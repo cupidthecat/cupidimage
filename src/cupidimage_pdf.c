@@ -2310,6 +2310,16 @@ typedef struct {
 } pdf_graphics_state;
 
 typedef struct {
+    double inverse[6];
+    double box[4];
+} pdf_form_clip;
+
+typedef struct {
+    size_t bytes_left;
+    unsigned calls_left;
+} pdf_form_budget;
+
+typedef struct {
     cupidimage_image *img;
     const unsigned char *document;
     size_t document_size;
@@ -2332,7 +2342,13 @@ typedef struct {
     int in_text;
     const pdf_font_table *font_table;
     const pdf_font_map *current_font;
+    int form_objects[16];
+    pdf_form_clip form_clips[16];
+    int form_depth;
+    pdf_form_budget *form_budget;
 } pdf_render_state;
+
+static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 
 static int pdf_is_ws(unsigned char c) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\0';
@@ -2673,40 +2689,28 @@ static int pdf_parse_array_token(const unsigned char *data, size_t size, size_t 
     return 0;
 }
 
-static void pdf_set_pixel(cupidimage_image *img, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+static void pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+    cupidimage_image *img = st->img;
     if (!img || !img->rgba) {
         return;
     }
     if (x < 0 || y < 0 || x >= (int)img->width || y >= (int)img->height) {
         return;
     }
+    double px = st->page_x0_pts + (x + 0.5) * (72.0 / 96.0);
+    double py = st->page_top_pts - (y + 0.5) * (72.0 / 96.0);
+    for (int i = 0; i < st->form_depth; i++) {
+        const pdf_form_clip *clip = &st->form_clips[i];
+        const double *m = clip->inverse;
+        double u = m[0] * px + m[2] * py + m[4];
+        double v = m[1] * px + m[3] * py + m[5];
+        if (u < clip->box[0] || u >= clip->box[2] || v < clip->box[1] || v >= clip->box[3]) return;
+    }
     size_t idx = ((size_t)y * img->width + (size_t)x) * 4u;
     img->rgba[idx + 0] = r;
     img->rgba[idx + 1] = g;
     img->rgba[idx + 2] = b;
     img->rgba[idx + 3] = 255;
-}
-
-static void pdf_draw_rect(cupidimage_image *img, int x, int y, int w, int h,
-                          uint8_t r, uint8_t g, uint8_t b) {
-    if (w <= 0 || h <= 0) {
-        return;
-    }
-    int x0 = x;
-    int y0 = y;
-    int x1 = x + w;
-    int y1 = y + h;
-
-    if (x0 < 0) x0 = 0;
-    if (y0 < 0) y0 = 0;
-    if (x1 > (int)img->width) x1 = (int)img->width;
-    if (y1 > (int)img->height) y1 = (int)img->height;
-
-    for (int yy = y0; yy < y1; yy++) {
-        for (int xx = x0; xx < x1; xx++) {
-            pdf_set_pixel(img, xx, yy, r, g, b);
-        }
-    }
 }
 
 static void pdf_matrix_identity(float m[6]) {
@@ -2745,7 +2749,14 @@ static int pdf_image_dictionary(const pdf_render_state *st, const pdf_object_vie
     int object;
     if (!pdf_page_value(parent, key, &pos)) return 0;
     if (pdf_page_reference(parent, pos, &object)) {
-        return get_object_content(st->document, st->document_size, object, result);
+        if (!get_object_content(st->document, st->document_size, object, result)) return 0;
+        pos = 0;
+        pdf_skip_ws_and_comments(result->data, result->len, &pos);
+        if (result->len - pos < 2 || result->data[pos] != '<' || result->data[pos + 1] != '<') {
+            pdf_object_view_release(result);
+            return 0;
+        }
+        return 1;
     }
     if (pos + 1 >= parent->len || parent->data[pos] != '<' || parent->data[pos + 1] != '<') return 0;
     result->data = parent->data + pos;
@@ -2812,7 +2823,7 @@ static int pdf_image_stream(const pdf_render_state *st, const pdf_object_view *v
                              const unsigned char **stream, size_t *length) {
     size_t pos = 0;
     int depth = 0, declared;
-    if (!pdf_image_integer(st, view, "Length", &declared) || declared <= 0) return 0;
+    if (!pdf_image_integer(st, view, "Length", &declared)) return 0;
     while (pos < view->len) {
         pdf_skip_ws_and_comments(view->data, view->len, &pos);
         if (pos >= view->len) return 0;
@@ -2993,8 +3004,11 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
     size_t pos;
     if (!pdf_image_object(st, name, &object) ||
         !get_object_content(st->document, st->document_size, object, &image)) goto done;
-    /* Form XObjects remain outside the preview subset. */
-    if (pdf_image_name_is(&image, "Subtype", "Form")) { ok = 1; goto done; }
+    if (pdf_image_name_is(&image, "Subtype", "Form")) {
+        ok = pdf_draw_form(st, object, &image);
+        pdf_object_view_release(&image);
+        return ok;
+    }
     if (!pdf_image_name_is(&image, "Subtype", "Image")) goto done;
     components = pdf_image_name_is(&image, "ColorSpace", "DeviceRGB") ? 3 :
                  pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1 : 0;
@@ -3049,7 +3063,7 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
                 double value = decode[2 * k] + (sample[k] / 255.0) * (decode[2 * k + 1] - decode[2 * k]);
                 rgb[c] = pdf_clamp_u8(value);
             }
-            pdf_set_pixel(st->img, x, y, rgb[0], rgb[1], rgb[2]);
+            pdf_set_pixel(st, x, y, rgb[0], rgb[1], rgb[2]);
         }
     }
     ok = 1;
@@ -3205,7 +3219,7 @@ static void pdf_stroke_path(pdf_render_state *st) {
                 float px = (float)x + 0.5f;
                 float d2 = pdf_point_to_segment_dist_sq(px, py, x0, y0, x1, y1);
                 if (d2 <= half_w_sq) {
-                    pdf_set_pixel(st->img, x, y, st->gs.stroke_r, st->gs.stroke_g, st->gs.stroke_b);
+                    pdf_set_pixel(st, x, y, st->gs.stroke_r, st->gs.stroke_g, st->gs.stroke_b);
                 }
             }
         }
@@ -3267,7 +3281,7 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
                 crossings += pdf_scanline_intersects(px, py, &xformed[i]);
             }
             if (even_odd ? crossings % 2 != 0 : crossings != 0) {
-                pdf_set_pixel(st->img, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
+                pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
             }
         }
     }
@@ -3415,19 +3429,36 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     if (scale_x < 1) scale_x = 1;
     if (scale_y < 1) scale_y = 1;
 
-    int base_x = (int)((st->text_x_pts - st->page_x0_pts) * px_per_pt + 0.5f);
-    int baseline_y = (int)((st->page_top_pts - st->text_y_pts) * px_per_pt + 0.5f);
-    int top_y = baseline_y - font_px;
-
-    for (int gy = 0; gy < 8; gy++) {
-        for (int gx = 0; gx < 8; gx++) {
-            if ((glyph[gy] & (1u << gx)) == 0) {
-                continue;
-            }
-            int rx = base_x + gx * scale_x;
-            int ry = top_y + gy * scale_y;
-            pdf_draw_rect(st->img, rx, ry, scale_x, scale_y,
-                          st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
+    double base_x = trunc(((double)st->text_x_pts - st->page_x0_pts) * px_per_pt + 0.5);
+    double top_y = trunc(((double)st->page_top_pts - st->text_y_pts) * px_per_pt + 0.5) - font_px;
+    if (!isfinite(base_x) || !isfinite(top_y)) return;
+    const float *m = st->gs.ctm;
+    double det = (double)m[0] * m[3] - (double)m[1] * m[2];
+    if (!isfinite(det) || det == 0) return;
+    double min_x = st->img->width, min_y = st->img->height, max_x = 0, max_y = 0;
+    for (int corner = 0; corner < 4; corner++) {
+        double ux = st->page_x0_pts + (base_x + ((corner & 1) ? scale_x * 8 : 0)) / px_per_pt;
+        double uy = st->page_top_pts - (top_y + ((corner & 2) ? scale_y * 8 : 0)) / px_per_pt;
+        double x = (m[0] * ux + m[2] * uy + m[4] - st->page_x0_pts) * px_per_pt;
+        double y = (st->page_top_pts - (m[1] * ux + m[3] * uy + m[5])) * px_per_pt;
+        if (!isfinite(x) || !isfinite(y)) return;
+        min_x = fmin(min_x, x); max_x = fmax(max_x, x);
+        min_y = fmin(min_y, y); max_y = fmax(max_y, y);
+    }
+    int x0 = (int)fmax(0, fmin(st->img->width, floor(min_x)));
+    int x1 = (int)fmax(0, fmin(st->img->width, ceil(max_x)));
+    int y0 = (int)fmax(0, fmin(st->img->height, floor(min_y)));
+    int y1 = (int)fmax(0, fmin(st->img->height, ceil(max_y)));
+    for (int y = y0; y < y1; y++) {
+        for (int x = x0; x < x1; x++) {
+            double tx = st->page_x0_pts + (x + 0.5) / px_per_pt - m[4];
+            double ty = st->page_top_pts - (y + 0.5) / px_per_pt - m[5];
+            double ux = (m[3] * tx - m[2] * ty) / det;
+            double uy = (m[0] * ty - m[1] * tx) / det;
+            double gx = ((ux - st->page_x0_pts) * px_per_pt - base_x) / scale_x;
+            double gy = ((st->page_top_pts - uy) * px_per_pt - top_y) / scale_y;
+            if (gx >= 0 && gx < 8 && gy >= 0 && gy < 8 && (glyph[(int)gy] & (1u << (int)gx)))
+                pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
         }
     }
 }
@@ -3855,41 +3886,9 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
     pdf_clear_operands(ops, count);
 }
 
-static int pdf_render_content_stream(const unsigned char *stream, size_t stream_len,
-                                     const unsigned char *document, size_t document_size, int page_object,
-                                     const pdf_font_table *font_table,
-                                     cupidimage_image *img, const pdf_page_geometry *geometry,
-                                     char *err, size_t errcap) {
-    pdf_render_state st;
-    st.img = img;
-    st.document = document;
-    st.document_size = document_size;
-    st.page_object = page_object;
-    st.image_failed = 0;
-    st.error = err;
-    st.error_capacity = errcap;
-    st.page_x0_pts = (float)geometry->x0;
-    st.page_top_pts = (float)geometry->y1;
-    st.line_x_pts = 0.0f;
-    st.line_y_pts = 0.0f;
-    st.text_x_pts = 0.0f;
-    st.text_y_pts = 0.0f;
-    st.font_size_pts = 12.0f;
-    st.leading_pts = 0.0f;
-    pdf_matrix_identity(st.gs.ctm);
-    st.gs.fill_r = 0;
-    st.gs.fill_g = 0;
-    st.gs.fill_b = 0;
-    st.gs.stroke_r = 0;
-    st.gs.stroke_g = 0;
-    st.gs.stroke_b = 0;
-    st.gs.line_width_pts = 1.0f;
-    st.gs_stack_len = 0;
-    pdf_path_clear(&st.path);
-    st.in_text = 0;
-    st.font_table = font_table;
-    st.current_font = NULL;
-
+static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len) {
+    char *err = st->error;
+    size_t errcap = st->error_capacity;
     pdf_operand ops[64];
     int op_count = 0;
     memset(ops, 0, sizeof(ops));
@@ -4005,8 +4004,8 @@ static int pdf_render_content_stream(const unsigned char *stream, size_t stream_
             }
             memcpy(opbuf, &stream[start], tok_len);
             opbuf[tok_len] = '\0';
-            pdf_execute_operator(&st, opbuf, ops, &op_count);
-            if (st.image_failed) return 0;
+            pdf_execute_operator(st, opbuf, ops, &op_count);
+            if (st->image_failed) return 0;
             continue;
         }
 
@@ -4015,6 +4014,136 @@ static int pdf_render_content_stream(const unsigned char *stream, size_t stream_
 
     pdf_clear_operands(ops, &op_count);
     return 1;
+}
+
+static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form) {
+    size_t pos, length;
+    int type = 1, ok = 0;
+    const unsigned char *stream;
+    unsigned char *inflated = NULL;
+    pdf_render_state *child = NULL;
+    pdf_font_table fonts;
+    pdf_font_table_init(&fonts);
+    if (st->form_depth >= 16 || !st->form_budget->calls_left) goto done;
+    st->form_budget->calls_left--;
+    for (int i = 0; i < st->form_depth; i++) {
+        if (st->form_objects[i] == object) goto done;
+    }
+    if ((pdf_page_value(form, "FormType", &pos) &&
+         (!pdf_image_integer(st, form, "FormType", &type) || type != 1)) ||
+        pdf_page_value(form, "Group", &pos) || pdf_page_value(form, "Ref", &pos)) goto done;
+    child = (pdf_render_state *)malloc(sizeof(*child));
+    if (!child) goto done;
+    *child = *st;
+    child->gs_stack_len = 0;
+    child->image_failed = 0;
+    pdf_path_clear(&child->path);
+    pdf_form_clip *clip = &child->form_clips[st->form_depth];
+    if (!pdf_page_value(form, "BBox", &pos) ||
+        !pdf_page_rectangle(st->document, st->document_size, form, pos, clip->box)) goto done;
+    if (pdf_page_value(form, "Matrix", &pos)) {
+        pdf_object_view indirect = {0};
+        const pdf_object_view *matrix = form;
+        int matrix_obj;
+        if (pos < form->len && form->data[pos] != '[') {
+            if (!pdf_page_reference(form, pos, &matrix_obj) ||
+                !get_object_content(st->document, st->document_size, matrix_obj, &indirect)) goto done;
+            matrix = &indirect;
+            pos = 0;
+            pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
+        }
+        float m[6];
+        int valid = pos < matrix->len && matrix->data[pos++] == '[';
+        for (int i = 0; valid && i < 6; i++) {
+            double number;
+            pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
+            valid = parse_pdf_number(matrix->data, matrix->len, &pos, &number) && fabs(number) <= 1e30;
+            if (valid) m[i] = (float)number;
+        }
+        pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
+        valid = valid && pos < matrix->len && matrix->data[pos] == ']';
+        pdf_object_view_release(&indirect);
+        if (!valid) goto done;
+        pdf_matrix_concat(child->gs.ctm, m);
+    }
+    const float *m = child->gs.ctm;
+    for (int i = 0; i < 6; i++) if (!isfinite(m[i])) goto done;
+    double det = (double)m[0] * m[3] - (double)m[1] * m[2];
+    if (det == 0) { ok = 1; goto done; }
+    double *inv = clip->inverse;
+    inv[0] = m[3] / det; inv[1] = -m[1] / det;
+    inv[2] = -m[2] / det; inv[3] = m[0] / det;
+    inv[4] = -(inv[0] * m[4] + inv[2] * m[5]);
+    inv[5] = -(inv[1] * m[4] + inv[3] * m[5]);
+    child->form_objects[child->form_depth++] = object;
+    if (pdf_page_value(form, "Resources", &pos)) {
+        pdf_object_view resources = {0};
+        int valid = pdf_image_dictionary(st, form, "Resources", &resources);
+        pdf_object_view_release(&resources);
+        if (!valid) goto done;
+        child->page_object = object;
+        if (!pdf_collect_page_fonts(st->document, st->document_size, object, &fonts, st->error, st->error_capacity)) {
+            pdf_font_table_free(&fonts);
+            pdf_font_table_init(&fonts);
+        }
+        child->font_table = &fonts;
+    }
+    int flate = pdf_image_filter_is(form, "FlateDecode");
+    if ((pdf_page_value(form, "Filter", &pos) && !flate) ||
+        pdf_page_value(form, "DecodeParms", &pos) || !pdf_image_stream(st, form, &stream, &length)) goto done;
+    if (flate) {
+        if (!pdf_inflate_auto(stream, length, &inflated, &length)) goto done;
+        stream = inflated;
+    }
+    if (length > st->form_budget->bytes_left) goto done;
+    st->form_budget->bytes_left -= length;
+    ok = pdf_render_stream(child, stream, length);
+done:
+    pdf_font_table_free(&fonts);
+    free(inflated);
+    free(child);
+    if (!ok) set_err(st->error, st->error_capacity, "pdf: invalid, recursive, or unsupported Form XObject");
+    return ok;
+}
+
+static int pdf_render_content_stream(const unsigned char *stream, size_t stream_len,
+                                     const unsigned char *document, size_t document_size, int page_object,
+                                     const pdf_font_table *font_table,
+                                     cupidimage_image *img, const pdf_page_geometry *geometry,
+                                     char *err, size_t errcap) {
+    pdf_render_state st = {0};
+    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096};
+    st.form_budget = &form_budget;
+    st.img = img;
+    st.document = document;
+    st.document_size = document_size;
+    st.page_object = page_object;
+    st.image_failed = 0;
+    st.error = err;
+    st.error_capacity = errcap;
+    st.page_x0_pts = (float)geometry->x0;
+    st.page_top_pts = (float)geometry->y1;
+    st.line_x_pts = 0.0f;
+    st.line_y_pts = 0.0f;
+    st.text_x_pts = 0.0f;
+    st.text_y_pts = 0.0f;
+    st.font_size_pts = 12.0f;
+    st.leading_pts = 0.0f;
+    pdf_matrix_identity(st.gs.ctm);
+    st.gs.fill_r = 0;
+    st.gs.fill_g = 0;
+    st.gs.fill_b = 0;
+    st.gs.stroke_r = 0;
+    st.gs.stroke_g = 0;
+    st.gs.stroke_b = 0;
+    st.gs.line_width_pts = 1.0f;
+    st.gs_stack_len = 0;
+    pdf_path_clear(&st.path);
+    st.in_text = 0;
+    st.font_table = font_table;
+    st.current_font = NULL;
+
+    return pdf_render_stream(&st, stream, stream_len);
 }
 
 static int pdf_rotate_page(cupidimage_image *img, int rotation) {

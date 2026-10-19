@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="$ROOT_DIR/bin/cupidimage"
-ASSETS_DIR="$ROOT_DIR/tests/pdf"
+ASSETS_DIR="$ROOT_DIR/assets/pdf"
 WIDTH="${1:-120}"
 HEIGHT="${2:-60}"
 
@@ -14,7 +14,7 @@ if [[ ! -x "$BIN" ]]; then
 fi
 
 if [[ ! -d "$ASSETS_DIR" ]]; then
-  echo "tests/pdf directory not found at $ASSETS_DIR" >&2
+  echo "assets/pdf directory not found at $ASSETS_DIR" >&2
   exit 1
 fi
 
