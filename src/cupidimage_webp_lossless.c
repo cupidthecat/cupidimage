@@ -19,6 +19,7 @@ typedef struct vp8l_bit_reader {
     size_t pos;
     uint64_t bitbuf;
     int bitcount;
+    int failed;
 } vp8l_bit_reader;
 
 static void vp8l_br_init(vp8l_bit_reader *br, const uint8_t *data, size_t size) {
@@ -27,6 +28,7 @@ static void vp8l_br_init(vp8l_bit_reader *br, const uint8_t *data, size_t size) 
     br->pos = 0;
     br->bitbuf = 0;
     br->bitcount = 0;
+    br->failed = 0;
 }
 
 static int vp8l_br_fill(vp8l_bit_reader *br, int bits) {
@@ -42,19 +44,13 @@ static uint32_t vp8l_br_read(vp8l_bit_reader *br, int bits) {
         return 0;
     }
     if (!vp8l_br_fill(br, bits)) {
+        br->failed = 1;
         return 0;
     }
     uint32_t val = (uint32_t)(br->bitbuf & ((1ULL << bits) - 1ULL));
     br->bitbuf >>= bits;
     br->bitcount -= bits;
     return val;
-}
-
-static uint32_t vp8l_br_peek(vp8l_bit_reader *br, int bits) {
-    if (!vp8l_br_fill(br, bits)) {
-        return 0;
-    }
-    return (uint32_t)(br->bitbuf & ((1ULL << bits) - 1ULL));
 }
 
 static void vp8l_br_drop(vp8l_bit_reader *br, int bits) {
@@ -84,12 +80,14 @@ static void huff_free(vp8l_huff *h) {
 
 static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits) {
     int count[VP8L_MAX_CODE_LENGTH + 1] = {0};
-    int maxlen = 0;
+    int maxlen = 0, symbols = 0, only_symbol = 0;
     for (int i = 0; i < num; i++) {
         if (lengths[i] > maxbits) {
             return 0;
         }
         if (lengths[i]) {
+            symbols++;
+            only_symbol = i;
             count[lengths[i]]++;
             if (lengths[i] > maxlen) {
                 maxlen = lengths[i];
@@ -97,16 +95,23 @@ static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits
         }
     }
 
-    if (maxlen == 0) {
-        h->maxbits = 1;
-        h->table = (uint32_t *)malloc(2 * sizeof(uint32_t));
+    if (symbols == 1 && maxlen == 1) {
+        /* A single leaf encodes its symbol without consuming any bits. */
+        h->maxbits = 0;
+        h->table = (uint32_t *)malloc(sizeof(uint32_t));
         if (!h->table) {
             return 0;
         }
-        h->table[0] = (1u << 24) | 0u;
-        h->table[1] = (1u << 24) | 0u;
+        h->table[0] = (uint32_t)only_symbol;
         return 1;
     }
+    if (!symbols) return 0;
+    int slots = 1;
+    for (int bits = 1; bits <= maxlen; bits++) {
+        slots = slots * 2 - count[bits];
+        if (slots < 0) return 0;
+    }
+    if (slots != 0) return 0;
 
     int next_code[VP8L_MAX_CODE_LENGTH + 1];
     int code = 0;
@@ -143,15 +148,20 @@ static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits
 }
 
 static int huff_decode(vp8l_bit_reader *br, const vp8l_huff *h, int *sym) {
-    if (!vp8l_br_fill(br, h->maxbits)) {
-        return 0;
+    if (br->failed || !h->table) return 0;
+    if (h->maxbits == 0) {
+        *sym = (int)h->table[0];
+        return 1;
     }
-    uint32_t idx = vp8l_br_peek(br, h->maxbits);
+    /* Zero-extend lookahead near EOF, but require all bits of the chosen code. */
+    vp8l_br_fill(br, h->maxbits);
+    uint32_t idx = (uint32_t)(br->bitbuf & ((1u << h->maxbits) - 1u));
     uint32_t val = h->table[idx];
     if (val == 0) {
         return 0;
     }
     int len = (int)(val >> 24);
+    if (len > br->bitcount) return 0;
     *sym = (int)(val & 0xFFFFFFu);
     vp8l_br_drop(br, len);
     return 1;
@@ -256,7 +266,7 @@ static int read_prefix_code(vp8l_bit_reader *br, int alphabet_size, vp8l_huff *o
         huff_free(&code_len_table);
     }
 
-    int ok = huff_build(out, lengths, alphabet_size, VP8L_MAX_CODE_LENGTH);
+    int ok = !br->failed && huff_build(out, lengths, alphabet_size, VP8L_MAX_CODE_LENGTH);
     free(lengths);
     return ok;
 }
@@ -585,6 +595,11 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
     free(color_cache);
     free(meta_prefix);
 
+    if (br->failed) {
+        free(pixels);
+        set_err(err, errcap, "truncated VP8L data");
+        return 0;
+    }
     *out_pixels = pixels;
     return 1;
 }
@@ -912,14 +927,17 @@ int cupidimage_decode_vp8l(const unsigned char *data, size_t size,
 
     vp8l_transform transforms[4];
     int transform_count = 0;
+    unsigned seen_transforms = 0;
     memset(transforms, 0, sizeof(transforms));
 
     while (vp8l_br_read(&br, 1)) {
         int type = (int)vp8l_br_read(&br, 2);
-        if (transform_count >= 4) {
-            set_err(err, errcap, "too many VP8L transforms");
+        if (transform_count >= 4 || (seen_transforms & (1u << type))) {
+            for (int i = 0; i < transform_count; i++) transform_free(&transforms[i]);
+            set_err(err, errcap, "repeated VP8L transform");
             return 0;
         }
+        seen_transforms |= 1u << type;
         vp8l_transform *t = &transforms[transform_count++];
         t->type = (transform_type)type;
 
