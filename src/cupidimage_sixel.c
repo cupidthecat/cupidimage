@@ -57,11 +57,11 @@ static void octree_free(octree_node *node) {
     free(node);
 }
 
-static void octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_t r, uint8_t g, uint8_t b, int level) {
+static int octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_t r, uint8_t g, uint8_t b, int level) {
     if (!*node_ptr) {
         int is_leaf = (level == 8);
         *node_ptr = octree_create_node(level, is_leaf);
-        if (!*node_ptr) return;
+        if (!*node_ptr) return 0;
         
         if (!is_leaf && level < 8) {
             (*node_ptr)->next = qt->reducible[level];
@@ -83,8 +83,9 @@ static void octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8
     } else {
         int shift = 7 - level;
         int idx = ((r >> shift) & 1) << 2 | ((g >> shift) & 1) << 1 | ((b >> shift) & 1);
-        octree_add_color(qt, &node->children[idx], r, g, b, level + 1);
+        return octree_add_color(qt, &node->children[idx], r, g, b, level + 1);
     }
+    return 1;
 }
 
 static void octree_reduce(octree_quantizer *qt) {
@@ -164,7 +165,10 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
             continue;  /* Skip transparent pixels */
         }
         
-        octree_add_color(&qt, &qt.root, rgba[i * 4 + 0], rgba[i * 4 + 1], rgba[i * 4 + 2], 0);
+        if (!octree_add_color(&qt, &qt.root, rgba[i * 4 + 0], rgba[i * 4 + 1], rgba[i * 4 + 2], 0)) {
+            octree_free(qt.root);
+            return 0;
+        }
         
         while (qt.leaf_count > effective_max) {
             octree_reduce(&qt);
@@ -173,7 +177,7 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
     
     /* Extract palette */
     int idx = palette_offset;
-    octree_get_palette_recursive(qt.root, palette + palette_offset * 3, &idx);
+    octree_get_palette_recursive(qt.root, palette, &idx);
     *palette_size = (uint32_t)idx;
     
     if (use_transparency) {
@@ -199,7 +203,7 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
             int best_dist = INT_MAX;
             uint8_t best_idx = 0;
             
-            for (uint32_t p = 0; p < *palette_size; p++) {
+            for (uint32_t p = (uint32_t)palette_offset; p < *palette_size; p++) {
                 int dr = (int)r - palette[p * 3 + 0];
                 int dg = (int)g - palette[p * 3 + 1];
                 int db = (int)b - palette[p * 3 + 2];
@@ -220,7 +224,7 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
 
 static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                          const uint8_t *palette, uint32_t palette_size,
-                                         uint8_t *indexed) {
+                                         int use_transparency, uint8_t *indexed) {
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -235,6 +239,7 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
+            if (use_transparency && rgba[i * 4 + 3] < 128) continue;
             
             int r = (int)rgba[i * 4 + 0] + error_r[i];
             int g = (int)rgba[i * 4 + 1] + error_g[i];
@@ -248,7 +253,7 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
             uint8_t best_idx = indexed[i];
             int best_dist = INT_MAX;
             
-            for (uint32_t p = 0; p < palette_size; p++) {
+            for (uint32_t p = use_transparency ? 1u : 0u; p < palette_size; p++) {
                 int dr = r - palette[p * 3 + 0];
                 int dg = g - palette[p * 3 + 1];
                 int db = b - palette[p * 3 + 2];
@@ -304,7 +309,7 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
 
 static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                   const uint8_t *palette, uint32_t palette_size,
-                                  uint8_t *indexed) {
+                                  int use_transparency, uint8_t *indexed) {
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -319,6 +324,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
+            if (use_transparency && rgba[i * 4 + 3] < 128) continue;
             
             int r = (int)rgba[i * 4 + 0] + error_r[i];
             int g = (int)rgba[i * 4 + 1] + error_g[i];
@@ -332,7 +338,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
             uint8_t best_idx = indexed[i];
             int best_dist = INT_MAX;
             
-            for (uint32_t p = 0; p < palette_size; p++) {
+            for (uint32_t p = use_transparency ? 1u : 0u; p < palette_size; p++) {
                 int dr = r - palette[p * 3 + 0];
                 int dg = g - palette[p * 3 + 1];
                 int db = b - palette[p * 3 + 2];
@@ -374,7 +380,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
 
 static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                  const uint8_t *palette, uint32_t palette_size,
-                                 uint8_t *indexed) {
+                                 int use_transparency, uint8_t *indexed) {
     /* 4x4 Bayer matrix */
     static const int bayer4x4[4][4] = {
         { 0,  8,  2, 10},
@@ -386,6 +392,7 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
+            if (use_transparency && rgba[i * 4 + 3] < 128) continue;
             
             int threshold = bayer4x4[y % 4][x % 4] * 16;
             
@@ -401,7 +408,7 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
             uint8_t best_idx = indexed[i];
             int best_dist = INT_MAX;
             
-            for (uint32_t p = 0; p < palette_size; p++) {
+            for (uint32_t p = use_transparency ? 1u : 0u; p < palette_size; p++) {
                 int dr = r - palette[p * 3 + 0];
                 int dg = g - palette[p * 3 + 1];
                 int db = b - palette[p * 3 + 2];
@@ -420,15 +427,15 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
 
 static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint32_t height,
                         const uint8_t *palette, uint32_t palette_size,
-                        float pixel_aspect_ratio) {
+                        float pixel_aspect_ratio, int use_transparency) {
     (void)pixel_aspect_ratio;  /* Reserved for future use */
     
     /* Start Sixel sequence: DCS P1 ; P2 ; P3 q
      * P1 = pixel aspect ratio (0 = default 2:1)
-     * P2 = background select (0 = leave at current, 1 = set to color 0, 2 = set to current)
+     * P2 = background select (0/2 = current background, 1 = leave unchanged)
      * P3 = horizontal grid size (0 = default)
      */
-    fprintf(out, "\033Pq");
+    fprintf(out, "\033P0;%dq", use_transparency ? 1 : 0);
     
     /* Raster attributes: "Pan;Pad;Ph;Pv
      * Pan = aspect ratio numerator
@@ -454,6 +461,7 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
         int first_color_in_band = 1;
         
         for (uint32_t color = 0; color < palette_size; color++) {
+            if (use_transparency && color == 0) continue;
             /* Check if this color is used in this band */
             int color_used = 0;
             for (uint32_t x = 0; x < width && !color_used; x++) {
@@ -541,7 +549,7 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
     fputc('\n', out);
     fflush(out);
     
-    return 1;
+    return !ferror(out);
 }
 
 int cupidimage_is_sixel_terminal(void) {
@@ -591,7 +599,9 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
         return 0;
     }
     
-    if (img->width == 0 || img->height == 0) {
+    if (img->width == 0 || img->height == 0 ||
+        (uint64_t)img->width * img->height > UINT32_MAX / 4u ||
+        (uint64_t)img->width * img->height > SIZE_MAX / (4u * sizeof(int))) {
         set_err(err, errcap, "invalid image dimensions");
         return 0;
     }
@@ -659,21 +669,22 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
     
     /* Apply dithering */
     if (dither_mode == 1) {
-        apply_floyd_steinberg_dither(rgba_copy, img->width, img->height, palette, palette_size, indexed);
+        apply_floyd_steinberg_dither(rgba_copy, img->width, img->height, palette, palette_size, use_transparency, indexed);
     } else if (dither_mode == 2) {
-        apply_atkinson_dither(rgba_copy, img->width, img->height, palette, palette_size, indexed);
+        apply_atkinson_dither(rgba_copy, img->width, img->height, palette, palette_size, use_transparency, indexed);
     } else if (dither_mode == 3) {
-        apply_ordered_dither(rgba_copy, img->width, img->height, palette, palette_size, indexed);
+        apply_ordered_dither(rgba_copy, img->width, img->height, palette, palette_size, use_transparency, indexed);
     }
     
     /* Encode and output */
     float aspect = opts && opts->pixel_aspect_ratio > 0 ? opts->pixel_aspect_ratio : 2.0f;
-    int result = encode_sixel(out, indexed, img->width, img->height, palette, palette_size, aspect);
+    int result = encode_sixel(out, indexed, img->width, img->height, palette, palette_size, aspect, use_transparency);
     
     free(rgba_copy);
     free(palette);
     free(indexed);
     
+    if (!result) set_err(err, errcap, "failed to write Sixel output");
     return result;
 }
 

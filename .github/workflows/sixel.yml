@@ -1,0 +1,17 @@
+name: Sixel rendering
+
+on: [push, pull_request]
+
+jobs:
+  sanitizer:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and check Sixel output
+        run: >-
+          make -j2 all test-sixel
+          CC=${{ matrix.compiler }}
+          CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -fno-pie -no-pie'
