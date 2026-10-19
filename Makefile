@@ -13,7 +13,7 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_PNG = $(BINDIR)/test_png
 
-.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean
+.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli
 
 all: lib cli
 
@@ -26,6 +26,9 @@ test-png: $(TEST_PNG)
 
 $(TEST_PNG): tests/test_png.c $(LIB) $(SRCDIR)/cupidimage.h
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-cli: cli
+	python3 tests/test_cli.py $(CLI)
 
 test-svg: cli
 	./scripts/test_svg_assets.sh
