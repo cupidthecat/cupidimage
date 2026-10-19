@@ -1,0 +1,17 @@
+name: PDF and TIFF compression
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sanitizer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: >-
+          make -j2 all test-deflate-containers CC=clang
+          CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'

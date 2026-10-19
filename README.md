@@ -316,6 +316,12 @@ scripts/test_svg_regressions.sh
 make test-svg-regressions
 ```
 
+Non-interactive PDF/TIFF compression regression checks:
+```sh
+make test-deflate-containers
+```
+These generate complete documents in memory and check decoded pixels across stored and dynamic-to-stored DEFLATE blocks.
+
 Quick PDF test:
 ```sh
 scripts/make_test_pdfs.sh
