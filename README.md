@@ -173,6 +173,23 @@ Run the clipping and allocation-failure checks with Python 3 and a C compiler:
 
     make test-pdf-clipping test-pdf-clip-oom
 
+PDF colors support DeviceGray, DeviceRGB, and DeviceCMYK through `cs`/`CS` and
+`sc`/`SC`/`scn`/`SCN`, as well as `g`/`G`, `rg`/`RG`, and `k`/`K`. Fill and
+stroke color spaces are independent and follow `q`/`Q` state restoration.
+Selecting a color space resets its color to black.
+
+Named ColorSpace resources can alias device spaces, including inherited and
+indirect dictionaries and indirect name values. Forms use their own resources
+when present and otherwise inherit the caller's resources. Alias resolution is
+bounded to reject cycles. Unsupported spaces, including patterns, calibrated
+colors, indexed colors, and ICC profiles, return a load error. Invalid color
+operands also return an error. CMYK uses the built-in RGB conversion without
+color profiles.
+
+Run the generated color and resource checks with:
+
+    make test-pdf-colors
+
 Run the generated image checks with Python 3:
 
     make test-pdf-images

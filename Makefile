@@ -15,7 +15,7 @@ CLI = $(BINDIR)/cupidimage
 TEST_TARGETS = test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
- test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric
+ test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
 TEST_BINS = test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
@@ -63,6 +63,9 @@ test-pdf-forms: $(BINDIR)/test_pdf_pages
 
 test-pdf-clipping: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_clipping.py $<
+
+test-pdf-colors: $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_colors.py $<
 test-sixel: $(BINDIR)/test_sixel
 	python3 scripts/test_sixel.py $<
 test-gif-regressions:
