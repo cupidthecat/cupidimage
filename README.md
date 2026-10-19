@@ -322,6 +322,13 @@ scripts/make_test_pdfs.sh
 scripts/test_pdf_assets.sh
 ```
 
+Non-interactive GIF regression checks cover frame dimensions, palette backgrounds,
+truncated input, frame metadata, and allocation failure cleanup:
+```sh
+make test-gif-regressions
+CC=clang CFLAGS='-O1 -g -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all' make test-gif-regressions
+```
+
 
 Todo
 - [ ] For each image format provide option for checkerboard or white for alpha
