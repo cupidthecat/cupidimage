@@ -16,7 +16,7 @@ Supported formats (decoder status):
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.
 - TIFF: Classic + BigTIFF; byte orders II/MM; compression none/LZW/PackBits/Deflate/JPEG/CCITT RLE/G3/G4; photometric bilevel/grayscale(+alpha)/RGB/RGBA/palette/CMYK/YCbCr/Lab; strips/tiles; planar 1/2; predictor=2; orientation 1-8; multi-page IFDs (SubIFD pages via page APIs).
 - TGA: types 0-3/9-11; uncompressed/RLE; 8/15/16/24/32-bit; all origins; color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correction.
-- PDF: basic text and simple graphics via minimal parser; FlateDecode streams; text positioning operators (BT/ET/Td/Tj); RGB color operators (rg/RG); stub glyph rendering. No complex fonts, transparency, patterns, or annotations.
+- PDF: basic text and vector graphics via minimal parser; FlateDecode streams; text positioning; straight and cubic Bézier paths (`c`/`v`/`y`); nonzero and even-odd fills; RGB, grayscale, and basic DeviceCMYK colors (`k`/`K`); bitmap glyph rendering. No complex fonts, clipping, transparency, patterns, or annotations.
 
 Build (Makefile):
 ```sh
@@ -315,6 +315,12 @@ Non-interactive SVG regression checks:
 scripts/test_svg_regressions.sh
 make test-svg-regressions
 ```
+
+Non-interactive PDF graphics regression checks:
+```sh
+make test-pdf-graphics
+```
+These generate complete PDFs in memory and check curves, transforms, fill rules, open subpaths, and CMYK colors. Curves are approximated by line segments, and DeviceCMYK colors use a simple RGB conversion without color profiles.
 
 Quick PDF test:
 ```sh

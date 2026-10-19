@@ -2152,11 +2152,13 @@ typedef struct {
     float y0;
     float x1;
     float y1;
+    int starts_subpath;
 } pdf_seg;
 
 typedef struct {
     pdf_seg segs[4096];
     int seg_count;
+    int subpath_first_seg;
     float current_x;
     float current_y;
     float subpath_start_x;
@@ -2600,6 +2602,7 @@ static void pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, fl
 static void pdf_path_clear(pdf_path *p) {
     if (!p) return;
     p->seg_count = 0;
+    p->subpath_first_seg = 0;
     p->has_current = 0;
     p->has_subpath = 0;
     p->current_x = 0.0f;
@@ -2615,11 +2618,13 @@ static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1
     p->segs[p->seg_count].y0 = y0;
     p->segs[p->seg_count].x1 = x1;
     p->segs[p->seg_count].y1 = y1;
+    p->segs[p->seg_count].starts_subpath = p->seg_count == p->subpath_first_seg;
     p->seg_count++;
 }
 
 static void pdf_path_move_to(pdf_path *p, float x, float y) {
     if (!p) return;
+    p->subpath_first_seg = p->seg_count;
     p->current_x = x;
     p->current_y = y;
     p->subpath_start_x = x;
@@ -2679,6 +2684,40 @@ static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0
     return dx * dx + dy * dy;
 }
 
+static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0,
+                               float x1, float y1, float x2, float y2,
+                               float x3, float y3, unsigned depth) {
+    if (st->path.seg_count >= 4096) return;
+    float px[4], py[4];
+    const float xs[] = {x0, x1, x2, x3}, ys[] = {y0, y1, y2, y3};
+    for (unsigned i = 0; i < 4; i++) {
+        pdf_user_to_pixel(st, xs[i], ys[i], &px[i], &py[i]);
+        if (!isfinite(px[i]) || !isfinite(py[i])) return;
+    }
+    /* Subdivide until both control points are within a quarter pixel of the chord. */
+    if (depth >= 12 ||
+        (pdf_point_to_segment_dist_sq(px[1], py[1], px[0], py[0], px[3], py[3]) <= 0.0625f &&
+         pdf_point_to_segment_dist_sq(px[2], py[2], px[0], py[0], px[3], py[3]) <= 0.0625f)) {
+        pdf_path_line_to(&st->path, x3, y3);
+        return;
+    }
+    float ax = x0 * 0.5f + x1 * 0.5f, ay = y0 * 0.5f + y1 * 0.5f;
+    float bx = x1 * 0.5f + x2 * 0.5f, by = y1 * 0.5f + y2 * 0.5f;
+    float cx = x2 * 0.5f + x3 * 0.5f, cy = y2 * 0.5f + y3 * 0.5f;
+    float dx = ax * 0.5f + bx * 0.5f, dy = ay * 0.5f + by * 0.5f;
+    float ex = bx * 0.5f + cx * 0.5f, ey = by * 0.5f + cy * 0.5f;
+    float mx = dx * 0.5f + ex * 0.5f, my = dy * 0.5f + ey * 0.5f;
+    pdf_flatten_curve(st, x0, y0, ax, ay, dx, dy, mx, my, depth + 1);
+    pdf_flatten_curve(st, mx, my, ex, ey, cx, cy, x3, y3, depth + 1);
+}
+
+static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1,
+                               float x2, float y2, float x3, float y3) {
+    if (!st->path.has_current) return;
+    pdf_flatten_curve(st, st->path.current_x, st->path.current_y,
+                       x1, y1, x2, y2, x3, y3, 0);
+}
+
 static void pdf_stroke_path(pdf_render_state *st) {
     if (!st || !st->img || st->path.seg_count <= 0) return;
 
@@ -2692,15 +2731,12 @@ static void pdf_stroke_path(pdf_render_state *st) {
         pdf_user_to_pixel(st, st->path.segs[i].x0, st->path.segs[i].y0, &x0, &y0);
         pdf_user_to_pixel(st, st->path.segs[i].x1, st->path.segs[i].y1, &x1, &y1);
 
-        int min_x = (int)floorf(fminf(x0, x1) - half_w - 1.0f);
-        int min_y = (int)floorf(fminf(y0, y1) - half_w - 1.0f);
-        int max_x = (int)ceilf(fmaxf(x0, x1) + half_w + 1.0f);
-        int max_y = (int)ceilf(fmaxf(y0, y1) + half_w + 1.0f);
-
-        if (min_x < 0) min_x = 0;
-        if (min_y < 0) min_y = 0;
-        if (max_x >= (int)st->img->width) max_x = (int)st->img->width - 1;
-        if (max_y >= (int)st->img->height) max_y = (int)st->img->height - 1;
+        if (!isfinite(x0) || !isfinite(y0) || !isfinite(x1) || !isfinite(y1)) continue;
+        float w = (float)st->img->width - 1, h = (float)st->img->height - 1;
+        int min_x = (int)fminf(w, fmaxf(0, floorf(fminf(x0, x1) - half_w - 1)));
+        int min_y = (int)fminf(h, fmaxf(0, floorf(fminf(y0, y1) - half_w - 1)));
+        int max_x = (int)fminf(w, fmaxf(0, ceilf(fmaxf(x0, x1) + half_w + 1)));
+        int max_y = (int)fminf(h, fmaxf(0, ceilf(fmaxf(y0, y1) + half_w + 1)));
 
         for (int y = min_y; y <= max_y; y++) {
             float py = (float)y + 0.5f;
@@ -2718,50 +2754,48 @@ static void pdf_stroke_path(pdf_render_state *st) {
 static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
     float y0 = seg->y0;
     float y1 = seg->y1;
-    /* Ensure consistent edge handling: include lower endpoint, exclude upper endpoint */
-    if ((y0 < y && y1 >= y) || (y1 < y && y0 >= y)) {
+    if ((y0 <= y && y1 > y) || (y1 <= y && y0 > y)) {
         /* Skip horizontal edges (approximately) to avoid double-counting. */
         if (fabsf(y0 - y1) <= 1e-6f) {
             return 0;
         }
         float t = (y - y0) / (y1 - y0);
         float ix = seg->x0 + t * (seg->x1 - seg->x0);
-        return ix > x;
+        return ix > x ? (y1 > y0 ? 1 : -1) : 0;
     }
     return 0;
 }
 
-static void pdf_fill_path(pdf_render_state *st) {
+static void pdf_fill_path(pdf_render_state *st, int even_odd) {
     if (!st || !st->img || st->path.seg_count <= 0) return;
 
     float min_x = 1e9f, min_y = 1e9f, max_x = -1e9f, max_y = -1e9f;
-    pdf_seg xformed[4096];
-    int n = st->path.seg_count;
-    if (n > (int)(sizeof(xformed) / sizeof(xformed[0]))) {
-        n = (int)(sizeof(xformed) / sizeof(xformed[0]));
+    pdf_seg xformed[8192];
+    int n = 0;
+    float start_x = 0, start_y = 0;
+
+    for (int i = 0; i < st->path.seg_count; i++) {
+        pdf_seg edge = {0};
+        pdf_user_to_pixel(st, st->path.segs[i].x0, st->path.segs[i].y0, &edge.x0, &edge.y0);
+        pdf_user_to_pixel(st, st->path.segs[i].x1, st->path.segs[i].y1, &edge.x1, &edge.y1);
+        if (!isfinite(edge.x0) || !isfinite(edge.y0) || !isfinite(edge.x1) || !isfinite(edge.y1)) return;
+        if (st->path.segs[i].starts_subpath) { start_x = edge.x0; start_y = edge.y0; }
+        xformed[n++] = edge;
+        min_x = fminf(min_x, fminf(edge.x0, edge.x1));
+        max_x = fmaxf(max_x, fmaxf(edge.x0, edge.x1));
+        min_y = fminf(min_y, fminf(edge.y0, edge.y1));
+        max_y = fmaxf(max_y, fmaxf(edge.y0, edge.y1));
+        if (i + 1 == st->path.seg_count || st->path.segs[i + 1].starts_subpath) {
+            /* Fill closes each subpath without adding a closing stroke. */
+            pdf_seg closing = {edge.x1, edge.y1, start_x, start_y, 0};
+            xformed[n++] = closing;
+        }
     }
 
-    for (int i = 0; i < n; i++) {
-        pdf_user_to_pixel(st, st->path.segs[i].x0, st->path.segs[i].y0, &xformed[i].x0, &xformed[i].y0);
-        pdf_user_to_pixel(st, st->path.segs[i].x1, st->path.segs[i].y1, &xformed[i].x1, &xformed[i].y1);
-        if (xformed[i].x0 < min_x) min_x = xformed[i].x0;
-        if (xformed[i].x1 < min_x) min_x = xformed[i].x1;
-        if (xformed[i].x0 > max_x) max_x = xformed[i].x0;
-        if (xformed[i].x1 > max_x) max_x = xformed[i].x1;
-        if (xformed[i].y0 < min_y) min_y = xformed[i].y0;
-        if (xformed[i].y1 < min_y) min_y = xformed[i].y1;
-        if (xformed[i].y0 > max_y) max_y = xformed[i].y0;
-        if (xformed[i].y1 > max_y) max_y = xformed[i].y1;
-    }
-
-    int x0 = (int)floorf(min_x);
-    int y0 = (int)floorf(min_y);
-    int x1 = (int)ceilf(max_x);
-    int y1 = (int)ceilf(max_y);
-    if (x0 < 0) x0 = 0;
-    if (y0 < 0) y0 = 0;
-    if (x1 > (int)st->img->width) x1 = (int)st->img->width;
-    if (y1 > (int)st->img->height) y1 = (int)st->img->height;
+    int x0 = (int)fminf((float)st->img->width, fmaxf(0, floorf(min_x)));
+    int y0 = (int)fminf((float)st->img->height, fmaxf(0, floorf(min_y)));
+    int x1 = (int)fminf((float)st->img->width, fmaxf(0, ceilf(max_x)));
+    int y1 = (int)fminf((float)st->img->height, fmaxf(0, ceilf(max_y)));
 
     for (int y = y0; y < y1; y++) {
         float py = (float)y + 0.5f;
@@ -2771,7 +2805,7 @@ static void pdf_fill_path(pdf_render_state *st) {
             for (int i = 0; i < n; i++) {
                 crossings += pdf_scanline_intersects(px, py, &xformed[i]);
             }
-            if (crossings & 1) {
+            if (even_odd ? crossings % 2 != 0 : crossings != 0) {
                 pdf_set_pixel(st->img, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
             }
         }
@@ -3211,6 +3245,22 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             st->gs.stroke_g = v;
             st->gs.stroke_b = v;
         }
+    } else if (strcmp(op, "k") == 0 || strcmp(op, "K") == 0) {
+        if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
+            pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
+            double c = fmin(1, fmax(0, ops[n - 4].num));
+            double m = fmin(1, fmax(0, ops[n - 3].num));
+            double y = fmin(1, fmax(0, ops[n - 2].num));
+            double k = fmin(1, fmax(0, ops[n - 1].num));
+            uint8_t r = pdf_clamp_u8(1 - fmin(1, c + k));
+            uint8_t g = pdf_clamp_u8(1 - fmin(1, m + k));
+            uint8_t b = pdf_clamp_u8(1 - fmin(1, y + k));
+            if (op[0] == 'k') {
+                st->gs.fill_r = r; st->gs.fill_g = g; st->gs.fill_b = b;
+            } else {
+                st->gs.stroke_r = r; st->gs.stroke_g = g; st->gs.stroke_b = b;
+            }
+        }
     } else if (strcmp(op, "w") == 0) {
         if (n >= 1 && pdf_expect_num(&ops[n - 1])) {
             float w = (float)ops[n - 1].num;
@@ -3248,6 +3298,25 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
         if (n >= 2 && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
             pdf_path_line_to(&st->path, (float)ops[n - 2].num, (float)ops[n - 1].num);
         }
+    } else if (strcmp(op, "c") == 0) {
+        if (n >= 6 && pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
+            pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
+            pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
+            pdf_path_curve_to(st, (float)ops[n - 6].num, (float)ops[n - 5].num,
+                              (float)ops[n - 4].num, (float)ops[n - 3].num,
+                              (float)ops[n - 2].num, (float)ops[n - 1].num);
+        }
+    } else if (strcmp(op, "v") == 0 || strcmp(op, "y") == 0) {
+        if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
+            pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
+            float x = (float)ops[n - 2].num, y = (float)ops[n - 1].num;
+            float cx = (float)ops[n - 4].num, cy = (float)ops[n - 3].num;
+            if (op[0] == 'v') {
+                pdf_path_curve_to(st, st->path.current_x, st->path.current_y, cx, cy, x, y);
+            } else {
+                pdf_path_curve_to(st, cx, cy, x, y, x, y);
+            }
+        }
     } else if (strcmp(op, "h") == 0) {
         pdf_path_close(&st->path);
     } else if (strcmp(op, "re") == 0) {
@@ -3273,16 +3342,16 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
         pdf_path_close(&st->path);
         pdf_stroke_path(st);
         pdf_path_clear(&st->path);
-    } else if (strcmp(op, "f") == 0 || strcmp(op, "f*") == 0) {
-        pdf_fill_path(st);
+    } else if (strcmp(op, "f") == 0 || strcmp(op, "F") == 0 || strcmp(op, "f*") == 0) {
+        pdf_fill_path(st, strcmp(op, "f*") == 0);
         pdf_path_clear(&st->path);
     } else if (strcmp(op, "B") == 0 || strcmp(op, "B*") == 0) {
-        pdf_fill_path(st);
+        pdf_fill_path(st, strcmp(op, "B*") == 0);
         pdf_stroke_path(st);
         pdf_path_clear(&st->path);
     } else if (strcmp(op, "b") == 0 || strcmp(op, "b*") == 0) {
         pdf_path_close(&st->path);
-        pdf_fill_path(st);
+        pdf_fill_path(st, strcmp(op, "b*") == 0);
         pdf_stroke_path(st);
         pdf_path_clear(&st->path);
     } else if (strcmp(op, "W") == 0 || strcmp(op, "W*") == 0) {

@@ -12,13 +12,19 @@ LIBOBJ = $(OBJDIR)/cupidimage.o $(OBJDIR)/cupidimage_internal.o $(OBJDIR)/cupidi
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 
-.PHONY: all lib cli test-svg test-svg-regressions test-pdf clean
+.PHONY: all lib cli test-pdf-graphics test-svg test-svg-regressions test-pdf clean
 
 all: lib cli
 
 lib: $(LIB)
 
 cli: $(CLI)
+
+test-pdf-graphics: $(BINDIR)/test_pdf_graphics
+	$(BINDIR)/test_pdf_graphics
+
+$(BINDIR)/test_pdf_graphics: tests/test_pdf_graphics.c tests/pdf_fixture.h $(LIB) $(SRCDIR)/cupidimage.h
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
 test-svg: cli
 	./scripts/test_svg_assets.sh
@@ -46,4 +52,4 @@ $(BINDIR):
 	@mkdir -p $(BINDIR)
 
 clean:
-	rm -f $(OBJDIR)/*.o $(LIB) $(CLI)
+	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_pdf_graphics
