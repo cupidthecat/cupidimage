@@ -67,7 +67,9 @@ PREFIX=/usr/local scripts/install.sh --uninstall
 
 Build (manual, static library):
 ```sh
+mkdir -p obj bin
 cc -Isrc -c src/cupidimage.c -o obj/cupidimage.o
+cc -Isrc -c src/cupidimage_internal.c -o obj/cupidimage_internal.o
 cc -Isrc -c src/cupidimage_png.c -o obj/cupidimage_png.o
 cc -Isrc -c src/cupidimage_jpeg.c -o obj/cupidimage_jpeg.o
 cc -Isrc -c src/cupidimage_webp.c -o obj/cupidimage_webp.o
@@ -78,14 +80,18 @@ cc -Isrc -c src/cupidimage_bmp.c -o obj/cupidimage_bmp.o
 cc -Isrc -c src/cupidimage_ico.c -o obj/cupidimage_ico.o
 cc -Isrc -c src/cupidimage_tiff.c -o obj/cupidimage_tiff.o
 cc -Isrc -c src/cupidimage_tga.c -o obj/cupidimage_tga.o
+cc -Isrc -c src/cupidimage_pdf.c -o obj/cupidimage_pdf.o
 cc -Isrc -c src/cupidimage_svg.c -o obj/cupidimage_svg.o
+cc -Isrc -c src/cupidimage_svg_base.c -o obj/cupidimage_svg_base.o
+cc -Isrc -c src/cupidimage_kitty.c -o obj/cupidimage_kitty.o
 cc -Isrc -c src/cupidimage_sixel.c -o obj/cupidimage_sixel.o
-ar rcs bin/libcupidimage.a obj/cupidimage.o obj/cupidimage_png.o obj/cupidimage_jpeg.o obj/cupidimage_webp.o obj/cupidimage_webp_tables.o obj/cupidimage_webp_lossless.o obj/cupidimage_gif.o obj/cupidimage_bmp.o obj/cupidimage_ico.o obj/cupidimage_tiff.o obj/cupidimage_tga.o obj/cupidimage_svg.o obj/cupidimage_sixel.o
+ar rcs bin/libcupidimage.a obj/cupidimage.o obj/cupidimage_internal.o obj/cupidimage_png.o obj/cupidimage_jpeg.o obj/cupidimage_webp.o obj/cupidimage_webp_tables.o obj/cupidimage_webp_lossless.o obj/cupidimage_gif.o obj/cupidimage_bmp.o obj/cupidimage_ico.o obj/cupidimage_tiff.o obj/cupidimage_tga.o obj/cupidimage_pdf.o obj/cupidimage_svg.o obj/cupidimage_svg_base.o obj/cupidimage_kitty.o obj/cupidimage_sixel.o
 ```
 
 Build the CLI test app:
 ```sh
-cc -Isrc src/cupidimage.c src/cupidimage_png.c src/cupidimage_jpeg.c src/cupidimage_webp.c src/cupidimage_webp_tables.c src/cupidimage_webp_lossless.c src/cupidimage_gif.c src/cupidimage_bmp.c src/cupidimage_ico.c src/cupidimage_tiff.c src/cupidimage_tga.c src/cupidimage_svg.c src/cupidimage_sixel.c src/cupidimage_cli.c -o bin/cupidimage -lm
+mkdir -p bin
+cc -Isrc src/cupidimage.c src/cupidimage_internal.c src/cupidimage_png.c src/cupidimage_jpeg.c src/cupidimage_webp.c src/cupidimage_webp_tables.c src/cupidimage_webp_lossless.c src/cupidimage_gif.c src/cupidimage_bmp.c src/cupidimage_ico.c src/cupidimage_tiff.c src/cupidimage_tga.c src/cupidimage_pdf.c src/cupidimage_svg.c src/cupidimage_svg_base.c src/cupidimage_kitty.c src/cupidimage_sixel.c src/cupidimage_cli.c -o bin/cupidimage -lm
 ```
 
 Use the CLI:
@@ -198,6 +204,21 @@ opts.image_id = 42;            /* custom image ID */
 opts.delete_previous = 1;       /* delete previous images */
 
 cupidimage_render_kitty_with_options(&img, stdout, 0, 0, &opts, err, sizeof(err));
+```
+
+Passing NULL for Kitty options uses the defaults, including compression. Render
+and delete functions return zero on output failure. Invalid or oversized images
+are rejected before encoding; animation frames are checked before transmission.
+Kitty animation uses `loop_count` as the number of plays, with zero for indefinite
+playback. A frame delay of zero creates a gapless frame.
+
+Non-interactive terminal regression checks compare emitted RGBA bytes, chunk
+boundaries, animation controls, placement deletion, and ANSI output. They also
+exercise invalid inputs and write failures:
+
+```sh
+make test-terminal-regressions
+CC=clang CFLAGS='-O1 -g -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all' make test-terminal-regressions
 ```
 
 Sixel graphics protocol usage (auto-detection):
