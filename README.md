@@ -24,7 +24,7 @@ Supported formats (decoder status):
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.
 - TIFF: Classic + BigTIFF; byte orders II/MM; compression none/LZW/PackBits/Deflate/JPEG/CCITT RLE/G3/G4; photometric bilevel/grayscale(+alpha)/RGB/RGBA/palette/CMYK/YCbCr/Lab; strips/tiles; planar 1/2; predictor=2; orientation 1-8; multi-page IFDs (SubIFD pages via page APIs).
 - TGA: types 0-3/9-11; uncompressed/RLE; 8/15/16/24/32-bit; all origins; color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correction.
-- PDF: basic text, FlateDecode streams, gray/RGB/CMYK paint, line and cubic Bezier paths, and nonzero/even-odd fills. Text uses built-in bitmap glyphs. Previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, clipping, transparency, patterns, and annotations are unsupported.
+- PDF: basic text, FlateDecode streams, gray/RGB/CMYK paint, line and cubic Bezier paths, and nonzero/even-odd fills. Text uses built-in bitmap glyphs. Image XObjects support 8-bit DeviceRGB and DeviceGray samples, raw and FlateDecode streams, TIFF/PNG predictors, Decode arrays, and affine placement. Previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, clipping paths, transparency, patterns, and annotations are unsupported.
 
 Build (Makefile):
 ```sh
@@ -118,8 +118,28 @@ Run the generated PDF page regressions with Python 3:
 
     make test-pdf-pages
 
+<<<<<<< HEAD
 When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` auto-play.
 Use `--svg-time` to render a single sampled frame. When output is redirected to a file or pipe, SVGs render their initial state and animated GIFs render their first composed frame.
+=======
+PDF image XObjects use the page's Resources dictionary, including inherited and
+indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
+images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 8-bit samples.
+Predictor Colors and Columns must match the image when prediction is enabled.
+The decoded sample data is limited to 64 MiB per image.
+
+JPEG/JPX image filters, filter arrays, image masks, soft masks, indexed color,
+inline images, and Form XObject contents are outside the supported subset.
+Drawing an invalid or unsupported image XObject returns a load error. Form
+contents are skipped.
+
+Run the generated image checks with Python 3:
+
+    make test-pdf-images
+
+When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` now auto-play.
+Use `--svg-time` to render a single sampled frame instead.
+>>>>>>> origin/feature/pdf-image-xobjects
 
 Link in your app (static library):
 ```sh
