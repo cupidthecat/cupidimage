@@ -461,6 +461,19 @@ scripts/test_svg_regressions.sh
 make test-svg-regressions
 ```
 
+SVG dimensions must be finite, positive, and representable as 32-bit dimensions.
+Positive fractional dimensions round to at least one pixel. Non-finite scale,
+DPI, and animation-time options return an error. The supersampled canvas is
+limited to 67,108,864 samples (256 MiB of RGBA data), including the supersampling
+factor. Oversized output requests return an error before allocation.
+
+Large shape bounds are clipped before conversion to raster coordinates. Run the
+dimension, allocation-limit, and oversized-geometry checks with:
+
+```sh
+make test-svg-numeric
+```
+
 Non-interactive PDF/TIFF compression regression checks:
 ```sh
 make test-deflate-containers
