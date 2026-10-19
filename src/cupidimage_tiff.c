@@ -100,6 +100,10 @@ typedef struct tiff_context {
     size_t value_size;
 } tiff_context;
 
+static int tiff_range_valid(const tiff_context *ctx, uint64_t offset, uint64_t length) {
+    return offset <= ctx->size && length <= ctx->size - offset;
+}
+
 static uint16_t read_u16(const tiff_context *ctx, const uint8_t *p) {
     if (ctx->big_endian) {
         return (uint16_t)((p[0] << 8) | p[1]);
@@ -204,7 +208,7 @@ static int tiff_read_entry(const tiff_context *ctx, const uint8_t *entry_ptr, ti
         return 1;
     }
 
-    if (value_offset > ctx->size || value_offset + entry->value_size > ctx->size) {
+    if (!tiff_range_valid(ctx, value_offset, entry->value_size)) {
         set_err(err, errcap, "TIFF tag value offset out of range");
         return 0;
     }
@@ -398,7 +402,7 @@ static int tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset,
 
     uint64_t count = 0;
     size_t count_size = ctx->big_tiff ? 8 : 2;
-    if (offset + count_size > ctx->size) {
+    if (!tiff_range_valid(ctx, offset, count_size)) {
         set_err(err, errcap, "truncated TIFF IFD");
         return 0;
     }
@@ -411,7 +415,6 @@ static int tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset,
 
     uint64_t entries_size = count * (uint64_t)ctx->entry_size;
     uint64_t entries_start = offset + count_size;
-    uint64_t after_entries = entries_start + entries_size;
     uint64_t next_offset_size = ctx->big_tiff ? 8 : 4;
 
     if (count > 0 && entries_size / (uint64_t)ctx->entry_size != count) {
@@ -419,10 +422,12 @@ static int tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset,
         return 0;
     }
 
-    if (after_entries + next_offset_size > ctx->size) {
+    if (!tiff_range_valid(ctx, entries_start, entries_size) ||
+        next_offset_size > ctx->size - entries_start - entries_size) {
         set_err(err, errcap, "truncated TIFF IFD entries");
         return 0;
     }
+    uint64_t after_entries = entries_start + entries_size;
 
     uint64_t next = 0;
     if (ctx->big_tiff) {
@@ -2030,7 +2035,7 @@ static int tiff_decompress_block(const tiff_context *ctx, const tiff_image_info 
 static int tiff_decode_strips_chunky(const tiff_context *ctx, const tiff_image_info *info,
                                      uint8_t *raw, size_t raw_size,
                                      size_t row_bytes, char *err, size_t errcap) {
-    uint64_t strips_expected = (info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_expected = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     uint64_t strip_count = info->strip_offsets_count;
     if (strip_count < strips_expected) {
         set_err(err, errcap, "invalid number of strips");
@@ -2075,18 +2080,19 @@ static int tiff_decode_strips_chunky(const tiff_context *ctx, const tiff_image_i
                 set_err(err, errcap, "invalid StripByteCounts");
                 return 0;
             }
-            src_size = (size_t)info->strip_byte_counts[i];
-            if (src_size == 0) {
+            if (info->strip_byte_counts[i] == 0 ||
+                !tiff_range_valid(ctx, off, info->strip_byte_counts[i])) {
                 set_err(err, errcap, "invalid StripByteCounts");
                 return 0;
             }
+            src_size = (size_t)info->strip_byte_counts[i];
         } else if (info->strip_byte_counts && i < info->strip_byte_counts_count) {
             if (info->strip_byte_counts[i] < expected) {
                 set_err(err, errcap, "truncated TIFF strip");
                 return 0;
             }
         }
-        if (off + src_size > ctx->size) {
+        if (!tiff_range_valid(ctx, off, src_size)) {
             set_err(err, errcap, "truncated TIFF strip");
             return 0;
         }
@@ -2111,7 +2117,7 @@ static int tiff_decode_strips_planar(const tiff_context *ctx, const tiff_image_i
         return 0;
     }
 
-    uint64_t strips_per_plane = (info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_per_plane = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     uint64_t required = strips_per_plane * info->samples_per_pixel;
     if (info->strip_offsets_count < required) {
         set_err(err, errcap, "invalid number of planar strips");
@@ -2166,12 +2172,13 @@ static int tiff_decode_strips_planar(const tiff_context *ctx, const tiff_image_i
                     set_err(err, errcap, "invalid StripByteCounts");
                     return 0;
                 }
-                src_size = (size_t)info->strip_byte_counts[idx];
-                if (src_size == 0) {
+                if (info->strip_byte_counts[idx] == 0 ||
+                    !tiff_range_valid(ctx, off, info->strip_byte_counts[idx])) {
                     free(plane_buf);
                     set_err(err, errcap, "invalid StripByteCounts");
                     return 0;
                 }
+                src_size = (size_t)info->strip_byte_counts[idx];
             } else if (info->strip_byte_counts && idx < info->strip_byte_counts_count) {
                 if (info->strip_byte_counts[idx] < expected) {
                     free(plane_buf);
@@ -2179,7 +2186,7 @@ static int tiff_decode_strips_planar(const tiff_context *ctx, const tiff_image_i
                     return 0;
                 }
             }
-            if (off + src_size > ctx->size) {
+            if (!tiff_range_valid(ctx, off, src_size)) {
                 free(plane_buf);
                 set_err(err, errcap, "truncated TIFF strip");
                 return 0;
@@ -2240,8 +2247,8 @@ static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_in
         return 0;
     }
 
-    uint64_t tiles_across = (info->width + info->tile_width - 1u) / info->tile_width;
-    uint64_t tiles_down = (info->height + info->tile_length - 1u) / info->tile_length;
+    uint64_t tiles_across = ((uint64_t)info->width + info->tile_width - 1u) / info->tile_width;
+    uint64_t tiles_down = ((uint64_t)info->height + info->tile_length - 1u) / info->tile_length;
     uint64_t tiles_total = tiles_across * tiles_down;
     if (info->tile_offsets_count < tiles_total) {
         set_err(err, errcap, "invalid number of tiles");
@@ -2279,12 +2286,13 @@ static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_in
                 set_err(err, errcap, "invalid TileByteCounts");
                 return 0;
             }
-            src_size = (size_t)info->tile_byte_counts[t];
-            if (src_size == 0) {
+            if (info->tile_byte_counts[t] == 0 ||
+                !tiff_range_valid(ctx, off, info->tile_byte_counts[t])) {
                 free(tile_buf);
                 set_err(err, errcap, "invalid TileByteCounts");
                 return 0;
             }
+            src_size = (size_t)info->tile_byte_counts[t];
         } else if (info->tile_byte_counts && t < info->tile_byte_counts_count) {
             if (info->tile_byte_counts[t] < tile_buf_size) {
                 free(tile_buf);
@@ -2292,7 +2300,7 @@ static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_in
                 return 0;
             }
         }
-        if (off + src_size > ctx->size) {
+        if (!tiff_range_valid(ctx, off, src_size)) {
             free(tile_buf);
             set_err(err, errcap, "truncated TIFF tile");
             return 0;
@@ -2358,8 +2366,8 @@ static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_in
         return 0;
     }
 
-    uint64_t tiles_across = (info->width + info->tile_width - 1u) / info->tile_width;
-    uint64_t tiles_down = (info->height + info->tile_length - 1u) / info->tile_length;
+    uint64_t tiles_across = ((uint64_t)info->width + info->tile_width - 1u) / info->tile_width;
+    uint64_t tiles_down = ((uint64_t)info->height + info->tile_length - 1u) / info->tile_length;
     uint64_t tiles_per_plane = tiles_across * tiles_down;
     uint64_t required = tiles_per_plane * info->samples_per_pixel;
     if (info->tile_offsets_count < required) {
@@ -2400,12 +2408,13 @@ static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_in
                     set_err(err, errcap, "invalid TileByteCounts");
                     return 0;
                 }
-                src_size = (size_t)info->tile_byte_counts[idx];
-                if (src_size == 0) {
+                if (info->tile_byte_counts[idx] == 0 ||
+                    !tiff_range_valid(ctx, off, info->tile_byte_counts[idx])) {
                     free(tile_buf);
                     set_err(err, errcap, "invalid TileByteCounts");
                     return 0;
                 }
+                src_size = (size_t)info->tile_byte_counts[idx];
             } else if (info->tile_byte_counts && idx < info->tile_byte_counts_count) {
                 if (info->tile_byte_counts[idx] < tile_buf_size) {
                     free(tile_buf);
@@ -2413,7 +2422,7 @@ static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_in
                     return 0;
                 }
             }
-            if (off + src_size > ctx->size) {
+            if (!tiff_range_valid(ctx, off, src_size)) {
                 free(tile_buf);
                 set_err(err, errcap, "truncated TIFF tile");
                 return 0;
@@ -2566,7 +2575,7 @@ static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info
     }
 
     if (info->jpeg_if_offset && info->jpeg_if_bytecount) {
-        if (info->jpeg_if_offset + info->jpeg_if_bytecount > ctx->size) {
+        if (!tiff_range_valid(ctx, info->jpeg_if_offset, info->jpeg_if_bytecount)) {
             set_err(err, errcap, "invalid JPEG interchange data");
             return 0;
         }
@@ -2582,7 +2591,7 @@ static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info
         return 1;
     }
 
-    uint64_t strips_expected = (info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_expected = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     if (info->strip_offsets_count < strips_expected) {
         set_err(err, errcap, "invalid number of strips");
         return 0;
@@ -2611,7 +2620,7 @@ static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info
 
         uint64_t off = info->strip_offsets[i];
         uint64_t count = info->strip_byte_counts[i];
-        if (count == 0 || off + count > ctx->size) {
+        if (count == 0 || !tiff_range_valid(ctx, off, count)) {
             free(rgba);
             set_err(err, errcap, "truncated JPEG strip");
             return 0;
@@ -2680,7 +2689,7 @@ static int tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_imag
         return 0;
     }
 
-    uint64_t strips_expected = (info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_expected = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     if (info->strip_offsets_count < strips_expected) {
         set_err(err, errcap, "invalid number of strips");
         return 0;
@@ -2717,18 +2726,19 @@ static int tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_imag
                 set_err(err, errcap, "invalid StripByteCounts");
                 return 0;
             }
-            src_size = (size_t)info->strip_byte_counts[i];
-            if (src_size == 0) {
+            if (info->strip_byte_counts[i] == 0 ||
+                !tiff_range_valid(ctx, off, info->strip_byte_counts[i])) {
                 set_err(err, errcap, "invalid StripByteCounts");
                 return 0;
             }
+            src_size = (size_t)info->strip_byte_counts[i];
         } else if (info->strip_byte_counts && i < info->strip_byte_counts_count) {
             if (info->strip_byte_counts[i] < expected) {
                 set_err(err, errcap, "truncated TIFF strip");
                 return 0;
             }
         }
-        if (off + src_size > ctx->size) {
+        if (!tiff_range_valid(ctx, off, src_size)) {
             set_err(err, errcap, "truncated TIFF strip");
             return 0;
         }

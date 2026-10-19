@@ -3538,50 +3538,56 @@ static void svg_css_init(svg_css *css) {
     css->animation_cap = 0;
 }
 
+static void svg_selector_part_free(svg_selector_part *part) {
+    free(part->tag);
+    free(part->id);
+    for (int c = 0; c < part->class_count; c++) free(part->classes[c]);
+    free(part->classes);
+    for (int a = 0; a < part->attr_count; a++) {
+        free(part->attr_names[a]);
+        free(part->attr_values[a]);
+    }
+    free(part->attr_names);
+    free(part->attr_values);
+    free(part->attr_has_value);
+    memset(part, 0, sizeof(*part));
+}
+
+static void svg_selector_free(svg_selector *sel) {
+    for (int p = 0; p < sel->part_count; p++) svg_selector_part_free(&sel->parts[p]);
+    free(sel->parts);
+    free(sel->combinators);
+    memset(sel, 0, sizeof(*sel));
+}
+
+static void svg_css_rule_free(svg_css_rule *rule) {
+    for (int s = 0; s < rule->selector_count; s++) svg_selector_free(&rule->selectors[s]);
+    free(rule->selectors);
+    for (int d = 0; d < rule->decl_count; d++) free(rule->decls[d].value);
+    free(rule->decls);
+    memset(rule, 0, sizeof(*rule));
+}
+
+static void svg_css_keyframes_free(svg_css_keyframes *kf) {
+    free(kf->name);
+    for (int k = 0; k < kf->step_count; k++) free(kf->steps[k].transform);
+    free(kf->steps);
+    memset(kf, 0, sizeof(*kf));
+}
+
 static void svg_css_free(svg_css *css) {
     if (!css) {
         return;
     }
     for (int i = 0; i < css->rule_count; i++) {
-        svg_css_rule *rule = &css->rules[i];
-        for (int s = 0; s < rule->selector_count; s++) {
-            svg_selector *sel = &rule->selectors[s];
-            for (int p = 0; p < sel->part_count; p++) {
-                svg_selector_part *part = &sel->parts[p];
-                free(part->tag);
-                free(part->id);
-                for (int c = 0; c < part->class_count; c++) {
-                    free(part->classes[c]);
-                }
-                free(part->classes);
-                for (int a = 0; a < part->attr_count; a++) {
-                    free(part->attr_names[a]);
-                    free(part->attr_values[a]);
-                }
-                free(part->attr_names);
-                free(part->attr_values);
-                free(part->attr_has_value);
-            }
-            free(sel->parts);
-            free(sel->combinators);
-        }
-        free(rule->selectors);
-        for (int d = 0; d < rule->decl_count; d++) {
-            free(rule->decls[d].value);
-        }
-        free(rule->decls);
+        svg_css_rule_free(&css->rules[i]);
     }
     free(css->rules);
     css->rules = NULL;
     css->rule_count = 0;
     css->rule_cap = 0;
     for (int i = 0; i < css->keyframe_count; i++) {
-        svg_css_keyframes *kf = &css->keyframes[i];
-        free(kf->name);
-        for (int k = 0; k < kf->step_count; k++) {
-            free(kf->steps[k].transform);
-        }
-        free(kf->steps);
+        svg_css_keyframes_free(&css->keyframes[i]);
     }
     free(css->keyframes);
     css->keyframes = NULL;
@@ -5149,6 +5155,8 @@ static int svg_css_parse_animation_shorthand(const char *value, svg_css_animatio
         const char *tend = p;
         char *tok = svg_css_span_dup(tstart, tend);
         if (!tok) {
+            free(anim->name);
+            anim->name = NULL;
             return 0;
         }
         if (strchr(tok, ',')) {
@@ -5386,7 +5394,7 @@ static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_star
                                     step.color = col;
                                 }
                             }
-                            svg_css_add_keyframe_step(&kf, &step);
+                            if (!svg_css_add_keyframe_step(&kf, &step)) free(step.transform);
                         }
                         free(label);
                     }
@@ -5409,15 +5417,12 @@ static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_star
             }
         }
     }
-    if (kf.prop == SVG_CSS_ANIM_PROP_NONE || kf.step_count == 0) {
-        free(kf.name);
-        for (int i = 0; i < kf.step_count; i++) {
-            free(kf.steps[i].transform);
-        }
-        free(kf.steps);
+    if (kf.prop == SVG_CSS_ANIM_PROP_NONE || kf.step_count == 0 ||
+        !svg_css_add_keyframes(css, &kf)) {
+        svg_css_keyframes_free(&kf);
         return 0;
     }
-    return svg_css_add_keyframes(css, &kf);
+    return 1;
 }
 
 static void svg_css_parse_animation_bindings(svg_css *css, const char *selector_start, const char *selector_end,
@@ -5447,9 +5452,8 @@ static void svg_css_parse_animation_bindings(svg_css *css, const char *selector_
                 svg_css_animation_binding anim;
                 if (svg_css_parse_animation_shorthand(anim_value, &anim)) {
                     anim.target_id = svg_strdup(id);
-                    if (anim.target_id) {
-                        svg_css_add_animation_binding(css, &anim);
-                    } else {
+                    if (!anim.target_id || !svg_css_add_animation_binding(css, &anim)) {
+                        free(anim.target_id);
                         free(anim.name);
                     }
                 }
@@ -5466,6 +5470,7 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
     }
     svg_selector sel;
     memset(&sel, 0, sizeof(sel));
+    svg_selector_part part = {0};
     const char *p = s;
     int pending_combinator = 0; /* 0: descendant, 1: child (>), 2: adjacent (+), 3: sibling (~) */
     while (*p) {
@@ -5485,7 +5490,6 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 break;
             }
         }
-        svg_selector_part part;
         memset(&part, 0, sizeof(part));
         int matched = 0;
         if (*p == '*') {
@@ -5497,9 +5501,8 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 p++;
             }
             part.tag = svg_strndup(start, (size_t)(p - start));
-            if (part.tag) {
-                svg_lowercase(part.tag);
-            }
+            if (!part.tag) goto fail;
+            svg_lowercase(part.tag);
             sel.specificity += 1;
             matched = 1;
         }
@@ -5514,7 +5517,7 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
             }
             char *name = svg_strndup(start, (size_t)(p - start));
             if (!name) {
-                return 0;
+                goto fail;
             }
             matched = 1;
             if (type == '#') {
@@ -5525,7 +5528,7 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 char **classes = (char **)realloc(part.classes, (size_t)(part.class_count + 1) * sizeof(char *));
                 if (!classes) {
                     free(name);
-                    return 0;
+                    goto fail;
                 }
                 part.classes = classes;
                 part.classes[part.class_count++] = name;
@@ -5546,7 +5549,7 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
             }
             char *aname = svg_strndup(nstart, (size_t)(p - nstart));
             if (!aname) {
-                return 0;
+                goto fail;
             }
             svg_lowercase(aname);
             while (isspace((unsigned char)*p)) {
@@ -5579,7 +5582,7 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 }
                 if (!avalue) {
                     free(aname);
-                    return 0;
+                    goto fail;
                 }
             }
             while (isspace((unsigned char)*p)) {
@@ -5598,7 +5601,7 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 free(names);
                 free(values);
                 free(flags);
-                return 0;
+                goto fail;
             }
             for (int ai = 0; ai < part.attr_count; ai++) {
                 names[ai] = part.attr_names[ai];
@@ -5624,15 +5627,16 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
         int old_count = sel.part_count;
         svg_selector_part *parts = (svg_selector_part *)realloc(sel.parts, (size_t)(old_count + 1) * sizeof(svg_selector_part));
         if (!parts) {
-            return 0;
+            goto fail;
         }
         sel.parts = parts;
         sel.parts[old_count] = part;
         sel.part_count = old_count + 1;
+        memset(&part, 0, sizeof(part));
         if (old_count > 0) {
             int *combs = (int *)realloc(sel.combinators, (size_t)old_count * sizeof(int));
             if (!combs) {
-                return 0;
+                goto fail;
             }
             sel.combinators = combs;
             sel.combinators[old_count - 1] = pending_combinator;
@@ -5651,10 +5655,15 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
         }
     }
     if (sel.part_count == 0) {
-        return 0;
+        goto fail;
     }
+    svg_selector_part_free(&part);
     *out = sel;
     return 1;
+fail:
+    svg_selector_part_free(&part);
+    svg_selector_free(&sel);
+    return 0;
 }
 
 static int svg_css_parse_decls(svg_css_rule *rule, const char *s) {
@@ -5813,6 +5822,8 @@ static int svg_css_parse(svg_css *css, const char *text) {
                     if (sels) {
                         rule.selectors = sels;
                         rule.selectors[rule.selector_count++] = sel;
+                    } else {
+                        svg_selector_free(&sel);
                     }
                 }
                 free(sel_str);
@@ -5822,35 +5833,9 @@ static int svg_css_parse(svg_css *css, const char *text) {
             }
             sel_p = sel_end;
         }
-        if (rule.selector_count > 0 && svg_css_parse_decls(&rule, decls_str)) {
-            svg_css_add_rule(css, &rule);
-        } else {
-            for (int s = 0; s < rule.selector_count; s++) {
-                svg_selector *sel = &rule.selectors[s];
-                for (int pidx = 0; pidx < sel->part_count; pidx++) {
-                    svg_selector_part *part = &sel->parts[pidx];
-                    free(part->tag);
-                    free(part->id);
-                    for (int c = 0; c < part->class_count; c++) {
-                        free(part->classes[c]);
-                    }
-                    free(part->classes);
-                    for (int a = 0; a < part->attr_count; a++) {
-                        free(part->attr_names[a]);
-                        free(part->attr_values[a]);
-                    }
-                    free(part->attr_names);
-                    free(part->attr_values);
-                    free(part->attr_has_value);
-                }
-                free(sel->parts);
-                free(sel->combinators);
-            }
-            free(rule.selectors);
-            for (int d = 0; d < rule.decl_count; d++) {
-                free(rule.decls[d].value);
-            }
-            free(rule.decls);
+        if (rule.selector_count == 0 || !svg_css_parse_decls(&rule, decls_str) ||
+            !svg_css_add_rule(css, &rule)) {
+            svg_css_rule_free(&rule);
         }
         free(selectors_str);
         free(decls_str);

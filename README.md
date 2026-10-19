@@ -400,6 +400,15 @@ make test-decoder-safety
 ```
 These checks cover invalid SVG animation start times and icon height bounds. CI also runs them with address and undefined-behavior sanitizers.
 
+TIFF bounds checks cover BigTIFF offsets and byte counts, compressed blocks,
+JPEG data ranges, and large RowsPerStrip values. CSS allocation checks fail each
+allocation in turn and verify that temporary selectors, declarations, keyframes,
+and animation bindings are freed:
+
+```sh
+make test-tiff-bounds test-svg-css-oom
+```
+
 Quick BMP smoke test (expects failures for invalid samples):
 ```sh
 scripts/test_bmp_assets.sh
