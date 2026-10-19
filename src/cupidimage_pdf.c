@@ -71,6 +71,20 @@ static int extract_stream(const unsigned char *data, size_t obj_start, size_t ob
 static int pdf_is_delim(unsigned char c);
 static void pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos);
 
+static int pdf_parse_decimal(const unsigned char *data, size_t end, size_t *pos,
+                             size_t limit, size_t *out) {
+    size_t p = *pos, value = 0;
+    if (p >= end || data[p] < '0' || data[p] > '9') return 0;
+    while (p < end && data[p] >= '0' && data[p] <= '9') {
+        unsigned digit = data[p++] - '0';
+        if (value > limit / 10 || (value == limit / 10 && digit > limit % 10)) return 0;
+        value = value * 10 + digit;
+    }
+    *out = value;
+    *pos = p;
+    return 1;
+}
+
 static int find_eof_marker(const unsigned char *data, size_t size, size_t *eof_pos) {
     if (size < 6) return 0;
     for (size_t i = size - 6; i > 0; i--) {
@@ -83,20 +97,18 @@ static int find_eof_marker(const unsigned char *data, size_t size, size_t *eof_p
 }
 
 static int find_startxref(const unsigned char *data, size_t eof_pos, size_t *xref_offset) {
-    if (eof_pos < 20) return 0;
-    const char *search = "startxref";
-    for (size_t i = eof_pos - 20; i < eof_pos; i++) {
-        if (memcmp(&data[i], search, 9) == 0) {
+    if (eof_pos < 9) return 0;
+    size_t i = eof_pos - 9;
+    do {
+        if (memcmp(&data[i], "startxref", 9) == 0) {
             size_t j = i + 9;
-            while (j < eof_pos && (data[j] == ' ' || data[j] == '\n' || data[j] == '\r')) j++;
-            *xref_offset = 0;
-            while (j < eof_pos && data[j] >= '0' && data[j] <= '9') {
-                *xref_offset = *xref_offset * 10 + (size_t)(data[j] - '0');
-                j++;
-            }
-            return 1;
+            if (j == eof_pos || !isspace(data[j])) return 0;
+            while (j < eof_pos && isspace(data[j])) j++;
+            if (!pdf_parse_decimal(data, eof_pos, &j, SIZE_MAX, xref_offset)) return 0;
+            while (j < eof_pos && isspace(data[j])) j++;
+            return j == eof_pos;
         }
-    }
+    } while (i-- > 0);
     return 0;
 }
 
@@ -108,7 +120,7 @@ static int pdf_check_header(const unsigned char *data, size_t size) {
 
 static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_pos,
                             pdf_xref *xref, char *err, size_t errcap) {
-    if (xref_pos + 4 > size) {
+    if (xref_pos > size || size - xref_pos < 4) {
         set_err(err, errcap, "pdf: xref offset out of bounds");
         return 0;
     }
@@ -131,19 +143,19 @@ static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_
     size_t pos = xref_pos + 4;
     while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
 
-    int first_obj = 0, count = 0;
-    while (pos < size && data[pos] >= '0' && data[pos] <= '9') {
-        first_obj = first_obj * 10 + (data[pos] - '0');
-        pos++;
+    size_t first_obj, count;
+    if (!pdf_parse_decimal(data, size, &pos, INT_MAX, &first_obj)) {
+        set_err(err, errcap, "pdf: invalid xref object number");
+        return 0;
     }
     while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
-    while (pos < size && data[pos] >= '0' && data[pos] <= '9') {
-        count = count * 10 + (data[pos] - '0');
-        pos++;
+    if (!pdf_parse_decimal(data, size, &pos, 100000, &count)) {
+        set_err(err, errcap, "pdf: invalid xref count");
+        return 0;
     }
     while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
 
-    if (count <= 0 || count > 100000) {
+    if (count == 0 || count - 1 > INT_MAX - first_obj) {
         set_err(err, errcap, "pdf: invalid xref count");
         return 0;
     }
@@ -153,48 +165,41 @@ static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_
         set_err(err, errcap, "pdf: out of memory");
         return 0;
     }
-    xref->count = count;
+    xref->count = (int)count;
 
-    for (int i = 0; i < count; i++) {
-        size_t offset = 0;
-        int gen = 0;
+    for (int i = 0; i < xref->count; i++) {
+        size_t offset, gen;
         char inuse = 'f';
 
-        for (int d = 0; d < 10 && pos < size; d++) {
-            if (data[pos] >= '0' && data[pos] <= '9') {
-                offset = offset * 10 + (size_t)(data[pos] - '0');
-            }
-            pos++;
-        }
+        if (!pdf_parse_decimal(data, size, &pos, SIZE_MAX, &offset)) goto invalid_entry;
         while (pos < size && data[pos] == ' ') pos++;
 
-        for (int d = 0; d < 5 && pos < size; d++) {
-            if (data[pos] >= '0' && data[pos] <= '9') {
-                gen = gen * 10 + (data[pos] - '0');
-            }
-            pos++;
-        }
+        if (!pdf_parse_decimal(data, size, &pos, 65535, &gen)) goto invalid_entry;
         while (pos < size && data[pos] == ' ') pos++;
 
-        if (pos < size) {
-            inuse = (char)data[pos++];
-        }
+        if (pos == size || (data[pos] != 'f' && data[pos] != 'n')) goto invalid_entry;
+        inuse = (char)data[pos++];
         while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
 
-        xref->entries[i].obj_num = first_obj + i;
-        xref->entries[i].gen_num = gen;
+        xref->entries[i].obj_num = (int)first_obj + i;
+        xref->entries[i].gen_num = (int)gen;
         xref->entries[i].offset = (inuse == 'n') ? offset : 0;
     }
 
     return 1;
+invalid_entry:
+    free(xref->entries);
+    xref->entries = NULL;
+    xref->count = 0;
+    set_err(err, errcap, "pdf: invalid xref entry");
+    return 0;
 }
 
 static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos,
                          pdf_xref *xref, char *err, size_t errcap) {
     size_t pos = xref_pos;
     size_t trailer_pos = 0;
-    size_t search_limit = xref_pos + 10000;
-    if (search_limit > size) search_limit = size;
+    size_t search_limit = xref_pos + (size - xref_pos < 10000 ? size - xref_pos : 10000);
 
     while (pos + 7 <= search_limit) {
         if (memcmp(&data[pos], "trailer", 7) == 0) {
@@ -229,12 +234,12 @@ static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos
         if (pos + 5 <= size && memcmp(&data[pos], "/Root", 5) == 0) {
             pos += 5;
             while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
-            int obj_num = 0;
-            while (pos < size && data[pos] >= '0' && data[pos] <= '9') {
-                obj_num = obj_num * 10 + (data[pos] - '0');
-                pos++;
+            size_t obj_num;
+            if (!pdf_parse_decimal(data, size, &pos, INT_MAX, &obj_num) || obj_num == 0) {
+                set_err(err, errcap, "pdf: invalid catalog object number");
+                return 0;
             }
-            xref->root_obj = obj_num;
+            xref->root_obj = (int)obj_num;
         }
         pos++;
     }
@@ -589,11 +594,9 @@ static int extract_dict_ref(const unsigned char *data, size_t start, size_t end,
                 pos++;
                 while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
             }
-            *obj_num = 0;
-            while (pos < end && data[pos] >= '0' && data[pos] <= '9') {
-                *obj_num = *obj_num * 10 + (data[pos] - '0');
-                pos++;
-            }
+            size_t number;
+            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &number)) return 0;
+            *obj_num = (int)number;
             return *obj_num > 0;
         }
     }
@@ -669,28 +672,20 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
                 continue;
             }
 
-            int obj = 0;
-            while (pos < end && data[pos] >= '0' && data[pos] <= '9') {
-                obj = obj * 10 + (data[pos] - '0');
-                pos++;
-            }
+            size_t obj;
+            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &obj)) return 0;
             while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
 
-            int gen = 0;
-            int have_gen = 0;
-            while (pos < end && data[pos] >= '0' && data[pos] <= '9') {
-                have_gen = 1;
-                gen = gen * 10 + (data[pos] - '0');
-                pos++;
-            }
-            (void)gen;
+            size_t gen;
+            int have_gen = pdf_parse_decimal(data, end, &pos, 65535, &gen);
+            if (!have_gen) return 0;
             while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
             if (have_gen && pos < end && data[pos] == 'R') {
                 pos++;
             }
 
             if (obj > 0 && *out_count < max_objs) {
-                objs[*out_count] = obj;
+                objs[*out_count] = (int)obj;
                 (*out_count)++;
             }
 
@@ -1098,6 +1093,20 @@ static int get_page_content_stream(const unsigned char *data, size_t size, pdf_x
     if (!extract_dict_refs(page.data, 0, page.len, "/Contents",
                            content_objs, (int)(sizeof(content_objs) / sizeof(content_objs[0])),
                            &content_count)) {
+        size_t pos;
+        if (pdf_page_value(&page, "Contents", &pos)) {
+            int empty = page.len - pos >= 4 && memcmp(page.data + pos, "null", 4) == 0;
+            if (pos < page.len && page.data[pos] == '[') {
+                pos++;
+                pdf_skip_ws_and_comments(page.data, page.len, &pos);
+                empty = pos < page.len && page.data[pos] == ']';
+            }
+            if (!empty) {
+                pdf_object_view_release(&page);
+                set_err(err, errcap, "pdf: invalid contents reference");
+                return 0;
+            }
+        }
         pdf_object_view_release(&page);
         *stream_data = NULL;
         *stream_len = 0;
@@ -2050,10 +2059,10 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             continue;
         }
 
-        int obj_num = 0;
-        while (pos < dict_end && dict_data[pos] >= '0' && dict_data[pos] <= '9') {
-            obj_num = obj_num * 10 + (dict_data[pos] - '0');
-            pos++;
+        size_t obj_num;
+        if (!pdf_parse_decimal(dict_data, dict_end, &pos, INT_MAX, &obj_num)) {
+            set_err(err, errcap, "pdf: invalid font object number");
+            return 0;
         }
         while (pos < dict_end && (dict_data[pos] == ' ' || dict_data[pos] == '\n' ||
                                   dict_data[pos] == '\r' || dict_data[pos] == '\t')) pos++;
@@ -2075,7 +2084,7 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             set_err(err, errcap, "pdf: out of memory");
             return 0;
         }
-        if (!pdf_parse_font_tounicode(data, size, obj_num, font, err, errcap)) {
+        if (!pdf_parse_font_tounicode(data, size, (int)obj_num, font, err, errcap)) {
             return 0;
         }
     }
