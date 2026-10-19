@@ -2320,6 +2320,8 @@ typedef struct {
     uint8_t stroke_g;
     uint8_t stroke_b;
     float line_width_pts;
+    int fill_space;
+    int stroke_space;
     pdf_clip_mask *clip;
 } pdf_graphics_state;
 
@@ -3754,6 +3756,90 @@ static int pdf_expect_str(const pdf_operand *op) {
     return op && (op->type == PDF_OPERAND_STRING || op->type == PDF_OPERAND_ARRAY || op->type == PDF_OPERAND_NAME);
 }
 
+static int pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth);
+
+static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
+                                 size_t pos, unsigned depth) {
+    if (depth >= 16) return 0;
+    pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    int object;
+    if (pdf_page_reference(view, pos, &object)) {
+        pdf_object_view indirect = {0};
+        if (!get_object_content(st->document, st->document_size, object, &indirect)) return 0;
+        int space = pdf_color_space_value(st, &indirect, 0, depth + 1);
+        pdf_object_view_release(&indirect);
+        return space;
+    }
+    if (pos >= view->len || view->data[pos++] != '/') return 0;
+    char name[128];
+    size_t length = 0;
+    while (pos < view->len && !pdf_is_ws(view->data[pos]) && !pdf_is_delim(view->data[pos])) {
+        if (length + 1 == sizeof(name)) return 0;
+        name[length++] = (char)view->data[pos++];
+    }
+    name[length] = '\0';
+    return pdf_color_space(st, name, depth + 1);
+}
+
+static int pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth) {
+    if (strcmp(name, "DeviceGray") == 0) return 1;
+    if (strcmp(name, "DeviceRGB") == 0) return 3;
+    if (strcmp(name, "DeviceCMYK") == 0) return 4;
+    if (depth >= 16) return 0;
+    int object = st->page_object;
+    for (unsigned i = 0; object > 0 && i < 64; i++) {
+        pdf_object_view node = {0}, resources = {0}, spaces = {0};
+        if (!get_object_content(st->document, st->document_size, object, &node)) return 0;
+        size_t pos;
+        int parent = 0, space = 0;
+        if (pdf_page_value(&node, "Resources", &pos)) {
+            if (pdf_image_dictionary(st, &node, "Resources", &resources) &&
+                pdf_image_dictionary(st, &resources, "ColorSpace", &spaces) &&
+                pdf_page_value(&spaces, name, &pos)) {
+                space = pdf_color_space_value(st, &spaces, pos, depth + 1);
+            }
+            pdf_object_view_release(&spaces);
+            pdf_object_view_release(&resources);
+            pdf_object_view_release(&node);
+            return space;
+        }
+        if (pdf_page_value(&node, "Parent", &pos)) pdf_page_reference(&node, pos, &parent);
+        pdf_object_view_release(&node);
+        object = parent;
+    }
+    return 0;
+}
+
+static int pdf_set_device_color(pdf_render_state *st, int stroke, int space,
+                                 const pdf_operand *ops, int count) {
+    if ((space != 1 && space != 3 && space != 4) || count != space) return 0;
+    for (int i = 0; i < count; i++) if (!pdf_expect_num(&ops[i])) return 0;
+    uint8_t r, g, b;
+    if (space == 1) {
+        r = g = b = pdf_clamp_u8(ops[0].num);
+    } else if (space == 3) {
+        r = pdf_clamp_u8(ops[0].num);
+        g = pdf_clamp_u8(ops[1].num);
+        b = pdf_clamp_u8(ops[2].num);
+    } else {
+        double c = fmin(1, fmax(0, ops[0].num));
+        double m = fmin(1, fmax(0, ops[1].num));
+        double y = fmin(1, fmax(0, ops[2].num));
+        double k = fmin(1, fmax(0, ops[3].num));
+        r = pdf_clamp_u8(1 - fmin(1, c + k));
+        g = pdf_clamp_u8(1 - fmin(1, m + k));
+        b = pdf_clamp_u8(1 - fmin(1, y + k));
+    }
+    if (stroke) {
+        st->gs.stroke_r = r; st->gs.stroke_g = g; st->gs.stroke_b = b;
+        st->gs.stroke_space = space;
+    } else {
+        st->gs.fill_r = r; st->gs.fill_g = g; st->gs.fill_b = b;
+        st->gs.fill_space = space;
+    }
+    return 1;
+}
+
 static void pdf_execute_operator(pdf_render_state *st, const char *op,
                                  pdf_operand *ops, int *count) {
     int n = *count;
@@ -3815,47 +3901,32 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
         if (n >= 1 && pdf_expect_num(&ops[n - 1])) {
             st->leading_pts = (float)ops[n - 1].num;
         }
-    } else if (strcmp(op, "rg") == 0) {
-        if (n >= 3 && pdf_expect_num(&ops[n - 3]) && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            st->gs.fill_r = pdf_clamp_u8(ops[n - 3].num);
-            st->gs.fill_g = pdf_clamp_u8(ops[n - 2].num);
-            st->gs.fill_b = pdf_clamp_u8(ops[n - 1].num);
+    } else if (strcmp(op, "cs") == 0 || strcmp(op, "CS") == 0) {
+        int space = n == 1 && ops[0].type == PDF_OPERAND_NAME ?
+                    pdf_color_space(st, ops[0].str, 0) : 0;
+        if (!space) {
+            set_err(st->error, st->error_capacity, "pdf: invalid or unsupported color space");
+            st->image_failed = 1;
+        } else if (op[0] == 'C') {
+            st->gs.stroke_space = space;
+            st->gs.stroke_r = st->gs.stroke_g = st->gs.stroke_b = 0;
+        } else {
+            st->gs.fill_space = space;
+            st->gs.fill_r = st->gs.fill_g = st->gs.fill_b = 0;
         }
-    } else if (strcmp(op, "RG") == 0) {
-        if (n >= 3 && pdf_expect_num(&ops[n - 3]) && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            st->gs.stroke_r = pdf_clamp_u8(ops[n - 3].num);
-            st->gs.stroke_g = pdf_clamp_u8(ops[n - 2].num);
-            st->gs.stroke_b = pdf_clamp_u8(ops[n - 1].num);
-        }
-    } else if (strcmp(op, "g") == 0) {
-        if (n >= 1 && pdf_expect_num(&ops[n - 1])) {
-            unsigned char v = pdf_clamp_u8(ops[n - 1].num);
-            st->gs.fill_r = v;
-            st->gs.fill_g = v;
-            st->gs.fill_b = v;
-        }
-    } else if (strcmp(op, "G") == 0) {
-        if (n >= 1 && pdf_expect_num(&ops[n - 1])) {
-            unsigned char v = pdf_clamp_u8(ops[n - 1].num);
-            st->gs.stroke_r = v;
-            st->gs.stroke_g = v;
-            st->gs.stroke_b = v;
-        }
-    } else if (strcmp(op, "k") == 0 || strcmp(op, "K") == 0) {
-        if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
-            pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            double c = fmin(1, fmax(0, ops[n - 4].num));
-            double m = fmin(1, fmax(0, ops[n - 3].num));
-            double y = fmin(1, fmax(0, ops[n - 2].num));
-            double k = fmin(1, fmax(0, ops[n - 1].num));
-            uint8_t r = pdf_clamp_u8(1 - fmin(1, c + k));
-            uint8_t g = pdf_clamp_u8(1 - fmin(1, m + k));
-            uint8_t b = pdf_clamp_u8(1 - fmin(1, y + k));
-            if (op[0] == 'k') {
-                st->gs.fill_r = r; st->gs.fill_g = g; st->gs.fill_b = b;
-            } else {
-                st->gs.stroke_r = r; st->gs.stroke_g = g; st->gs.stroke_b = b;
-            }
+    } else if (strcmp(op, "g") == 0 || strcmp(op, "G") == 0 ||
+               strcmp(op, "rg") == 0 || strcmp(op, "RG") == 0 ||
+               strcmp(op, "k") == 0 || strcmp(op, "K") == 0 ||
+               strcmp(op, "sc") == 0 || strcmp(op, "SC") == 0 ||
+               strcmp(op, "scn") == 0 || strcmp(op, "SCN") == 0) {
+        int stroke = op[0] >= 'A' && op[0] <= 'Z';
+        int space = op[0] == 'g' || op[0] == 'G' ? 1 :
+                    op[0] == 'r' || op[0] == 'R' ? 3 :
+                    op[0] == 'k' || op[0] == 'K' ? 4 :
+                    stroke ? st->gs.stroke_space : st->gs.fill_space;
+        if (!pdf_set_device_color(st, stroke, space, ops, n)) {
+            set_err(st->error, st->error_capacity, "pdf: invalid color operands");
+            st->image_failed = 1;
         }
     } else if (strcmp(op, "w") == 0) {
         if (n >= 1 && pdf_expect_num(&ops[n - 1])) {
@@ -3957,9 +4028,6 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
         pdf_path_end(st);
     } else if (strcmp(op, "W") == 0 || strcmp(op, "W*") == 0) {
         st->pending_clip = op[1] == '*' ? 2 : 1;
-    } else if (strcmp(op, "cs") == 0 || strcmp(op, "CS") == 0 || strcmp(op, "sc") == 0 ||
-               strcmp(op, "SC") == 0 || strcmp(op, "scn") == 0 || strcmp(op, "SCN") == 0) {
-        /* Color space operators are ignored; direct gray/RGB operators are handled above. */
     } else if (strcmp(op, "Tj") == 0) {
         if (n >= 1 && ops[n - 1].type == PDF_OPERAND_STRING) {
             pdf_render_text_string(st, ops[n - 1].str, ops[n - 1].len);
@@ -4245,6 +4313,7 @@ static int pdf_render_content_stream(const unsigned char *stream, size_t stream_
     st.gs.stroke_g = 0;
     st.gs.stroke_b = 0;
     st.gs.line_width_pts = 1.0f;
+    st.gs.fill_space = st.gs.stroke_space = 1;
     st.gs_stack_len = 0;
     pdf_path_clear(&st.path);
     st.in_text = 0;
