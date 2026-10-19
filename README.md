@@ -24,7 +24,7 @@ Supported formats (decoder status):
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.
 - TIFF: Classic + BigTIFF; byte orders II/MM; compression none/LZW/PackBits/Deflate/JPEG/CCITT RLE/G3/G4; photometric bilevel/grayscale(+alpha)/RGB/RGBA/palette/CMYK/YCbCr/Lab; strips/tiles; planar 1/2; predictor=2; orientation 1-8; multi-page IFDs (SubIFD pages via page APIs).
 - TGA: types 0-3/9-11; uncompressed/RLE; 8/15/16/24/32-bit; all origins; color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correction.
-- PDF: basic text, FlateDecode streams, gray/RGB/CMYK paint, line and cubic Bezier paths, and nonzero/even-odd fills. Text uses built-in bitmap glyphs. Image XObjects support 8-bit DeviceRGB and DeviceGray samples, raw/FlateDecode streams, baseline and progressive grayscale/YCbCr JPEG images through DCTDecode, TIFF/PNG predictors, Decode arrays, and affine placement. Form XObjects render nested content with local resources, transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, general clipping paths, transparency, patterns, and annotations are unsupported.
+- PDF: basic text, FlateDecode streams, gray/RGB/CMYK paint, line and cubic Bezier paths, nonzero/even-odd fills, and path clipping. Text uses built-in bitmap glyphs. Image XObjects support 8-bit DeviceRGB and DeviceGray samples, raw/FlateDecode streams, baseline and progressive grayscale/YCbCr JPEG images through DCTDecode, TIFF/PNG predictors, Decode arrays, and affine placement. Form XObjects render nested content with local resources, transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, text clipping modes, transparency, patterns, and annotations are unsupported.
 
 Build (Makefile):
 ```sh
@@ -157,6 +157,21 @@ groups, external-reference forms, filter chains, and form DecodeParms are reject
 Run the generated form checks with Python 3:
 
     make test-pdf-forms
+
+Path clipping supports `W` (nonzero winding) and `W*` (even-odd). The clip takes
+effect after the path's painting operator, including `n`, and intersects the
+current clip. It applies to paths, text, images, and nested forms. `q` and `Q`
+save and restore the clip. Path coordinates retain their placement when the
+transformation matrix changes. Clipping samples pixel centers without antialiasing.
+
+Each page allows 4096 clip operations, 4096 segments per clipping path, 32 saved
+graphics states, and 64 MiB of live clipping masks. A shared budget limits clipping
+to 268,435,456 pixel-edge tests per page. Documents exceeding these limits return
+a load error.
+
+Run the clipping and allocation-failure checks with Python 3 and a C compiler:
+
+    make test-pdf-clipping test-pdf-clip-oom
 
 Run the generated image checks with Python 3:
 
