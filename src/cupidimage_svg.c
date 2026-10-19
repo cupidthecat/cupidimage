@@ -3,6 +3,7 @@
 #include "cupidimage_svg_base.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +28,7 @@
 #define SVG_MAX_DASH 16
 #define SVG_MAX_TRANSFER_TABLE 64
 #define SVG_MAX_INFO_ATTR 32
+#define SVG_MAX_SAMPLES (64u * 1024u * 1024u)
 
 typedef struct svg_attr {
     char *name;
@@ -706,6 +708,23 @@ static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
+}
+
+static int svg_dimension(float value, uint32_t *out) {
+    if (!isfinite(value) || value <= 0) return 0;
+    double rounded = fmax(1, floor((double)value + 0.5));
+    if (rounded > UINT32_MAX) return 0;
+    *out = (uint32_t)rounded;
+    return 1;
+}
+
+/* Clip floating bounds before converting them to signed raster coordinates. */
+static int svg_raster_bound(float value, int upper) {
+    double rounded = upper ? ceil((double)value) : floor((double)value);
+    if (isnan(rounded)) return 0;
+    if (rounded <= INT_MIN) return INT_MIN;
+    if (rounded >= INT_MAX) return INT_MAX;
+    return (int)rounded;
 }
 
 static int svg_hex_value(int c) {
@@ -7282,7 +7301,7 @@ static void svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_
     }
     const int max_radius = 96;
     if (sigma_x >= 0.01f) {
-        int radius = (int)ceilf(3.0f * sigma_x);
+        int radius = (int)fminf((float)max_radius, ceilf(3.0f * sigma_x));
         if (radius < 1) radius = 1;
         if (radius > max_radius) radius = max_radius;
         float sigma_eff = sigma_x;
@@ -7330,7 +7349,7 @@ static void svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_
         free(kernel);
     }
     if (sigma_y >= 0.01f) {
-        int radius = (int)ceilf(3.0f * sigma_y);
+        int radius = (int)fminf((float)max_radius, ceilf(3.0f * sigma_y));
         if (radius < 1) radius = 1;
         if (radius > max_radius) radius = max_radius;
         float sigma_eff = sigma_y;
@@ -8605,10 +8624,10 @@ static void svg_compute_filter_region(const svg_filter *filter, const svg_render
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
     svg_transform_bounds(m, fx, fy, fx + fw, fy + fh, &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
     if (sx0 < 0) sx0 = 0;
@@ -8659,10 +8678,10 @@ static void svg_compute_filter_op_region(const svg_filter_op *op, const svg_filt
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
     svg_transform_bounds(m, fx, fy, fx + fw, fy + fh, &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
     if (sx0 < 0) sx0 = 0;
@@ -10049,10 +10068,10 @@ static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const sv
         return;
     }
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     if (sx0 < 0) sx0 = 0;
     if (sy0 < 0) sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
@@ -10264,10 +10283,10 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
     float inner_ry = ry > half ? ry - half : 0.0f;
 
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     if (sx0 < 0) sx0 = 0;
     if (sy0 < 0) sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
@@ -10470,10 +10489,10 @@ static void svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style
     }
 
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     if (sx0 < 0) sx0 = 0;
     if (sy0 < 0) sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
@@ -10668,10 +10687,10 @@ static void svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style, 
     }
 
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     if (sx0 < 0) sx0 = 0;
     if (sy0 < 0) sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
@@ -10741,10 +10760,10 @@ static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *styl
     }
 
     uint32_t ss = ctx->ss;
-    int sx0 = (int)floorf(dev_minx * (float)ss);
-    int sy0 = (int)floorf(dev_miny * (float)ss);
-    int sx1 = (int)ceilf(dev_maxx * (float)ss);
-    int sy1 = (int)ceilf(dev_maxy * (float)ss);
+    int sx0 = svg_raster_bound(dev_minx * (float)ss, 0);
+    int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
+    int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
+    int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     if (sx0 < 0) sx0 = 0;
     if (sy0 < 0) sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
@@ -12101,7 +12120,7 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
     }
     float intrinsic_w = pre.width_ok ? pre.width_attr : (pre.vb_ok ? pre.vb_w : 512.0f);
     float intrinsic_h = pre.height_ok ? pre.height_attr : (pre.vb_ok ? pre.vb_h : 512.0f);
-    if (intrinsic_w <= 0.0f || intrinsic_h <= 0.0f) {
+    if (!isfinite(intrinsic_w) || !isfinite(intrinsic_h) || intrinsic_w <= 0.0f || intrinsic_h <= 0.0f) {
         svg_defs_free(&defs);
         svg_css_free(&css);
         set_err(err, errcap, "invalid SVG dimensions");
@@ -12127,8 +12146,12 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
     }
     if (out_w < 1.0f) out_w = 1.0f;
     if (out_h < 1.0f) out_h = 1.0f;
-    ctx->width = (uint32_t)lroundf(out_w);
-    ctx->height = (uint32_t)lroundf(out_h);
+    if (!svg_dimension(out_w, &ctx->width) || !svg_dimension(out_h, &ctx->height)) {
+        svg_defs_free(&defs);
+        svg_css_free(&css);
+        set_err(err, errcap, "invalid SVG dimensions");
+        return 0;
+    }
     ctx->ss = opts && opts->supersampling ? opts->supersampling : 2;
     if (ctx->ss != 1 && ctx->ss != 2 && ctx->ss != 4) {
         ctx->ss = 2;
@@ -12148,13 +12171,13 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
 
     size_t hi_w = (size_t)ctx->width * (size_t)ctx->ss;
     size_t hi_h = (size_t)ctx->height * (size_t)ctx->ss;
-    size_t hi_size = hi_w * hi_h * 4u;
-    if (hi_w == 0 || hi_h == 0 || hi_size / 4u != hi_w * hi_h) {
+    if (hi_w > INT_MAX || hi_h > INT_MAX || hi_w > SVG_MAX_SAMPLES / hi_h) {
         svg_defs_free(&defs);
         svg_css_free(&css);
         set_err(err, errcap, "image too large");
         return 0;
     }
+    size_t hi_size = hi_w * hi_h * 4u;
     ctx->hi_rgba = (uint8_t *)malloc(hi_size);
     if (!ctx->hi_rgba) {
         svg_defs_free(&defs);
@@ -12575,12 +12598,10 @@ int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
     }
     float intrinsic_w = w_ok ? w : (vb_ok ? vb_w : 512.0f);
     float intrinsic_h = h_ok ? h : (vb_ok ? vb_h : 512.0f);
-    if (intrinsic_w <= 0.0f || intrinsic_h <= 0.0f) {
+    if (!svg_dimension(intrinsic_w, width) || !svg_dimension(intrinsic_h, height)) {
         set_err(err, errcap, "invalid SVG dimensions");
         return 0;
     }
-    *width = (uint32_t)lroundf(intrinsic_w);
-    *height = (uint32_t)lroundf(intrinsic_h);
     return 1;
 }
 
@@ -12590,6 +12611,11 @@ int cupidimage_load_svg_with_options(const unsigned char *data, size_t size,
                                      char *err, size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
+        return 0;
+    }
+    memset(out, 0, sizeof(*out));
+    if (opts && (!isfinite(opts->scale) || !isfinite(opts->dpi) || !isfinite(opts->animation_time))) {
+        set_err(err, errcap, "invalid SVG options");
         return 0;
     }
     svg_render_ctx ctx;
