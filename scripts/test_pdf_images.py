@@ -120,7 +120,12 @@ def main():
         check("jpeg-color-transform-1", fixture(color_jpeg,
               attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
         adobe_jpeg = color_jpeg[:2] + segment(0xee, b"Adobe\0d\0\0\0\0\0") + color_jpeg[2:]
+        sof = color_jpeg.index(b"\xff\xc0")
+        after_sof = sof + 2 + int.from_bytes(color_jpeg[sof + 2:sof + 4], "big")
+        adobe_after_sof = color_jpeg[:after_sof] + segment(0xee, b"Adobe\0d\0\0\0\0\0") + color_jpeg[after_sof:]
         check("jpeg-adobe-override", fixture(adobe_jpeg,
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+        check("jpeg-adobe-after-sof-override", fixture(adobe_after_sof,
               attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
         for name, payload, image_attrs in (
                 ("wrong-jpeg-dimensions", jpeg(3, False, 16384, 16384) + scan((1, 2, 3)) + b"\x03" + EOI, attrs),
@@ -128,6 +133,7 @@ def main():
                 ("truncated-jpeg", color_jpeg[:-4], attrs),
                 ("invalid-jpeg", b"not a JPEG", attrs),
                 ("unsupported-raw-rgb-jpeg", adobe_jpeg, attrs),
+                ("unsupported-raw-rgb-after-sof", adobe_after_sof, attrs),
                 ("unsupported-color-transform", color_jpeg, attrs + " /DecodeParms << /ColorTransform 0 >>"),
                 ("unsupported-filter-chain", zlib.compress(RGB), attrs + " /Filter [/FlateDecode /DCTDecode]")):
             if "Filter" not in image_attrs:

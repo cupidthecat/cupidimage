@@ -2863,12 +2863,14 @@ static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length,
                                    int width, int height, int components, int transform) {
     if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8) return 0;
     size_t pos = 2;
+    int have_frame = 0;
     while (pos < length) {
         if (stream[pos++] != 0xff) return 0;
         while (pos < length && stream[pos] == 0xff) pos++;
         if (pos >= length) return 0;
         unsigned marker = stream[pos++];
-        if (marker == 0xda || marker == 0xd9 || marker == 0) return 0;
+        if (marker == 0xda) return have_frame;
+        if (marker == 0xd9 || marker == 0) return 0;
         if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
         if (length - pos < 2) return 0;
         size_t segment = (size_t)stream[pos] * 256u + stream[pos + 1];
@@ -2877,10 +2879,11 @@ static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length,
             memcmp(stream + pos + 2, "Adobe", 5) == 0 &&
             stream[pos + 13] == 0 && transform != 1) return 0;
         if (marker == 0xc0 || marker == 0xc2) {
-            return segment >= 8 && stream[pos + 2] == 8 &&
+            if (have_frame || !(segment >= 8 && stream[pos + 2] == 8 &&
                    (int)stream[pos + 3] * 256 + stream[pos + 4] == height &&
                    (int)stream[pos + 5] * 256 + stream[pos + 6] == width &&
-                   stream[pos + 7] == components;
+                   stream[pos + 7] == components)) return 0;
+            have_frame = 1;
         }
         pos += segment;
     }
