@@ -13,7 +13,7 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_PNG = $(BINDIR)/test_png
 
-.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli
+.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety
 
 all: lib cli
 
@@ -29,6 +29,13 @@ $(TEST_PNG): tests/test_png.c $(LIB) $(SRCDIR)/cupidimage.h
 
 test-cli: cli
 	python3 tests/test_cli.py $(CLI)
+
+
+test-decoder-safety: $(BINDIR)/test_decoder_safety
+	$(BINDIR)/test_decoder_safety
+
+$(BINDIR)/test_decoder_safety: tests/test_decoder_safety.c $(LIB) $(SRCDIR)/cupidimage.h
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
 test-svg: cli
 	./scripts/test_svg_assets.sh
@@ -57,3 +64,5 @@ $(BINDIR):
 
 clean:
 	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(TEST_PNG)
+
+	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_decoder_safety

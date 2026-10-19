@@ -296,6 +296,12 @@ make test-png CC=clang OBJDIR=obj/png-sanitize BINDIR=bin/png-sanitize \
   CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-omit-frame-pointer'
 ```
 
+Decoder safety regression checks:
+```sh
+make test-decoder-safety
+```
+These checks cover invalid SVG animation start times and icon height bounds. CI also runs them with address and undefined-behavior sanitizers.
+
 Quick BMP smoke test (expects failures for invalid samples):
 ```sh
 scripts/test_bmp_assets.sh
