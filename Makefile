@@ -13,7 +13,7 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_PNG = $(BINDIR)/test_png
 
-.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers
+.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers test-pdf-graphics
 
 all: lib cli
 
@@ -40,6 +40,11 @@ test-deflate-containers: $(BINDIR)/test_deflate_containers
 	$(BINDIR)/test_deflate_containers
 
 $(BINDIR)/test_deflate_containers: tests/test_deflate_containers.c tests/pdf_fixture.h $(LIB) $(SRCDIR)/cupidimage.h
+
+test-pdf-graphics: $(BINDIR)/test_pdf_graphics
+	$(BINDIR)/test_pdf_graphics
+
+$(BINDIR)/test_pdf_graphics: tests/test_pdf_graphics.c tests/pdf_fixture.h $(LIB) $(SRCDIR)/cupidimage.h
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
 test-svg: cli
@@ -73,3 +78,5 @@ clean:
 	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_decoder_safety
 
 	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_deflate_containers
+
+	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_pdf_graphics
