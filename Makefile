@@ -14,7 +14,7 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_TARGETS = test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
- test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety
+ test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms
 TEST_BINS = test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless
 
@@ -46,6 +46,8 @@ test-pdf-images: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_images.py $<
 test-pdf-safety: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_safety.py $<
+test-pdf-forms: $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_forms.py $<
 test-sixel: $(BINDIR)/test_sixel
 	python3 scripts/test_sixel.py $<
 test-gif-regressions:
