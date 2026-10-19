@@ -6,6 +6,14 @@ Terminal graphics output currently supports:
 - Sixel graphics protocol with auto-detection (octree color quantization, multiple dithering modes, animations)
 - No iTerm2 inline image protocol support yet
 
+Sixel `use_transparency` keeps pixels with alpha below 128 unpainted, including
+when dithering is enabled. Other pixels use opaque palette colors. With the
+option disabled, the renderer blends alpha against `background_color`.
+
+Run the Sixel stream and palette regressions with Python 3:
+
+    make test-sixel
+
 Supported formats (decoder status):
 - SVG: static subset with shapes (rect/circle/ellipse/line/polyline/polygon/path including arc commands), embedded images (`<image>` with `data:` URIs and local file hrefs), basic text (`<text>/<tspan>/<textPath>` via built-in bitmap font; includes `dominant-baseline`/`alignment-baseline` handling and UTF-8 bullet `•` fallback glyph), presentation + inline styles + basic `<style>` selectors (descendant, child `>`, adjacent `+`, and general sibling `~` combinators, plus basic `[attr]`/`[attr=value]` matching and `display`/`visibility`), transforms, viewBox/preserveAspectRatio, linear/radial gradients, patterns, `hsl()/hsla()` colors, stroke caps/joins/dash, clipPath, luminance and alpha masks (`mask-type`), basic `<use>` references for primitive shapes and `<symbol>` (with symbol `preserveAspectRatio` handling and wrapper style attributes), basic SVG markers (`marker-start`/`marker-mid`/`marker-end`, including `orient=\"auto-start-reverse\"` and improved join-angle placement), and filter primitives: `feGaussianBlur`, `feOffset`, `feColorMatrix`, `feComponentTransfer`, `feMorphology`, `feConvolveMatrix`, `feTurbulence`, `feDisplacementMap`, `feDiffuseLighting`, `feSpecularLighting`, `feTile`, `feImage` (including `data:` URIs), `feFlood`, `feBlend`, `feComposite`, `feMerge` (including Source/Background/FillPaint/StrokePaint filter inputs and primitive subregions). Basic sampled animation support for SMIL (`<set>`, `<animate>`, `<animateTransform>`) and CSS keyframes (subset: `transform`, `stroke-dashoffset`, `stop-color`) via `cupidimage_svg_options.animation_time` / CLI `--svg-time`. Supersampled rasterization for terminal preview. No scripting/DOM, no external web fetches, no custom font loading.
 - PNG: non-interlaced and Adam7; color types 0/2/3/4/6 with 1/2/4/8/16-bit depths; palette + tRNS.
@@ -16,7 +24,7 @@ Supported formats (decoder status):
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.
 - TIFF: Classic + BigTIFF; byte orders II/MM; compression none/LZW/PackBits/Deflate/JPEG/CCITT RLE/G3/G4; photometric bilevel/grayscale(+alpha)/RGB/RGBA/palette/CMYK/YCbCr/Lab; strips/tiles; planar 1/2; predictor=2; orientation 1-8; multi-page IFDs (SubIFD pages via page APIs).
 - TGA: types 0-3/9-11; uncompressed/RLE; 8/15/16/24/32-bit; all origins; color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correction.
-- PDF: basic text and simple graphics via minimal parser; FlateDecode streams; text positioning operators (BT/ET/Td/Tj); RGB color operators (rg/RG); stub glyph rendering. No complex fonts, transparency, patterns, or annotations.
+- PDF: basic text, FlateDecode streams, gray/RGB/CMYK paint, line and cubic Bezier paths, and nonzero/even-odd fills. Text uses built-in bitmap glyphs. Image XObjects support 8-bit DeviceRGB and DeviceGray samples, raw and FlateDecode streams, TIFF/PNG predictors, Decode arrays, and affine placement. Previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, clipping paths, transparency, patterns, and annotations are unsupported.
 
 Build (Makefile):
 ```sh
@@ -30,10 +38,28 @@ scripts/make.sh lib
 scripts/make.sh cli
 ```
 
+Run all non-interactive regressions with Python 3 and GNU Make:
+
+```sh
+make -j2 all test
+make -j2 all test CC=clang OBJDIR=obj/clang BINDIR=bin/clang \
+  CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -fno-pie -no-pie'
+```
+
+CI runs the full suite with GCC and Clang sanitizers. The interactive asset
+viewers remain available through their individual targets.
+
 Build just the static library or CLI:
 ```sh
 make lib
 make cli
+
+Run the generated JPEG decoder regressions (requires Python 3):
+
+    make test-jpeg
+
+The tests check exact pixels for small baseline and progressive images, restart
+boundaries, reordered components, and malformed headers and Huffman tables.
 ```
 
 Install (static library + header):
@@ -52,7 +78,9 @@ PREFIX=/usr/local scripts/install.sh --uninstall
 
 Build (manual, static library):
 ```sh
+mkdir -p obj bin
 cc -Isrc -c src/cupidimage.c -o obj/cupidimage.o
+cc -Isrc -c src/cupidimage_internal.c -o obj/cupidimage_internal.o
 cc -Isrc -c src/cupidimage_png.c -o obj/cupidimage_png.o
 cc -Isrc -c src/cupidimage_jpeg.c -o obj/cupidimage_jpeg.o
 cc -Isrc -c src/cupidimage_webp.c -o obj/cupidimage_webp.o
@@ -63,14 +91,18 @@ cc -Isrc -c src/cupidimage_bmp.c -o obj/cupidimage_bmp.o
 cc -Isrc -c src/cupidimage_ico.c -o obj/cupidimage_ico.o
 cc -Isrc -c src/cupidimage_tiff.c -o obj/cupidimage_tiff.o
 cc -Isrc -c src/cupidimage_tga.c -o obj/cupidimage_tga.o
+cc -Isrc -c src/cupidimage_pdf.c -o obj/cupidimage_pdf.o
 cc -Isrc -c src/cupidimage_svg.c -o obj/cupidimage_svg.o
+cc -Isrc -c src/cupidimage_svg_base.c -o obj/cupidimage_svg_base.o
+cc -Isrc -c src/cupidimage_kitty.c -o obj/cupidimage_kitty.o
 cc -Isrc -c src/cupidimage_sixel.c -o obj/cupidimage_sixel.o
-ar rcs bin/libcupidimage.a obj/cupidimage.o obj/cupidimage_png.o obj/cupidimage_jpeg.o obj/cupidimage_webp.o obj/cupidimage_webp_tables.o obj/cupidimage_webp_lossless.o obj/cupidimage_gif.o obj/cupidimage_bmp.o obj/cupidimage_ico.o obj/cupidimage_tiff.o obj/cupidimage_tga.o obj/cupidimage_svg.o obj/cupidimage_sixel.o
+ar rcs bin/libcupidimage.a obj/cupidimage.o obj/cupidimage_internal.o obj/cupidimage_png.o obj/cupidimage_jpeg.o obj/cupidimage_webp.o obj/cupidimage_webp_tables.o obj/cupidimage_webp_lossless.o obj/cupidimage_gif.o obj/cupidimage_bmp.o obj/cupidimage_ico.o obj/cupidimage_tiff.o obj/cupidimage_tga.o obj/cupidimage_pdf.o obj/cupidimage_svg.o obj/cupidimage_svg_base.o obj/cupidimage_kitty.o obj/cupidimage_sixel.o
 ```
 
 Build the CLI test app:
 ```sh
-cc -Isrc src/cupidimage.c src/cupidimage_png.c src/cupidimage_jpeg.c src/cupidimage_webp.c src/cupidimage_webp_tables.c src/cupidimage_webp_lossless.c src/cupidimage_gif.c src/cupidimage_bmp.c src/cupidimage_ico.c src/cupidimage_tiff.c src/cupidimage_tga.c src/cupidimage_svg.c src/cupidimage_sixel.c src/cupidimage_cli.c -o bin/cupidimage -lm
+mkdir -p bin
+cc -Isrc src/cupidimage.c src/cupidimage_internal.c src/cupidimage_png.c src/cupidimage_jpeg.c src/cupidimage_webp.c src/cupidimage_webp_tables.c src/cupidimage_webp_lossless.c src/cupidimage_gif.c src/cupidimage_bmp.c src/cupidimage_ico.c src/cupidimage_tiff.c src/cupidimage_tga.c src/cupidimage_pdf.c src/cupidimage_svg.c src/cupidimage_svg_base.c src/cupidimage_kitty.c src/cupidimage_sixel.c src/cupidimage_cli.c -o bin/cupidimage -lm
 ```
 
 Use the CLI:
@@ -87,8 +119,33 @@ Use the CLI:
 ./bin/cupidimage --ansi test.png  # Force ANSI mode (disable auto-detection)
 ```
 
-When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` now auto-play.
-Use `--svg-time` to render a single sampled frame instead.
+PDF pages render at 96 DPI. CropBox is intersected with MediaBox, and page
+rotation applies to both text and graphics. Direct and indirect page boxes and
+rotation values are supported. Invalid boxes, cyclic parent chains, and previews
+larger than 64 megapixels are rejected. The renderer still trims whitespace from
+the resulting preview.
+
+Run the generated PDF page regressions with Python 3:
+
+    make test-pdf-pages
+
+PDF image XObjects use the page's Resources dictionary, including inherited and
+indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
+images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 8-bit samples.
+Predictor Colors and Columns must match the image when prediction is enabled.
+The decoded sample data is limited to 64 MiB per image.
+
+JPEG/JPX image filters, filter arrays, image masks, soft masks, indexed color,
+inline images, and Form XObject contents are outside the supported subset.
+Drawing an invalid or unsupported image XObject returns a load error. Form
+contents are skipped.
+
+Run the generated image checks with Python 3:
+
+    make test-pdf-images
+
+When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` auto-play.
+Use `--svg-time` to render a single sampled frame. When output is redirected to a file or pipe, SVGs render their initial state and animated GIFs render their first composed frame.
 
 Link in your app (static library):
 ```sh
@@ -173,6 +230,21 @@ opts.image_id = 42;            /* custom image ID */
 opts.delete_previous = 1;       /* delete previous images */
 
 cupidimage_render_kitty_with_options(&img, stdout, 0, 0, &opts, err, sizeof(err));
+```
+
+Passing NULL for Kitty options uses the defaults, including compression. Render
+and delete functions return zero on output failure. Invalid or oversized images
+are rejected before encoding; animation frames are checked before transmission.
+Kitty animation uses `loop_count` as the number of plays, with zero for indefinite
+playback. A frame delay of zero creates a gapless frame.
+
+Non-interactive terminal regression checks compare emitted RGBA bytes, chunk
+boundaries, animation controls, placement deletion, and ANSI output. They also
+exercise invalid inputs and write failures:
+
+```sh
+make test-terminal-regressions
+CC=clang CFLAGS='-O1 -g -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all' make test-terminal-regressions
 ```
 
 Sixel graphics protocol usage (auto-detection):
@@ -284,6 +356,24 @@ cc -DCUPIDIMAGE_ICO_DEBUG -Isrc -c src/cupidimage_ico.c -o obj/cupidimage_ico.o
 cc -DCUPIDIMAGE_TGA_DEBUG -Isrc -c src/cupidimage_tga.c -o obj/cupidimage_tga.o
 ```
 
+Non-interactive PNG regression checks:
+```sh
+make test-png
+```
+The tests generate PNGs in memory and check RGBA pixels, palette bounds, transparency keys, and a transition from dynamic Huffman coding to a stored DEFLATE block. They cover ordinary and Adam7-interlaced images without external image libraries or fixture downloads.
+
+To run with Clang's address and undefined-behavior sanitizers in separate build directories:
+```sh
+make test-png CC=clang OBJDIR=obj/png-sanitize BINDIR=bin/png-sanitize \
+  CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-omit-frame-pointer'
+```
+
+Decoder safety regression checks:
+```sh
+make test-decoder-safety
+```
+These checks cover invalid SVG animation start times and icon height bounds. CI also runs them with address and undefined-behavior sanitizers.
+
 Quick BMP smoke test (expects failures for invalid samples):
 ```sh
 scripts/test_bmp_assets.sh
@@ -310,16 +400,40 @@ scripts/make_test_svgs.sh
 scripts/test_svg_assets.sh
 ```
 
+Non-interactive CLI regression checks (requires Python 3):
+```sh
+make test-cli
+```
+
 Non-interactive SVG regression checks:
 ```sh
 scripts/test_svg_regressions.sh
 make test-svg-regressions
 ```
 
+Non-interactive PDF/TIFF compression regression checks:
+```sh
+make test-deflate-containers
+```
+These generate complete documents in memory and check decoded pixels across stored and dynamic-to-stored DEFLATE blocks.
+
+Non-interactive PDF graphics regression checks:
+```sh
+make test-pdf-graphics
+```
+These generate complete PDFs in memory and check curves, transforms, fill rules, open subpaths, and CMYK colors. Curves are approximated by line segments, and DeviceCMYK colors use a simple RGB conversion without color profiles.
+
 Quick PDF test:
 ```sh
 scripts/make_test_pdfs.sh
 scripts/test_pdf_assets.sh
+```
+
+Non-interactive GIF regression checks cover frame dimensions, palette backgrounds,
+truncated input, frame metadata, and allocation failure cleanup:
+```sh
+make test-gif-regressions
+CC=clang CFLAGS='-O1 -g -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all' make test-gif-regressions
 ```
 
 

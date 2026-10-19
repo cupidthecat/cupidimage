@@ -2,9 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN="$ROOT_DIR/bin/cupidimage"
-LIB="$ROOT_DIR/bin/libcupidimage.a"
+BIN="${BIN:-$ROOT_DIR/bin/cupidimage}"
+LIB="${LIB:-$ROOT_DIR/bin/libcupidimage.a}"
 ASSETS_DIR="$ROOT_DIR/assets/svg"
+BUILD_DIR="$(mktemp -d)"
+trap 'rm -rf "$BUILD_DIR"' EXIT
+cd "$ROOT_DIR"
 
 if [[ ! -x "$BIN" ]]; then
   echo "cupidimage CLI not found at $BIN" >&2
@@ -44,8 +47,8 @@ if (( fail > 0 )); then
 fi
 
 echo "[svg-regressions] running pixel probes..."
-PROBE_C="/tmp/svg_regression_probe.c"
-PROBE_BIN="/tmp/svg_regression_probe"
+PROBE_C="$BUILD_DIR/svg_regression_probe.c"
+PROBE_BIN="$BUILD_DIR/svg_regression_probe"
 cat >"$PROBE_C" <<'EOF'
 #include "src/cupidimage.h"
 #include <stdio.h>
@@ -155,9 +158,9 @@ int main(void) {
 }
 EOF
 
-cc -O2 -Wall -Wextra -std=c99 -I"$ROOT_DIR" -I"$ROOT_DIR/src" "$PROBE_C" \
-  $(if nm "$LIB" 2>/dev/null | grep -q "__asan_init"; then echo "-fsanitize=address,undefined,leak"; fi) \
-  -L"$ROOT_DIR/bin" -lcupidimage -lm -o "$PROBE_BIN"
+read -r -a flags <<< "${CFLAGS:--O2 -Wall -Wextra -std=c99}"
+"${CC:-cc}" "${flags[@]}" -I"$ROOT_DIR" -I"$ROOT_DIR/src" "$PROBE_C" \
+  "$LIB" -lm -o "$PROBE_BIN"
 
 if ! "$PROBE_BIN"; then
   echo "[svg-regressions] pixel probes failed" >&2
