@@ -164,7 +164,7 @@ static int ico_decode_dib(const unsigned char *data, size_t size,
 
     int32_t width_s = (int32_t)read_le32(buf + 4);
     int32_t height_s = (int32_t)read_le32(buf + 8);
-    if (width_s <= 0) {
+    if (width_s <= 0 || height_s == INT32_MIN) {
         set_err(err, errcap, "invalid icon dimensions");
         return 0;
     }

@@ -284,6 +284,12 @@ cc -DCUPIDIMAGE_ICO_DEBUG -Isrc -c src/cupidimage_ico.c -o obj/cupidimage_ico.o
 cc -DCUPIDIMAGE_TGA_DEBUG -Isrc -c src/cupidimage_tga.c -o obj/cupidimage_tga.o
 ```
 
+Decoder safety regression checks:
+```sh
+make test-decoder-safety
+```
+These checks cover invalid SVG animation start times and icon height bounds. CI also runs them with address and undefined-behavior sanitizers.
+
 Quick BMP smoke test (expects failures for invalid samples):
 ```sh
 scripts/test_bmp_assets.sh

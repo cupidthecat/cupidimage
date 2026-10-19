@@ -1262,9 +1262,6 @@ static int svg_get_animation_progress(const svg_tag *anim, float time_s, float *
             begin_attr = svg_strndup(begin_attr, (size_t)(semi - begin_attr));
         }
         if (!svg_parse_clock_seconds(begin_attr, &begin)) {
-            if (semi) {
-                free((char *)begin_attr);
-            }
             begin = 0.0f;
         }
         if (semi) {
