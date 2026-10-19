@@ -16,7 +16,7 @@ Supported formats (decoder status):
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.
 - TIFF: Classic + BigTIFF; byte orders II/MM; compression none/LZW/PackBits/Deflate/JPEG/CCITT RLE/G3/G4; photometric bilevel/grayscale(+alpha)/RGB/RGBA/palette/CMYK/YCbCr/Lab; strips/tiles; planar 1/2; predictor=2; orientation 1-8; multi-page IFDs (SubIFD pages via page APIs).
 - TGA: types 0-3/9-11; uncompressed/RLE; 8/15/16/24/32-bit; all origins; color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correction.
-- PDF: basic text and vector graphics via minimal parser; FlateDecode streams; text positioning; straight and cubic Bézier paths (`c`/`v`/`y`); nonzero and even-odd fills; RGB, grayscale, and basic DeviceCMYK colors (`k`/`K`); bitmap glyph rendering. No complex fonts, clipping, transparency, patterns, or annotations.
+- PDF: basic text, FlateDecode streams, gray/RGB/CMYK paint, line and cubic Bezier paths, and nonzero/even-odd fills. Text uses built-in bitmap glyphs. Previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, clipping, transparency, patterns, and annotations are unsupported.
 
 Build (Makefile):
 ```sh
@@ -93,6 +93,16 @@ Use the CLI:
 ./bin/cupidimage --sixel-colors 128 --sixel-dither atkinson test.jpg
 ./bin/cupidimage --ansi test.png  # Force ANSI mode (disable auto-detection)
 ```
+
+PDF pages render at 96 DPI. CropBox is intersected with MediaBox, and page
+rotation applies to both text and graphics. Direct and indirect page boxes and
+rotation values are supported. Invalid boxes, cyclic parent chains, and previews
+larger than 64 megapixels are rejected. The renderer still trims whitespace from
+the resulting preview.
+
+Run the generated PDF page regressions with Python 3:
+
+    make test-pdf-pages
 
 When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` auto-play.
 Use `--svg-time` to render a single sampled frame. When output is redirected to a file or pipe, SVGs render their initial state and animated GIFs render their first composed frame.
