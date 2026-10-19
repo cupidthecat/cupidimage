@@ -13,7 +13,7 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_PNG = $(BINDIR)/test_png
 
-.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers test-pdf-graphics test-jpeg test-pdf-pages
+.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers test-pdf-graphics test-jpeg test-pdf-pages test-sixel
 
 all: lib cli
 
@@ -65,6 +65,11 @@ test-pdf-pages: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_pages.py $(BINDIR)/test_pdf_pages
 
 $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB)
+
+test-sixel: $(BINDIR)/test_sixel
+	python3 scripts/test_sixel.py $(BINDIR)/test_sixel
+
+$(BINDIR)/test_sixel: scripts/test_sixel.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
 $(LIB): $(LIBOBJ)
