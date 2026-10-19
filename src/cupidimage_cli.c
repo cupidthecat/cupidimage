@@ -670,12 +670,6 @@ static int render_svg_animation(const char *path, int maxw, int maxh, int force_
     if (!has_animation) {
         return 0;
     }
-    /* Note: Removed isatty() check to allow animation playback in all terminals.
-     * The original check was too restrictive and prevented animations from playing
-     * in valid terminal environments (WSL, tmux, screen, IDE terminals, etc.).
-     * If the terminal doesn't support ANSI escape codes, the output will simply
-     * be garbled, which is acceptable for edge cases. */
-
     const unsigned frame_ms = 33u;
     const float frame_dt = (float)frame_ms / 1000.0f;
     uint32_t loops = indefinite ? 0xFFFFFFFFu : 1u;
@@ -885,7 +879,7 @@ int main(int argc, char **argv) {
             cupidimage_free_animation(&anim);
             return 1;
         }
-        if (anim.frame_count == 1) {
+        if (anim.frame_count == 1 || !isatty(STDOUT_FILENO)) {
             if (!render_image_with_sixel_opts(&anim.frames[0], maxw, maxh, force_sixel, force_ansi, sixel_colors, sixel_dither)) {
                 fprintf(stderr, "render error\n");
                 cupidimage_free_animation(&anim);
@@ -925,7 +919,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (!has_svg_time && path_has_svg_extension(path)) {
+    if (!has_svg_time && path_has_svg_extension(path) && isatty(STDOUT_FILENO)) {
         int anim_res = render_svg_animation(path, maxw, maxh, force_ansi, err, sizeof(err));
         if (anim_res < 0) {
             fprintf(stderr, "load error: %s\n", err);

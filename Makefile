@@ -12,13 +12,16 @@ LIBOBJ = $(OBJDIR)/cupidimage.o $(OBJDIR)/cupidimage_internal.o $(OBJDIR)/cupidi
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 
-.PHONY: all lib cli test-svg test-svg-regressions test-pdf clean
+.PHONY: all lib cli test-cli test-svg test-svg-regressions test-pdf clean
 
 all: lib cli
 
 lib: $(LIB)
 
 cli: $(CLI)
+
+test-cli: cli
+	python3 tests/test_cli.py $(CLI)
 
 test-svg: cli
 	./scripts/test_svg_assets.sh

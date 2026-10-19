@@ -87,8 +87,8 @@ Use the CLI:
 ./bin/cupidimage --ansi test.png  # Force ANSI mode (disable auto-detection)
 ```
 
-When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` now auto-play.
-Use `--svg-time` to render a single sampled frame instead.
+When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` auto-play.
+Use `--svg-time` to render a single sampled frame. When output is redirected to a file or pipe, SVGs render their initial state and animated GIFs render their first composed frame.
 
 Link in your app (static library):
 ```sh
@@ -308,6 +308,11 @@ Quick SVG smoke test:
 ```sh
 scripts/make_test_svgs.sh
 scripts/test_svg_assets.sh
+```
+
+Non-interactive CLI regression checks (requires Python 3):
+```sh
+make test-cli
 ```
 
 Non-interactive SVG regression checks:
