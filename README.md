@@ -175,6 +175,21 @@ opts.delete_previous = 1;       /* delete previous images */
 cupidimage_render_kitty_with_options(&img, stdout, 0, 0, &opts, err, sizeof(err));
 ```
 
+Passing NULL for Kitty options uses the defaults, including compression. Render
+and delete functions return zero on output failure. Invalid or oversized images
+are rejected before encoding; animation frames are checked before transmission.
+Kitty animation uses `loop_count` as the number of plays, with zero for indefinite
+playback. A frame delay of zero creates a gapless frame.
+
+Non-interactive terminal regression checks compare emitted RGBA bytes, chunk
+boundaries, animation controls, placement deletion, and ANSI output. They also
+exercise invalid inputs and write failures:
+
+```sh
+make test-terminal-regressions
+CC=clang CFLAGS='-O1 -g -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all' make test-terminal-regressions
+```
+
 Sixel graphics protocol usage (auto-detection):
 ```c
 #include "cupidimage.h"

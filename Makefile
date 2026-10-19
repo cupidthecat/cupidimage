@@ -12,7 +12,7 @@ LIBOBJ = $(OBJDIR)/cupidimage.o $(OBJDIR)/cupidimage_internal.o $(OBJDIR)/cupidi
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 
-.PHONY: all lib cli test-svg test-svg-regressions test-pdf clean
+.PHONY: all lib cli test-svg test-svg-regressions test-pdf test-terminal-regressions clean
 
 all: lib cli
 
@@ -28,6 +28,9 @@ test-svg-regressions: cli lib
 
 test-pdf: cli
 	./scripts/test_pdf_assets.sh
+
+test-terminal-regressions:
+	bash ./scripts/test_terminal_regressions.sh
 
 $(LIB): $(LIBOBJ)
 	@mkdir -p $(BINDIR)

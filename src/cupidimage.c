@@ -1,6 +1,7 @@
 #include "cupidimage.h"
 
 #include <stdlib.h>
+#include <limits.h>
 
 void cupidimage_free(cupidimage_image *img) {
     if (!img) {
@@ -32,6 +33,8 @@ int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width
     if (!img || !img->rgba || !out || img->width == 0 || img->height == 0) {
         return 0;
     }
+    if (img->width > INT_MAX || img->height > INT_MAX ||
+        img->width > SIZE_MAX / 4u / img->height) return 0;
 
     int width = (int)img->width;
     int height = (int)img->height;
@@ -111,8 +114,9 @@ int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width
             fputc(' ', out);
         }
         fprintf(out, "\x1b[0m\n");
+        if (ferror(out)) return 0;
         have_last = 0;
     }
 
-    return 1;
+    return fflush(out) == 0;
 }
