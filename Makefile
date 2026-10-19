@@ -13,7 +13,7 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_PNG = $(BINDIR)/test_png
 
-.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers test-pdf-graphics test-jpeg test-pdf-pages test-sixel
+.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers test-pdf-graphics test-jpeg test-pdf-pages test-sixel test-gif-regressions
 
 all: lib cli
 
@@ -71,6 +71,9 @@ test-sixel: $(BINDIR)/test_sixel
 
 $(BINDIR)/test_sixel: scripts/test_sixel.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-gif-regressions:
+	bash ./scripts/test_gif_regressions.sh
 
 $(LIB): $(LIBOBJ)
 	@mkdir -p $(BINDIR)

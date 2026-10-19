@@ -355,7 +355,7 @@ int cupidimage_load_gif(const unsigned char *data, size_t size, cupidimage_image
     }
 
     uint8_t bg_r = 255, bg_g = 255, bg_b = 255, bg_a = 0;
-    if (global_entries > 0 && bg_index < (uint8_t)global_entries) {
+    if (global_entries > 0 && bg_index < global_entries) {
         bg_r = global_palette[(int)bg_index * 3 + 0];
         bg_g = global_palette[(int)bg_index * 3 + 1];
         bg_b = global_palette[(int)bg_index * 3 + 2];
@@ -450,7 +450,7 @@ int cupidimage_load_gif(const unsigned char *data, size_t size, cupidimage_image
             int interlaced = (img_packed & 0x40) != 0;
             int lct_size = 1 << ((img_packed & 0x07) + 1);
 
-            if (left + w > width || top + h > height) {
+            if (w == 0 || h == 0 || left + w > width || top + h > height) {
                 free(canvas);
                 set_err(err, errcap, "invalid GIF frame");
                 return 0;
@@ -647,7 +647,7 @@ int cupidimage_load_gif_animation(const unsigned char *data, size_t size,
     }
 
     uint8_t bg_r = 255, bg_g = 255, bg_b = 255, bg_a = 0;
-    if (global_entries > 0 && bg_index < (uint8_t)global_entries) {
+    if (global_entries > 0 && bg_index < global_entries) {
         bg_r = global_palette[(int)bg_index * 3 + 0];
         bg_g = global_palette[(int)bg_index * 3 + 1];
         bg_b = global_palette[(int)bg_index * 3 + 2];
@@ -765,7 +765,7 @@ int cupidimage_load_gif_animation(const unsigned char *data, size_t size,
         int interlaced = (img_packed & 0x40) != 0;
         int lct_size = 1 << ((img_packed & 0x07) + 1);
 
-        if (left + w > width || top + h > height) {
+        if (w == 0 || h == 0 || left + w > width || top + h > height) {
             set_err(err, errcap, "invalid GIF frame");
             goto fail;
         }
@@ -856,19 +856,33 @@ int cupidimage_load_gif_animation(const unsigned char *data, size_t size,
         free(ordered);
 
         if (frame_count == frame_cap) {
+            if (frame_cap > UINT32_MAX / 2u) {
+                set_err(err, errcap, "too many GIF frames");
+                goto fail;
+            }
             uint32_t new_cap = frame_cap ? frame_cap * 2u : 4u;
-            cupidimage_image *new_frames = (cupidimage_image *)realloc(frames, new_cap * sizeof(*frames));
-            uint32_t *new_delays = (uint32_t *)realloc(delays, new_cap * sizeof(*delays));
-            uint8_t *new_flags = (uint8_t *)realloc(user_input_flags, new_cap * sizeof(*new_flags));
-            if (!new_frames || !new_delays || !new_flags) {
-                free(new_frames);
-                free(new_delays);
-                free(new_flags);
+            if (SIZE_MAX / new_cap < sizeof(*frames) ||
+                SIZE_MAX / new_cap < sizeof(*delays)) {
+                set_err(err, errcap, "too many GIF frames");
+                goto fail;
+            }
+            cupidimage_image *new_frames = (cupidimage_image *)realloc(frames, (size_t)new_cap * sizeof(*frames));
+            if (!new_frames) {
                 set_err(err, errcap, "out of memory");
                 goto fail;
             }
             frames = new_frames;
+            uint32_t *new_delays = (uint32_t *)realloc(delays, (size_t)new_cap * sizeof(*delays));
+            if (!new_delays) {
+                set_err(err, errcap, "out of memory");
+                goto fail;
+            }
             delays = new_delays;
+            uint8_t *new_flags = (uint8_t *)realloc(user_input_flags, (size_t)new_cap * sizeof(*new_flags));
+            if (!new_flags) {
+                set_err(err, errcap, "out of memory");
+                goto fail;
+            }
             user_input_flags = new_flags;
             frame_cap = new_cap;
         }
@@ -879,6 +893,7 @@ int cupidimage_load_gif_animation(const unsigned char *data, size_t size,
             goto fail;
         }
         memcpy(frame_rgba, canvas, rgba_size);
+        memset(&frames[frame_count], 0, sizeof(frames[frame_count]));
         frames[frame_count].width = width;
         frames[frame_count].height = height;
         frames[frame_count].rgba = frame_rgba;
