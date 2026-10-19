@@ -34,6 +34,13 @@ Build just the static library or CLI:
 ```sh
 make lib
 make cli
+
+Run the generated JPEG decoder regressions (requires Python 3):
+
+    make test-jpeg
+
+The tests check exact pixels for small baseline and progressive images, restart
+boundaries, reordered components, and malformed headers and Huffman tables.
 ```
 
 Install (static library + header):

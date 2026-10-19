@@ -204,7 +204,17 @@ static void idct_8x8(const int32_t *block, uint8_t *out, int stride) {
     }
 }
 
-static void huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int num) {
+static int huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int num) {
+    if (num < 1 || num > 256) return 0;
+    int slots = 1;
+    int total = 0;
+    for (int i = 0; i < 16; i++) {
+        slots = slots * 2 - bits[i];
+        total += bits[i];
+        /* JPEG reserves the all-ones code for entropy padding. */
+        if (slots <= 0) return 0;
+    }
+    if (total != num) return 0;
     memcpy(h->bits, bits, 16);
     memcpy(h->huffval, vals, (size_t)num);
     h->num = num;
@@ -227,6 +237,7 @@ static void huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, i
     }
     h->maxcode[17] = 0xFFFF;
     h->valid = 1;
+    return 1;
 }
 
 static void jpeg_apply_default_huffman(jpeg_huff dc_tables[4], jpeg_huff ac_tables[4]) {
@@ -335,6 +346,10 @@ static int huff_decode(jpeg_bitstream *bs, const jpeg_huff *h, int *sym) {
 }
 
 static int receive_extend(jpeg_bitstream *bs, int s, int *ok) {
+    if (s < 0 || s > 11) {
+        *ok = 0;
+        return 0;
+    }
     if (s == 0) {
         *ok = 1;
         return 0;
@@ -359,7 +374,7 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
     }
 
     int sym = 0;
-    if (!huff_decode(bs, dc, &sym)) {
+    if (!huff_decode(bs, dc, &sym) || sym > 11) {
         return 0;
     }
     int ok = 0;
@@ -384,6 +399,7 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
         }
         int run = sym >> 4;
         int size = sym & 0x0F;
+        if (size == 0 || size > 10) return 0;
         k += run;
         if (k >= 64) {
             return 0;
@@ -430,7 +446,7 @@ static int consume_restart(jpeg_bitstream *bs, int expected) {
 static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc,
                            int al, int32_t *block) {
     int sym = 0;
-    if (!huff_decode(bs, dc, &sym)) {
+    if (!huff_decode(bs, dc, &sym) || sym > 11) {
         return 0;
     }
     int ok = 0;
@@ -439,7 +455,7 @@ static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc
         return 0;
     }
     c->dc_pred += diff;
-    block[0] = (int32_t)(c->dc_pred << al);
+    block[0] = (int32_t)(c->dc_pred * (1 << al));
     return 1;
 }
 
@@ -450,11 +466,8 @@ static int decode_dc_refine(jpeg_bitstream *bs, int al, int32_t *block) {
     }
     if (bit) {
         int32_t add = (int32_t)1 << al;
-        if (block[0] >= 0) {
-            block[0] += add;
-        } else {
-            block[0] -= add;
-        }
+        /* DC refinement appends a bit to the signed point transform. */
+        block[0] |= add;
     }
     return 1;
 }
@@ -474,6 +487,7 @@ static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac,
         }
         int run = sym >> 4;
         int size = sym & 0x0F;
+        if (size > 10) return 0;
         if (size == 0) {
             if (run == 15) {
                 k += 16;
@@ -498,7 +512,7 @@ static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac,
         if (!ok) {
             return 0;
         }
-        block[zigzag[k]] = (int32_t)coeff << al;
+        block[zigzag[k]] = (int32_t)coeff * (1 << al);
         k++;
     }
     return 1;
@@ -603,6 +617,7 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                                         jpeg_comp *comps, int num_comp,
                                         const int *scan_comp, int scan_count,
                                         int ss, int se, int ah, int al,
+                                        int width, int height,
                                         int mcu_cols, int mcu_rows,
                                         int hmax, int vmax,
                                         const jpeg_huff dc_tables[4],
@@ -610,8 +625,6 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                                         int restart_interval,
                                         size_t *consumed,
                                         char *err, size_t errcap) {
-    (void)hmax;
-    (void)vmax;
     jpeg_bitstream bs;
     bs.data = data;
     bs.size = size;
@@ -655,8 +668,10 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
 
     if (scan_count == 1) {
         jpeg_comp *c = &comps[scan_comp[0]];
-        for (int by = 0; by < c->blocks_h; by++) {
-            for (int bx = 0; bx < c->blocks_w; bx++) {
+        int blocks_w = (width * c->h + hmax * 8 - 1) / (hmax * 8);
+        int blocks_h = (height * c->v + vmax * 8 - 1) / (vmax * 8);
+        for (int by = 0; by < blocks_h; by++) {
+            for (int bx = 0; bx < blocks_w; bx++) {
                 int32_t *block = c->coeffs + ((by * c->blocks_w + bx) * 64);
                 if (ss == 0 && se == 0) {
                     if (ah == 0) {
@@ -687,7 +702,8 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                 }
 
                 mcu_count++;
-                if (restart_interval > 0 && (mcu_count % restart_interval) == 0) {
+                if (restart_interval > 0 && (mcu_count % restart_interval) == 0 &&
+                    (by + 1 < blocks_h || bx + 1 < blocks_w)) {
                     int expected = 0xD0 + (rst_index & 7);
                     if (!consume_restart(&bs, expected)) {
                         set_err(err, errcap, "jpeg restart marker error");
@@ -744,7 +760,8 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                 }
 
                 mcu_count++;
-                if (restart_interval > 0 && (mcu_count % restart_interval) == 0) {
+                if (restart_interval > 0 && (mcu_count % restart_interval) == 0 &&
+                    (my + 1 < mcu_rows || mx + 1 < mcu_cols)) {
                     int expected = 0xD0 + (rst_index & 7);
                     if (!consume_restart(&bs, expected)) {
                         set_err(err, errcap, "jpeg restart marker error");
@@ -973,6 +990,7 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
 
 static int jpeg_decode_scan(const uint8_t *data, size_t size,
                             jpeg_comp *comps, int num_comp,
+                            const int *scan_comp,
                             int width, int height,
                             int hmax, int vmax,
                             int qtables[4][64],
@@ -1043,7 +1061,8 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
 
     for (int my = 0; my < mcu_rows; my++) {
         for (int mx = 0; mx < mcu_cols; mx++) {
-            for (int ci = 0; ci < num_comp; ci++) {
+            for (int si = 0; si < num_comp; si++) {
+                int ci = scan_comp[si];
                 jpeg_comp *c = &comps[ci];
                 int cw = comp_w[ci];
 
@@ -1196,7 +1215,8 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
             }
 
             mcu_count++;
-            if (restart_interval > 0 && (mcu_count % restart_interval) == 0) {
+            if (restart_interval > 0 && (mcu_count % restart_interval) == 0 &&
+                (my + 1 < mcu_rows || mx + 1 < mcu_cols)) {
                 int expected = 0xD0 + (rst_index & 7);
                 if (!consume_restart(&bs, expected)) {
                     free(rgba);
@@ -1228,7 +1248,7 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
     jpeg_huff ac_tables[4] = {0};
     int qtables[4][64];
     int qvalid[4] = {0, 0, 0, 0};
-    jpeg_comp comps[3];
+    jpeg_comp comps[4] = {0};
     int num_comp = 0;
     int width = 0;
     int height = 0;
@@ -1284,7 +1304,7 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             }
             uint16_t length = read_be16(data + pos);
             pos += 2;
-            if (length < 2 || pos + length - 2 > size) {
+            if (length < 6 || (size_t)length - 2 > size - pos) {
                 set_err(err, errcap, "invalid SOS");
                 goto fail;
             }
@@ -1294,19 +1314,29 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             }
             size_t hdr_end = pos + length - 2;
             int ns = data[pos++];
-            if (ns < 1 || ns > num_comp) {
+            if (ns < 1 || ns > num_comp || length != 6 + 2 * ns) {
                 set_err(err, errcap, "unsupported scan components");
                 goto fail;
             }
-            int scan_comp[3];
+            int scan_comp[4];
+            unsigned seen_components = 0;
             for (int i = 0; i < ns; i++) {
                 int cid = data[pos++];
                 int tdta = data[pos++];
                 int dc_sel = (tdta >> 4) & 0x0F;
                 int ac_sel = tdta & 0x0F;
+                if (dc_sel > 3 || ac_sel > 3) {
+                    set_err(err, errcap, "invalid huffman table selector");
+                    goto fail;
+                }
                 int found = 0;
                 for (int c = 0; c < num_comp; c++) {
                     if (comps[c].id == cid) {
+                        if (seen_components & (1u << c)) {
+                            set_err(err, errcap, "duplicate scan component");
+                            goto fail;
+                        }
+                        seen_components |= 1u << c;
                         comps[c].dc_table = dc_sel;
                         comps[c].ac_table = ac_sel;
                         scan_comp[i] = c;
@@ -1349,6 +1379,7 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 }
                 if (!jpeg_decode_scan(data + pos, size - pos,
                                       comps, num_comp,
+                                      scan_comp,
                                       width, height,
                                       hmax, vmax,
                                       qtables,
@@ -1364,7 +1395,7 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 return 1;
             }
 
-            if (ss > se || se > 63 || al > 13 || ah > 13 || (ah > 0 && al >= ah)) {
+            if (ss > se || se > 63 || al > 13 || ah > 13 || (ah > 0 && al + 1 != ah)) {
                 set_err(err, errcap, "unsupported JPEG scan");
                 goto fail;
             }
@@ -1379,6 +1410,7 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                                               comps, num_comp,
                                               scan_comp, ns,
                                               ss, se, ah, al,
+                                              width, height,
                                               mcu_cols, mcu_rows,
                                               hmax, vmax,
                                               dc_tables, ac_tables,
@@ -1473,10 +1505,10 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                     set_err(err, errcap, "invalid huffman table length");
                     goto fail;
                 }
-                if (tc == 0) {
-                    huff_build(&dc_tables[th], bits, seg + off, count);
-                } else {
-                    huff_build(&ac_tables[th], bits, seg + off, count);
+                jpeg_huff *table = tc == 0 ? &dc_tables[th] : &ac_tables[th];
+                if (!huff_build(table, bits, seg + off, count)) {
+                    set_err(err, errcap, "invalid huffman codes");
+                    goto fail;
                 }
                 off += (size_t)count;
             }
@@ -1488,6 +1520,10 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 }
             }
         } else if (marker == 0xC2 || marker == 0xC0) {
+            if (saw_sof) {
+                set_err(err, errcap, "multiple JPEG frames unsupported");
+                goto fail;
+            }
             JPEG_DEBUG("jpeg: %s length=%u\n", marker == 0xC2 ? "SOF2" : "SOF0", length);
             if (length < 8) {
                 set_err(err, errcap, "invalid SOF");
@@ -1498,6 +1534,10 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             height = (seg[1] << 8) | seg[2];
             width = (seg[3] << 8) | seg[4];
             num_comp = seg[5];
+            if (width == 0 || height == 0) {
+                set_err(err, errcap, "invalid JPEG dimensions");
+                goto fail;
+            }
             if (precision != 8) {
                 set_err(err, errcap, "only 8-bit JPEG supported");
                 goto fail;
@@ -1506,7 +1546,7 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 set_err(err, errcap, "unsupported component count");
                 goto fail;
             }
-            if (length < 8 + num_comp * 3) {
+            if (length != 8 + num_comp * 3) {
                 set_err(err, errcap, "invalid SOF length");
                 goto fail;
             }
@@ -1515,6 +1555,12 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             for (int i = 0; i < num_comp; i++) {
                 int idx = 6 + i * 3;
                 comps[i].id = seg[idx];
+                for (int j = 0; j < i; j++) {
+                    if (comps[j].id == comps[i].id) {
+                        set_err(err, errcap, "duplicate frame component");
+                        goto fail;
+                    }
+                }
                 int hv = seg[idx + 1];
                 comps[i].h = (hv >> 4) & 0x0F;
                 comps[i].v = hv & 0x0F;
@@ -1533,6 +1579,8 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             mcu_cols = (width + hmax * 8 - 1) / (hmax * 8);
             mcu_rows = (height + vmax * 8 - 1) / (vmax * 8);
             if (progressive && !coeffs_allocated) {
+                /* Release any earlier component allocations on failure. */
+                coeffs_allocated = 1;
                 for (int i = 0; i < num_comp; i++) {
                     comps[i].blocks_w = mcu_cols * comps[i].h;
                     comps[i].blocks_h = mcu_rows * comps[i].v;
@@ -1547,7 +1595,6 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                         goto fail;
                     }
                 }
-                coeffs_allocated = 1;
             }
             saw_sof = 1;
         } else if (marker == 0xDD) {
