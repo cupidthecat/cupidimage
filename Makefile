@@ -7,101 +7,75 @@ INCLUDES = -Isrc -I.
 OBJDIR = obj
 BINDIR = bin
 SRCDIR = src
-
-LIBOBJ = $(OBJDIR)/cupidimage.o $(OBJDIR)/cupidimage_internal.o $(OBJDIR)/cupidimage_png.o $(OBJDIR)/cupidimage_jpeg.o $(OBJDIR)/cupidimage_webp.o $(OBJDIR)/cupidimage_webp_tables.o $(OBJDIR)/cupidimage_webp_lossless.o $(OBJDIR)/cupidimage_gif.o $(OBJDIR)/cupidimage_bmp.o $(OBJDIR)/cupidimage_ico.o $(OBJDIR)/cupidimage_tiff.o $(OBJDIR)/cupidimage_tga.o $(OBJDIR)/cupidimage_pdf.o $(OBJDIR)/cupidimage_svg.o $(OBJDIR)/cupidimage_svg_base.o $(OBJDIR)/cupidimage_kitty.o $(OBJDIR)/cupidimage_sixel.o
+LIBSRC = $(filter-out $(SRCDIR)/cupidimage_cli.c,$(wildcard $(SRCDIR)/*.c))
+LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
+CLI_OBJ = $(OBJDIR)/cupidimage_cli.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_PNG = $(BINDIR)/test_png
+TEST_TARGETS = test-png test-cli test-decoder-safety test-deflate-containers \
+ test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
+ test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety
+TEST_BINS = test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+ test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety
 
-.PHONY: all lib cli test-png test-svg test-svg-regressions test-pdf clean test-cli test-decoder-safety test-deflate-containers test-pdf-graphics test-jpeg test-pdf-pages test-sixel test-gif-regressions test-terminal-regressions test-pdf-images
-
+.PHONY: all lib cli test $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
-
 lib: $(LIB)
-
 cli: $(CLI)
+test: $(TEST_TARGETS)
 
-test-png: $(TEST_PNG)
-	$(TEST_PNG)
-
-$(TEST_PNG): tests/test_png.c $(LIB) $(SRCDIR)/cupidimage.h
-	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
-
-test-cli: cli
-	python3 tests/test_cli.py $(CLI)
-
-
+test-png: $(BINDIR)/test_png
+	$<
+test-cli: $(CLI)
+	python3 tests/test_cli.py $<
 test-decoder-safety: $(BINDIR)/test_decoder_safety
-	$(BINDIR)/test_decoder_safety
-
-$(BINDIR)/test_decoder_safety: tests/test_decoder_safety.c $(LIB) $(SRCDIR)/cupidimage.h
-
+	$<
 test-deflate-containers: $(BINDIR)/test_deflate_containers
-	$(BINDIR)/test_deflate_containers
-
-$(BINDIR)/test_deflate_containers: tests/test_deflate_containers.c tests/pdf_fixture.h $(LIB) $(SRCDIR)/cupidimage.h
-
+	$<
 test-pdf-graphics: $(BINDIR)/test_pdf_graphics
-	$(BINDIR)/test_pdf_graphics
-
-$(BINDIR)/test_pdf_graphics: tests/test_pdf_graphics.c tests/pdf_fixture.h $(LIB) $(SRCDIR)/cupidimage.h
-	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
-
-test-svg: cli
-	./scripts/test_svg_assets.sh
-
-test-svg-regressions: cli lib
-	./scripts/test_svg_regressions.sh
-
-test-pdf: cli
-	./scripts/test_pdf_assets.sh
-
+	$<
+test-svg-safety: $(BINDIR)/test_svg_safety
+	$<
 test-jpeg: $(BINDIR)/test_jpeg_decoder
-	python3 scripts/test_jpeg_decoder.py $(BINDIR)/test_jpeg_decoder
-
-$(BINDIR)/test_jpeg_decoder: scripts/test_jpeg_decoder.c $(LIB)
-
+	python3 scripts/test_jpeg_decoder.py $<
 test-pdf-pages: $(BINDIR)/test_pdf_pages
-	python3 scripts/test_pdf_pages.py $(BINDIR)/test_pdf_pages
-
+	python3 scripts/test_pdf_pages.py $<
 test-pdf-images: $(BINDIR)/test_pdf_pages
-	python3 scripts/test_pdf_images.py $(BINDIR)/test_pdf_pages
-
-$(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB)
-
+	python3 scripts/test_pdf_images.py $<
 test-sixel: $(BINDIR)/test_sixel
-	python3 scripts/test_sixel.py $(BINDIR)/test_sixel
+	python3 scripts/test_sixel.py $<
+test-gif-regressions:
+	CC="$(CC)" CFLAGS="$(CFLAGS)" bash scripts/test_gif_regressions.sh
+test-terminal-regressions:
+	CC="$(CC)" CFLAGS="$(CFLAGS)" bash scripts/test_terminal_regressions.sh
+test-svg-regressions: $(CLI) $(LIB)
+	CC="$(CC)" CFLAGS="$(CFLAGS)" BIN="$(abspath $(CLI))" LIB="$(abspath $(LIB))" bash scripts/test_svg_regressions.sh
 
-$(BINDIR)/test_sixel: scripts/test_sixel.c $(LIB)
+# Interactive asset viewers are separate from the unattended regression suite.
+test-svg: $(CLI)
+	bash scripts/test_svg_assets.sh
+test-pdf: $(CLI)
+	bash scripts/test_pdf_assets.sh
+
+$(BINDIR)/test_%: tests/test_%.c $(LIB) $(SRCDIR)/cupidimage.h | $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+$(BINDIR)/test_deflate_containers $(BINDIR)/test_pdf_graphics: tests/pdf_fixture.h
+$(BINDIR)/test_jpeg_decoder: scripts/test_jpeg_decoder.c $(LIB) | $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+$(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB) | $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+$(BINDIR)/test_sixel: scripts/test_sixel.c $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
-test-gif-regressions:
-	bash ./scripts/test_gif_regressions.sh
-
-test-terminal-regressions:
-	bash ./scripts/test_terminal_regressions.sh
-
-$(LIB): $(LIBOBJ)
-	@mkdir -p $(BINDIR)
+$(LIB): $(LIBOBJ) | $(BINDIR)
 	$(AR) rcs $@ $(LIBOBJ)
-
-$(CLI): $(SRCDIR)/cupidimage.c $(SRCDIR)/cupidimage_internal.c $(SRCDIR)/cupidimage_png.c $(SRCDIR)/cupidimage_jpeg.c $(SRCDIR)/cupidimage_webp.c $(SRCDIR)/cupidimage_webp_tables.c $(SRCDIR)/cupidimage_webp_lossless.c $(SRCDIR)/cupidimage_gif.c $(SRCDIR)/cupidimage_bmp.c $(SRCDIR)/cupidimage_ico.c $(SRCDIR)/cupidimage_tiff.c $(SRCDIR)/cupidimage_tga.c $(SRCDIR)/cupidimage_pdf.c $(SRCDIR)/cupidimage_svg.c $(SRCDIR)/cupidimage_svg_base.c $(SRCDIR)/cupidimage_kitty.c $(SRCDIR)/cupidimage_sixel.c $(SRCDIR)/cupidimage_cli.c | $(BINDIR)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDLIBS)
-
+$(CLI): $(CLI_OBJ) $(LIB) | $(BINDIR)
+	$(CC) $(CFLAGS) $(CLI_OBJ) $(LIB) -o $@ $(LDLIBS)
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-$(OBJDIR):
-	@mkdir -p $(OBJDIR)
-
-$(BINDIR):
-	@mkdir -p $(BINDIR)
-
+	$(CC) $(CFLAGS) $(INCLUDES) -MMD -MP -c $< -o $@
+$(OBJDIR) $(BINDIR):
+	mkdir -p $@
 clean:
-	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(TEST_PNG)
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.d $(LIB) $(CLI) $(addprefix $(BINDIR)/,$(TEST_BINS))
 
-	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_decoder_safety
-
-	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_deflate_containers
-
-	rm -f $(OBJDIR)/*.o $(LIB) $(CLI) $(BINDIR)/test_pdf_graphics
+-include $(LIBOBJ:.o=.d) $(CLI_OBJ:.o=.d)

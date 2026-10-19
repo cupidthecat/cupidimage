@@ -38,6 +38,17 @@ scripts/make.sh lib
 scripts/make.sh cli
 ```
 
+Run all non-interactive regressions with Python 3 and GNU Make:
+
+```sh
+make -j2 all test
+make -j2 all test CC=clang OBJDIR=obj/clang BINDIR=bin/clang \
+  CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -fno-pie -no-pie'
+```
+
+CI runs the full suite with GCC and Clang sanitizers. The interactive asset
+viewers remain available through their individual targets.
+
 Build just the static library or CLI:
 ```sh
 make lib
@@ -118,10 +129,6 @@ Run the generated PDF page regressions with Python 3:
 
     make test-pdf-pages
 
-<<<<<<< HEAD
-When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` auto-play.
-Use `--svg-time` to render a single sampled frame. When output is redirected to a file or pipe, SVGs render their initial state and animated GIFs render their first composed frame.
-=======
 PDF image XObjects use the page's Resources dictionary, including inherited and
 indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
 images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 8-bit samples.
@@ -137,9 +144,8 @@ Run the generated image checks with Python 3:
 
     make test-pdf-images
 
-When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` now auto-play.
-Use `--svg-time` to render a single sampled frame instead.
->>>>>>> origin/feature/pdf-image-xobjects
+When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` auto-play.
+Use `--svg-time` to render a single sampled frame. When output is redirected to a file or pipe, SVGs render their initial state and animated GIFs render their first composed frame.
 
 Link in your app (static library):
 ```sh

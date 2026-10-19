@@ -8559,19 +8559,22 @@ static float svg_alpha_sample_clamped(const uint8_t *buf, uint32_t w, uint32_t h
     return buf[idx + 3] / 255.0f;
 }
 
-static uint32_t svg_noise_hash(int x, int y, int seed) {
-    uint32_t h = (uint32_t)(x * 374761393 + y * 668265263) ^ (uint32_t)seed;
+static uint32_t svg_noise_hash(uint32_t x, uint32_t y, uint32_t seed) {
+    uint32_t h = (x * 374761393u + y * 668265263u) ^ seed;
     h = (h ^ (h >> 13)) * 1274126177u;
     return h ^ (h >> 16);
 }
 
-static float svg_noise2(float x, float y, int seed) {
-    int x0 = (int)floorf(x);
-    int y0 = (int)floorf(y);
-    int x1 = x0 + 1;
-    int y1 = y0 + 1;
-    float fx = x - (float)x0;
-    float fy = y - (float)y0;
+static float svg_noise2(float x, float y, uint32_t seed) {
+    if (!isfinite(x) || !isfinite(y)) return 0.0f;
+    double ix = floor((double)x), iy = floor((double)y);
+    double wx = fmod(ix, 4294967296.0), wy = fmod(iy, 4294967296.0);
+    if (wx < 0) wx += 4294967296.0;
+    if (wy < 0) wy += 4294967296.0;
+    uint32_t x0 = (uint32_t)wx, y0 = (uint32_t)wy;
+    uint32_t x1 = x0 + 1u, y1 = y0 + 1u;
+    float fx = (float)((double)x - ix);
+    float fy = (float)((double)y - iy);
     float u = fx * fx * (3.0f - 2.0f * fx);
     float v = fy * fy * (3.0f - 2.0f * fy);
     float v00 = (float)(svg_noise_hash(x0, y0, seed) & 0xFFFF) / 65535.0f;
@@ -8978,7 +8981,7 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     float freqy = fy;
                     float a = 1.0f;
                     for (int o = 0; o < octaves; o++) {
-                        float n = svg_noise2(ux * freqx, uy * freqy, op->turb_seed + o * 17);
+                        float n = svg_noise2(ux * freqx, uy * freqy, (uint32_t)op->turb_seed + (uint32_t)o * 17u);
                         if (op->turb_fractal) {
                             sum += n * a;
                         } else {
@@ -11302,13 +11305,6 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
             *p = lt;
             break;
         }
-        if (svg_strncasecmp(lt, "</text", 6) == 0) {
-            char *tmp = lt;
-            svg_tag end_tag;
-            svg_next_tag(&tmp, &end_tag);
-            *p = tmp;
-            break;
-        }
         if (strncmp(lt, "<![CDATA[", 9) == 0) {
             char *cend = strstr(lt + 9, "]]>");
             if (!cend) {
@@ -11340,6 +11336,10 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
             break;
         }
         const char *lname = svg_local_name(inner.name);
+        if (inner.is_end && strcmp(lname, "text") == 0) {
+            *p = tmp;
+            break;
+        }
         if (!inner.is_end && strcmp(lname, "tspan") == 0) {
             if (tdepth < SVG_MAX_DEPTH) {
                 state_stack[tdepth].style = cur_style;
@@ -11536,6 +11536,7 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
         }
         *p = tmp;
     }
+    while (path_depth > 0) svg_text_path_clear(&path_stack[--path_depth]);
 }
 
 static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *content,
