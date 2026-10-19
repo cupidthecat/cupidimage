@@ -41,11 +41,10 @@ static uint32_t bs_read(struct bitstream *bs, int bits) {
 }
 
 static void bs_align(struct bitstream *bs) {
-    int drop = bs->bitcount & 7;
-    if (drop) {
-        bs->bitbuf >>= drop;
-        bs->bitcount -= drop;
-    }
+    /* Return complete lookahead bytes to the byte reader; discard only padding. */
+    bs->pos -= (size_t)(bs->bitcount / 8);
+    bs->bitbuf = 0;
+    bs->bitcount = 0;
 }
 
 static unsigned reverse_bits(unsigned v, int bits) {
@@ -544,6 +543,26 @@ static uint8_t sample16_to_8(uint16_t v) {
     return (uint8_t)((v + 128u) / 257u);
 }
 
+static uint16_t read_be16(const uint8_t *p) {
+    return (uint16_t)(((uint16_t)p[0] << 8) | p[1]);
+}
+
+static uint8_t transparency_alpha(const uint8_t *row, uint32_t x, uint8_t bit_depth,
+                                   uint8_t color_type, const uint8_t *trns) {
+    unsigned mask = (1u << bit_depth) - 1u;
+    if (color_type == 0) {
+        uint16_t sample = bit_depth == 16 ? read_be16(row + (size_t)x * 2u)
+                                         : gray_sample_at(row, x, bit_depth);
+        return sample == (read_be16(trns) & mask) ? 0 : 255;
+    }
+    for (unsigned c = 0; c < 3; c++) {
+        size_t offset = (size_t)x * 3u + c;
+        uint16_t sample = bit_depth == 16 ? read_be16(row + offset * 2u) : row[offset];
+        if (sample != (read_be16(trns + c * 2u) & mask)) return 255;
+    }
+    return 0;
+}
+
 int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image *out,
                         char *err, size_t errcap) {
     if (!data || !out) {
@@ -569,8 +588,10 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
 
     uint8_t palette[256 * 3];
     uint8_t palette_alpha[256];
+    uint8_t trns[256];
     int palette_entries = 0;
     int trns_entries = 0;
+    int have_trns = 0;
     for (int i = 0; i < 256; i++) {
         palette_alpha[i] = 255;
     }
@@ -619,7 +640,8 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
                 return 0;
             }
             trns_entries = (int)length;
-            memcpy(palette_alpha, chunk, length);
+            have_trns = 1;
+            memcpy(trns, chunk, length);
         } else if (memcmp(type, "IDAT", 4) == 0) {
             uint8_t *next = (uint8_t *)realloc(idat, idat_size + length);
             if (!next) {
@@ -652,6 +674,14 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
         set_err(err, errcap, "unsupported PNG method");
         return 0;
     }
+    if (have_trns && ((color_type == 0 && trns_entries != 2) ||
+                      (color_type == 2 && trns_entries != 6) ||
+                      (color_type == 3 && trns_entries > palette_entries) ||
+                      color_type == 4 || color_type == 6)) {
+        free(idat);
+        set_err(err, errcap, "invalid tRNS");
+        return 0;
+    }
     if (color_type == 3) {
         if (!(bit_depth == 1 || bit_depth == 2 || bit_depth == 4 || bit_depth == 8)) {
             free(idat);
@@ -663,11 +693,7 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
             set_err(err, errcap, "missing PLTE");
             return 0;
         }
-        if (trns_entries > palette_entries) {
-            free(idat);
-            set_err(err, errcap, "invalid tRNS");
-            return 0;
-        }
+        if (have_trns) memcpy(palette_alpha, trns, (size_t)trns_entries);
     } else if (color_type == 0) {
         if (!(bit_depth == 1 || bit_depth == 2 || bit_depth == 4 || bit_depth == 8 || bit_depth == 16)) {
             free(idat);
@@ -802,7 +828,7 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
                     }
                 } else if (color_type == 3) {
                     uint8_t idx = palette_index_at(src, x, bit_depth);
-                    if (idx >= (uint8_t)palette_entries) {
+                    if ((int)idx >= palette_entries) {
                         free(recon);
                         free(rgba);
                         set_err(err, errcap, "palette index out of range");
@@ -846,6 +872,9 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
                         dst[x * 4 + 2] = src[x * 4 + 2];
                         dst[x * 4 + 3] = src[x * 4 + 3];
                     }
+                }
+                if (have_trns && (color_type == 0 || color_type == 2)) {
+                    dst[x * 4 + 3] = transparency_alpha(src, x, bit_depth, color_type, trns);
                 }
             }
         }
@@ -1000,7 +1029,7 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
                     }
                 } else if (color_type == 3) {
                     uint8_t idx = palette_index_at(src, x, bit_depth);
-                    if (idx >= (uint8_t)palette_entries) {
+                    if ((int)idx >= palette_entries) {
                         free(raw);
                         free(rgba);
                         free(recon);
@@ -1045,6 +1074,9 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
                         dst[2] = src[x * 4 + 2];
                         dst[3] = src[x * 4 + 3];
                     }
+                }
+                if (have_trns && (color_type == 0 || color_type == 2)) {
+                    dst[3] = transparency_alpha(src, x, bit_depth, color_type, trns);
                 }
             }
         }

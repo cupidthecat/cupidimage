@@ -284,6 +284,18 @@ cc -DCUPIDIMAGE_ICO_DEBUG -Isrc -c src/cupidimage_ico.c -o obj/cupidimage_ico.o
 cc -DCUPIDIMAGE_TGA_DEBUG -Isrc -c src/cupidimage_tga.c -o obj/cupidimage_tga.o
 ```
 
+Non-interactive PNG regression checks:
+```sh
+make test-png
+```
+The tests generate PNGs in memory and check RGBA pixels, palette bounds, transparency keys, and a transition from dynamic Huffman coding to a stored DEFLATE block. They cover ordinary and Adam7-interlaced images without external image libraries or fixture downloads.
+
+To run with Clang's address and undefined-behavior sanitizers in separate build directories:
+```sh
+make test-png CC=clang OBJDIR=obj/png-sanitize BINDIR=bin/png-sanitize \
+  CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-omit-frame-pointer'
+```
+
 Quick BMP smoke test (expects failures for invalid samples):
 ```sh
 scripts/test_bmp_assets.sh
