@@ -362,6 +362,14 @@ make test-png
 ```
 The tests generate PNGs in memory and check RGBA pixels, palette bounds, transparency keys, and a transition from dynamic Huffman coding to a stored DEFLATE block. They cover ordinary and Adam7-interlaced images without external image libraries or fixture downloads.
 
+Lossless WebP regression checks generate VP8L and RIFF streams with constant and
+mixed channels, one-symbol and variable-length code trees, truncated data, and
+repeated transforms:
+
+```sh
+make test-webp
+```
+
 To run with Clang's address and undefined-behavior sanitizers in separate build directories:
 ```sh
 make test-png CC=clang OBJDIR=obj/png-sanitize BINDIR=bin/png-sanitize \
