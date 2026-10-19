@@ -2845,11 +2845,88 @@ static unsigned char pdf_image_paeth(int a, int b, int c) {
     return (unsigned char)(da <= db && da <= dc ? a : db <= dc ? b : c);
 }
 
+static int pdf_image_filter_is(const pdf_object_view *view, const char *name) {
+    if (pdf_image_name_is(view, "Filter", name)) return 1;
+    size_t pos, length = strlen(name);
+    if (!pdf_page_value(view, "Filter", &pos) || pos >= view->len || view->data[pos++] != '[') return 0;
+    pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    if (pos >= view->len || view->data[pos++] != '/' || length > view->len - pos ||
+        memcmp(view->data + pos, name, length) != 0) return 0;
+    pos += length;
+    pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    return pos < view->len && view->data[pos] == ']';
+}
+
+/* Check the frame before invoking the decoder so a small image dictionary cannot
+ * hide a JPEG frame with enormous dimensions or a different component count. */
+static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length,
+                                   int width, int height, int components, int transform) {
+    if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8) return 0;
+    size_t pos = 2;
+    while (pos < length) {
+        if (stream[pos++] != 0xff) return 0;
+        while (pos < length && stream[pos] == 0xff) pos++;
+        if (pos >= length) return 0;
+        unsigned marker = stream[pos++];
+        if (marker == 0xda || marker == 0xd9 || marker == 0) return 0;
+        if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+        if (length - pos < 2) return 0;
+        size_t segment = (size_t)stream[pos] * 256u + stream[pos + 1];
+        if (segment < 2 || segment > length - pos) return 0;
+        if (components == 3 && marker == 0xee && segment >= 14 &&
+            memcmp(stream + pos + 2, "Adobe", 5) == 0 &&
+            stream[pos + 13] == 0 && transform != 1) return 0;
+        if (marker == 0xc0 || marker == 0xc2) {
+            return segment >= 8 && stream[pos + 2] == 8 &&
+                   (int)stream[pos + 3] * 256 + stream[pos + 4] == height &&
+                   (int)stream[pos + 5] * 256 + stream[pos + 6] == width &&
+                   stream[pos + 7] == components;
+        }
+        pos += segment;
+    }
+    return 0;
+}
+
+static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_view *view,
+                                   int width, int height, int components, unsigned char **samples) {
+    pdf_object_view params = {0};
+    size_t pos;
+    int transform = -1;
+    if (pdf_page_value(view, "DecodeParms", &pos)) {
+        int ok = pdf_image_dictionary(st, view, "DecodeParms", &params) &&
+                 (!pdf_page_value(&params, "ColorTransform", &pos) ||
+                  pdf_image_integer(st, &params, "ColorTransform", &transform));
+        pdf_object_view_release(&params);
+        if (!ok || (transform != -1 && transform != 1)) return 0;
+    }
+    const unsigned char *stream;
+    size_t length;
+    if (!pdf_image_stream(st, view, &stream, &length) ||
+        !pdf_image_jpeg_matches(stream, length, width, height, components, transform)) return 0;
+    cupidimage_image image = {0};
+    if (!cupidimage_load_jpeg(stream, length, &image, NULL, 0)) return 0;
+    size_t count = (size_t)width * height;
+    unsigned char *decoded = (unsigned char *)malloc(count * components);
+    if (!decoded || image.width != (uint32_t)width || image.height != (uint32_t)height) {
+        free(decoded);
+        cupidimage_free(&image);
+        return 0;
+    }
+    for (size_t i = 0; i < count; i++) {
+        for (int c = 0; c < components; c++) decoded[i * components + c] = image.rgba[i * 4 + c];
+    }
+    cupidimage_free(&image);
+    *samples = decoded;
+    return 1;
+}
+
 static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view,
                               int width, int height, int components, unsigned char **samples) {
     const unsigned char *stream;
     size_t length, row = (size_t)width * components, bytes = row * height, pos;
-    int predictor = 1, flate = pdf_image_name_is(view, "Filter", "FlateDecode");
+    if (pdf_image_filter_is(view, "DCTDecode"))
+        return pdf_image_jpeg_samples(st, view, width, height, components, samples);
+    int predictor = 1, flate = pdf_image_filter_is(view, "FlateDecode");
     if (pdf_page_value(view, "Filter", &pos) && !flate) return 0;
     pdf_object_view params = {0};
     if (pdf_page_value(view, "DecodeParms", &pos)) {

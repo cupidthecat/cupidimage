@@ -8,6 +8,7 @@ import tempfile
 import zlib
 
 from test_pdf_pages import document
+from test_jpeg_decoder import jpeg, scan, segment, EOI
 
 RGB = bytes((255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0))
 RED, GREEN, BLUE, YELLOW = (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)
@@ -99,6 +100,39 @@ def main():
             check(resource, fixture(resource=resource), quadrants)
         check("flate", fixture(zlib.compress(RGB), attrs + " /Filter /FlateDecode"), quadrants)
         check("stored-flate", fixture(zlib.compress(RGB, 0), attrs + " /Filter /FlateDecode"), quadrants)
+        check("flate-filter-array", fixture(zlib.compress(RGB), attrs + " /Filter [/FlateDecode]"), quadrants)
+        for components in (1, 3):
+            space = "DeviceGray" if components == 1 else "DeviceRGB"
+            image_attrs = f"/Width 2 /Height 2 /BitsPerComponent 8 /ColorSpace /{space}"
+            ids = tuple(range(1, components + 1))
+            for progressive in (False, True):
+                payload = jpeg(components, progressive, 2, 2) + scan(ids, se=0 if progressive else 63)
+                payload += ((b"\x7f" if progressive else b"\x3f") if components == 1 else b"\x1f" if progressive else b"\x03") + EOI
+                for filter_value in ("/DCTDecode", "[ /DCTDecode ]"):
+                    check(f"jpeg-{components}-{progressive}-{filter_value.startswith('[')}",
+                          fixture(payload, image_attrs + " /Filter " + filter_value, resource="inherited"),
+                          lambda x, y: (128, 128, 128))
+                check(f"jpeg-inverted-{components}-{progressive}", fixture(payload,
+                      image_attrs + " /Filter /DCTDecode /Decode [" + "1 0 " * components + "]"),
+                      lambda x, y: (127, 127, 127))
+        color_jpeg = jpeg(3, False, 2, 2, dc=1) + scan((1, 2, 3)) + b"\x41\x7f" + EOI
+        check("jpeg-color", fixture(color_jpeg, attrs + " /Filter /DCTDecode"), lambda x, y: (130, 129, 127))
+        check("jpeg-color-transform-1", fixture(color_jpeg,
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+        adobe_jpeg = color_jpeg[:2] + segment(0xee, b"Adobe\0d\0\0\0\0\0") + color_jpeg[2:]
+        check("jpeg-adobe-override", fixture(adobe_jpeg,
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+        for name, payload, image_attrs in (
+                ("wrong-jpeg-dimensions", jpeg(3, False, 16384, 16384) + scan((1, 2, 3)) + b"\x03" + EOI, attrs),
+                ("wrong-jpeg-components", color_jpeg, attrs.replace("DeviceRGB", "DeviceGray")),
+                ("truncated-jpeg", color_jpeg[:-4], attrs),
+                ("invalid-jpeg", b"not a JPEG", attrs),
+                ("unsupported-raw-rgb-jpeg", adobe_jpeg, attrs),
+                ("unsupported-color-transform", color_jpeg, attrs + " /DecodeParms << /ColorTransform 0 >>"),
+                ("unsupported-filter-chain", zlib.compress(RGB), attrs + " /Filter [/FlateDecode /DCTDecode]")):
+            if "Filter" not in image_attrs:
+                image_attrs += " /Filter /DCTDecode"
+            check(name, fixture(payload, image_attrs), reject=True)
         check("dynamic-to-stored", fixture(bytes.fromhex(
               "780104e0819224499224c9128b9a4756cfde7bffffb988090900f6ff01020304050607080900af002e"),
               "/Width 10 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceGray /Filter /FlateDecode"),
@@ -149,7 +183,7 @@ def main():
                              ("oversized-image", {"attrs": attrs.replace("/Width 2", "/Width 100000000")}),
                              ("unsupported-bits", {"attrs": attrs.replace("/BitsPerComponent 8", "/BitsPerComponent 1")}),
                              ("unsupported-space", {"attrs": attrs.replace("/DeviceRGB", "/Indexed")}),
-                             ("unsupported-filter", {"attrs": attrs + " /Filter /DCTDecode"}),
+                             ("unsupported-filter", {"attrs": attrs + " /Filter /JPXDecode"}),
                              ("unsupported-mask", {"attrs": attrs + " /ImageMask true"}),
                              ("soft-mask", {"attrs": attrs + " /SMask 8 0 R"}),
                              ("color-mask", {"attrs": attrs + " /Mask [0 0 0 0 0 0]"}),
