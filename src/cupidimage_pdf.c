@@ -1077,11 +1077,10 @@ static uint32_t pdf_bs_read(pdf_bitstream *bs, int bits) {
 }
 
 static void pdf_bs_align(pdf_bitstream *bs) {
-    int drop = bs->bitcount & 7;
-    if (drop) {
-        bs->bitbuf >>= drop;
-        bs->bitcount -= drop;
-    }
+    /* Stored blocks read bytes directly, including complete lookahead bytes. */
+    bs->pos -= (size_t)(bs->bitcount / 8);
+    bs->bitbuf = 0;
+    bs->bitcount = 0;
 }
 
 static unsigned pdf_reverse_bits(unsigned v, int bits) {

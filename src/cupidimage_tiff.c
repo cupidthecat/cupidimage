@@ -928,11 +928,10 @@ static uint32_t tiff_bs_read(tiff_bitstream *bs, int bits) {
 }
 
 static void tiff_bs_align(tiff_bitstream *bs) {
-    int drop = bs->bitcount & 7;
-    if (drop) {
-        bs->bitbuf >>= drop;
-        bs->bitcount -= drop;
-    }
+    /* Stored blocks read bytes directly, including complete lookahead bytes. */
+    bs->pos -= (size_t)(bs->bitcount / 8);
+    bs->bitbuf = 0;
+    bs->bitcount = 0;
 }
 
 static unsigned tiff_reverse_bits(unsigned v, int bits) {
