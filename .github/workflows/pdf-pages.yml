@@ -1,4 +1,4 @@
-name: PDF page geometry
+name: PDF page geometry and images
 
 on: [push, pull_request]
 
@@ -12,6 +12,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build and check PDF pages
         run: >-
-          make -j2 all test-pdf-pages
+          make -j2 all test-pdf-pages test-pdf-images
           CC=${{ matrix.compiler }}
           CFLAGS='-O1 -g -Wall -Wextra -std=c99 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -fno-pie -no-pie'

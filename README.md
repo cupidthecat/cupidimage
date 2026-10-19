@@ -16,7 +16,7 @@ Supported formats (decoder status):
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.
 - TIFF: Classic + BigTIFF; byte orders II/MM; compression none/LZW/PackBits/Deflate/JPEG/CCITT RLE/G3/G4; photometric bilevel/grayscale(+alpha)/RGB/RGBA/palette/CMYK/YCbCr/Lab; strips/tiles; planar 1/2; predictor=2; orientation 1-8; multi-page IFDs (SubIFD pages via page APIs).
 - TGA: types 0-3/9-11; uncompressed/RLE; 8/15/16/24/32-bit; all origins; color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correction.
-- PDF: basic text and simple graphics via minimal parser; FlateDecode streams; text positioning operators (BT/ET/Td/Tj); RGB color operators (rg/RG); stub glyph rendering. Page previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. No complex fonts, transparency, patterns, or annotations.
+- PDF: basic text and simple graphics via minimal parser; FlateDecode streams; text positioning operators (BT/ET/Td/Tj); RGB color operators (rg/RG); stub glyph rendering. Image XObjects support 8-bit DeviceRGB and DeviceGray samples, raw and FlateDecode streams, TIFF/PNG predictors, Decode arrays, and affine placement. Page previews use inherited MediaBox/CropBox rectangles, nonzero page origins, and clockwise rotation in multiples of 90 degrees. No complex fonts, transparency, patterns, or annotations.
 
 Build (Makefile):
 ```sh
@@ -96,6 +96,21 @@ the resulting preview.
 Run the generated PDF page regressions with Python 3:
 
     make test-pdf-pages
+
+PDF image XObjects use the page's Resources dictionary, including inherited and
+indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
+images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 8-bit samples.
+Predictor Colors and Columns must match the image when prediction is enabled.
+The decoded sample data is limited to 64 MiB per image.
+
+JPEG/JPX image filters, filter arrays, image masks, soft masks, indexed color,
+inline images, and Form XObject contents are outside the supported subset.
+Drawing an invalid or unsupported image XObject returns a load error. Form
+contents are skipped.
+
+Run the generated image checks with Python 3:
+
+    make test-pdf-images
 
 When stdout is an interactive terminal, SVG files containing SMIL animation tags (`<animate>`, `<animateTransform>`, `<set>`) or CSS `animation`/`@keyframes` now auto-play.
 Use `--svg-time` to render a single sampled frame instead.

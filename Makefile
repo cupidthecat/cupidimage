@@ -12,7 +12,7 @@ LIBOBJ = $(OBJDIR)/cupidimage.o $(OBJDIR)/cupidimage_internal.o $(OBJDIR)/cupidi
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 
-.PHONY: all lib cli test-svg test-svg-regressions test-pdf test-pdf-pages clean
+.PHONY: all lib cli test-svg test-svg-regressions test-pdf test-pdf-pages test-pdf-images clean
 
 all: lib cli
 
@@ -31,6 +31,9 @@ test-pdf: cli
 
 test-pdf-pages: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_pages.py $(BINDIR)/test_pdf_pages
+
+test-pdf-images: $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_images.py $(BINDIR)/test_pdf_pages
 
 $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
