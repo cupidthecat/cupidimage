@@ -14,9 +14,10 @@ LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_TARGETS = test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
- test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms
+ test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
+ test-tiff-bounds test-svg-css-oom
 TEST_BINS = test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
- test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless
+ test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom
 
 .PHONY: all lib cli test $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
@@ -37,6 +38,12 @@ test-pdf-graphics: $(BINDIR)/test_pdf_graphics
 test-svg-safety: $(BINDIR)/test_svg_safety
 	$<
 test-webp: $(BINDIR)/test_webp_lossless
+	$<
+
+test-tiff-bounds: $(BINDIR)/test_tiff_bounds
+	$<
+
+test-svg-css-oom: $(BINDIR)/test_svg_css_oom
 	$<
 test-jpeg: $(BINDIR)/test_jpeg_decoder
 	python3 scripts/test_jpeg_decoder.py $<
@@ -66,6 +73,7 @@ test-pdf: $(CLI)
 $(BINDIR)/test_%: tests/test_%.c $(LIB) $(SRCDIR)/cupidimage.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_deflate_containers $(BINDIR)/test_pdf_graphics: tests/pdf_fixture.h
+$(BINDIR)/test_svg_css_oom: $(SRCDIR)/cupidimage_svg.c $(SRCDIR)/cupidimage_svg_base.c tests/fault_alloc.h
 $(BINDIR)/test_jpeg_decoder: scripts/test_jpeg_decoder.c $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB) | $(BINDIR)
