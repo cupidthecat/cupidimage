@@ -14,405 +14,6 @@ static uint32_t read_be32(const unsigned char *p) {
     return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
 }
 
-struct bitstream {
-    const uint8_t *data;
-    size_t size;
-    size_t pos;
-    uint32_t bitbuf;
-    int bitcount;
-};
-
-static int bs_fill(struct bitstream *bs, int need) {
-    while (bs->bitcount < need && bs->pos < bs->size) {
-        bs->bitbuf |= (uint32_t)bs->data[bs->pos++] << bs->bitcount;
-        bs->bitcount += 8;
-    }
-    return bs->bitcount >= need;
-}
-
-static uint32_t bs_read(struct bitstream *bs, int bits) {
-    if (!bs_fill(bs, bits)) {
-        return 0;
-    }
-    uint32_t val = bs->bitbuf & ((1u << bits) - 1u);
-    bs->bitbuf >>= bits;
-    bs->bitcount -= bits;
-    return val;
-}
-
-static void bs_align(struct bitstream *bs) {
-    /* Return complete lookahead bytes to the byte reader; discard only padding. */
-    bs->pos -= (size_t)(bs->bitcount / 8);
-    bs->bitbuf = 0;
-    bs->bitcount = 0;
-}
-
-static unsigned reverse_bits(unsigned v, int bits) {
-    unsigned r = 0;
-    for (int i = 0; i < bits; i++) {
-        r = (r << 1) | (v & 1u);
-        v >>= 1;
-    }
-    return r;
-}
-
-typedef struct huff_table {
-    int maxbits;
-    uint16_t *table;
-} huff_table;
-
-static void huff_free(huff_table *ht) {
-    free(ht->table);
-    ht->table = NULL;
-    ht->maxbits = 0;
-}
-
-static int huff_build(huff_table *ht, const uint8_t *lengths, int num, int maxbits) {
-    int count[16] = {0};
-    int maxlen = 0;
-    for (int i = 0; i < num; i++) {
-        if (lengths[i] > maxbits) {
-            return 0;
-        }
-        if (lengths[i]) {
-            count[lengths[i]]++;
-            if (lengths[i] > maxlen) {
-                maxlen = lengths[i];
-            }
-        }
-    }
-    if (maxlen == 0) {
-        return 0;
-    }
-
-    int next_code[16];
-    int code = 0;
-    count[0] = 0;
-    for (int bits = 1; bits <= maxbits; bits++) {
-        code = (code + count[bits - 1]) << 1;
-        next_code[bits] = code;
-    }
-
-    ht->maxbits = maxlen;
-    ht->table = (uint16_t *)malloc(((size_t)1u << maxlen) * sizeof(uint16_t));
-    if (!ht->table) {
-        return 0;
-    }
-    size_t table_size = (size_t)1u << maxlen;
-    for (size_t i = 0; i < table_size; i++) {
-        ht->table[i] = 0xFFFFu;
-    }
-
-    for (int sym = 0; sym < num; sym++) {
-        int len = lengths[sym];
-        if (!len) {
-            continue;
-        }
-        int sym_code = next_code[len]++;
-        unsigned rev = reverse_bits((unsigned)sym_code, len);
-        unsigned fill = 1u << (maxlen - len);
-        for (unsigned i = 0; i < fill; i++) {
-            unsigned idx = (i << len) | rev;
-            ht->table[idx] = (uint16_t)((len << 9) | sym);
-        }
-    }
-
-    return 1;
-}
-
-static int huff_decode(struct bitstream *bs, const huff_table *ht, int *sym) {
-    if (!bs_fill(bs, ht->maxbits)) {
-        return 0;
-    }
-    uint32_t idx = bs->bitbuf & ((1u << ht->maxbits) - 1u);
-    uint16_t val = ht->table[idx];
-    if (val == 0xFFFFu) {
-        return 0;
-    }
-    int len = val >> 9;
-    *sym = val & 0x1FF;
-    bs->bitbuf >>= len;
-    bs->bitcount -= len;
-    return 1;
-}
-
-static int build_fixed_tables(huff_table *litlen, huff_table *dist) {
-    uint8_t litlen_lengths[288];
-    uint8_t dist_lengths[32];
-
-    for (int i = 0; i <= 143; i++) {
-        litlen_lengths[i] = 8;
-    }
-    for (int i = 144; i <= 255; i++) {
-        litlen_lengths[i] = 9;
-    }
-    for (int i = 256; i <= 279; i++) {
-        litlen_lengths[i] = 7;
-    }
-    for (int i = 280; i <= 287; i++) {
-        litlen_lengths[i] = 8;
-    }
-    for (int i = 0; i < 32; i++) {
-        dist_lengths[i] = 5;
-    }
-
-    if (!huff_build(litlen, litlen_lengths, 288, 15)) {
-        return 0;
-    }
-    if (!huff_build(dist, dist_lengths, 32, 15)) {
-        huff_free(litlen);
-        return 0;
-    }
-    return 1;
-}
-
-static int build_dynamic_tables(struct bitstream *bs, huff_table *litlen, huff_table *dist) {
-    int hlit = (int)bs_read(bs, 5) + 257;
-    int hdist = (int)bs_read(bs, 5) + 1;
-    int hclen = (int)bs_read(bs, 4) + 4;
-    if (hlit > 286 || hdist > 30) {
-        return 0;
-    }
-
-    static const int order[19] = {
-        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-    };
-
-    uint8_t clen_lengths[19];
-    for (int i = 0; i < 19; i++) {
-        clen_lengths[i] = 0;
-    }
-    for (int i = 0; i < hclen; i++) {
-        clen_lengths[order[i]] = (uint8_t)bs_read(bs, 3);
-    }
-
-    huff_table clen_table = {0, NULL};
-    if (!huff_build(&clen_table, clen_lengths, 19, 7)) {
-        return 0;
-    }
-
-    int total = hlit + hdist;
-    uint8_t lengths[316];
-    int idx = 0;
-    while (idx < total) {
-        int sym = 0;
-        if (!huff_decode(bs, &clen_table, &sym)) {
-            huff_free(&clen_table);
-            return 0;
-        }
-        if (sym <= 15) {
-            lengths[idx++] = (uint8_t)sym;
-        } else if (sym == 16) {
-            if (idx == 0) {
-                huff_free(&clen_table);
-                return 0;
-            }
-            int repeat = (int)bs_read(bs, 2) + 3;
-            uint8_t prev = lengths[idx - 1];
-            for (int i = 0; i < repeat && idx < total; i++) {
-                lengths[idx++] = prev;
-            }
-        } else if (sym == 17) {
-            int repeat = (int)bs_read(bs, 3) + 3;
-            for (int i = 0; i < repeat && idx < total; i++) {
-                lengths[idx++] = 0;
-            }
-        } else if (sym == 18) {
-            int repeat = (int)bs_read(bs, 7) + 11;
-            for (int i = 0; i < repeat && idx < total; i++) {
-                lengths[idx++] = 0;
-            }
-        } else {
-            huff_free(&clen_table);
-            return 0;
-        }
-    }
-
-    huff_free(&clen_table);
-
-    if (!huff_build(litlen, lengths, hlit, 15)) {
-        return 0;
-    }
-    if (!huff_build(dist, lengths + hlit, hdist, 15)) {
-        huff_free(litlen);
-        return 0;
-    }
-    return 1;
-}
-
-static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, size_t *outlen) {
-    static const int length_base[29] = {
-        3, 4, 5, 6, 7, 8, 9, 10,
-        11, 13, 15, 17, 19, 23, 27, 31,
-        35, 43, 51, 59, 67, 83, 99, 115,
-        131, 163, 195, 227, 258
-    };
-    static const int length_extra[29] = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 2, 2, 2, 2,
-        3, 3, 3, 3, 4, 4, 4, 4,
-        5, 5, 5, 5, 0
-    };
-    static const int dist_base[30] = {
-        1, 2, 3, 4, 5, 7, 9, 13,
-        17, 25, 33, 49, 65, 97, 129, 193,
-        257, 385, 513, 769, 1025, 1537, 2049, 3073,
-        4097, 6145, 8193, 12289, 16385, 24577
-    };
-    static const int dist_extra[30] = {
-        0, 0, 0, 0, 1, 1, 2, 2,
-        3, 3, 4, 4, 5, 5, 6, 6,
-        7, 7, 8, 8, 9, 9, 10, 10,
-        11, 11, 12, 12, 13, 13
-    };
-
-    size_t outpos = 0;
-    int final_block = 0;
-
-    while (!final_block) {
-        if (!bs_fill(bs, 3)) {
-            return 0;
-        }
-        final_block = (int)bs_read(bs, 1);
-        int btype = (int)bs_read(bs, 2);
-
-        if (btype == 0) {
-            bs_align(bs);
-            if (bs->pos + 4 > bs->size) {
-                return 0;
-            }
-            uint16_t len = (uint16_t)(bs->data[bs->pos] | (bs->data[bs->pos + 1] << 8));
-            uint16_t nlen = (uint16_t)(bs->data[bs->pos + 2] | (bs->data[bs->pos + 3] << 8));
-            bs->pos += 4;
-            if ((uint16_t)~len != nlen) {
-                return 0;
-            }
-            if (bs->pos + len > bs->size) {
-                return 0;
-            }
-            if (outpos + len > outcap) {
-                return 0;
-            }
-            memcpy(out + outpos, bs->data + bs->pos, len);
-            bs->pos += len;
-            outpos += len;
-        } else if (btype == 1 || btype == 2) {
-            huff_table litlen = {0, NULL};
-            huff_table dist = {0, NULL};
-            int ok = 0;
-            if (btype == 1) {
-                ok = build_fixed_tables(&litlen, &dist);
-            } else {
-                ok = build_dynamic_tables(bs, &litlen, &dist);
-            }
-            if (!ok) {
-                huff_free(&litlen);
-                huff_free(&dist);
-                return 0;
-            }
-
-            while (1) {
-                int sym = 0;
-                if (!huff_decode(bs, &litlen, &sym)) {
-                    huff_free(&litlen);
-                    huff_free(&dist);
-                    return 0;
-                }
-                if (sym < 256) {
-                    if (outpos >= outcap) {
-                        huff_free(&litlen);
-                        huff_free(&dist);
-                        return 0;
-                    }
-                    out[outpos++] = (uint8_t)sym;
-                } else if (sym == 256) {
-                    break;
-                } else if (sym <= 285) {
-                    int len_idx = sym - 257;
-                    int length = length_base[len_idx];
-                    int extra = length_extra[len_idx];
-                    if (extra) {
-                        length += (int)bs_read(bs, extra);
-                    }
-
-                    int dist_sym = 0;
-                    if (!huff_decode(bs, &dist, &dist_sym)) {
-                        huff_free(&litlen);
-                        huff_free(&dist);
-                        return 0;
-                    }
-                    if (dist_sym > 29) {
-                        huff_free(&litlen);
-                        huff_free(&dist);
-                        return 0;
-                    }
-                    int distance = dist_base[dist_sym];
-                    int dist_ext = dist_extra[dist_sym];
-                    if (dist_ext) {
-                        distance += (int)bs_read(bs, dist_ext);
-                    }
-                    if (distance <= 0 || (size_t)distance > outpos) {
-                        huff_free(&litlen);
-                        huff_free(&dist);
-                        return 0;
-                    }
-                    if (outpos + (size_t)length > outcap) {
-                        huff_free(&litlen);
-                        huff_free(&dist);
-                        return 0;
-                    }
-                    for (int i = 0; i < length; i++) {
-                        out[outpos] = out[outpos - (size_t)distance];
-                        outpos++;
-                    }
-                } else {
-                    huff_free(&litlen);
-                    huff_free(&dist);
-                    return 0;
-                }
-            }
-
-            huff_free(&litlen);
-            huff_free(&dist);
-        } else {
-            return 0;
-        }
-    }
-
-    *outlen = outpos;
-    return 1;
-}
-
-static int zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap, size_t *outlen) {
-    if (size < 2) {
-        return 0;
-    }
-    uint8_t cmf = data[0];
-    uint8_t flg = data[1];
-    if ((cmf & 0x0F) != 8) {
-        return 0;
-    }
-    if (((cmf << 8) + flg) % 31 != 0) {
-        return 0;
-    }
-    if (flg & 0x20) {
-        return 0;
-    }
-
-    struct bitstream bs;
-    bs.data = data + 2;
-    bs.size = size - 2;
-    bs.pos = 0;
-    bs.bitbuf = 0;
-    bs.bitcount = 0;
-
-    if (!deflate_decode(&bs, out, outcap, outlen)) {
-        return 0;
-    }
-
-    return 1;
-}
-
 static uint8_t paeth(uint8_t a, uint8_t b, uint8_t c) {
     int p = (int)a + (int)b - (int)c;
     int pa = abs(p - (int)a);
@@ -599,25 +200,58 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
     uint8_t *idat = NULL;
     size_t idat_size = 0;
 
+    int have_header = 0, have_palette = 0, have_data = 0, data_ended = 0, have_end = 0;
     size_t chunk_off = 8;
-    while (chunk_off + 8 <= size) {
+    while (size - chunk_off >= 12) {
         uint32_t length = read_be32(data + chunk_off);
         const unsigned char *type = data + chunk_off + 4;
-        chunk_off += 8;
-        if (chunk_off + length + 4 > size) {
+        if (length > 0x7fffffffu || (size_t)length > size - chunk_off - 12) {
             free(idat);
-            set_err(err, errcap, "truncated PNG");
+            set_err(err, errcap, "invalid PNG chunk length");
             return 0;
         }
-
-        const unsigned char *chunk = data + chunk_off;
-
-        if (memcmp(type, "IHDR", 4) == 0) {
+        for (unsigned i = 0; i < 4; i++) {
+            if (!((type[i] >= 'A' && type[i] <= 'Z') || (type[i] >= 'a' && type[i] <= 'z'))) {
+                free(idat);
+                set_err(err, errcap, "invalid PNG chunk type");
+                return 0;
+            }
+        }
+        uint32_t crc = UINT32_C(0xffffffff);
+        for (size_t i = 0; i < (size_t)length + 4; i++) {
+            crc ^= type[i];
+            for (unsigned bit = 0; bit < 8; bit++)
+                crc = (crc >> 1) ^ ((crc & 1) ? UINT32_C(0xedb88320) : 0);
+        }
+        const unsigned char *chunk = type + 4;
+        if (~crc != read_be32(chunk + length)) {
+            free(idat);
+            set_err(err, errcap, "PNG chunk CRC mismatch");
+            return 0;
+        }
+        int header = memcmp(type, "IHDR", 4) == 0;
+        int palette_chunk = memcmp(type, "PLTE", 4) == 0;
+        int transparency = memcmp(type, "tRNS", 4) == 0;
+        int image_data = memcmp(type, "IDAT", 4) == 0;
+        int end = memcmp(type, "IEND", 4) == 0;
+        if ((!have_header && !header) || (header && have_header) ||
+            (palette_chunk && (have_palette || have_data || have_trns || color_type == 0 || color_type == 4)) ||
+            (transparency && (have_trns || have_data || (color_type == 3 && !have_palette))) ||
+            (image_data && (data_ended || (color_type == 3 && !have_palette))) ||
+            (end && (!have_data || length != 0)) ||
+            (!(type[0] & 32) && !header && !palette_chunk && !image_data && !end)) {
+            free(idat);
+            set_err(err, errcap, "invalid PNG chunk ordering or unsupported critical chunk");
+            return 0;
+        }
+        if (have_data && !image_data) data_ended = 1;
+        if (header) {
             if (length != 13) {
                 free(idat);
                 set_err(err, errcap, "invalid IHDR");
                 return 0;
             }
+            have_header = 1;
             width = read_be32(chunk);
             height = read_be32(chunk + 4);
             bit_depth = chunk[8];
@@ -625,15 +259,22 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
             compression = chunk[10];
             filter = chunk[11];
             interlace = chunk[12];
-        } else if (memcmp(type, "PLTE", 4) == 0) {
-            if (length == 0 || length % 3 != 0 || length / 3 > 256) {
+            if (width > 0x7fffffffu || height > 0x7fffffffu) {
+                free(idat);
+                set_err(err, errcap, "invalid PNG dimensions");
+                return 0;
+            }
+        } else if (palette_chunk) {
+            if (!length || length % 3 || length / 3 > 256 ||
+                (color_type == 3 && bit_depth < 8 && length / 3 > (1u << bit_depth))) {
                 free(idat);
                 set_err(err, errcap, "invalid PLTE");
                 return 0;
             }
+            have_palette = 1;
             palette_entries = (int)(length / 3);
             memcpy(palette, chunk, length);
-        } else if (memcmp(type, "tRNS", 4) == 0) {
+        } else if (transparency) {
             if (length > 256) {
                 free(idat);
                 set_err(err, errcap, "invalid tRNS");
@@ -642,21 +283,34 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
             trns_entries = (int)length;
             have_trns = 1;
             memcpy(trns, chunk, length);
-        } else if (memcmp(type, "IDAT", 4) == 0) {
-            uint8_t *next = (uint8_t *)realloc(idat, idat_size + length);
-            if (!next) {
+        } else if (image_data) {
+            have_data = 1;
+            if ((size_t)length > SIZE_MAX - idat_size) {
                 free(idat);
-                set_err(err, errcap, "out of memory");
+                set_err(err, errcap, "PNG data too large");
                 return 0;
             }
-            idat = next;
-            memcpy(idat + idat_size, chunk, length);
-            idat_size += length;
-        } else if (memcmp(type, "IEND", 4) == 0) {
+            if (length) {
+                uint8_t *next = (uint8_t *)realloc(idat, idat_size + length);
+                if (!next) {
+                    free(idat);
+                    set_err(err, errcap, "out of memory");
+                    return 0;
+                }
+                idat = next;
+                memcpy(idat + idat_size, chunk, length);
+                idat_size += length;
+            }
+        } else if (end) {
+            have_end = 1;
             break;
         }
-
-        chunk_off += length + 4;
+        chunk_off += (size_t)length + 12;
+    }
+    if (!have_end) {
+        free(idat);
+        set_err(err, errcap, "missing IEND or truncated PNG");
+        return 0;
     }
 
     if (width == 0 || height == 0) {
@@ -729,8 +383,13 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
         return 0;
     }
 
+    if ((size_t)width > SIZE_MAX / 4u / (size_t)height) {
+        free(idat);
+        set_err(err, errcap, "image too large");
+        return 0;
+    }
     size_t rgba_size = (size_t)width * (size_t)height * 4u;
-    if (rgba_size / 4u != (size_t)width * (size_t)height) {
+    if (rowbytes == SIZE_MAX) {
         free(idat);
         set_err(err, errcap, "image too large");
         return 0;
@@ -752,7 +411,7 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
         }
 
         size_t outlen = 0;
-        if (!zlib_decompress(idat, idat_size, raw, raw_size, &outlen) || outlen != raw_size) {
+        if (!cupidimage_inflate_zlib(idat, idat_size, raw, raw_size, &outlen) || outlen != raw_size) {
             free(idat);
             free(raw);
             set_err(err, errcap, "zlib decode failed");
@@ -927,7 +586,7 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
         return 0;
     }
     size_t outlen = 0;
-    if (!zlib_decompress(idat, idat_size, raw, total_raw, &outlen) || outlen != total_raw) {
+    if (!cupidimage_inflate_zlib(idat, idat_size, raw, total_raw, &outlen) || outlen != total_raw) {
         free(idat);
         free(raw);
         set_err(err, errcap, "zlib decode failed");

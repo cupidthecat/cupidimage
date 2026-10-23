@@ -14,11 +14,14 @@ Run the Sixel stream and palette regressions with Python 3:
 
     make test-sixel
 
+See [format conformance](docs/format-conformance.md) for standards, test coverage,
+and remaining feature gaps.
+
 Supported formats (decoder status):
 - SVG: static subset with shapes (rect/circle/ellipse/line/polyline/polygon/path including arc commands), embedded images (`<image>` with `data:` URIs and local file hrefs), basic text (`<text>/<tspan>/<textPath>` via built-in bitmap font; includes `dominant-baseline`/`alignment-baseline` handling and UTF-8 bullet `•` fallback glyph), presentation + inline styles + basic `<style>` selectors (descendant, child `>`, adjacent `+`, and general sibling `~` combinators, plus basic `[attr]`/`[attr=value]` matching and `display`/`visibility`), transforms, viewBox/preserveAspectRatio, linear/radial gradients, patterns, `hsl()/hsla()` colors, stroke caps/joins/dash, clipPath, luminance and alpha masks (`mask-type`), basic `<use>` references for primitive shapes and `<symbol>` (with symbol `preserveAspectRatio` handling and wrapper style attributes), basic SVG markers (`marker-start`/`marker-mid`/`marker-end`, including `orient=\"auto-start-reverse\"` and improved join-angle placement), and filter primitives: `feGaussianBlur`, `feOffset`, `feColorMatrix`, `feComponentTransfer`, `feMorphology`, `feConvolveMatrix`, `feTurbulence`, `feDisplacementMap`, `feDiffuseLighting`, `feSpecularLighting`, `feTile`, `feImage` (including `data:` URIs), `feFlood`, `feBlend`, `feComposite`, `feMerge` (including Source/Background/FillPaint/StrokePaint filter inputs and primitive subregions). Basic sampled animation support for SMIL (`<set>`, `<animate>`, `<animateTransform>`) and CSS keyframes (subset: `transform`, `stroke-dashoffset`, `stop-color`) via `cupidimage_svg_options.animation_time` / CLI `--svg-time`. Supersampled rasterization for terminal preview. No scripting/DOM, no external web fetches, no custom font loading.
 - PNG: non-interlaced and Adam7; color types 0/2/3/4/6 with 1/2/4/8/16-bit depths; palette + tRNS.
 - JPEG: baseline/progressive DCT, Huffman-coded, 8-bit precision; grayscale/YCbCr/CMYK/YCCK; sampling up to 2x2. No arithmetic coding or >2x2 sampling.
-- WebP: VP8 lossy keyframes; VP8X still images; VP8L lossless with transforms/color cache; ALPH chunk method 0. No animation or interframes.
+- WebP: VP8 lossy keyframes with 1/2/4/8 coefficient partitions; VP8X still images; VP8L lossless with transforms/color cache; raw and lossless-compressed ALPH with all spatial filters. No animation or ICC color conversion.
 - GIF: single-frame decode and animated GIF composition; palettes, interlacing, transparency; disposal methods 0-3; loop counts and per-frame delays.
 - BMP: Windows/OS/2; BI_RGB/BI_RLE8/BI_RLE4/BI_BITFIELDS/BI_JPEG/BI_PNG; 1/4/8/16/24/32-bit; top-down/bottom-up; pre-multiplied alpha conversion.
 - ICO/CUR: directory enumeration + page-based decode; PNG-compressed and DIB icons at 1/4/8/24/32-bit; AND mask transparency; CUR hotspots.

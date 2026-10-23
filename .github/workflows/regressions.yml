@@ -16,3 +16,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make -j2 all test
+      - run: make test-pdf-corpus

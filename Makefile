@@ -12,18 +12,21 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cupidimage_cli.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
-TEST_BINS = test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+TEST_BINS = test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
-.PHONY: all lib cli test $(TEST_TARGETS) test-svg test-pdf clean
+.PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
 lib: $(LIB)
 cli: $(CLI)
 test: $(TEST_TARGETS)
+
+test-inflate: $(BINDIR)/test_inflate
+	python3 scripts/test_inflate.py $<
 
 test-png: $(BINDIR)/test_png
 	$<
@@ -39,6 +42,12 @@ test-svg-safety: $(BINDIR)/test_svg_safety
 	$<
 test-svg-numeric: $(BINDIR)/test_svg_numeric
 	$<
+test-webp-pixels: $(BINDIR)/test_webp_pixels
+	python3 scripts/test_webp_pixels.py $<
+
+test-webp-container: $(BINDIR)/test_webp_container
+	$<
+
 test-webp: $(BINDIR)/test_webp_lossless
 	$<
 
@@ -56,6 +65,9 @@ test-pdf-pages: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_pages.py $<
 test-pdf-images: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_images.py $<
+test-pdf-corpus: $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_corpus.py $< --download
+
 test-pdf-safety: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_safety.py $<
 test-pdf-forms: $(BINDIR)/test_pdf_pages

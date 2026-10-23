@@ -13,6 +13,13 @@ def main():
     probe = str(pathlib.Path(sys.argv[1]).resolve())
     base = document('/MediaBox [0 0 18 12]')
     cases = [('valid', base, False)]
+    for prefix in ('/Nested << /Root 999 0 R >> ', '/Text (/Root 999 0 R) ',
+                   '/Nested [ << /Root 999 0 R >> ] ', '/RootExtra 999 0 R '):
+        cases.append(('trailer-root-scope-' + prefix, base.replace(
+            b'/Root 1 0 R', prefix.encode() + b'/Root 1 0 R'), False))
+    cases.append(('missing-real-trailer-root', base.replace(
+        b'/Root 1 0 R', b'/Nested << /Root 1 0 R >>'), True))
+
     for value in ('2147483648', '999999999999', '18446744073709551615',
                   '18446744073709551616', '9' * 200):
         number = value.encode()
