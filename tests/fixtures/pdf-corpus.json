@@ -6,14 +6,18 @@
       "url": "https://raw.githubusercontent.com/py-pdf/sample-files/02b8203bf416db3dbdb03438bc8278dfcb0555f3/001-trivial/minimal-document.pdf",
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92",
       "pages": 1,
-      "license": "CC-BY-SA-4.0, as stated by py-pdf/sample-files README and LICENSE. Downloaded unchanged for local testing."
+      "license": "CC-BY-SA-4.0. Unchanged file from py-pdf/sample-files; see docs/test-assets.md and the adjacent license.",
+      "asset": "assets/pdf/pypdf/minimal-document.pdf"
     },
     {
       "name": "pdfjs-empty.pdf",
       "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/empty.pdf",
       "sha256": "fcee6184c0d776126782cd2799797b106373278c8ea0a4354ee4e33cd8663d51",
       "pages": 1,
-      "blank_dimensions": [816, 1056],
+      "blank_dimensions": [
+        816,
+        1056
+      ],
       "license": "Retrieved from the requested PDF.js test corpus. Not redistributed here; per-document redistribution rights have not been established."
     },
     {

@@ -15,7 +15,7 @@ rows = json.loads(fixture.read_text())['cases']
 with tempfile.TemporaryDirectory(prefix='cupidimage-vp8-') as directory:
     path = pathlib.Path(directory) / 'owned.webp'
     for row in rows:
-        data = base64.b64decode(row['webp'], validate=True)
+        data = (fixture.parents[2] / row['asset']).read_bytes()
         assert hashlib.sha256(data).hexdigest() == row['sha256']
         expected = zlib.decompress(base64.b64decode(row['rgba_zlib'], validate=True))
         assert len(expected) == row['width'] * row['height'] * 4

@@ -59,9 +59,9 @@ Synthetic cases cover misleading nested keys and a missing real root.
 | PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects | Font rendering, transparency, patterns, annotations, filters, object structures, real-document corpus |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
-The supplied `.webp` files under `assets/` have PNG signatures. They must not be
-used as evidence that WebP decoding works. The new regression fixtures contain
-real WebP streams generated from owned synthetic images.
+The 49 files in `assets/webp/reference/` contain real WebP streams generated
+from owned synthetic images. Older PNG files mislabeled as WebP have been renamed
+and moved to `assets/png/`. See [test assets](test-assets.md) for provenance.
 
 ## References
 
@@ -95,10 +95,11 @@ fixture stores input hashes and expected decoded pixels, so routine tests do
 not need Pillow, FFmpeg, downloaded images, or network access. The ordinary
 GCC/Clang sanitizer jobs run these tests through `make test`.
 
-The opt-in real PDF corpus downloads three immutable, SHA-256-pinned documents
+The opt-in real PDF corpus uses three immutable, SHA-256-pinned documents
 from the requested repositories. It checks all five pages and the blank page's
 pixels. It is a load/structure smoke test, not a font or visual equivalence test.
-The PDFs are cached locally and are not redistributed in this repository.
+The py-pdf document is vendored with its CC BY-SA 4.0 license. The two PDF.js
+documents are downloaded to an ignored cache; they are not redistributed.
 
 ```sh
 make test-pdf-corpus

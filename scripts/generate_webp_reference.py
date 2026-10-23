@@ -6,7 +6,9 @@ from pathlib import Path
 import argparse,base64,hashlib,json,random,subprocess,tempfile,zlib
 parser=argparse.ArgumentParser()
 parser.add_argument('--output',type=Path,default=Path(__file__).resolve().parents[1]/'tests/fixtures/vp8-reference.json')
+parser.add_argument('--assets',type=Path,default=Path(__file__).resolve().parents[1]/'assets/webp/reference')
 args=parser.parse_args()
+args.assets.mkdir(parents=True,exist_ok=True)
 workspace=tempfile.TemporaryDirectory(prefix='cupidimage-vp8-generate-')
 root=Path(workspace.name)
 rows=[]
@@ -17,7 +19,8 @@ def reference(name,path,w,h):
   for x in range(w):
    Y=raw[y*w+x];U=raw[n+(y//2)*uw+x//2]-128;V=raw[n+u+(y//2)*uw+x//2]-128;scaled=298*(Y-16)
    expected.extend([max(0,min(255,v)) for v in [(scaled+409*V+128)>>8,(scaled-100*U-208*V+128)>>8,(scaled+516*U+128)>>8]]+[255])
- rows.append(dict(name=name,width=w,height=h,webp=base64.b64encode(encoded).decode(),sha256=hashlib.sha256(encoded).hexdigest(),rgba_zlib=base64.b64encode(zlib.compress(expected)).decode()))
+ asset=args.assets/(name+'.webp');asset.write_bytes(encoded)
+ rows.append(dict(name=name,width=w,height=h,asset='assets/webp/reference/'+asset.name,sha256=hashlib.sha256(encoded).hexdigest(),rgba_zlib=base64.b64encode(zlib.compress(expected)).decode()))
 for w,h in [(1,1),(4,3),(16,16),(17,19),(32,32)]:
  for kind in ['solid','gradient','noise']:
   rng=random.Random(6386+w*100+h)

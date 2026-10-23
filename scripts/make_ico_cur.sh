@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUTDIR="ico"
+OUTDIR="assets/ico"
 VENV=".icogen-venv"
 
 mkdir -p "$OUTDIR"
@@ -21,8 +21,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-outdir = Path(os.environ.get("OUTDIR", "ico"))
+outdir = Path(os.environ.get("OUTDIR", "assets/ico"))
 outdir.mkdir(parents=True, exist_ok=True)
+(outdir / "negative").mkdir(exist_ok=True)
 
 def rgba_pattern(size):
     w = h = size
@@ -320,7 +321,7 @@ ico_write(outdir / "edge-256-dir-zero.ico",
           force_dir_sizes=[(0,0)])
 
 # 7b) mismatched metadata: directory says 16x16 but data is 32x32
-ico_write(outdir / "edge-mismatched-metadata.ico",
+ico_write(outdir / "negative/edge-mismatched-metadata.ico",
           [(32, 32, dib_bgra_bytes(img32), False)],
           force_dir_sizes=[(16,16)])
 
@@ -328,22 +329,22 @@ ico_write(outdir / "edge-mismatched-metadata.ico",
 good = (outdir / "simple-32x32-rgba.ico").read_bytes()
 
 # truncated file
-(outdir / "invalid-truncated.ico").write_bytes(good[:40])
+(outdir / "negative/invalid-truncated.ico").write_bytes(good[:40])
 
 # bad magic number (reserved != 0)
 bad = bytearray(good)
 bad[0:2] = b"\x01\x00"
-(outdir / "invalid-bad-magic.ico").write_bytes(bytes(bad))
+(outdir / "negative/invalid-bad-magic.ico").write_bytes(bytes(bad))
 
 # zero icon count
 zero_count = bytearray(good)
 zero_count[4:6] = b"\x00\x00"
-(outdir / "invalid-zero-count.ico").write_bytes(bytes(zero_count))
+(outdir / "negative/invalid-zero-count.ico").write_bytes(bytes(zero_count))
 
 # bonus: wrong type (neither 1 nor 2)
 wrong_type = bytearray(good)
 wrong_type[2:4] = b"\x03\x00"
-(outdir / "invalid-wrong-type.ico").write_bytes(bytes(wrong_type))
+(outdir / "negative/invalid-wrong-type.ico").write_bytes(bytes(wrong_type))
 
 (outdir / "MANIFEST.txt").write_text("\n".join(sorted(p.name for p in outdir.glob("*"))) + "\n")
 print(f"Wrote ICO/CUR files to: {outdir.resolve()}")

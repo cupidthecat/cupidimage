@@ -18,8 +18,8 @@ if [[ ! -d "$ASSETS_DIR" ]]; then
   exit 1
 fi
 
-shopt -s nullglob
-files=("$ASSETS_DIR"/*.tif)
+shopt -s nullglob globstar
+files=("$ASSETS_DIR"/**/*.tif)
 if (( ${#files[@]} == 0 )); then
   echo "No .tif files found in $ASSETS_DIR" >&2
   exit 1

@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUTDIR="bmp"
+OUTDIR="assets/bmp"
 mkdir -p "$OUTDIR"
 
 python3 - <<'PY'
 import os, struct
 
-outdir = os.environ.get("OUTDIR", "bmp")
+outdir = os.environ.get("OUTDIR", "assets/bmp")
 os.makedirs(outdir, exist_ok=True)
+os.makedirs(os.path.join(outdir, "negative"), exist_ok=True)
 
 def pack_file_header(file_size, off_bits, signature=b'BM'):
     return struct.pack('<2sIHHI', signature, file_size, 0, 0, off_bits)
@@ -373,10 +374,10 @@ write_bmp_info(os.path.join(outdir, 'large-palette.bmp'),
 # Validation Tests (should fail)
 good = open(os.path.join(outdir, '24bit-rgb.bmp'), 'rb').read()
 
-with open(os.path.join(outdir, 'invalid-signature.bmp'), 'wb') as f:
+with open(os.path.join(outdir, 'negative/invalid-signature.bmp'), 'wb') as f:
     f.write(b'ZZ' + good[2:])
 
-with open(os.path.join(outdir, 'truncated.bmp'), 'wb') as f:
+with open(os.path.join(outdir, 'negative/truncated.bmp'), 'wb') as f:
     f.write(good[:40])  # cut short
 
 # huge dimensions: claims enormous width/height, no pixel data
@@ -384,7 +385,7 @@ W, H = 70000, 70000
 dib = pack_info_header(W, H, 24, compression=0, size_image=0, clr_used=0, dib_size=40)
 off_bits = 14 + 40
 fh = pack_file_header(off_bits, off_bits, signature=b'BM')
-with open(os.path.join(outdir, 'huge-dimensions.bmp'), 'wb') as f:
+with open(os.path.join(outdir, 'negative/huge-dimensions.bmp'), 'wb') as f:
     f.write(fh)
     f.write(dib)
 

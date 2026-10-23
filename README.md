@@ -112,7 +112,7 @@ Use the CLI:
 ```sh
 ./bin/cupidimage test.png 120 60
 ./bin/cupidimage test.jpg 120 60
-./bin/cupidimage test.webp 120 60
+./bin/cupidimage assets/webp/reference/gradient-32x32-q90.webp 120 60
 ./bin/cupidimage --fit test.png
 ./bin/cupidimage --svg-time 1.5 assets/svg/animation_basic.svg
 ./bin/cupidimage document.pdf
@@ -523,3 +523,5 @@ CC=clang CFLAGS='-O1 -g -std=c99 -fsanitize=address,undefined -fno-sanitize-reco
 Todo
 - [ ] For each image format provide option for checkerboard or white for alpha
 - [ ] HEIC / HEIF
+
+Test images are organized in [assets/](assets/README.md). See the [asset provenance](docs/test-assets.md) and run `make test-assets` to check their inventory and format signatures.

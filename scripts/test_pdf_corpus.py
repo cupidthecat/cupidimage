@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch or replay a small, hash-pinned real PDF corpus without redistributing it."""
+"""Check vendored and cached, hash-pinned real PDF samples."""
 import argparse
 import hashlib
 import json
@@ -21,7 +21,7 @@ checks = 0
 for row in rows:
     name = row['name']
     assert pathlib.Path(name).name == name
-    path = args.cache / name
+    path = manifest.parents[2] / row['asset'] if 'asset' in row else args.cache / name
     if not path.exists():
         if not args.download:
             raise SystemExit(f'Missing {name}; use --download or provide a verified local cache.')

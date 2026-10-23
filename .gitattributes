@@ -3,3 +3,17 @@
 *.py text eol=lf
 *.yml text eol=lf
 Makefile text eol=lf
+
+# Preserve fixture bytes (PDF xref spacing and binary headers are significant).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.ico binary
+*.cur binary
+*.tif binary
+*.tiff binary
+*.tga binary
+*.pdf binary
