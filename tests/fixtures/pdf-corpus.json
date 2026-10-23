@@ -18,14 +18,16 @@
         816,
         1056
       ],
-      "license": "Retrieved from the requested PDF.js test corpus. Not redistributed here; per-document redistribution rights have not been established."
+      "license": "PDF.js project test fixture; upstream Apache-2.0 license retained. basicapi.pdf embeds DejaVu font subsets; their Bitstream/Arev notices are retained separately.",
+      "asset": "assets/pdf/pdfjs/empty.pdf"
     },
     {
       "name": "pdfjs-basicapi.pdf",
       "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/basicapi.pdf",
       "sha256": "925853d98d67d5dae7473c635f932958e1695ce1029d23b2ecd2531cb65f1f14",
       "pages": 3,
-      "license": "Retrieved from the requested PDF.js test corpus. Not redistributed here; per-document redistribution rights have not been established."
+      "license": "PDF.js project test fixture; upstream Apache-2.0 license retained. basicapi.pdf embeds DejaVu font subsets; their Bitstream/Arev notices are retained separately.",
+      "asset": "assets/pdf/pdfjs/basicapi.pdf"
     }
   ]
 }

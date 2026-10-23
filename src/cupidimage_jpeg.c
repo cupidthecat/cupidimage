@@ -490,6 +490,7 @@ static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac,
         if (size > 10) return 0;
         if (size == 0) {
             if (run == 15) {
+                if (se - k + 1 < 16) return 0;
                 k += 16;
                 continue;
             }
@@ -558,14 +559,19 @@ static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac,
         int size = sym & 0x0F;
         if (size == 0) {
             if (run == 15) {
-                for (int i = 0; i < 16 && k <= se; i++, k++) {
-                    int idx = zigzag[k];
+                /* ZRL counts sixteen zero coefficients, not sixteen spectral
+                 * positions. Existing nonzero coefficients consume refinement
+                 * bits but do not shorten the zero run (T.81, G.1.2.3). */
+                int zeros = 16;
+                while (zeros && k <= se) {
+                    int idx = zigzag[k++];
                     if (block[idx] != 0) {
-                        if (!refine_coeff(bs, &block[idx], p1)) {
-                            return 0;
-                        }
+                        if (!refine_coeff(bs, &block[idx], p1)) return 0;
+                    } else {
+                        zeros--;
                     }
                 }
+                if (zeros) return 0;
                 continue;
             }
             int extra = 0;
@@ -594,6 +600,7 @@ static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac,
             return 0;
         }
         int32_t newcoef = bit ? p1 : p2;
+        int inserted = 0;
         while (k <= se) {
             int idx = zigzag[k];
             if (block[idx] != 0) {
@@ -602,6 +609,7 @@ static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac,
                 }
             } else if (run == 0) {
                 block[idx] = newcoef;
+                inserted = 1;
                 k++;
                 break;
             } else {
@@ -609,6 +617,7 @@ static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac,
             }
             k++;
         }
+        if (!inserted) return 0;
     }
     return 1;
 }

@@ -63,8 +63,17 @@ The 49 files in `assets/webp/reference/` contain real WebP streams generated
 from owned synthetic images. Older PNG files mislabeled as WebP have been renamed
 and moved to `assets/png/`. See [test assets](test-assets.md) for provenance.
 
+The progressive JPEG audit found an AC-refinement ZRL bug: the decoder counted
+sixteen spectral positions instead of sixteen zero coefficients. Existing nonzero
+coefficients must consume refinement bits without shortening the zero run. The fix
+also rejects runs and newly inserted coefficients that exceed the scan band.
+Seventy-two owned grayscale and RGB 4:4:4 JPEGs now compare against independent
+libjpeg pixels, including baseline/progressive scans, odd dimensions, noise,
+gradients, and three quality levels.
+
 ## References
 
+- [ITU-T T.81, Annex G: progressive JPEG](https://www.w3.org/Graphics/JPEG/itu-t81.pdf)
 - [PNG Third Edition](https://www.w3.org/TR/png-3/)
 - [RFC 1950: zlib](https://www.rfc-editor.org/rfc/rfc1950)
 - [RFC 1951: DEFLATE](https://www.rfc-editor.org/rfc/rfc1951)
@@ -98,12 +107,12 @@ GCC/Clang sanitizer jobs run these tests through `make test`.
 The opt-in real PDF corpus uses three immutable, SHA-256-pinned documents
 from the requested repositories. It checks all five pages and the blank page's
 pixels. It is a load/structure smoke test, not a font or visual equivalence test.
-The py-pdf document is vendored with its CC BY-SA 4.0 license. The two PDF.js
-documents are downloaded to an ignored cache; they are not redistributed.
+All three selected documents are vendored with their license notices. The PDF.js
+samples include font notices for embedded DejaVu subsets. See the asset guide.
 
 ```sh
 make test-pdf-corpus
-# Offline replay after the first download:
+# Offline replay:
 python3 scripts/test_pdf_corpus.py bin/test_pdf_pages
 ```
 

@@ -5,6 +5,7 @@ Images and documents are organized by format: `png`, `jpeg`, `webp`, `gif`,
 
 - `<format>/reference/`: owned, known-pixel fixtures for every supported input format.
 - `webp/reference/`: includes 49 lossy VP8 references plus a lossless image.
+- `pdf/pdfjs/`: pinned Mozilla PDF.js samples with project and font license notices.
 - `pdf/pypdf/`: a pinned upstream PDF with its own license.
 - `<format>/negative/`: intentionally malformed or nonstandard test input.
 - `manifest.json`: file inventory, hashes, and explanations of negative fixtures.

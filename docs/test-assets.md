@@ -32,6 +32,15 @@ Expected pixels use FFmpeg-decoded YUV, nearest-neighbor chroma, and the documen
 limited-range BT.601 conversion. They do not claim equivalence to interpolated
 chroma display modes.
 
+## JPEG reference corpus
+
+`assets/jpeg/reference/` also contains 72 grayscale and RGB 4:4:4 baseline and
+progressive JPEGs. `make test-jpeg-reference` compares them with pinned libjpeg
+pixels. Maximum channel tolerances are 2 for grayscale and 3 for RGB, accounting
+for integer IDCT and color conversion rounding. No chroma interpolation tolerance
+is hidden here: these RGB files have no subsampling. Regenerate them with
+`scripts/generate_jpeg_reference.py` (Pillow required only for generation).
+
 ## PDF samples
 
 `assets/pdf/pypdf/minimal-document.pdf` is an unchanged copy of
@@ -43,15 +52,25 @@ It is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4
 The complete license is retained beside the PDF. This asset's license is separate
 from the C library's license. No endorsement is implied.
 
-The PDF.js `basicapi.pdf` and `empty.pdf` samples are used through the pinned
-manifest and local downloader. Their actual files are not redistributed here
-because per-document redistribution rights have not yet been established.
-The manifest records exact upstream revisions and hashes.
+`assets/pdf/pdfjs/` contains unchanged copies of PDF.js `basicapi.pdf` and
+`empty.pdf`, pinned to revision `67667f1e449378a2675f4095cded012b7ce5f37b`.
+They are project test fixtures: a simple three-page table of contents and a blank
+page, rather than arbitrary third-party documents from the larger corpus.
+The upstream Apache 2.0 license is retained beside them. `basicapi.pdf` embeds
+DejaVu Sans font subsets; the DejaVu Bitstream/Arev license notices are retained
+separately. These licenses do not change the library's license.
 
-`make test-pdf-corpus` uses the vendored py-pdf document and downloads the two
-PDF.js files to the ignored `.cache/pdf-corpus/` directory. It tests five pages,
-including exact white pixels for the empty page. It does not establish complete
-PDF font or visual rendering support.
+Sources and contribution history:
+- [PDF.js test corpus at the pinned revision](https://github.com/mozilla/pdf.js/tree/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs)
+- [Basic API fixture contribution](https://github.com/mozilla/pdf.js/commit/3925e374177d9e5b8d470c92b8b23c31fdf11b4e)
+- [Blank fixture contribution](https://github.com/mozilla/pdf.js/commit/85b38fc247d9b36b9e687469456d54f18c9bcd3e)
+- [DejaVu font licensing](https://dejavu-fonts.github.io/License.html)
+
+`make test-pdf-corpus` reads these three vendored files without network access.
+It tests five pages, including exact white pixels for the empty page. It does not
+establish complete PDF font or visual rendering support. The downloader remains
+available for future manifest entries that are intentionally cache-only. Other
+PDF.js documents need individual provenance review before vendoring.
 
 ## Layout and integrity
 

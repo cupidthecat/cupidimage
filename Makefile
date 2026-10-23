@@ -12,7 +12,7 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cupidimage_cli.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
@@ -24,6 +24,9 @@ all: lib cli
 lib: $(LIB)
 cli: $(CLI)
 test: $(TEST_TARGETS)
+
+test-jpeg-reference: $(BINDIR)/test_format_pixels
+	python3 scripts/test_jpeg_reference.py $<
 
 test-format-pixels: $(BINDIR)/test_format_pixels
 	python3 scripts/test_format_pixels.py $<

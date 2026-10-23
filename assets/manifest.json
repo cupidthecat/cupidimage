@@ -177,12 +177,300 @@
       "sha256": "865c30388ce273b1d4421d42e8c5f655cc6a974fcebd144bed5b41023a9adb9d"
     },
     {
+      "path": "assets/jpeg/reference/l-gradient-17x19-baseline-q10.jpg",
+      "sha256": "df8cf7ab202c7f1cf8a49b433d0dd1c891b05c95ea154f99e4ec8ab1f17fdad5"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-17x19-baseline-q50.jpg",
+      "sha256": "50414fda9a36b353908c5fa8092a45b4b8c1b4586d9828bcfa8589a6a2fe0335"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-17x19-baseline-q90.jpg",
+      "sha256": "28e86463f23159b47cf9b822cddadcc563a948e6672cc6b138b083e17a5c1ae2"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-17x19-progressive-q10.jpg",
+      "sha256": "792c265f371fdfc08dbaafb5630d20895a98c59ea2bc95cb8af83f67dffc8039"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-17x19-progressive-q50.jpg",
+      "sha256": "2c3432b4271509a026cbe729c721caee4943039fd8a65b76d162ae36847ec5f5"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-17x19-progressive-q90.jpg",
+      "sha256": "8657308f7d0a5b4d6d0398d58386f456b67d73f5ea9a33b27f32b477740a68b9"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-32x32-baseline-q10.jpg",
+      "sha256": "560c8693d9e387b15a8e7cd2e0576fae13d3cd17ba688366acf94dce7be59323"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-32x32-baseline-q50.jpg",
+      "sha256": "d29e51b488ae671ab6e4745eb81da5522fee1c1ff7e62b3e73c246d27e709486"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-32x32-baseline-q90.jpg",
+      "sha256": "014588e1ec16e995c71db0beb5f5aa2f3d22a73536c6cb13cbf87b17cf98c897"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-32x32-progressive-q10.jpg",
+      "sha256": "92c7e10e0bdf6bcd3959efe1ee3941a3c44f5b976e08f2c2c712e637f4e4cc9d"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-32x32-progressive-q50.jpg",
+      "sha256": "5ccdf688bb7a6f8bd66773375653c1554d9f94bba59490afb5985a578ca1fa59"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-32x32-progressive-q90.jpg",
+      "sha256": "bb694e56256b385d7392d6db57d146c98b88b6637b1b890586b41497057fd198"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-8x8-baseline-q10.jpg",
+      "sha256": "e174a64c1dd1f6d37a669d997de99de4a6e968633cec4f356de55f704e5c3b96"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-8x8-baseline-q50.jpg",
+      "sha256": "3d7d8e95e0be16a9f4d904fcc35375300eebf66abd42852d6d85324cc7dc3187"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-8x8-baseline-q90.jpg",
+      "sha256": "5a159209ac6c675c1f1aad1ebed4be0aec5c603af5e0bea5153cacf134864624"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-8x8-progressive-q10.jpg",
+      "sha256": "ea998bbd561a982e80fb86330c2c922d20de772cc0fbd2ef79a2314e6a8081dd"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-8x8-progressive-q50.jpg",
+      "sha256": "b3e65f6911a33a431c10be69e55e0e93dc4011643d3e9e40f3a52754b6b0fa17"
+    },
+    {
+      "path": "assets/jpeg/reference/l-gradient-8x8-progressive-q90.jpg",
+      "sha256": "387db076f5b2b757d3de1183e2a78c127cadef1c63de707c7d750d4d4cac8bd2"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-17x19-baseline-q10.jpg",
+      "sha256": "fa4f1364a142dee91ab1f0374466c2b1eaa67e57d9d2ac41f71d61da63c5c330"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-17x19-baseline-q50.jpg",
+      "sha256": "f80e2a4e5c7e2792e3080acb40ca6f51da3fd6a18cc80df6f1085ffdbd564aee"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-17x19-baseline-q90.jpg",
+      "sha256": "d98f959c4bd552acd4fc70ec7c3de009eede82d98d27dcbe4de09ecca7c24735"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-17x19-progressive-q10.jpg",
+      "sha256": "78c1106fc06c9f6b97b181b5970730730dd538e7fb4d094f480e08cfb06867e0"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-17x19-progressive-q50.jpg",
+      "sha256": "3dbe0842296a544316ae660973e399c328847e7a0a49ca89876f987c21e0b970"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-17x19-progressive-q90.jpg",
+      "sha256": "df752bd20739420d7d02efc0e9ef53cc29e3a6735cda39d639f5b769310ace9e"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-32x32-baseline-q10.jpg",
+      "sha256": "4caca3a72a81e1f86a9c42c2ff615bb784602ccc7dbf8ecb4ba5176f8d0af61e"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-32x32-baseline-q50.jpg",
+      "sha256": "97f3049d2328a991e258196c7e3ad3dd4be09ebc85505d69f5b431b7b9b7a432"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-32x32-baseline-q90.jpg",
+      "sha256": "e55337ea2c848f22055ad5676688ebb6c218dadfaa247b592ba646fbab8ff08c"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-32x32-progressive-q10.jpg",
+      "sha256": "4798d837817691da0ea0442ff7d69659712ed6073960511e7c11896862ecea7f"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-32x32-progressive-q50.jpg",
+      "sha256": "aba99e521675d980502a40076eb12c74e3b2ce9211812dae204ded9b1352fa48"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-32x32-progressive-q90.jpg",
+      "sha256": "6db457c024ccf211f408bb62f359190662a6571093e28006465116c14e4b3544"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-8x8-baseline-q10.jpg",
+      "sha256": "5e89457e693bdd6e88e5564d67c5ab2b8c25e091f50a8c4cd641a1e822cbb10c"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-8x8-baseline-q50.jpg",
+      "sha256": "2a8acaefb1646128a5e1f3565cb5526db2d4ab2e85df0cfc201ac73326243440"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-8x8-baseline-q90.jpg",
+      "sha256": "759c59397a26c0e4bb33484e3bde5bf2d8d10eb1fe577b46eb8f3870b00ca890"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-8x8-progressive-q10.jpg",
+      "sha256": "7f2d04de4226ff74504ffc91484b8c3e998433399eef7cecd1252e6cd97fa5ff"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-8x8-progressive-q50.jpg",
+      "sha256": "79656e1564391b775420caf4b59c09d5a40de60a7c42adf0c4c727035e805898"
+    },
+    {
+      "path": "assets/jpeg/reference/l-noise-8x8-progressive-q90.jpg",
+      "sha256": "ca0a27e73809e2f5f471360bdca68a21a1ab122105801b867f65c6c3fd9350d9"
+    },
+    {
       "path": "assets/jpeg/reference/quadrants-baseline.jpg",
       "sha256": "f9bf1ec6fa8d3960fe0a1718d564c17b8f8bd69d09b7088f21b222c2749fa5a8"
     },
     {
       "path": "assets/jpeg/reference/quadrants-progressive.jpg",
       "sha256": "03de88529fc91daf0b5de94e386d8c2af159289d42c3b786fd8df2d2df98f00f"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-17x19-baseline-q10.jpg",
+      "sha256": "2216ab449b4620ce7e92963bd8060db4333d66fe1f7871c7e22646bb765f8c24"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-17x19-baseline-q50.jpg",
+      "sha256": "9100814737f26d004c96a2dc26460df2c8224fd10aead40a9af9041ae803c959"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-17x19-baseline-q90.jpg",
+      "sha256": "6fd9218d8167edc7969dbdac36aa333296d3c54a0b3c49a67dde1a723fc8bb96"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-17x19-progressive-q10.jpg",
+      "sha256": "6152ccdd76f0ee09aaf5843a6896648ff932cfd6e0cb39b7e49674bf44daf7a7"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-17x19-progressive-q50.jpg",
+      "sha256": "1a325b045fe61509b9d90d4b0efcb85ad5826c91bcde37c4075877f89a4d6a7b"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-17x19-progressive-q90.jpg",
+      "sha256": "a8cf931ae2f824ea30550cf627856172a62fb7f13a505c766a1e176cb91b8d6e"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-32x32-baseline-q10.jpg",
+      "sha256": "93b6b083d946e13b86e0f3f791df377b7801946aa4517b0ca1c2f1e1fa8c1b7f"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-32x32-baseline-q50.jpg",
+      "sha256": "ed420cb16655d3fea3f6c811e9b1de7ba8057614a6d0138907c5300b7c2237e0"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-32x32-baseline-q90.jpg",
+      "sha256": "48de11df8623be6179ca514b6042352220a446d0d2df85d03130d7fc3b732be9"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-32x32-progressive-q10.jpg",
+      "sha256": "b508c39e4b23402d6fa227f9e3cc5c3c247b50617766a6b620a78b29ceceaa16"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-32x32-progressive-q50.jpg",
+      "sha256": "1a16eae488c49168ba65714eef1b13f313f95f7d3ecbd4788c278b1e9695b87c"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-32x32-progressive-q90.jpg",
+      "sha256": "426b37dcd31b9a078d0050bc58eff61ffd123159713c48941efa9a47fce1f7d7"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-8x8-baseline-q10.jpg",
+      "sha256": "9e549520a66b46837a456284406827af492896c46dd17d5d724871651090d217"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-8x8-baseline-q50.jpg",
+      "sha256": "96b6c900f1a9e8eb971c1fcc18a2bfd8c67dd1349b0f18d50ae71f5c65ffe8af"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-8x8-baseline-q90.jpg",
+      "sha256": "822ab620872d317b9b3d26d56998276bec14dc85b1247aef6f45bf13bb7f24cc"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-8x8-progressive-q10.jpg",
+      "sha256": "d38c57cd9a0c0ee2d04a255b34a16af61526a3f907ecd57d11f1630524eb9c04"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-8x8-progressive-q50.jpg",
+      "sha256": "b6935a7e8abf828b78ea859447b9c94a72a4aa4232d918a443316288da0214cc"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-gradient-8x8-progressive-q90.jpg",
+      "sha256": "a57a395f2d1501b072f7e5293b042d4ac08758f337354ea405662c6f7564cca3"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-17x19-baseline-q10.jpg",
+      "sha256": "56d831c7381fa89fbf2434fa8260634f728228e7e53c607c1a2b5ffce1f34f5f"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-17x19-baseline-q50.jpg",
+      "sha256": "007f220561ab0ed5a6ac67409b96987dd182d9d40caa50b4cb4bb82bc96f4e69"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-17x19-baseline-q90.jpg",
+      "sha256": "52e851c8c5d319ca0566b8e32a98c0df160ea50fb84e1103b1fee56ffca39101"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-17x19-progressive-q10.jpg",
+      "sha256": "f5fe37ab4400c5f8892842e0c4be7a19eb77e30428f1f02e1029eb06616260c5"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-17x19-progressive-q50.jpg",
+      "sha256": "2bbfbb15a9a0a1d0670e85fbf3ef52e9586cf16a01510761de0da21c94a0c584"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-17x19-progressive-q90.jpg",
+      "sha256": "ceb22938c62c0d9a0ee6fe6fd4f3d7b14f56dfe9efe599b77ac472ff8212d51c"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-32x32-baseline-q10.jpg",
+      "sha256": "b02518e8a860e8404ec447aa3684f00052b1e3edf2e6aca93355ca7f7edb59c8"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-32x32-baseline-q50.jpg",
+      "sha256": "4f09692a0d500d492015f32db951e9a31465e96a17d644a54b672f9402d74bc0"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-32x32-baseline-q90.jpg",
+      "sha256": "e720fa68d956e4a27e93418097c3420a36ac0702b439034bc997ab70bc0b1bdf"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-32x32-progressive-q10.jpg",
+      "sha256": "7e4f1ad665d008386adebd5896cb4cf6deaa097295a9111251acbe6eeddd2117"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-32x32-progressive-q50.jpg",
+      "sha256": "4574a1a7b3647b2d4a59557ffbfc1afdc0f2841b89d90c455a68dbf4776234d6"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-32x32-progressive-q90.jpg",
+      "sha256": "69cfb8e6427c2ac6eeab1625e3e56e814b23ca49b409f70ac6dee42c134f2c81"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-8x8-baseline-q10.jpg",
+      "sha256": "45465bc83f35bb95984c003a05f8b833e52747fb9ef56f66f565f81ed2a35075"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-8x8-baseline-q50.jpg",
+      "sha256": "3a6a019c0263c701ce799221b7c8eb26d390c449a4b73536956041cbcaa8fd90"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-8x8-baseline-q90.jpg",
+      "sha256": "6b4e856dceb7912dba6ccda7a130d12b65f573ecdd347335efc185ad240b8578"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-8x8-progressive-q10.jpg",
+      "sha256": "bda240f7ea50939f890e7c9ae283e2c4f9b0fc3515c7e628998269e2c35b46ec"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-8x8-progressive-q50.jpg",
+      "sha256": "fcc07c64cf6f6cf48bb723be2649a9257ac2bbd460f275abcf88151c18ebd639"
+    },
+    {
+      "path": "assets/jpeg/reference/rgb-noise-8x8-progressive-q90.jpg",
+      "sha256": "dbfc6165cbc9850e5975919bbff75dbb8586b0e8a8a4d442690dd9ee7d3aa0df"
     },
     {
       "path": "assets/pdf/basic_text.pdf",
@@ -219,6 +507,22 @@
     {
       "path": "assets/pdf/multiline.tex",
       "sha256": "5f17a9b5eded7a4192ba14ae35e55e45e213793a9f95f4dd4758814ca3ea27c8"
+    },
+    {
+      "path": "assets/pdf/pdfjs/LICENSE-APACHE-2.0.txt",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+    },
+    {
+      "path": "assets/pdf/pdfjs/LICENSE-DEJAVU.txt",
+      "sha256": "7a083b136e64d064794c3419751e5c7dd10d2f64c108fe5ba161eae5e5958a93"
+    },
+    {
+      "path": "assets/pdf/pdfjs/basicapi.pdf",
+      "sha256": "925853d98d67d5dae7473c635f932958e1695ce1029d23b2ecd2531cb65f1f14"
+    },
+    {
+      "path": "assets/pdf/pdfjs/empty.pdf",
+      "sha256": "fcee6184c0d776126782cd2799797b106373278c8ea0a4354ee4e33cd8663d51"
     },
     {
       "path": "assets/pdf/pypdf/LICENSE-CC-BY-SA-4.0.txt",
