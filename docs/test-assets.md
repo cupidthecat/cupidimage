@@ -52,10 +52,10 @@ It is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4
 The complete license is retained beside the PDF. This asset's license is separate
 from the C library's license. No endorsement is implied.
 
-`assets/pdf/pdfjs/` contains unchanged copies of PDF.js `basicapi.pdf` and
-`empty.pdf`, pinned to revision `67667f1e449378a2675f4095cded012b7ce5f37b`.
-They are project test fixtures: a simple three-page table of contents and a blank
-page, rather than arbitrary third-party documents from the larger corpus.
+`assets/pdf/pdfjs/` contains unchanged copies of PDF.js `basicapi.pdf`,
+`empty.pdf`, and `asciihexdecode.pdf`, pinned to revision `67667f1e449378a2675f4095cded012b7ce5f37b`.
+They are project test fixtures: a simple three-page table of contents, a blank
+page, and an ASCIIHex text stream, rather than arbitrary third-party documents from the larger corpus.
 The upstream Apache 2.0 license is retained beside them. `basicapi.pdf` embeds
 DejaVu Sans font subsets; the DejaVu Bitstream/Arev license notices are retained
 separately. These licenses do not change the library's license.
@@ -66,8 +66,8 @@ Sources and contribution history:
 - [Blank fixture contribution](https://github.com/mozilla/pdf.js/commit/85b38fc247d9b36b9e687469456d54f18c9bcd3e)
 - [DejaVu font licensing](https://dejavu-fonts.github.io/License.html)
 
-`make test-pdf-corpus` reads these three vendored files without network access.
-It tests five pages, including exact white pixels for the empty page. It does not
+`make test-pdf-corpus` reads these four vendored files without network access.
+It tests six pages, including exact white pixels for the empty page. It does not
 establish complete PDF font or visual rendering support. The downloader remains
 available for future manifest entries that are intentionally cache-only. Other
 PDF.js documents need individual provenance review before vendoring.

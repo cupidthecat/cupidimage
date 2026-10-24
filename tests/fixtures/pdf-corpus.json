@@ -28,6 +28,14 @@
       "pages": 3,
       "license": "PDF.js project test fixture; upstream Apache-2.0 license retained. basicapi.pdf embeds DejaVu font subsets; their Bitstream/Arev notices are retained separately.",
       "asset": "assets/pdf/pdfjs/basicapi.pdf"
+    },
+    {
+      "name": "pdfjs-asciihexdecode.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/asciihexdecode.pdf",
+      "sha256": "17cc92aa58ec48f75b01c6b6e7f8c8bade0a36f7295d0f833a16bafae854dc79",
+      "pages": 1,
+      "asset": "assets/pdf/pdfjs/asciihexdecode.pdf",
+      "license": "PDF.js project test fixture; upstream Apache-2.0 license retained."
     }
   ]
 }

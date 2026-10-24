@@ -12,11 +12,11 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cupidimage_cli.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
-TEST_BINS = test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+TEST_BINS = test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
@@ -30,6 +30,17 @@ test-jpeg-reference: $(BINDIR)/test_format_pixels
 
 test-format-pixels: $(BINDIR)/test_format_pixels
 	python3 scripts/test_format_pixels.py $<
+
+test-asset-corpus: $(BINDIR)/test_asset_probe
+	python3 scripts/test_asset_corpus.py --probe $< --memory-mib $(if $(findstring sanitize,$(CFLAGS)),0,1024) --timeout $(if $(findstring sanitize,$(CFLAGS)),30,10)
+
+test-pdf-audit:
+	python3 scripts/test_pdf_audit.py
+
+.PHONY: audit-assets audit-pdf-full
+audit-assets: test-asset-corpus
+audit-pdf-full: $(BINDIR)/test_pdf_pages
+	python3 scripts/audit_pdf_corpus.py --probe $< --download
 
 test-assets:
 	python3 scripts/test_assets.py
@@ -74,6 +85,9 @@ test-pdf-pages: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_pages.py $<
 test-pdf-images: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_images.py $<
+test-pdf-streams: $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_streams.py $<
+
 test-pdf-corpus: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_corpus.py $< --download
 

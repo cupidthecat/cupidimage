@@ -104,10 +104,10 @@ fixture stores input hashes and expected decoded pixels, so routine tests do
 not need Pillow, FFmpeg, downloaded images, or network access. The ordinary
 GCC/Clang sanitizer jobs run these tests through `make test`.
 
-The opt-in real PDF corpus uses three immutable, SHA-256-pinned documents
-from the requested repositories. It checks all five pages and the blank page's
+The opt-in real PDF corpus uses four immutable, SHA-256-pinned documents
+from the requested repositories. It checks all six pages and the blank page's
 pixels. It is a load/structure smoke test, not a font or visual equivalence test.
-All three selected documents are vendored with their license notices. The PDF.js
+All four selected documents are vendored with their license notices. The PDF.js
 samples include font notices for embedded DejaVu subsets. See the asset guide.
 
 ```sh
@@ -125,3 +125,21 @@ python3 scripts/generate_webp_reference.py
 
 Encoder version changes can change the compressed bytes. Regeneration is an
 explicit maintenance step; normal tests never update their expected output.
+
+## Corpus test system
+
+`make test-asset-corpus` checks every committed image asset and exposed page/frame,
+then validates bounded terminal-output samples. Independent pixel matches and
+decoded-but-unverified images have separate report statuses. Invalid ICO reserved
+headers are now rejected; the all-asset run exposed that acceptance bug.
+
+Page-tree Type, catalog Pages, Kids, and Contents lookups now use the outer PDF
+dictionary rather than nested/string decoys. Page content supports ASCIIHexDecode
+and rejects unknown filters instead of interpreting compressed bytes as operators.
+The cumulative decoded page content limit is 64 MiB.
+
+The opt-in full PDF.js catalog contains 1,007 tracked PDFs and lists 460 external
+link entries separately. See [testing](testing.md) for first-page versus all-page
+audits, process limits, resume behavior, and independent raster comparisons.
+
+ICO header validation follows [Microsoft's ICO format description](https://devblogs.microsoft.com/oldnewthing/20101018-00/?p=12513).

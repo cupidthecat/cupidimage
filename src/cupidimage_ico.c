@@ -51,7 +51,7 @@ static int ico_parse_directory(const unsigned char *data, size_t size,
     uint16_t reserved = read_le16(data);
     uint16_t type = read_le16(data + 2);
     uint16_t count = read_le16(data + 4);
-    if (type != ICO_TYPE_ICON && type != ICO_TYPE_CURSOR) {
+    if (reserved != 0 || (type != ICO_TYPE_ICON && type != ICO_TYPE_CURSOR)) {
         set_err(err, errcap, "invalid ICO/CUR header");
         return 0;
     }
@@ -64,10 +64,6 @@ static int ico_parse_directory(const unsigned char *data, size_t size,
     if (size < 6u + dir_bytes) {
         set_err(err, errcap, "file too small");
         return 0;
-    }
-
-    if (reserved != 0) {
-        ICO_DEBUG("warning: reserved field=%u\n", reserved);
     }
 
     cupidimage_ico_entry *entries = (cupidimage_ico_entry *)calloc(count, sizeof(*entries));

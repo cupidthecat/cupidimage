@@ -69,6 +69,8 @@ static int extract_stream(const unsigned char *data, size_t obj_start, size_t ob
                           const unsigned char **stream_data, size_t *stream_len,
                           size_t *stream_keyword_pos);
 static int pdf_is_delim(unsigned char c);
+static int pdf_image_name_is(const pdf_object_view *view, const char *key, const char *name);
+static int pdf_image_filter_is(const pdf_object_view *view, const char *name);
 static int pdf_page_value(const pdf_object_view *view, const char *key, size_t *value_pos);
 static int pdf_page_reference(const pdf_object_view *view, size_t pos, int *object);
 static void pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos);
@@ -596,101 +598,29 @@ static int extract_dict_ref(const unsigned char *data, size_t start, size_t end,
     return 0;
 }
 
-static int extract_dict_name(const unsigned char *data, size_t start, size_t end,
-                             const char *key, char *out, size_t out_cap) {
-    size_t key_len = strlen(key);
-    if (!out || out_cap == 0 || end <= start || end - start <= key_len) {
-        return 0;
-    }
-    for (size_t pos = start; pos + key_len < end; pos++) {
-        if (memcmp(&data[pos], key, key_len) != 0) {
-            continue;
-        }
-        pos += key_len;
-        while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
-        if (pos >= end || data[pos] != '/') {
-            return 0;
-        }
-        pos++;
-        size_t n = 0;
-        while (pos < end &&
-               !isspace((unsigned char)data[pos]) &&
-               data[pos] != '/' && data[pos] != '<' && data[pos] != '>' &&
-               data[pos] != '[' && data[pos] != ']' && data[pos] != '(' && data[pos] != ')') {
-            if (n + 1 < out_cap) {
-                out[n++] = (char)data[pos];
-            }
-            pos++;
-        }
-        out[n] = '\0';
-        return n > 0;
-    }
-    return 0;
-}
-
 static int extract_dict_refs(const unsigned char *data, size_t start, size_t end, const char *key,
                              int *objs, int max_objs, int *out_count) {
-    size_t key_len = strlen(key);
-    if (!objs || max_objs <= 0 || !out_count || end <= start || end - start <= key_len) {
-        return 0;
-    }
+    if (!objs || max_objs <= 0 || !out_count || end <= start || key[0] != '/') return 0;
+    pdf_object_view view = {data + start, end - start, NULL};
+    size_t pos;
     *out_count = 0;
-
-    for (size_t pos = start; pos + key_len < end; pos++) {
-        if (memcmp(&data[pos], key, key_len) != 0) {
-            continue;
-        }
-        pos += key_len;
-        while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
-
-        int in_array = 0;
-        if (pos < end && data[pos] == '[') {
-            in_array = 1;
-            pos++;
-        }
-
-        while (pos < end) {
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
-            if (pos >= end) {
-                break;
-            }
-            if (in_array && data[pos] == ']') {
-                break;
-            }
-            if (data[pos] < '0' || data[pos] > '9') {
-                if (!in_array) {
-                    break;
-                }
-                pos++;
-                continue;
-            }
-
-            size_t obj;
-            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &obj)) return 0;
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
-
-            size_t gen;
-            int have_gen = pdf_parse_decimal(data, end, &pos, 65535, &gen);
-            if (!have_gen) return 0;
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
-            if (have_gen && pos < end && data[pos] == 'R') {
-                pos++;
-            }
-
-            if (obj > 0 && *out_count < max_objs) {
-                objs[*out_count] = (int)obj;
-                (*out_count)++;
-            }
-
-            if (!in_array) {
-                break;
-            }
-        }
-
-        return *out_count > 0;
+    if (!pdf_page_value(&view, key + 1, &pos)) return 0;
+    int array = pos < view.len && view.data[pos] == '[';
+    if (array) pos++;
+    for (;;) {
+        pdf_skip_ws_and_comments(view.data, view.len, &pos);
+        if (array && pos < view.len && view.data[pos] == ']') return *out_count > 0;
+        size_t object, generation;
+        if (!pdf_parse_decimal(view.data, view.len, &pos, INT_MAX, &object) || !object) return 0;
+        pdf_skip_ws_and_comments(view.data, view.len, &pos);
+        if (!pdf_parse_decimal(view.data, view.len, &pos, 65535, &generation)) return 0;
+        pdf_skip_ws_and_comments(view.data, view.len, &pos);
+        if (pos >= view.len || view.data[pos++] != 'R' ||
+            (pos < view.len && !isspace(view.data[pos]) && !pdf_is_delim(view.data[pos]))) return 0;
+        if (*out_count == max_objs) return 0;
+        objs[(*out_count)++] = (int)object;
+        if (!array) return 1;
     }
-
-    return 0;
 }
 
 static int get_pages_obj(const unsigned char *data, size_t size, pdf_xref *xref,
@@ -702,7 +632,9 @@ static int get_pages_obj(const unsigned char *data, size_t size, pdf_xref *xref,
         return 0;
     }
 
-    if (!extract_dict_ref(catalog.data, 0, catalog.len, "/Pages", pages_obj)) {
+    size_t pages_position;
+    if (!pdf_page_value(&catalog, "Pages", &pages_position) ||
+        !pdf_page_reference(&catalog, pages_position, pages_obj)) {
         pdf_object_view_release(&catalog);
         set_err(err, errcap, "pdf: /Pages not found in catalog");
         return 0;
@@ -752,11 +684,7 @@ static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num
         return 0;
     }
 
-    char type_name[32];
-    type_name[0] = '\0';
-    (void)extract_dict_name(node.data, 0, node.len, "/Type", type_name, sizeof(type_name));
-
-    if (strcmp(type_name, "Page") == 0) {
+    if (pdf_image_name_is(&node, "Type", "Page")) {
         if (*scan_index == target_index) {
             *page_obj = obj_num;
             pdf_object_view_release(&node);
@@ -1070,6 +998,32 @@ static int buffer_contains(const unsigned char *data, size_t start, size_t end, 
     return 0;
 }
 
+/* ISO 32000-1, 7.4.2: whitespace is ignored; an odd final nibble is padded. */
+static int pdf_ascii_hex_decode(const unsigned char *data, size_t length,
+                                unsigned char **out, size_t *out_length) {
+    if (length > 128u * 1024u * 1024u) return 0;
+    unsigned char *decoded = (unsigned char *)malloc(length / 2 + 1);
+    if (!decoded) return 0;
+    int high = -1;
+    size_t used = 0;
+    for (size_t i = 0; i < length; i++) {
+        unsigned char c = data[i];
+        if (c == '>') {
+            if (high >= 0) decoded[used++] = (unsigned char)(high * 16);
+            *out = decoded; *out_length = used; return 1;
+        }
+        if (c == 0 || c == 9 || c == 10 || c == 12 || c == 13 || c == 32) continue;
+        int value = c >= '0' && c <= '9' ? c - '0' :
+                    c >= 'A' && c <= 'F' ? c - 'A' + 10 :
+                    c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+        if (value < 0) break;
+        if (high < 0) high = value;
+        else { decoded[used++] = (unsigned char)(high * 16 + value); high = -1; }
+    }
+    free(decoded);
+    return 0;
+}
+
 static int get_page_content_stream(const unsigned char *data, size_t size, pdf_xref *xref,
                                    int page_obj, unsigned char **stream_data,
                                    size_t *stream_len, int *is_flate,
@@ -1127,10 +1081,14 @@ static int get_page_content_stream(const unsigned char *data, size_t size, pdf_x
             continue;
         }
 
-        int stream_is_flate = 0;
-        if (buffer_contains(contents.data, 0, stream_kw_pos, "/FlateDecode") ||
-            buffer_contains(contents.data, 0, stream_kw_pos, "/Fl")) {
-            stream_is_flate = 1;
+        int stream_is_flate = pdf_image_filter_is(&contents, "FlateDecode") ||
+                              pdf_image_filter_is(&contents, "Fl");
+        int stream_is_hex = pdf_image_filter_is(&contents, "ASCIIHexDecode") ||
+                            pdf_image_filter_is(&contents, "AHx");
+        size_t filter_pos;
+        if (!stream_is_flate && !stream_is_hex && pdf_page_value(&contents, "Filter", &filter_pos)) {
+            pdf_object_view_release(&contents); free(combined);
+            set_err(err, errcap, "pdf: unsupported content stream filter"); return 0;
         }
 
         const unsigned char *decoded_ptr = stream_ptr;
@@ -1144,10 +1102,23 @@ static int get_page_content_stream(const unsigned char *data, size_t size, pdf_x
                 return 0;
             }
             decoded_ptr = decoded_owned;
+        } else if (stream_is_hex) {
+            if (!pdf_ascii_hex_decode(stream_ptr, raw_len, &decoded_owned, &decoded_len)) {
+                pdf_object_view_release(&contents); free(combined);
+                set_err(err, errcap, "pdf: invalid ASCIIHex stream"); return 0;
+            }
+            decoded_ptr = decoded_owned;
         }
 
         if (decoded_len > 0) {
-            size_t extra = decoded_len + ((combined_len > 0) ? 1u : 0u);
+            const size_t limit = 64u * 1024u * 1024u;
+            size_t separator = combined_len > 0 ? 1u : 0u;
+            if (decoded_len > limit || combined_len > limit - decoded_len ||
+                separator > limit - decoded_len - combined_len) {
+                free(decoded_owned); pdf_object_view_release(&contents); free(combined);
+                set_err(err, errcap, "pdf: page content exceeds limit"); return 0;
+            }
+            size_t extra = decoded_len + separator;
             unsigned char *tmp = (unsigned char *)realloc(combined, combined_len + extra);
             if (!tmp) {
                 free(decoded_owned);

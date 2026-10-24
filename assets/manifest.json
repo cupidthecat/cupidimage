@@ -126,7 +126,8 @@
     {
       "path": "assets/ico/negative/edge-mismatched-metadata.ico",
       "sha256": "de9c8c3dbf1d38ffcfc719fe7350ecaae82c4bbb9213510ed7b2bacb97f024ae",
-      "negative_reason": "Directory dimensions/depth intentionally disagree with the embedded image."
+      "negative_reason": "Directory dimensions/depth intentionally disagree with the embedded image.",
+      "expected_decode": "accept"
     },
     {
       "path": "assets/ico/negative/invalid-bad-magic.ico",
@@ -517,6 +518,10 @@
       "sha256": "7a083b136e64d064794c3419751e5c7dd10d2f64c108fe5ba161eae5e5958a93"
     },
     {
+      "path": "assets/pdf/pdfjs/asciihexdecode.pdf",
+      "sha256": "17cc92aa58ec48f75b01c6b6e7f8c8bade0a36f7295d0f833a16bafae854dc79"
+    },
+    {
       "path": "assets/pdf/pdfjs/basicapi.pdf",
       "sha256": "925853d98d67d5dae7473c635f932958e1695ce1029d23b2ecd2531cb65f1f14"
     },
@@ -712,7 +717,8 @@
     {
       "path": "assets/tga/negative/16bit-rgb565.tga",
       "sha256": "9c39c77c3ef7b68a0f982a52799df6e2f508878523c8db866c1d3c8ce1023862",
-      "negative_reason": "Nonstandard RGB565 TGA payload; standard 16-bit truecolor is RGB555 with an attribute bit."
+      "negative_reason": "Nonstandard RGB565 TGA payload; standard 16-bit truecolor is RGB555 with an attribute bit.",
+      "expected_decode": "accept"
     },
     {
       "path": "assets/tga/negative/huge-dimensions.tga",
@@ -722,7 +728,8 @@
     {
       "path": "assets/tga/negative/invalid-signature.tga",
       "sha256": "c5a9acd71a6af08419d22d2cf1c77af3893f52f65d0c66b67807c93de95ffcae",
-      "negative_reason": "Signature or optional footer deliberately corrupted."
+      "negative_reason": "Signature or optional footer deliberately corrupted.",
+      "expected_decode": "accept"
     },
     {
       "path": "assets/tga/negative/invalid-type.tga",

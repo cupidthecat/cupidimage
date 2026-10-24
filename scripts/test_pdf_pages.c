@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char **argv) {
     if (argc != 3) return 2;
@@ -12,6 +13,10 @@ int main(int argc, char **argv) {
     if (!cupidimage_get_pdf_page_count_file(argv[1], &count, error, sizeof(error))) {
         fprintf(stderr, "%s\n", error);
         return 3;
+    }
+    if (strcmp(argv[2], "count") == 0) {
+        printf("%d\n", count);
+        return 0;
     }
     if (!cupidimage_load_pdf_page_file(argv[1], &image, atoi(argv[2]), error, sizeof(error))) {
         fprintf(stderr, "%s\n", error);

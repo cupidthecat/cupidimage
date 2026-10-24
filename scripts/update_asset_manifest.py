@@ -18,6 +18,8 @@ for path in sorted((root / 'assets').rglob('*')):
         if not reason:
             raise SystemExit(f'Add a reviewed negative_reason to the manifest first: {name}')
         row['negative_reason'] = reason
+        if previous[name].get('expected_decode'):
+            row['expected_decode'] = previous[name]['expected_decode']
     rows.append(row)
 manifest.write_text(json.dumps({'files': rows}, indent=2) + '\n')
 print(f'Updated {len(rows)} asset hashes; run make test-assets to verify formats')
