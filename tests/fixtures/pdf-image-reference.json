@@ -1,0 +1,40 @@
+{
+  "provenance": "Owned synthetic pixels; expected RGBA is calculated from the source samples, Decode rules, and stencil/color-key masks.",
+  "cases": [
+    {
+      "asset": "assets/pdf/reference/packed-gray-1bit.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxjYGD4z4AHEwL49BKDR80fNX8gzae1/lHzR80fzOYDADyZvG4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/packed-rgb-4bit-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfMH2HywFXgwpQpGzR81fzCbDwA8mbxu",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gray-16bit-tiff-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxjYGD4z4AHEwKhoaF4MT6zR80fNX+gzV+1ahVeXF9fjxcTAqPmj5o/mM0HAN57G70=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/stencil-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj+M+AFzY0NODF+HUThqPmj5o/kObTWv+o+aPmD2bzAdtnXe4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/color-key-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj434AHMxCCDP/xYnxmj5o/av5Amw9EeDGlCkbNHzV/MJsPAE3U3K4=",
+      "tolerance": 0
+    }
+  ]
+}

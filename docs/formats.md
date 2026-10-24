@@ -72,8 +72,9 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 
 basic text, raw/FlateDecode/ASCIIHexDecode page streams, gray/RGB/CMYK paint, line and cubic Bezier paths,
 nonzero/even-odd fills, and path clipping. Text uses built-in bitmap glyphs. Image XObjects
-support 8-bit DeviceRGB and DeviceGray samples, raw/FlateDecode streams, baseline and
-progressive grayscale/YCbCr JPEG images through DCTDecode, TIFF/PNG predictors, Decode
+support 1/2/4/8/16-bit DeviceRGB, DeviceGray, and DeviceCMYK samples in raw or
+FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
+DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
 nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, text
@@ -93,7 +94,7 @@ Run the generated PDF page regressions with Python 3:
 
 PDF image XObjects use the page's Resources dictionary, including inherited and
 indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
-images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 8-bit samples.
+images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 1/2/4/8/16-bit samples.
 Predictor Colors and Columns must match the image when prediction is enabled.
 The decoded sample data is limited to 64 MiB per image.
 
@@ -101,7 +102,7 @@ JPEG images support DCTDecode as a name or a single-filter array, including
 ColorTransform 1 and Decode array inversion. Their frame dimensions, bit depth,
 and component count must match the image dictionary. FlateDecode also accepts a
 single-filter array. Raw RGB JPEG images, ColorTransform 0, JPX, filter chains,
-image masks, soft masks, indexed color, and inline images
+soft masks, mask-image streams, indexed color, and inline images
 are outside the supported subset.
 Drawing an invalid or unsupported XObject returns a load error.
 
@@ -158,6 +159,20 @@ Run the generated image checks with Python 3:
 
 
 Page content streams also accept ASCIIHexDecode (`AHx`) as a name or a single-filter array. Unknown page filters return an error. Combined page content is limited to 64 MiB.
+
+## Packed image samples and masks
+
+Raw and Flate image streams support 1-, 2-, 4-, 8-, and 16-bit components, including
+odd-width row padding. TIFF horizontal differencing operates on whole components;
+PNG predictors operate on the correct packed byte stride. Sixteen-bit samples
+retain their precision through prediction and Decode mapping before conversion to
+8-bit RGBA.
+
+Stencil ImageMask images use the current fill color, with normal or inverted
+Decode polarity. Color-key Mask arrays make matching source samples transparent.
+Soft masks and external mask-image streams remain unsupported. DeviceCMYK images
+use the same unmanaged conversion as device-color paint; DCT-compressed CMYK
+images and color-managed conversion remain outside this subset.
 
 ## Deferred formats
 

@@ -152,7 +152,7 @@ Use `make test-png`, `test-jpeg`, `test-jpeg-reference`, `test-webp`,
 `test-tiff-bounds`, or `test-decoder-safety` when changing a decoder.
 
 PDF checks include `test-pdf-pages`, `test-pdf-streams`, `test-pdf-safety`,
-`test-pdf-graphics`, `test-pdf-images`, `test-pdf-forms`, `test-pdf-clipping`,
+`test-pdf-graphics`, `test-pdf-images`, `test-pdf-packed-images`, `test-pdf-forms`, `test-pdf-clipping`,
 `test-pdf-colors`, and `test-pdf-clip-oom`. `test-pdf-audit` tests the corpus runner
 itself without network access. `test-deflate-containers` covers shared compression
 through complete PDF/TIFF containers, and `test-inflate` checks zlib directly.
@@ -169,3 +169,10 @@ make -j2 all test CC=clang OBJDIR=obj/clang BINDIR=bin/clang \
 Use separate object and binary directories when changing compiler flags. CI runs
 GCC and Clang sanitizer jobs. Interactive viewers such as `make test-svg` and
 `make test-pdf` are manual inspection tools, not unattended regression gates.
+
+The packed-image suite covers 156 analytic pixel/validation cases. Its optional
+`--reference` mode adds independent raster comparisons and needs `pdftoppm` plus
+the optional `fitz` Python module for full 16-bit predictor/mask precision. The
+secondary comparisons allow one channel level for gray-background tie rounding;
+the normal analytic pixel checks remain exact. None of those external tools are
+needed for `make test-pdf-packed-images`.

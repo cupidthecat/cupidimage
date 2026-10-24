@@ -543,8 +543,16 @@
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92"
     },
     {
+      "path": "assets/pdf/reference/color-key-mask.pdf",
+      "sha256": "882e494b107ead819956d7a0aa9048c13d3e9ecd3b4d11a38e496587f54dc989"
+    },
+    {
       "path": "assets/pdf/reference/eof-without-newline.pdf",
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
+    },
+    {
+      "path": "assets/pdf/reference/gray-16bit-tiff-predictor.pdf",
+      "sha256": "61b55241f59c1a234421bbc777abbac34de9e2453f023c39b0f009f9ea821648"
     },
     {
       "path": "assets/pdf/reference/indirect-flate-length.pdf",
@@ -555,8 +563,20 @@
       "sha256": "a3b9d2450db54cc71af0377d3dcf76c91cf32f0ed278f1318499369ac9e7d3ee"
     },
     {
+      "path": "assets/pdf/reference/packed-gray-1bit.pdf",
+      "sha256": "5321670cc14e471f0ea9155f2b1f97f367c0ab07ea7ca965cca5920d0863445b"
+    },
+    {
+      "path": "assets/pdf/reference/packed-rgb-4bit-predictor.pdf",
+      "sha256": "184d7b5199997cdb70217ef777dcb3811ef1433eba479d988acfd1a5a252f6d0"
+    },
+    {
       "path": "assets/pdf/reference/quadrants.pdf",
       "sha256": "9f2fa1b0e7eb0b0ea83b4795c449fd6f65bcf2c4e736f9cc60c624bd57fc118e"
+    },
+    {
+      "path": "assets/pdf/reference/stencil-mask.pdf",
+      "sha256": "e2f2b9a55b1082b876d1b08395d8d935b9bfbcf9f7a14528603efd801efc2ed5"
     },
     {
       "path": "assets/pdf/shapes.pdf",

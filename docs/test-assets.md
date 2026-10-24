@@ -109,3 +109,9 @@ lengths. Their expected quadrant pixels are analytic. The old `minimal_xref.pdf`
 had a 44-byte Length for 38 bytes of content and stale object offsets. Its corrected
 replacement is generated with exact lengths/offsets; the original is retained as
 `assets/pdf/negative/incorrect-stream-length.pdf`.
+
+Five additional owned PDF image fixtures cover packed grayscale, packed RGB with
+PNG prediction, 16-bit TIFF prediction, stencil masks, and color-key transparency.
+Their full expected pixels are in `tests/fixtures/pdf-image-reference.json` and
+are checked by the all-asset runner. Regenerate them with
+`scripts/generate_pdf_image_reference.py`, which needs only Python's standard library.

@@ -693,12 +693,31 @@ static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_v
     return 1;
 }
 
+static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bits) {
+    if (bits == 8) return row[index];
+    if (bits == 16) return (uint32_t)row[index * 2] * 256u + row[index * 2 + 1];
+    size_t bit = index * (unsigned)bits;
+    return (row[bit / 8] >> (8 - bits - (int)(bit & 7))) & ((1u << bits) - 1u);
+}
+
+static void pdf_store_packed_sample(unsigned char *row, size_t index, int bits, uint32_t value) {
+    if (bits == 8) { row[index] = (unsigned char)value; return; }
+    if (bits == 16) { row[index * 2] = (unsigned char)(value >> 8); row[index * 2 + 1] = (unsigned char)value; return; }
+    size_t bit = index * (unsigned)bits;
+    unsigned shift = 8u - (unsigned)bits - (unsigned)(bit & 7);
+    unsigned mask = ((1u << bits) - 1u) << shift;
+    row[bit / 8] = (unsigned char)((row[bit / 8] & ~mask) | ((value << shift) & mask));
+}
+
 static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view,
-                              int width, int height, int components, unsigned char **samples) {
+                              int width, int height, int components, int image_bits, unsigned char **samples) {
     const unsigned char *stream;
-    size_t length, row = (size_t)width * components, bytes = row * height, pos;
+    size_t length, row = ((size_t)width * components * image_bits + 7u) / 8u;
+    size_t bytes = row * height, pos;
+    if (bytes > 64u * 1024u * 1024u) return 0;
     if (cupidimage_pdf_image_filter_is(view, "DCTDecode"))
-        return pdf_image_jpeg_samples(st, view, width, height, components, samples);
+        return image_bits == 8 && (components == 1 || components == 3) &&
+               pdf_image_jpeg_samples(st, view, width, height, components, samples);
     int predictor = 1, flate = cupidimage_pdf_image_filter_is(view, "FlateDecode");
     if (cupidimage_pdf_page_value(view, "Filter", &pos) && !flate) return 0;
     pdf_object_view params = {0};
@@ -710,12 +729,13 @@ static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *
                  (!cupidimage_pdf_page_value(&params, "Colors", &pos) || pdf_image_integer(st, &params, "Colors", &colors)) &&
                  (!cupidimage_pdf_page_value(&params, "BitsPerComponent", &pos) || pdf_image_integer(st, &params, "BitsPerComponent", &bits));
         cupidimage_pdf_object_view_release(&params);
-        if (!ok || (predictor != 1 && (columns != width || colors != components || bits != 8))) return 0;
+        if (!ok || (predictor != 1 && (columns != width || colors != components || bits != image_bits))) return 0;
     }
     if (predictor != 1 && predictor != 2 && (predictor < 10 || predictor > 15)) return 0;
     if (!pdf_image_stream(st, view, &stream, &length)) return 0;
     size_t encoded_row = row + (predictor >= 10 ? 1u : 0u);
     size_t expected = encoded_row * height;
+    if (expected > 64u * 1024u * 1024u) return 0;
     unsigned char *decoded = (unsigned char *)malloc(expected);
     if (!decoded) return 0;
     size_t actual = 0;
@@ -725,14 +745,22 @@ static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *
         if (length != bytes) goto fail;
         memcpy(decoded, stream, bytes);
     }
+    size_t bpp = ((unsigned)components * (unsigned)image_bits + 7u) / 8u;
+    uint32_t maximum = (1u << image_bits) - 1u;
     for (int y = 0; y < height; y++) {
         unsigned char *scan = decoded + (size_t)y * encoded_row;
-        int filter = predictor >= 10 ? *scan++ : predictor == 2 ? 1 : 0;
+        int filter = predictor >= 10 ? *scan++ : 0;
         if (filter > 4) goto fail;
-        for (size_t x = 0; x < row; x++) {
-            int left = x >= (size_t)components ? scan[x - components] : 0;
+        if (predictor == 2) {
+            for (size_t sample = (size_t)components; sample < (size_t)width * components; sample++) {
+                uint32_t value = pdf_packed_sample(scan, sample, image_bits) +
+                                 pdf_packed_sample(scan, sample - components, image_bits);
+                pdf_store_packed_sample(scan, sample, image_bits, value & maximum);
+            }
+        } else for (size_t x = 0; x < row; x++) {
+            int left = x >= bpp ? scan[x - bpp] : 0;
             int up = y ? decoded[(size_t)(y - 1) * row + x] : 0;
-            int upper_left = y && x >= (size_t)components ? decoded[(size_t)(y - 1) * row + x - components] : 0;
+            int upper_left = y && x >= bpp ? decoded[(size_t)(y - 1) * row + x - bpp] : 0;
             if (filter == 1) scan[x] = (unsigned char)(scan[x] + left);
             else if (filter == 2) scan[x] = (unsigned char)(scan[x] + up);
             else if (filter == 3) scan[x] = (unsigned char)(scan[x] + (left + up) / 2);
@@ -760,16 +788,27 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
         return ok;
     }
     if (!cupidimage_pdf_image_name_is(&image, "Subtype", "Image")) goto done;
-    components = cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceRGB") ? 3 :
-                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1 : 0;
+    int stencil = 0;
+    if (cupidimage_pdf_page_value(&image, "ImageMask", &pos)) {
+        size_t n = image.len - pos;
+        if (n >= 4 && memcmp(image.data + pos, "true", 4) == 0 &&
+            (n == 4 || cupidimage_pdf_is_ws(image.data[pos+4]) || cupidimage_pdf_is_delim(image.data[pos+4]))) stencil = 1;
+        else if (!(n >= 5 && memcmp(image.data + pos, "false", 5) == 0 &&
+            (n == 5 || cupidimage_pdf_is_ws(image.data[pos+5]) || cupidimage_pdf_is_delim(image.data[pos+5])))) goto done;
+    }
+    components = stencil ? 1 : cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceRGB") ? 3 :
+                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1 :
+                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceCMYK") ? 4 : 0;
+    bits = stencil ? 1 : 8;
     if (!components || !pdf_image_integer(st, &image, "Width", &width) ||
         !pdf_image_integer(st, &image, "Height", &height) ||
-        !pdf_image_integer(st, &image, "BitsPerComponent", &bits) || bits != 8 ||
+        ((!stencil || cupidimage_pdf_page_value(&image, "BitsPerComponent", &pos)) &&
+         !pdf_image_integer(st, &image, "BitsPerComponent", &bits)) ||
+        (bits != 1 && bits != 2 && bits != 4 && bits != 8 && bits != 16) ||
+        (stencil && (bits != 1 || cupidimage_pdf_page_value(&image, "ColorSpace", &pos))) ||
         width < 1 || height < 1 || (double)width * height * components > 64.0 * 1024 * 1024 ||
-        cupidimage_pdf_page_value(&image, "SMask", &pos) || cupidimage_pdf_page_value(&image, "Mask", &pos)) goto done;
-    if (cupidimage_pdf_page_value(&image, "ImageMask", &pos) &&
-        (image.len - pos < 5 || memcmp(image.data + pos, "false", 5) != 0)) goto done;
-    double decode[6] = {0, 1, 0, 1, 0, 1};
+        cupidimage_pdf_page_value(&image, "SMask", &pos)) goto done;
+    double decode[8] = {0, 1, 0, 1, 0, 1, 0, 1};
     if (cupidimage_pdf_page_value(&image, "Decode", &pos)) {
         if (pos >= image.len || image.data[pos++] != '[') goto done;
         for (int i = 0; i < 2 * components; i++) {
@@ -779,7 +818,25 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
         cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
         if (pos >= image.len || image.data[pos] != ']') goto done;
     }
-    if (!pdf_image_samples(st, &image, width, height, components, &samples)) goto done;
+    if (stencil && !((decode[0] == 0 && decode[1] == 1) || (decode[0] == 1 && decode[1] == 0))) goto done;
+    uint32_t color_key[8] = {0};
+    uint32_t maximum = (1u << bits) - 1u;
+    int has_color_key = cupidimage_pdf_page_value(&image, "Mask", &pos);
+    if (has_color_key) {
+        if (stencil || pos >= image.len || image.data[pos++] != '[') goto done;
+        for (int i = 0; i < components * 2; i++) {
+            double value;
+            cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
+            if (!cupidimage_pdf_parse_pdf_number(image.data, image.len, &pos, &value) ||
+                value < 0 || value > maximum || floor(value) != value) goto done;
+            color_key[i] = (uint32_t)value;
+            if ((i & 1) && color_key[i] < color_key[i-1]) goto done;
+        }
+        cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
+        if (pos >= image.len || image.data[pos] != ']') goto done;
+    }
+    if (!pdf_image_samples(st, &image, width, height, components, bits, &samples)) goto done;
+    size_t sample_row = ((size_t)width * components * bits + 7u) / 8u;
     const float *m = st->gs.ctm;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
     if (!isfinite(det)) goto done;
@@ -806,12 +863,23 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
             if (u < 0 || u >= 1 || v <= 0 || v > 1) continue;
             int sx = (int)(u * width), sy = (int)((1 - v) * height);
             if (sx >= width || sy >= height) continue;
-            const unsigned char *sample = samples + ((size_t)sy * width + sx) * components;
+            const unsigned char *sample = samples + (size_t)sy * sample_row;
+            double values[4] = {0};
+            int transparent = has_color_key;
+            for (int c = 0; c < components; c++) {
+                uint32_t value = pdf_packed_sample(sample, (size_t)sx * components + c, bits);
+                if (has_color_key && (value < color_key[c*2] || value > color_key[c*2+1])) transparent = 0;
+                values[c] = decode[2*c] + ((double)value / maximum) * (decode[2*c+1] - decode[2*c]);
+            }
+            if (transparent || (stencil && values[0] >= 0.5)) continue;
             uint8_t rgb[3];
-            for (int c = 0; c < 3; c++) {
-                int k = components == 1 ? 0 : c;
-                double value = decode[2 * k] + (sample[k] / 255.0) * (decode[2 * k + 1] - decode[2 * k]);
-                rgb[c] = pdf_clamp_u8(value);
+            if (stencil) {
+                rgb[0] = st->gs.fill_r; rgb[1] = st->gs.fill_g; rgb[2] = st->gs.fill_b;
+            } else if (components == 4) {
+                double black = fmin(1, fmax(0, values[3]));
+                for (int c = 0; c < 3; c++) rgb[c] = pdf_clamp_u8(1 - fmin(1, fmax(0, values[c]) + black));
+            } else {
+                for (int c = 0; c < 3; c++) rgb[c] = pdf_clamp_u8(values[components == 1 ? 0 : c]);
             }
             pdf_set_pixel(st, x, y, rgb[0], rgb[1], rgb[2]);
         }

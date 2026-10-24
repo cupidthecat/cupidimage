@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def references():
     output = {}
-    for filename in ('format-reference.json', 'vp8-reference.json', 'jpeg-reference.json'):
+    for filename in ('format-reference.json', 'vp8-reference.json', 'jpeg-reference.json', 'pdf-image-reference.json'):
         for row in json.loads((ROOT / 'tests/fixtures' / filename).read_text())['cases']:
             output[row['asset']] = row
     return output

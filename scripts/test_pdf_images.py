@@ -160,6 +160,7 @@ def main():
               "/Width 2 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray /Decode [1 0]"),
               lambda x, y: (255 - ((0, 85), (170, 255))[y >= 8][x >= 12],) * 3)
         check("image-mask-false", fixture(attrs=attrs + " /ImageMask false"), quadrants)
+        check("color-key-no-match", fixture(attrs=attrs + " /Mask [0 0 0 0 0 0]"), quadrants)
         check("nested-decoys", fixture(attrs="/Other << /Width 999 /Filter /Unsupported >> " + attrs), quadrants)
         check("indirect-dimensions", fixture(attrs=attrs.replace("/Width 2", "/Width 8 0 R"), extra={8: "2"}), quadrants)
         check("indirect-length", fixture(length="8 0 R", extra={8: "12"}), quadrants)
@@ -187,12 +188,11 @@ def main():
                              ("fractional-width", {"attrs": attrs.replace("/Width 2", "/Width 2.5")}),
                              ("huge-width", {"attrs": attrs.replace("/Width 2", "/Width 999999999999999999999999")}),
                              ("oversized-image", {"attrs": attrs.replace("/Width 2", "/Width 100000000")}),
-                             ("unsupported-bits", {"attrs": attrs.replace("/BitsPerComponent 8", "/BitsPerComponent 1")}),
+                             ("packed-bits-with-invalid-byte-count", {"attrs": attrs.replace("/BitsPerComponent 8", "/BitsPerComponent 1")}),
                              ("unsupported-space", {"attrs": attrs.replace("/DeviceRGB", "/Indexed")}),
                              ("unsupported-filter", {"attrs": attrs + " /Filter /JPXDecode"}),
-                             ("unsupported-mask", {"attrs": attrs + " /ImageMask true"}),
+                             ("invalid-stencil-color-space-and-depth", {"attrs": attrs + " /ImageMask true"}),
                              ("soft-mask", {"attrs": attrs + " /SMask 8 0 R"}),
-                             ("color-mask", {"attrs": attrs + " /Mask [0 0 0 0 0 0]"}),
                              ("bad-decode", {"attrs": attrs + " /Decode [1 0]"}),
                              ("short-data", {"payload": RGB[:-1]}),
                              ("extra-data", {"payload": RGB + b"X"}),
