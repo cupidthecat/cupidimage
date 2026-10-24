@@ -1,5 +1,5 @@
 #include "cupidimage.h"
-#include "cupidimage_kitty.h"
+#include "output/kitty/cupidimage_kitty.h"
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>

@@ -21,7 +21,7 @@
       <feTile in="SourceGraphic"/>
     </filter>
     <filter id="img" x="0" y="0" width="100%" height="100%">
-      <feImage href="assets/basic.png" x="0" y="0" width="120" height="80" result="img"/>
+      <feImage href="assets/png/basic.png" x="0" y="0" width="120" height="80" result="img"/>
       <feComposite in="img" in2="SourceGraphic" operator="over"/>
     </filter>
   </defs>

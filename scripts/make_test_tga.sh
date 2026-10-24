@@ -11,6 +11,7 @@ from pathlib import Path
 
 outdir = Path(os.environ.get("OUTDIR", "assets/tga"))
 outdir.mkdir(parents=True, exist_ok=True)
+(outdir / "negative").mkdir(exist_ok=True)
 
 SIGNATURE = b"TRUEVISION-XFILE.\0"
 
@@ -381,7 +382,7 @@ header = pack_header(id_length=0, color_map_type=0, image_type=2,
                      cm_first=0, cm_length=0, cm_entry_size=0,
                      x_origin=0, y_origin=0, width=w, height=h,
                      pixel_depth=16, descriptor=0)
-write_tga(outdir / "16bit-rgb565.tga", header=header, image=image)
+write_tga(outdir / "negative/16bit-rgb565.tga", header=header, image=image)
 
 indices16 = index_pattern(w, h, 16)
 image = encode_indices(indices16, w, h, origin=0, pixel_depth=16)
@@ -491,24 +492,24 @@ header = pack_header(id_length=0, color_map_type=0, image_type=4,
                      cm_first=0, cm_length=0, cm_entry_size=0,
                      x_origin=0, y_origin=0, width=w, height=h,
                      pixel_depth=24, descriptor=0)
-write_tga(outdir / "invalid-type.tga", header=header)
+write_tga(outdir / "negative/invalid-type.tga", header=header)
 
 header = pack_header(id_length=0, color_map_type=0, image_type=2,
                      cm_first=0, cm_length=0, cm_entry_size=0,
                      x_origin=0, y_origin=0, width=w, height=h,
                      pixel_depth=24, descriptor=0)
-write_tga(outdir / "invalid-signature.tga", header=header, image=image,
+write_tga(outdir / "negative/invalid-signature.tga", header=header, image=image,
           extension={"author": "bad", "attributes_type": 3, "gamma": (0, 0)},
           cc_table=b"" )
 # corrupt footer signature
-p = outdir / "invalid-signature.tga"
+p = outdir / "negative/invalid-signature.tga"
 blob = bytearray(p.read_bytes())
 if len(blob) >= 18:
     blob[-18:] = b"INVALID-SIGNATURE."
     p.write_bytes(blob)
 
 # Truncated pixel data
-p = outdir / "truncated.tga"
+p = outdir / "negative/truncated.tga"
 header = pack_header(id_length=0, color_map_type=0, image_type=2,
                      cm_first=0, cm_length=0, cm_entry_size=0,
                      x_origin=0, y_origin=0, width=w, height=h,
@@ -520,7 +521,7 @@ header = pack_header(id_length=0, color_map_type=0, image_type=2,
                      cm_first=0, cm_length=0, cm_entry_size=0,
                      x_origin=0, y_origin=0, width=65535, height=65535,
                      pixel_depth=24, descriptor=0)
-write_tga(outdir / "huge-dimensions.tga", header=header)
+write_tga(outdir / "negative/huge-dimensions.tga", header=header)
 
 # RLE overflow (declares more pixels than available)
 raw = encode_pixels_rgba(rgba, w, h, origin=0, pixel_depth=24)
@@ -530,7 +531,7 @@ header = pack_header(id_length=0, color_map_type=0, image_type=10,
                      cm_first=0, cm_length=0, cm_entry_size=0,
                      x_origin=0, y_origin=0, width=w, height=h,
                      pixel_depth=24, descriptor=0)
-write_tga(outdir / "rle-overflow.tga", header=header, image=bad_rle)
+write_tga(outdir / "negative/rle-overflow.tga", header=header, image=bad_rle)
 
 print(f"Wrote TGA assets to {outdir}")
 PY
