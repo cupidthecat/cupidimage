@@ -3,7 +3,7 @@
 from pathlib import Path
 import tempfile
 import unittest
-from review_assets import ask, collect, label, review_key, select_range
+from review_assets import ask, automatic_failure, collect, label, review_key, select_range
 
 
 class ReviewTests(unittest.TestCase):
@@ -36,6 +36,16 @@ class ReviewTests(unittest.TestCase):
             if expected in ('partial','wrong'):self.assertEqual(note,'note')
         replies=iter(['n','text is missing','p'])
         self.assertEqual(ask(lambda _:next(replies)),('partial','text is missing'))
+
+    def test_failed_render_is_automatically_wrong(self):
+        for status in ('error','signal','timeout','invalid-output'):
+            details={'decode_status':status,'error':'failed\n'}
+            self.assertTrue(automatic_failure(details))
+            self.assertEqual(details['rating'],'wrong')
+            self.assertEqual(details['rating_source'],'automatic')
+        self.assertFalse(automatic_failure({'decode_status':'ok'}))
+        self.assertTrue(automatic_failure({'decode_status':'ok','terminal_status':'error'}))
+        self.assertTrue(automatic_failure({'decode_status':'ok','artifact_error':'invalid raster'}))
 
     def test_fingerprints(self):
         base=review_key('/image','sha',0,'probe','cli','auto')

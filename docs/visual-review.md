@@ -57,7 +57,13 @@ At each prompt:
 - `n`: add a note before choosing a rating.
 - `q` or Ctrl+C: stop, keeping completed ratings.
 
-Wrong/partial ratings offer an optional note. Describe missing text, incorrect
+Decode failures, crashes, timeouts, invalid output, and failed terminal rendering
+automatically save a `wrong` rating and advance without asking you to judge a
+reference-only or missing image. These records have `rating_source: automatic`;
+keyboard decisions have `rating_source: manual`. Missing input files are reported
+separately because no decoder was tested. Previously saved ratings are not rewritten.
+
+Wrong/partial manual ratings offer an optional note. Describe missing text, incorrect
 colors, misplaced shapes, clipping, or other visible problems. Decode errors and
 terminal-render errors are recorded separately from your rating. A successful
 process is not automatically marked correct.

@@ -95,6 +95,16 @@ def ask(input_fn=input):
         print('Choose c, p, w, s, r, n, or q.')
 
 
+def automatic_failure(details):
+    reason = None
+    if details.get('decode_status') != 'ok': reason = 'No decoded image: ' + details.get('error', '').strip()
+    elif details.get('artifact_error'): reason = 'No viewable image: ' + details['artifact_error']
+    elif details.get('terminal_status') in ('error', 'timeout'): reason = 'Terminal rendering failed: ' + details['terminal_status']
+    if reason is None: return False
+    details.update(rating='wrong', rating_source='automatic', note=reason)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('paths', nargs='*', help='Files, directories, or quoted globs; mixed formats are allowed')
@@ -210,6 +220,10 @@ def main():
                             metadata,rgba,_,_,_=bundle(raw);details.update({k:v for k,v in metadata.items()if k!='count'})
                             actual=target/'actual.rgba';actual.write_bytes(struct.pack('=III',metadata['width'],metadata['height'],wanted)+rgba)
                         except Exception as error:details.update(decode_status='invalid-output',error=str(error))
+                    if automatic_failure(details):
+                        emit(details); counts['wrong']+=1; counts['automatic-wrong']+=1; previous.add(key)
+                        print('Automatically rated WRONG:',label(details['note']),flush=True)
+                        continue
                     reference=None
                     if args.reference and fmt=='pdf':
                         prefix=target/'reference'
@@ -218,6 +232,10 @@ def main():
                         if ref['status']=='ok' and prefix.with_suffix('.ppm').exists():reference=prefix.with_suffix('.ppm')
                     try: save_visuals(target,actual,reference,read_ppm)
                     except Exception as error: details['artifact_error']=str(error)
+                    if automatic_failure(details):
+                        emit(details); counts['wrong']+=1; counts['automatic-wrong']+=1; previous.add(key)
+                        print('Automatically rated WRONG:',label(details['note']),flush=True)
+                        continue
                     preview=target/'comparison.png';caption='LEFT: cupidimage | RIGHT: independent reference'
                     if not preview.exists():preview=target/'actual-preview.png';caption='cupidimage output (no reference displayed)'
                     if not preview.exists():preview=target/'reference-preview.png';caption='REFERENCE ONLY: cupidimage failed to render'
@@ -225,7 +243,7 @@ def main():
                     note=''
                     while True:
                         print(f"\n{label(path.name)}: page/frame {page+1}/{wanted}\n{caption}",flush=True)
-                        if details['error']:print('Decoder:',label(details['error']),flush=True)
+                        if details['error']:print('Decoder:',label(details['error'].strip()),flush=True)
                         if details.get('artifact_error'):print('Preview:',label(details['artifact_error']),flush=True)
                         if preview.exists():
                             flags=[] if args.backend=='auto' else ['--'+args.backend]
@@ -235,10 +253,13 @@ def main():
                             except subprocess.TimeoutExpired:
                                 details['terminal_status']='timeout';print('Terminal rendering timed out.')
                         else:print('No image could be rendered.')
+                        if automatic_failure(details):
+                            emit(details);counts['wrong']+=1;counts['automatic-wrong']+=1;previous.add(key)
+                            print('Automatically rated WRONG:',label(details['note']),flush=True);break
                         rating,new_note=ask();note=new_note or note
                         if rating=='redisplay':continue
                         if rating=='quit':stopped=True;break
-                        details.update(rating=rating,note=note);emit(details);counts[rating]+=1;previous.add(key);break
+                        details.update(rating=rating,rating_source="manual",note=note);emit(details);counts[rating]+=1;previous.add(key);break
                     if stopped:break
                 if stopped:break
         except (KeyboardInterrupt,EOFError):stopped=True;print('\nReview stopped; completed ratings are saved.')
