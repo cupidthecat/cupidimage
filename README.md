@@ -12,9 +12,9 @@ for the exact boundaries. HEIC/HEIF is deferred.
 
 ## GIF rendering preview
 
-![cupidimage displaying a GIF in the terminal](img/gif-terminal-preview.png)
+![cupidimage displaying a GIF in the terminal](img/gif-terminal-preview.gif)
 
-Screenshot of the GIF renderer.
+Animated preview of the GIF renderer.
 
 ## Build and preview
 
