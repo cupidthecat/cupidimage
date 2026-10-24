@@ -7,9 +7,9 @@ INCLUDES = -Isrc -I.
 OBJDIR = obj
 BINDIR = bin
 SRCDIR = src
-LIBSRC = $(filter-out $(SRCDIR)/cupidimage_cli.c,$(wildcard $(SRCDIR)/*.c))
+LIBSRC = $(shell find $(SRCDIR) -name '*.c' ! -path '$(SRCDIR)/cli/*' | sort)
 LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
-CLI_OBJ = $(OBJDIR)/cupidimage_cli.o
+CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
 TEST_TARGETS = test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
@@ -119,8 +119,8 @@ test-pdf: $(CLI)
 $(BINDIR)/test_%: tests/test_%.c $(LIB) $(SRCDIR)/cupidimage.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_deflate_containers $(BINDIR)/test_pdf_graphics: tests/pdf_fixture.h
-$(BINDIR)/test_svg_css_oom: $(SRCDIR)/cupidimage_svg.c $(SRCDIR)/cupidimage_svg_base.c tests/fault_alloc.h
-$(BINDIR)/test_pdf_clip_oom: $(SRCDIR)/cupidimage_pdf.c tests/fault_alloc.h
+$(BINDIR)/test_svg_css_oom: $(filter $(SRCDIR)/formats/svg/%,$(LIBSRC)) $(SRCDIR)/formats/svg/svg_internal.h tests/fault_alloc.h
+$(BINDIR)/test_pdf_clip_oom: $(filter $(SRCDIR)/formats/pdf/%,$(LIBSRC)) $(SRCDIR)/formats/pdf/pdf_internal.h tests/fault_alloc.h
 $(BINDIR)/test_jpeg_decoder: scripts/test_jpeg_decoder.c $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB) | $(BINDIR)
@@ -128,15 +128,22 @@ $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB) | $(BINDIR)
 $(BINDIR)/test_sixel: scripts/test_sixel.c $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
-$(LIB): $(LIBOBJ) | $(BINDIR)
+$(LIB): $(LIBOBJ) $(OBJDIR)/library-sources.list | $(BINDIR)
+	rm -f $@
 	$(AR) rcs $@ $(LIBOBJ)
 $(CLI): $(CLI_OBJ) $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(CLI_OBJ) $(LIB) -o $@ $(LDLIBS)
+.PHONY: check-source-list
+$(OBJDIR)/library-sources.list: check-source-list | $(OBJDIR)
+	@printf '%s\n' $(LIBSRC) > $@.tmp
+	@cmp -s $@.tmp $@ && rm -f $@.tmp || mv $@.tmp $@
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(INCLUDES) -MMD -MP -c $< -o $@
 $(OBJDIR) $(BINDIR):
 	mkdir -p $@
 clean:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.d $(LIB) $(CLI) $(addprefix $(BINDIR)/,$(TEST_BINS))
+	rm -f $(LIBOBJ) $(CLI_OBJ) $(LIBOBJ:.o=.d) $(CLI_OBJ:.o=.d) $(OBJDIR)/*.o $(OBJDIR)/*.d $(OBJDIR)/library-sources.list $(OBJDIR)/library-sources.list.tmp $(LIB) $(CLI) $(addprefix $(BINDIR)/,$(TEST_BINS))
 
 -include $(LIBOBJ:.o=.d) $(CLI_OBJ:.o=.d)

@@ -1,5 +1,5 @@
 #include "cupidimage.h"
-#include "cupidimage_webp_lossless.h"
+#include "formats/webp/cupidimage_webp_lossless.h"
 #include <string.h>
 
 static unsigned char stream[2048];

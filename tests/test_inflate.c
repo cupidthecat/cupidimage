@@ -1,4 +1,4 @@
-#include "cupidimage_internal.h"
+#include "core/internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 

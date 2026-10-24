@@ -88,6 +88,7 @@ Downloaded corpora and generated reports stay outside Git.
 - [Build and installation](docs/building.md)
 - [Command-line reference](docs/cli.md)
 - [Library API](docs/api.md)
+- [Source architecture](docs/architecture.md)
 - [Formats and known limitations](docs/formats.md)
 - [Testing and full-corpus audits](docs/testing.md)
 - [Asset provenance](docs/test-assets.md)

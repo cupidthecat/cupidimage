@@ -4,7 +4,10 @@
 #define calloc fault_calloc
 #define realloc fault_realloc
 #define free fault_free
-#include "../src/cupidimage_pdf.c"
+#include "../src/formats/pdf/pdf_document.c"
+#include "../src/formats/pdf/pdf_fonts.c"
+#include "../src/formats/pdf/pdf_render.c"
+#include "../src/formats/pdf/cupidimage_pdf.c"
 #undef malloc
 #undef calloc
 #undef realloc
@@ -34,7 +37,7 @@ int main(void) {
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
-            int ok = pdf_render_content_stream((const unsigned char *)fixtures[fixture],
+            int ok = cupidimage_pdf_render_content_stream((const unsigned char *)fixtures[fixture],
                 strlen(fixtures[fixture]), (const unsigned char *)document, (size_t)document_size,
                 3, NULL, &image, &geometry, error, sizeof(error));
             if (failure == 0) total = allocation_count;
