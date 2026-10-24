@@ -91,6 +91,7 @@ Downloaded corpora and generated reports stay outside Git.
 - [Source architecture](docs/architecture.md)
 - [Formats and known limitations](docs/formats.md)
 - [Testing and full-corpus audits](docs/testing.md)
+- [Interactive visual review and ratings](docs/visual-review.md)
 - [Asset provenance](docs/test-assets.md)
 - [Security and troubleshooting](docs/troubleshooting.md)
 

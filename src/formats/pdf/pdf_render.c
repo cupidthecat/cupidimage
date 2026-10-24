@@ -119,31 +119,6 @@ static void pdf_render_state_release(pdf_render_state *st) {
     for (int i = 0; i < st->gs_stack_len; i++) pdf_clip_release(st, st->gs_stack[i].clip);
 }
 
-static int pdf_is_ws(unsigned char c) {
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\0';
-}
-
-int cupidimage_pdf_is_delim(unsigned char c) {
-    return c == '(' || c == ')' || c == '<' || c == '>' || c == '[' || c == ']' ||
-           c == '{' || c == '}' || c == '/' || c == '%';
-}
-
-void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos) {
-    while (*pos < size) {
-        if (pdf_is_ws(data[*pos])) {
-            (*pos)++;
-            continue;
-        }
-        if (data[*pos] == '%') {
-            while (*pos < size && data[*pos] != '\n' && data[*pos] != '\r') {
-                (*pos)++;
-            }
-            continue;
-        }
-        break;
-    }
-}
-
 static unsigned char pdf_clamp_u8(double v) {
     if (v < 0.0) v = 0.0;
     if (v > 1.0) v = 1.0;
@@ -195,7 +170,7 @@ static int pdf_parse_name_token(const unsigned char *data, size_t size, size_t *
     }
     size_t start = *pos + 1;
     size_t p = start;
-    while (p < size && !pdf_is_ws(data[p]) && !cupidimage_pdf_is_delim(data[p])) {
+    while (p < size && !cupidimage_pdf_is_ws(data[p]) && !cupidimage_pdf_is_delim(data[p])) {
         p++;
     }
 
@@ -402,6 +377,63 @@ static int pdf_parse_hex_string(const unsigned char *data, size_t size, size_t *
     return 1;
 }
 
+/* Content property dictionaries are operands, not hex strings or operators.
+ * Scan nested dictionaries/arrays without executing their contents. */
+static int pdf_parse_dictionary_token(const unsigned char *data, size_t size, size_t *pos,
+                                      char **out, size_t *out_len) {
+    size_t start = *pos, p = start;
+    unsigned char stack[64];
+    unsigned depth = 0;
+    if (p > size || size - p < 2 || data[p] != '<' || data[p + 1] != '<') return 0;
+    stack[depth++] = '>'; p += 2;
+    while (p < size && depth) {
+        if (p - start > 1024u * 1024u) return 0;
+        unsigned char c = data[p++];
+        if (c == '%') {
+            while (p < size && data[p] != '\r' && data[p] != '\n') p++;
+        } else if (c == '(') {
+            unsigned nesting = 1;
+            while (p < size && nesting) {
+                c = data[p++];
+                if (c == '\\') { if (p >= size) return 0; p++; }
+                else if (c == '(') { if (++nesting > 64) return 0; }
+                else if (c == ')') nesting--;
+            }
+            if (nesting) return 0;
+        } else if (c == '<') {
+            if (p < size && data[p] == '<') {
+                if (depth == sizeof(stack)) return 0;
+                stack[depth++] = '>'; p++;
+            } else {
+                int closed = 0;
+                while (p < size) {
+                    c = data[p++];
+                    if (c == '>') { closed = 1; break; }
+                    if (!cupidimage_pdf_is_ws(c) && !((c >= '0' && c <= '9') ||
+                        (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) return 0;
+                }
+                if (!closed) return 0;
+            }
+        } else if (c == '[') {
+            if (depth == sizeof(stack)) return 0;
+            stack[depth++] = ']';
+        } else if (c == ']') {
+            if (stack[depth - 1] != ']') return 0;
+            depth--;
+        } else if (c == '>') {
+            if (stack[depth - 1] != '>' || p >= size || data[p++] != '>') return 0;
+            depth--;
+        } else if (c == ')') return 0;
+    }
+    if (depth || p - start > 1024u * 1024u) return 0;
+    size_t length = p - start;
+    char *copy = (char *)malloc(length + 1);
+    if (!copy) return 0;
+    memcpy(copy, data + start, length); copy[length] = '\0';
+    *out = copy; *out_len = length; *pos = p;
+    return 1;
+}
+
 static int pdf_parse_array_token(const unsigned char *data, size_t size, size_t *pos,
                                  char **out_str, size_t *out_len) {
     if (*pos >= size || data[*pos] != '[') {
@@ -562,73 +594,20 @@ static int pdf_image_object(const pdf_render_state *st, const char *name, int *o
 
 static int pdf_image_integer(const pdf_render_state *st, const pdf_object_view *view,
                               const char *key, int *value) {
-    size_t pos;
-    if (!cupidimage_pdf_page_value(view, key, &pos)) return 0;
-    pdf_object_view indirect = {0};
-    int object;
-    if (cupidimage_pdf_page_reference(view, pos, &object)) {
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect)) return 0;
-        view = &indirect;
-        pos = 0;
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    }
-    double number;
-    int ok = cupidimage_pdf_parse_pdf_number(view->data, view->len, &pos, &number) &&
-             number >= 0 && number <= INT_MAX && floor(number) == number &&
-             (pos == view->len || pdf_is_ws(view->data[pos]) || cupidimage_pdf_is_delim(view->data[pos]));
-    if (ok) *value = (int)number;
-    cupidimage_pdf_object_view_release(&indirect);
-    return ok;
+    return cupidimage_pdf_dictionary_integer(st->document, st->document_size, view, key, value);
 }
 
 int cupidimage_pdf_image_name_is(const pdf_object_view *view, const char *key, const char *name) {
     size_t pos, length = strlen(name);
     if (!cupidimage_pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '/') return 0;
     return length <= view->len - pos && memcmp(view->data + pos, name, length) == 0 &&
-           (pos + length == view->len || pdf_is_ws(view->data[pos + length]) ||
+           (pos + length == view->len || cupidimage_pdf_is_ws(view->data[pos + length]) ||
             cupidimage_pdf_is_delim(view->data[pos + length]));
 }
 
-/* Find the end of the outer dictionary without matching text inside a string. */
 static int pdf_image_stream(const pdf_render_state *st, const pdf_object_view *view,
                              const unsigned char **stream, size_t *length) {
-    size_t pos = 0;
-    int depth = 0, declared;
-    if (!pdf_image_integer(st, view, "Length", &declared)) return 0;
-    while (pos < view->len) {
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-        if (pos >= view->len) return 0;
-        unsigned char c = view->data[pos++];
-        if (c == '(') {
-            int strings = 1;
-            while (pos < view->len && strings) {
-                c = view->data[pos++];
-                if (c == '\\' && pos < view->len) pos++;
-                else if (c == '(') strings++;
-                else if (c == ')') strings--;
-            }
-        } else if (c == '<') {
-            if (pos < view->len && view->data[pos] == '<') { depth++; pos++; }
-            else while (pos < view->len && view->data[pos++] != '>') { }
-        } else if (c == '>' && pos < view->len && view->data[pos] == '>') {
-            pos++;
-            if (--depth == 0) break;
-        }
-    }
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (depth != 0 || view->len - pos < 7 || memcmp(view->data + pos, "stream", 6) != 0) return 0;
-    pos += 6;
-    if (view->data[pos] == '\r') {
-        pos++;
-        if (pos < view->len && view->data[pos] == '\n') pos++;
-    } else if (view->data[pos] == '\n') pos++;
-    else return 0;
-    if ((size_t)declared > view->len - pos) return 0;
-    *stream = view->data + pos;
-    *length = (size_t)declared;
-    pos += *length;
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    return view->len - pos >= 9 && memcmp(view->data + pos, "endstream", 9) == 0;
+    return cupidimage_pdf_object_stream(st->document, st->document_size, view, stream, length);
 }
 
 static unsigned char pdf_image_paeth(int a, int b, int c) {
@@ -1460,7 +1439,8 @@ typedef enum {
     PDF_OPERAND_NUM,
     PDF_OPERAND_NAME,
     PDF_OPERAND_STRING,
-    PDF_OPERAND_ARRAY
+    PDF_OPERAND_ARRAY,
+    PDF_OPERAND_DICTIONARY
 } pdf_operand_type;
 
 typedef struct {
@@ -1506,7 +1486,7 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
     if (pos >= view->len || view->data[pos++] != '/') return 0;
     char name[128];
     size_t length = 0;
-    while (pos < view->len && !pdf_is_ws(view->data[pos]) && !cupidimage_pdf_is_delim(view->data[pos])) {
+    while (pos < view->len && !cupidimage_pdf_is_ws(view->data[pos]) && !cupidimage_pdf_is_delim(view->data[pos])) {
         if (length + 1 == sizeof(name)) return 0;
         name[length++] = (char)view->data[pos++];
     }
@@ -1825,6 +1805,23 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
             continue;
         }
 
+        if (c == '<' && pos + 1 < stream_len && stream[pos + 1] == '<') {
+            char *dictionary = NULL;
+            size_t length = 0;
+            if (!pdf_parse_dictionary_token(stream, stream_len, &pos, &dictionary, &length)) {
+                cupidimage_set_err(err, errcap, "pdf: malformed content dictionary");
+                pdf_clear_operands(ops, &op_count);
+                return 0;
+            }
+            if (op_count < (int)(sizeof(ops) / sizeof(ops[0]))) {
+                ops[op_count].type = PDF_OPERAND_DICTIONARY;
+                ops[op_count].str = dictionary;
+                ops[op_count].len = length;
+                op_count++;
+            } else free(dictionary);
+            continue;
+        }
+
         if (c == '<' && !(pos + 1 < stream_len && stream[pos + 1] == '<')) {
             char *txt = NULL;
             size_t txt_len = 0;
@@ -1897,7 +1894,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
         }
 
         size_t start = pos;
-        while (pos < stream_len && !pdf_is_ws(stream[pos]) && !cupidimage_pdf_is_delim(stream[pos])) {
+        while (pos < stream_len && !cupidimage_pdf_is_ws(stream[pos]) && !cupidimage_pdf_is_delim(stream[pos])) {
             pos++;
         }
         if (pos > start) {

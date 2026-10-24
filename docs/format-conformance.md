@@ -143,3 +143,20 @@ link entries separately. See [testing](testing.md) for first-page versus all-pag
 audits, process limits, resume behavior, and independent raster comparisons.
 
 ICO header validation follows [Microsoft's ICO format description](https://devblogs.microsoft.com/oldnewthing/20101018-00/?p=12513).
+
+## PDF parsing fixes from the corpus
+
+The next parser batch accepts an EOF marker ending at the final byte, treats
+marked-content property dictionaries as bounded operands rather than hex strings,
+and resolves direct/indirect stream lengths exactly. Indirect integer chains have
+cycle and depth checks. Page Count is read from the outer dictionary rather than
+nested decoys. A narrow compatibility repair accepts generation 65536 only on
+the unused object-zero free-list sentinel; live entries and other generation
+overflows remain errors. The normative free-list generation is still 65535.
+
+These changes follow [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf), especially object syntax, stream boundaries, cross-reference tables, and marked-content property lists. They do not implement optional-content visibility, complete fonts, or all image filters.
+
+In a targeted all-page run on the same 225 cached corpus files, document errors
+fell from 114 to 8 and rendered pages increased from 70 to 103. Additional image
+failures became visible once those documents parsed. These are decoding results,
+not a visual-conformance score, and do not substitute for a complete-corpus rerun.

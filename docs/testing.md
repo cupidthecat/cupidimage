@@ -119,10 +119,31 @@ the runner does not resize, align, or crop them to manufacture a match. The
 current library trims page whitespace, so some differences reflect that policy
 as well as incomplete rendering.
 
-`--keep-images` retains reference PPMs and the probe's actual output beside the
-report. Actual PDF output starts with three native-endian 32-bit values
-(width, height, page count), followed by RGBA bytes. These artifacts are for local
-diagnosis and remain ignored by Git.
+`--keep-images` saves full-resolution actual/reference PNGs, a side-by-side PNG,
+and a difference preview when page dimensions match. An HTML gallery is written
+beside the JSONL report, for example `visual.html`. Open it in a browser to inspect
+several pages. Preview images may be downsampled for display; the numerical
+comparison still uses original pixels without alignment or resizing.
+
+To display comparisons in the terminal as they are produced:
+
+```sh
+python3 scripts/audit_pdf_corpus.py --download --reference --terminal-preview \
+  --pause --limit 20 --report .cache/pdfjs-full/visual-20.jsonl
+```
+
+This is different from the ordinary audit command, which prints progress/results
+but does not display page images. Missing actual output is labeled as a failure;
+a reference-only preview is never presented as cupidimage's output.
+
+For interactive **correct / partly wrong / wrong / skip** ratings, mixed-format
+selections, and resumable manual reviews, use [interactive visual review](visual-review.md).
+
+Raw probe output and reference PPMs are also retained for diagnosis. Actual PDF
+output starts with three native-endian 32-bit values (width, height, page count),
+followed by RGBA bytes. All generated artifacts remain ignored by Git. Large
+all-page runs with saved images can use substantial disk space; start with a
+selection rather than storing the entire corpus at once.
 
 ## Focused suites and sanitizers
 

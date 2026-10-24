@@ -12,7 +12,7 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
@@ -34,10 +34,15 @@ test-format-pixels: $(BINDIR)/test_format_pixels
 test-asset-corpus: $(BINDIR)/test_asset_probe
 	python3 scripts/test_asset_corpus.py --probe $< --memory-mib $(if $(findstring sanitize,$(CFLAGS)),0,1024) --timeout $(if $(findstring sanitize,$(CFLAGS)),30,10)
 
+test-visual-review:
+	python3 scripts/test_visual_review.py
+
 test-pdf-audit:
 	python3 scripts/test_pdf_audit.py
 
-.PHONY: audit-assets audit-pdf-full
+.PHONY: audit-assets audit-pdf-full review-assets
+review-assets: $(CLI) $(BINDIR)/test_asset_probe
+	python3 scripts/review_assets.py --cli $(CLI) --probe $(BINDIR)/test_asset_probe $(REVIEW_ARGS)
 audit-assets: test-asset-corpus
 audit-pdf-full: $(BINDIR)/test_pdf_pages
 	python3 scripts/audit_pdf_corpus.py --probe $< --download

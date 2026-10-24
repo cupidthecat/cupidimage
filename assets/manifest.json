@@ -499,7 +499,7 @@
     },
     {
       "path": "assets/pdf/minimal_xref.pdf",
-      "sha256": "4694d77d16c82c01296852ad2be9b1d028e72e54d34eba9e62d09ada01780b95"
+      "sha256": "4df8cc51695b7fddeeb98f8f5ae4cd9b059e92c4bd70959fab53bfb675b860e9"
     },
     {
       "path": "assets/pdf/multiline.pdf",
@@ -508,6 +508,11 @@
     {
       "path": "assets/pdf/multiline.tex",
       "sha256": "5f17a9b5eded7a4192ba14ae35e55e45e213793a9f95f4dd4758814ca3ea27c8"
+    },
+    {
+      "path": "assets/pdf/negative/incorrect-stream-length.pdf",
+      "sha256": "4694d77d16c82c01296852ad2be9b1d028e72e54d34eba9e62d09ada01780b95",
+      "negative_reason": "Legacy fixture declares a 44-byte content stream containing only 38 bytes and has stale object offsets."
     },
     {
       "path": "assets/pdf/pdfjs/LICENSE-APACHE-2.0.txt",
@@ -536,6 +541,18 @@
     {
       "path": "assets/pdf/pypdf/minimal-document.pdf",
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92"
+    },
+    {
+      "path": "assets/pdf/reference/eof-without-newline.pdf",
+      "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
+    },
+    {
+      "path": "assets/pdf/reference/indirect-flate-length.pdf",
+      "sha256": "28d1418811c6fcd48d3f0bf5f692b95c837ad7f57b995d17f4bf69779a5da1ab"
+    },
+    {
+      "path": "assets/pdf/reference/marked-content-properties.pdf",
+      "sha256": "a3b9d2450db54cc71af0377d3dcf76c91cf32f0ed278f1318499369ac9e7d3ee"
     },
     {
       "path": "assets/pdf/reference/quadrants.pdf",

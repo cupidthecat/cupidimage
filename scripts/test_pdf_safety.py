@@ -13,6 +13,12 @@ def main():
     probe = str(pathlib.Path(sys.argv[1]).resolve())
     base = document('/MediaBox [0 0 18 12]')
     cases = [('valid', base, False)]
+    cases.append(('eof-without-final-newline', base.rstrip(b'\r\n'), False))
+    cases.append(('eof-final-cr', base.rstrip(b'\r\n') + b'\r', False))
+    cases.append(('repair-unused-free-sentinel', base.replace(b'0000000000 65535 f', b'0000000000 65536 f'), False))
+    cases.append(('reject-live-generation-overflow', base.replace(b'0000000000 65535 f', b'0000000000 65536 n'), True))
+    cases.append(('reject-other-free-generation-overflow', base.replace(b'0000000000 65535 f', b'0000000001 65536 f'), True))
+    cases.append(('reject-larger-generation-overflow', base.replace(b'65535 f', b'65537 f'), True))
     for prefix in ('/Nested << /Root 999 0 R >> ', '/Text (/Root 999 0 R) ',
                    '/Nested [ << /Root 999 0 R >> ] ', '/RootExtra 999 0 R '):
         cases.append(('trailer-root-scope-' + prefix, base.replace(

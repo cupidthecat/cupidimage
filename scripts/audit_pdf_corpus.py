@@ -13,6 +13,8 @@ import struct
 import subprocess
 import tempfile
 import time
+import sys
+from pdf_visuals import save_visuals, write_gallery
 import urllib.parse
 import urllib.request
 
@@ -154,10 +156,19 @@ def main():
     parser.add_argument('--fail-on-error', action='store_true', help='Return nonzero for any failed, differing, or untested page')
     parser.add_argument('--reference', action='store_true', help='Compare with installed pdfinfo/pdftoppm at 96 DPI; never installs tools')
     parser.add_argument('--report', type=Path, default=ROOT / '.cache/pdfjs-full/report.jsonl')
+    parser.add_argument('--terminal-preview', action='store_true', help='Display generated page comparisons in the terminal with the CLI')
+    parser.add_argument('--pause', action='store_true', help='Wait for Enter after each terminal preview')
+    parser.add_argument('--cli', type=Path, default=ROOT / 'bin/cupidimage')
     parser.add_argument('--keep-images', action='store_true', help='Retain raw probe output and reference PPMs beside the report')
     args = parser.parse_args()
     if args.limit < 0 or args.max_pages < 1 or args.memory_mib < 0 or not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('Limits must be positive (limit/memory may be zero)')
+    if args.pause and (not args.terminal_preview or not sys.stdin.isatty()):
+        parser.error('--pause requires --terminal-preview and interactive stdin')
+    if args.terminal_preview:
+        if not args.cli.is_file(): parser.error('Build the CLI first: make cli')
+        args.cli = args.cli.resolve()
+        args.keep_images = True
     probe = args.probe.resolve()
     if not probe.is_file(): parser.error('Build the probe first: make bin/test_pdf_pages')
     if args.reference and (not shutil.which('pdfinfo') or not shutil.which('pdftoppm')):
@@ -249,27 +260,51 @@ def main():
                     if result['status'] == 'ok':
                         try: details.update(inspect_output(raw))
                         except Exception as error: details.update(status='invalid-output', error=str(error))
-                    if args.reference and details['status'] == 'ok':
+                    if args.reference:
                         prefix = directory / 'reference'
                         prefix.with_suffix('.ppm').unlink(missing_ok=True)
                         ref, _ = process(['pdftoppm', '-f', str(page+1), '-l', str(page+1), '-singlefile', '-r', '96', '-cropbox', str(path), str(prefix)], directory, args.timeout, args.memory_mib, 'reference-command')
                         if ref['status'] == 'ok':
-                            try: details['comparison'] = compare(prefix.with_suffix('.ppm'), raw, (details['width'], details['height']))
+                            try:
+                                details['comparison'] = compare(prefix.with_suffix('.ppm'), raw, (details['width'], details['height'])) if details['status'] == 'ok' else {'status': 'actual-render-failed'}
                             except Exception as error: details['comparison'] = {'status': 'comparison-error', 'error': str(error)}
                         else: details['comparison'] = ref
                         counts['reference-' + details['comparison']['status']] += 1
                     if args.keep_images:
                         target = args.report.parent / (args.report.stem + '-images') / f'{index:04}-{page+1:04}'
                         target.mkdir(parents=True, exist_ok=True)
+                        for artifact in ('actual.rgba', 'reference.ppm', 'actual.png', 'reference.png',
+                                         'actual-preview.png', 'reference-preview.png', 'comparison.png', 'difference.png'):
+                            (target / artifact).unlink(missing_ok=True)
                         shutil.copyfile(raw, target / 'actual.rgba')
                         ppm = directory / 'reference.ppm'
                         if args.reference and ppm.exists(): shutil.copyfile(ppm, target / 'reference.ppm')
                         details['artifacts'] = str(target)
+                        try:
+                            save_visuals(target, raw if details['status'] == 'ok' else None,
+                                         ppm if args.reference and ppm.exists() else None, read_ppm)
+                        except Exception as error:
+                            details['artifact_error'] = str(error); counts['artifact-error'] += 1
                     emit(details); counts['page-' + details['status']] += 1
+                    if args.terminal_preview and args.keep_images:
+                        preview = target / 'comparison.png'
+                        label = 'left: cupidimage / right: reference'
+                        if not preview.exists():
+                            preview = target / 'actual-preview.png'; label = 'cupidimage output'
+                        if not preview.exists():
+                            preview = target / 'reference-preview.png'; label = 'reference only; actual rendering failed'
+                        if preview.exists():
+                            print(f"{name}, page {page+1}: {label}", flush=True)
+                            try: subprocess.run([str(args.cli), '--fit', str(preview)], timeout=args.timeout, check=False)
+                            except subprocess.TimeoutExpired: print('Terminal preview timed out', flush=True)
+                        else: print(details.get('error') or 'No page image available', flush=True)
+                        if args.pause: input('Enter for next page; Ctrl+C to stop: ')
             finish(name, before)
         emit({'kind': 'summary', 'counts': dict(counts)})
     print(json.dumps(dict(counts), sort_keys=True))
     print('Report:', args.report)
+    if args.keep_images:
+        print('Visual gallery:', write_gallery(args.report))
     # This is a diagnostic audit, not a conformance claim or a normal CI gate.
     passed = {'document-ok', 'page-ok', 'reference-exact'}
     return int(args.fail_on_error and any(value for key, value in counts.items() if key not in passed))

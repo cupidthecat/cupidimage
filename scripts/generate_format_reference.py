@@ -4,6 +4,7 @@ import base64
 import json
 from pathlib import Path
 import struct
+import zlib
 from PIL import Image
 from test_pdf_pages import document
 
@@ -44,7 +45,20 @@ for i, color in enumerate(('red', 'lime', 'blue', 'white')):
     svg += f'<rect x="{(i%2)*8}" y="{(i//2)*8}" width="8" height="8" fill="{color}"/>'
 add('svg', 'quadrants.svg').write_text(svg + '</svg>\n')
 stream = '1 0 0 rg 0 6 6 6 re f 0 1 0 rg 6 6 6 6 re f 0 0 1 rg 0 0 6 6 re f 1 1 1 rg 6 0 6 6 re f'
-add('pdf', 'quadrants.pdf').write_bytes(document(page_attrs='/MediaBox [0 0 12 12]', stream=stream))
+pdf_data = document(page_attrs='/MediaBox [0 0 12 12]', stream=stream)
+add('pdf', 'quadrants.pdf').write_bytes(pdf_data)
+add('pdf', 'eof-without-newline.pdf').write_bytes(pdf_data.rstrip(b'\r\n'))
+add('pdf', 'marked-content-properties.pdf').write_bytes(document(
+    page_attrs='/MediaBox [0 0 12 12]', stream='/Span << /MCID 0 /Nested << /Values [1 (>> [) <4142>] >> >> BDC ' + stream + ' EMC'))
+compressed = zlib.compress(stream.encode())
+add('pdf', 'indirect-flate-length.pdf').write_bytes(document(
+    page_attrs='/MediaBox [0 0 12 12]', extra={
+        4: b'<< /Length 5 0 R /Filter /FlateDecode >>\nstream\n' + compressed + b'\nendstream',
+        5: str(len(compressed))}))
+(ROOT / 'assets/pdf/minimal_xref.pdf').write_bytes(document(
+    page_attrs='/MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >>',
+    stream='BT\n/F1 12 Tf\n100 700 Td\n(Hello) Tj\nET\n',
+    extra={5: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'}))
 (ROOT / 'tests/fixtures/format-reference.json').write_text(json.dumps({
     'provenance': 'Owned synthetic quadrant pixels. Lossless and vector expectations are analytic; JPEG expectations use Pillow/libjpeg with tolerance 3 for integer IDCT rounding.',
     'cases': rows}, indent=2) + '\n')

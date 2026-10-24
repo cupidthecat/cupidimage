@@ -10,7 +10,7 @@ Lossless and vector expectations come from the original synthetic pixels. JPEG
 uses independent Pillow/libjpeg output, with a maximum channel tolerance of 3 for
 integer IDCT rounding. CUR also checks the cursor hotspot.
 
-`make test-format-pixels` checks all 12 files through the public loader, then
+`make test-format-pixels` checks all 15 files through the public loader, then
 independently decodes their ANSI, Kitty, and Sixel output back to pixels. These
 are basic format and output checks, not full feature coverage. Existing focused
 regressions cover additional decoding, animation, and terminal behavior.
@@ -102,3 +102,10 @@ The TIFF inline-value repair follows [TIFF 6.0, section 2](https://www.itu.int/i
 The old 1-bit palette PNG had too many PLTE entries. Its valid replacement keeps
 the same pixels and two usable colors; the original is preserved as an explicit
 negative fixture.
+
+The owned PDF references also cover an EOF marker without a final newline,
+marked-content property dictionaries, and indirectly specified Flate stream
+lengths. Their expected quadrant pixels are analytic. The old `minimal_xref.pdf`
+had a 44-byte Length for 38 bytes of content and stale object offsets. Its corrected
+replacement is generated with exact lengths/offsets; the original is retained as
+`assets/pdf/negative/incorrect-stream-length.pdf`.

@@ -106,4 +106,10 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
 void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos);
 void cupidimage_pdf_trim_whitespace(cupidimage_image *img);
 
+int cupidimage_pdf_is_ws(unsigned char c);
+int cupidimage_pdf_dictionary_integer(const unsigned char *document, size_t document_size,
+                                      const pdf_object_view *view, const char *key, int *value);
+int cupidimage_pdf_object_stream(const unsigned char *document, size_t document_size,
+                                 const pdf_object_view *view, const unsigned char **stream, size_t *length);
+
 #endif
