@@ -10,6 +10,12 @@ implemented, and color-managed output is incomplete. See the
 [format guide](docs/formats.md) and [conformance tracker](docs/format-conformance.md)
 for the exact boundaries. HEIC/HEIF is deferred.
 
+## GIF rendering preview
+
+![cupidimage displaying a GIF in the terminal](img/gif-terminal-preview.png)
+
+Screenshot of the GIF renderer.
+
 ## Build and preview
 
 ```sh
