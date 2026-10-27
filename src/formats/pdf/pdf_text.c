@@ -36,8 +36,10 @@ void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y) {
 
 void cupidimage_pdf_text_advance(pdf_render_state *st, double distance) {
     double *m = st->text_matrix;
-    m[4] += distance * m[0];
-    m[5] += distance * m[1];
+    int vertical =
+        st->gs.current_font && st->gs.current_font->cid && st->gs.current_font->cid->vertical;
+    m[4] += distance * m[vertical ? 2 : 0];
+    m[5] += distance * m[vertical ? 3 : 1];
     text_position_valid(st, m);
 }
 
@@ -305,27 +307,60 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
     while (pos < length && !st->image_failed) {
         size_t before = pos;
         const pdf_font_map *font = st->gs.current_font;
-        uint32_t cp = font && font->type3 ? bytes[pos++] : pdf_decode_next_codepoint(st, bytes, length, &pos);
+        double width, advance_y = 0, origin_x = 0, origin_y = 0;
+        uint32_t cp;
+        if (font && font->cid) {
+            if (length - pos < 2) {
+                st->image_failed = 1;
+                cupidimage_set_err(st->error, st->error_capacity, "pdf: incomplete two-byte CID");
+                break;
+            }
+            unsigned cid = (unsigned)bytes[pos] * 256 + bytes[pos + 1];
+            pos += 2;
+            cp = '?';
+            pdf_font_lookup_codepoint(font, cid, 2, &cp);
+            cupidimage_pdf_cid_metrics(font->cid, cid, &width, &advance_y, &origin_x, &origin_y);
+        } else {
+            cp = font && font->type3 ? bytes[pos++]
+                                     : pdf_decode_next_codepoint(st, bytes, length, &pos);
+            unsigned char draw = pdf_codepoint_to_ascii(cp);
+            width = cp < 32 ? .5 : draw == '?' && cp >= 128 ? .5 : pdf_char_advance_em(draw);
+            if (font && pos - before == 1) {
+                unsigned code = bytes[before];
+                if (font->has_widths)
+                    width = code >= (unsigned)font->first_char && code <= (unsigned)font->last_char
+                                ? font->widths[code]
+                                : font->missing_width;
+                else if (font->has_missing_width)
+                    width = font->missing_width;
+            }
+        }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
-            if (!cupidimage_pdf_draw_type3_glyph(st,font,bytes[before])) st->image_failed=1;
-        } else if (cp >= 32) pdf_draw_glyph(st, draw);
-        double width = cp < 32 ? .5 : draw == '?' && cp >= 128 ? .5 : pdf_char_advance_em(draw);
-        if (font && pos - before == 1) {
-            unsigned code = bytes[before];
-            if (font->has_widths)
-                width = (code >= (unsigned)font->first_char && code <= (unsigned)font->last_char)
-                            ? font->widths[code]
-                            : font->missing_width;
-            else if (font->has_missing_width)
-                width = font->missing_width;
+            if (!cupidimage_pdf_draw_type3_glyph(st, font, bytes[before]))
+                st->image_failed = 1;
+        } else if (cp >= 32) {
+            if (font && font->cid && font->cid->vertical) {
+                double saved[6];
+                memcpy(saved, st->text_matrix, sizeof(saved));
+                double dx = -origin_x * st->gs.font_size_pts * st->gs.horizontal_scale,
+                       dy = -origin_y * st->gs.font_size_pts;
+                st->text_matrix[4] += dx * saved[0] + dy * saved[2];
+                st->text_matrix[5] += dx * saved[1] + dy * saved[3];
+                pdf_draw_glyph(st, draw);
+                memcpy(st->text_matrix, saved, sizeof(saved));
+            } else
+                pdf_draw_glyph(st, draw);
         }
         double spacing = st->gs.char_space;
         /* Word spacing applies to a single-byte character code 32, not to a
            Unicode mapping or one byte within a multibyte character code. */
         if (pos - before == 1 && bytes[before] == 32)
             spacing += st->gs.word_space;
-        cupidimage_pdf_text_advance(st, (width * st->gs.font_size_pts + spacing) *
-                                            st->gs.horizontal_scale);
+        if (font && font->cid && font->cid->vertical)
+            cupidimage_pdf_text_advance(st, advance_y * st->gs.font_size_pts + spacing);
+        else
+            cupidimage_pdf_text_advance(st, (width * st->gs.font_size_pts + spacing) *
+                                                st->gs.horizontal_scale);
     }
 }

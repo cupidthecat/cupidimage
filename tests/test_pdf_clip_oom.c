@@ -9,6 +9,7 @@
 #include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"
+#include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
@@ -272,6 +273,50 @@ int main(void) {
         checks++;
         if (pattern_select_shading(&state, &view, 0, 0))
             failures++;
+    }
+    {
+        const char *entries[] = {"/W [1 [500 600]] /W2 [1 2 -800 200 700]",
+                                 "/DW 600 /DW2 [900 -1100]",
+                                 "/W [65535 [500]]",
+                                 "/W [65536 [1]]",
+                                 "/W [3 2 500]",
+                                 "/W2 [1 [-800 200]]",
+                                 "/DW2 [900]",
+                                 "/W [65535 [500 600]]",
+                                 "/W 8 0 R"};
+        for (unsigned test = 0; test < sizeof(entries) / sizeof(entries[0]); test++) {
+            char document[2048];
+            int length =
+                snprintf(document, sizeof(document),
+                         "6 0 obj << /Subtype /CIDFontType2 %s >> endobj\n8 0 obj 8 0 R endobj",
+                         entries[test]);
+            const char *source =
+                "<< /Subtype /Type0 /Encoding /Identity-V /DescendantFonts [6 0 R] >>";
+            pdf_object_view view = {(const unsigned char *)source, strlen(source), NULL};
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                pdf_font_map font = {0};
+                size_t budget = 0;
+                allocation_count = 0;
+                fail_at = failure;
+                int ok = cupidimage_pdf_parse_cid_font((unsigned char *)document, (size_t)length,
+                                                       &view, &font, &budget);
+                if (!failure)
+                    total = allocation_count;
+                checks++;
+                if (!failure && ok != (test < 3)) {
+                    fprintf(stderr, "FAIL CID metadata case %u\n", test);
+                    failures++;
+                }
+                cupidimage_pdf_cid_font_free(font.cid);
+                if (live_count) {
+                    failures++;
+                    while (live_count)
+                        fault_free(live[0]);
+                }
+            }
+        }
+        fail_at = 0;
     }
     printf("PDF clip allocation failures: %zu checks, %zu failures\n", checks, failures);
     return failures != 0;

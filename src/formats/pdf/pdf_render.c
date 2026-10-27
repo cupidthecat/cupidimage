@@ -859,7 +859,10 @@ static void pdf_render_tj_array(pdf_render_state *st, const char *arr, size_t le
             (data[pos] >= '0' && data[pos] <= '9')) {
             double num = 0.0;
             if (pdf_parse_number_token(data, len, &pos, &num)) {
-                cupidimage_pdf_text_advance(st, -num / 1000.0 * st->gs.font_size_pts * st->gs.horizontal_scale);
+                int vertical = st->gs.current_font && st->gs.current_font->cid &&
+                               st->gs.current_font->cid->vertical;
+                cupidimage_pdf_text_advance(st, -num / 1000.0 * st->gs.font_size_pts *
+                                                    (vertical ? 1 : st->gs.horizontal_scale));
                 continue;
             }
         }

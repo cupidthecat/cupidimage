@@ -313,3 +313,13 @@ It now checks that default butt caps leave the point unpainted, alongside an
 explicit round-cap dot check. The PDF allocation-failure suite has 173 checks,
 including dash parsing and fragment-buffer growth. Stroke adjustment and
 antialiased font-outline fidelity remain open.
+
+## Identity CID positioning
+
+Identity-H/V code consumption and DW/W/DW2/W2 metrics follow ISO 32000-1
+sections 9.7.4.3 and 9.7.5.2. The 62-case generated suite compares fallback glyphs
+at analytically positioned origins, including indirect values, affine/reflected
+matrices, negative font sizes, horizontal scaling, spacing, TJ adjustments and
+all text painting/clipping modes. It does not compare embedded font outlines or
+claim complete CID font rendering. The allocation-failure suite now has 198
+checks, including malformed metrics, recursive references and partial tables.

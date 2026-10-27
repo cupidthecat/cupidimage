@@ -43,6 +43,16 @@ typedef struct {
 } pdf_type3_font;
 
 typedef struct {
+    double width, advance_y, origin_x, origin_y;
+    unsigned flags;
+} pdf_cid_metric;
+typedef struct {
+    int vertical;
+    double default_width, default_advance_y, default_origin_y;
+    pdf_cid_metric *metrics;
+} pdf_cid_font;
+
+typedef struct {
     char name[32];
     pdf_tounicode_entry *entries;
     int count;
@@ -51,9 +61,11 @@ typedef struct {
     int has_widths, has_missing_width, first_char, last_char;
     double widths[256], missing_width;
     pdf_type3_font *type3;
+    pdf_cid_font *cid;
 } pdf_font_map;
 
 typedef struct {
+    size_t cid_bytes;
     pdf_font_map *fonts;
     int count;
     int cap;
@@ -132,5 +144,14 @@ int cupidimage_pdf_parse_type3_font(const unsigned char *data, size_t size,
 int cupidimage_pdf_collect_resource_fonts(const unsigned char *data, size_t size,
                                          const pdf_object_view *owner, pdf_font_table *table,
                                          char *error, size_t capacity);
+
+int cupidimage_pdf_font_dictionary_at(const unsigned char *data, size_t size,
+                                      const pdf_object_view *parent, size_t pos,
+                                      pdf_object_view *out);
+int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
+                                  const pdf_object_view *view, pdf_font_map *font, size_t *budget);
+void cupidimage_pdf_cid_font_free(pdf_cid_font *font);
+void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *width,
+                                double *advance_y, double *origin_x, double *origin_y);
 
 #endif

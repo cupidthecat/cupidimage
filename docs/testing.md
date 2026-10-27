@@ -234,3 +234,11 @@ independent comparisons; that optional pass needs the reference command-line
 tools and PyMuPDF. Analytic circle and polygon checks cover boundary cases where
 independent rasterizers use different edge rules. The ordinary suite requires
 neither reference dependency.
+
+## CID positioning
+
+`make test-pdf-cid` runs 62 Identity-H/V metric and placement checks without
+external font dependencies. It compares identical fallback glyphs at explicit
+origins, so font-outline differences cannot hide positioning failures. The PDF
+allocation-failure target also exercises CID tables, malformed ranges and
+recursive indirect values. These checks do not establish embedded-font fidelity.

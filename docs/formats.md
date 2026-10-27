@@ -381,8 +381,8 @@ regardless of its Unicode mapping.
 
 Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
-fallback outside that range. Type 0 CID metrics, vertical writing metrics,
-complete standard-font metrics and embedded
+fallback outside that range. Identity CID metrics and vertical positioning are
+described below. Other CID encodings, complete standard-font metrics and embedded
 Type 1/TrueType font outlines remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes are not equivalent to actual
 font outlines.
@@ -492,3 +492,30 @@ steps/fragments and 262,144 primitives per stroke, plus the shared pixel-work
 budget. Invalid arrays and exhausted budgets fail explicitly. Curve flattening
 and pixel-centre coverage remain approximations; this is not antialiased outline
 parity. Automatic stroke adjustment is not implemented.
+
+## Identity CID metrics and vertical text
+
+Type 0 fonts with Identity-H or Identity-V encodings consume big-endian,
+two-byte character codes. DW/W supply horizontal advances; DW2/W2 supply vertical
+advances and origin offsets. Both consecutive-width arrays and CID ranges are
+supported, with indirect arrays and numeric values. Without overrides, horizontal
+width is 1000, vertical advance is -1000, vertical origin Y is 880, and origin X
+is half the horizontal width. Metrics are in thousandths of an em.
+
+Vertical text applies its origin offset before painting and advances along the
+text matrix's Y axis. Character spacing and TJ adjustments follow that axis;
+horizontal scaling affects glyph width and the horizontal origin offset, not the
+vertical advance. Word spacing does not apply to these two-byte codes. Text
+painting/clipping modes and saved graphics state use the same placement rules.
+
+ToUnicode chooses a fallback glyph but does not choose the CID's metrics. An
+unmapped CID shows the existing placeholder, rather than treating its number as
+Unicode. A truncated two-byte string fails. Malformed font metadata retains the
+existing font-table fallback policy. These changes do not implement embedded
+font outlines, CIDToGIDMap glyph selection, custom/predefined collection CMaps
+other than Identity-H/V, or full CJK text rendering.
+
+Metric tables are bounded to the 65,536-CID space, with at most 65,536 assignments
+per W/W2 array, 16 levels of indirect-value resolution and 64 MiB of CID metadata
+per collected font table. Allocations are released on metadata failure and after
+rendering.
