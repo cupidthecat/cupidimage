@@ -128,5 +128,9 @@ save_document('calculator-gradient.pdf',shading_pdf(axial,
     calculator('{ 1 exch sub dup 0 exch 1 exch sub }',filtered=True)),lambda x,y:gradient_rgb((x+.5)/24))
 save_document('calculator-conditional.pdf',shading_pdf(axial,
     calculator('{ .5 lt { 1 0 0 } { 0 0 1 } ifelse }')),lambda x,y:(255,0,0)if x<12 else(0,0,255))
+save_document('indexed-vector-fill.pdf', document(
+    '/MediaBox [0 0 18 12] /Resources << /ColorSpace << /Palette [/Indexed /DeviceRGB 2 <ff000000ff000000ff>] >> >>',
+    stream='/Palette cs 0 0 6 12 re f 1 sc 6 0 6 12 re f 2 scn 12 0 6 12 re f'),
+    lambda x,y:((255,0,0),(0,255,0),(0,0,255))[x//8])
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

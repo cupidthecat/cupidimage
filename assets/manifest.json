@@ -1330,6 +1330,10 @@
     {
       "path": "assets/webp/reference/solid-4x3-q90.webp",
       "sha256": "105231a0ae3e70af873e036f91bbd4a512329888b6a47c65e571a0b67dd66d02"
+    },
+    {
+      "path": "assets/pdf/reference/indexed-vector-fill.pdf",
+      "sha256": "d8f749c61214a81a6ce1f429451018b821e06237160ce6e25677ffee5f71eb3d"
     }
   ]
 }

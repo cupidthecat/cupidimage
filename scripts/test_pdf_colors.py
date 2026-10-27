@@ -89,6 +89,31 @@ def main():
               extra={5: form('/DeviceGray cs .25 sc ' + FILL, '/BBox [0 0 18 12]')})
         check('empty-form-resources', '/F0 Do', reject=True, attrs=form_resources,
               extra={5: form('/C1 cs 1 0 0 sc ' + FILL, '/BBox [0 0 18 12] /Resources << >>')})
+        palette = '[/Indexed /DeviceRGB 2 <ff000000ff000000ff>]'
+        palette_resources = '/Resources << /ColorSpace << /P ' + palette + ' >> >>'
+        for stroke in (False, True):
+            select = 'CS' if stroke else 'cs'
+            paint = STROKE if stroke else FILL
+            for op in (('SC', 'SCN') if stroke else ('sc', 'scn')):
+                for value, color in ((0, (255,0,0)), (1, (0,255,0)), (2, (0,0,255)),
+                                     (-10, (255,0,0)), (10, (0,0,255)), (.5, (0,255,0)), (.49, (255,0,0))):
+                    check('indexed-'+str(value)+op, f'/P {select} {value} {op} {paint}', color, attrs=palette_resources)
+            check('indexed-initial', f'/P {select} {paint}', (255,0,0), attrs=palette_resources)
+        check('indexed-inherited', '/P cs 2 sc ' + FILL, (0,0,255), parent=palette_resources)
+        check('indexed-indirect', '/P cs 1 sc ' + FILL, (0,255,0),
+              attrs='/Resources 5 0 R', extra={5:'<< /ColorSpace << /P 6 0 R >> >>',6:palette})
+        check('indexed-save-restore', '/P cs 1 sc q 0 0 1 rg Q 2 sc ' + FILL, (0,0,255), attrs=palette_resources)
+        check('indexed-direct-replace', '/P cs 1 sc 0 0 0 rg 0 1 0 sc ' + FILL, (0,255,0), attrs=palette_resources)
+        check('indexed-fill-stroke', '/P CS 2 SC /DeviceGray cs 0 sc ' + STROKE, (0,0,255), attrs=palette_resources)
+        check('indexed-form-restore', '/P cs 2 sc /F0 Do 1 sc ' + FILL, (0,255,0),
+              attrs='/Resources << /ColorSpace << /P '+palette+' >> /XObject << /F0 5 0 R >> >>',
+              extra={5:form('/DeviceGray cs .25 sc '+FILL, '/BBox [0 0 18 12]')})
+        check('indexed-gray', '/P cs 1 sc '+FILL, (128,128,128),
+              attrs='/Resources << /ColorSpace << /P [/Indexed /DeviceGray 1 <0080>] >> >>')
+        check('indexed-cmyk', '/P cs '+FILL, (255,0,0),
+              attrs='/Resources << /ColorSpace << /P [/Indexed /DeviceCMYK 0 <00ffff00>] >> >>')
+        for bad in ('0 1 sc', '/name scn', '[] sc', 'sc'):
+            check('indexed-bad-operands', '/P cs '+bad+' '+FILL, reject=True, attrs=palette_resources)
         for content in ('cs', '(DeviceRGB) cs', '/Unknown cs', '/Pattern cs', '/DeviceRGB cs 1 sc',
                         '/DeviceGray cs 1 0 0 sc', '/DeviceCMYK cs 1 0 0 scn', '/DeviceRGB cs /name scn',
                         '/DeviceRGB cs [1 0 0] sc', '1 0 rg', '1 0 0 0 1 k'):

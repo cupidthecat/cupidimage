@@ -144,7 +144,8 @@ PDF colors support DeviceGray, DeviceRGB, and DeviceCMYK through `cs`/`CS` and
 stroke color spaces are independent and follow `q`/`Q` state restoration.
 Selecting a color space resets its color to black.
 
-Named ColorSpace resources can alias device spaces, including inherited and
+Named ColorSpace resources support device spaces and Indexed palettes for
+vector fills and strokes, including inherited and
 indirect dictionaries and indirect name values. Forms use their own resources
 when present and otherwise inherit the caller's resources. Alias resolution is
 bounded to reject cycles. Unsupported spaces, including patterns, calibrated
@@ -320,3 +321,9 @@ Programs are compiled once into forward branches, with 4,096 instructions,
 and copied or rotated stack entry consumes the shared work budget. Invalid
 syntax, type errors, non-finite results, and stack errors reject the rendering.
 Calculator streams use the shared byte filters and decoded-data limit.
+
+Indexed vector colors use the same palette parser as images. `cs` and `CS`
+select palette entry zero initially; `sc`, `scn`, `SC`, and `SCN` round and clamp
+the requested index. Fill and stroke palettes are independent and survive
+graphics-state save/restore and form calls. Device-color operators replace
+the selected palette with their device space.

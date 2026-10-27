@@ -37,6 +37,11 @@ typedef struct {
 } pdf_clip_budget;
 
 typedef struct {
+    int components, indexed, high;
+    unsigned char palette[1024];
+} pdf_image_colors;
+
+typedef struct {
     float ctm[6];
     uint8_t fill_r;
     uint8_t fill_g;
@@ -47,8 +52,8 @@ typedef struct {
     float line_width_pts;
     double fill_alpha, stroke_alpha;
     int blend_mode;
-    int fill_space;
-    int stroke_space;
+    pdf_image_colors fill_space;
+    pdf_image_colors stroke_space;
     pdf_clip_mask *clip;
 } pdf_graphics_state;
 
@@ -106,12 +111,11 @@ uint8_t cupidimage_pdf_clamp_u8(double v);
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px, float *py);
 void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b);
 
-typedef struct {
-    int components, indexed, high;
-    unsigned char palette[1024];
-} pdf_image_colors;
 int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
                                      size_t *pos, unsigned depth, pdf_image_colors *colors);
+
+int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name,
+                               unsigned depth, pdf_image_colors *colors);
 
 int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name);
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3], double result[3]);

@@ -148,3 +148,50 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
     if (colors->components) return 1;
     return 0;
 }
+
+static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
+                                 size_t pos, unsigned depth, pdf_image_colors *colors) {
+    if (depth >= 16) return 0;
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    int object;
+    if (cupidimage_pdf_page_reference(view, pos, &object)) {
+        pdf_object_view indirect = {0};
+        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect)) return 0;
+        int space = pdf_color_space_value(st, &indirect, 0, depth + 1, colors);
+        cupidimage_pdf_object_view_release(&indirect);
+        return space;
+    }
+    if (pos < view->len && view->data[pos] == '[')
+        return cupidimage_pdf_image_color_space(st, view, &pos, depth, colors);
+    char name[128];
+    if (!pdf_color_name(view, &pos, name)) return 0;
+    return cupidimage_pdf_color_space(st, name, depth + 1, colors);
+}
+
+int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth, pdf_image_colors *colors) {
+    int components = !strcmp(name, "DeviceGray") ? 1 : !strcmp(name, "DeviceRGB") ? 3 : !strcmp(name, "DeviceCMYK") ? 4 : 0;
+    if (components) { colors->components = components; return 1; }
+    if (depth >= 16) return 0;
+    int object = st->page_object;
+    for (unsigned i = 0; object > 0 && i < 64; i++) {
+        pdf_object_view node = {0}, resources = {0}, spaces = {0};
+        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &node)) return 0;
+        size_t pos;
+        int parent = 0, space = 0;
+        if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
+            if (cupidimage_pdf_image_dictionary(st, &node, "Resources", &resources) &&
+                cupidimage_pdf_image_dictionary(st, &resources, "ColorSpace", &spaces) &&
+                cupidimage_pdf_page_value(&spaces, name, &pos)) {
+                space = pdf_color_space_value(st, &spaces, pos, depth + 1, colors);
+            }
+            cupidimage_pdf_object_view_release(&spaces);
+            cupidimage_pdf_object_view_release(&resources);
+            cupidimage_pdf_object_view_release(&node);
+            return space;
+        }
+        if (cupidimage_pdf_page_value(&node, "Parent", &pos)) cupidimage_pdf_page_reference(&node, pos, &parent);
+        cupidimage_pdf_object_view_release(&node);
+        object = parent;
+    }
+    return 0;
+}
