@@ -305,39 +305,18 @@ void cupidimage_pdf_object_view_release(pdf_object_view *view) {
 
 static int parse_obj_header_at(const unsigned char *data, size_t size, size_t pos,
                                int *obj_num, size_t *header_end) {
-    size_t p = pos;
-    if (p >= size || data[p] < '0' || data[p] > '9') {
-        return 0;
-    }
-    if (p > 0 && data[p - 1] != '\n' && data[p - 1] != '\r') {
-        return 0;
-    }
-    int num = 0;
-    while (p < size && data[p] >= '0' && data[p] <= '9') {
-        if (num > (INT_MAX - (data[p] - '0')) / 10) return 0;
-        num = num * 10 + (data[p] - '0');
-        p++;
-    }
-    if (p >= size || data[p] != ' ') {
-        return 0;
-    }
-    while (p < size && data[p] == ' ') p++;
-    if (p >= size || data[p] < '0' || data[p] > '9') {
-        return 0;
-    }
-    while (p < size && data[p] >= '0' && data[p] <= '9') p++;
-    if (p >= size || data[p] != ' ') {
-        return 0;
-    }
-    while (p < size && data[p] == ' ') p++;
-    if (p + 3 > size || memcmp(&data[p], "obj", 3) != 0) {
-        return 0;
-    }
+    size_t p = pos, number, generation;
+    if (p >= size || (p && !cupidimage_pdf_is_ws(data[p-1]))) return 0;
+    if (!cupidimage_pdf_parse_decimal(data, size, &p, INT_MAX, &number) || !number ||
+        p == size || (!cupidimage_pdf_is_ws(data[p]) && data[p] != '%')) return 0;
+    cupidimage_pdf_skip_ws_and_comments(data, size, &p);
+    if (!cupidimage_pdf_parse_decimal(data, size, &p, 65535, &generation) ||
+        p == size || (!cupidimage_pdf_is_ws(data[p]) && data[p] != '%')) return 0;
+    cupidimage_pdf_skip_ws_and_comments(data, size, &p);
+    if (size-p < 3 || memcmp(data+p, "obj", 3)) return 0;
     p += 3;
-    if (p < size && !isspace((unsigned char)data[p])) {
-        return 0;
-    }
-    *obj_num = num;
+    if (p < size && !cupidimage_pdf_is_ws(data[p]) && !cupidimage_pdf_is_delim(data[p])) return 0;
+    *obj_num = (int)number;
     *header_end = p;
     return 1;
 }
@@ -345,7 +324,29 @@ static int parse_obj_header_at(const unsigned char *data, size_t size, size_t po
 static int find_endobj(const unsigned char *data, size_t size, size_t from, size_t *endobj_pos) {
     size_t p = from;
     while (p + 6 <= size) {
-        if (memcmp(&data[p], "stream", 6) == 0) {
+        if (data[p] == '%') {
+            while (p < size && data[p] != '\r' && data[p] != '\n') p++;
+            continue;
+        }
+        if (data[p] == '(') {
+            unsigned depth = 1; p++;
+            while (p < size && depth) {
+                unsigned char c = data[p++];
+                if (c == '\\' && p < size) p++;
+                else if (c == '(') depth++;
+                else if (c == ')') depth--;
+            }
+            if (depth) return 0;
+            continue;
+        }
+        if (data[p] == '<' && (p+1 == size || data[p+1] != '<')) {
+            p++;
+            while (p < size && data[p] != '>') p++;
+            if (p == size) return 0;
+            p++; continue;
+        }
+        if (data[p] == '<' && p+1 < size && data[p+1] == '<') { p += 2; continue; }
+        if (memcmp(&data[p], "stream", 6) == 0 && p+6 < size && (data[p+6] == '\r' || data[p+6] == '\n')) {
             int preceded_ok = (p == from) || isspace((unsigned char)data[p - 1]) || data[p - 1] == '>';
             if (preceded_ok) {
                 size_t stream_start = p + 6;
@@ -354,7 +355,7 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
 
                 int declared_len = 0;
                 if (extract_dict_int(data, from, p, "/Length", &declared_len) &&
-                    declared_len > 0 && stream_start + (size_t)declared_len <= size) {
+                    declared_len >= 0 && (size_t)declared_len <= size-stream_start) {
                     p = stream_start + (size_t)declared_len;
                     while (p < size && (data[p] == ' ' || data[p] == '\t' || data[p] == '\r' || data[p] == '\n')) p++;
                     if (p + 9 <= size && memcmp(&data[p], "endstream", 9) == 0) {
@@ -372,7 +373,9 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
                 return 0;
             }
         }
-        if (memcmp(&data[p], "endobj", 6) == 0) {
+        if (memcmp(&data[p], "endobj", 6) == 0 &&
+            (p == from || cupidimage_pdf_is_ws(data[p-1]) || data[p-1] == '>' || data[p-1] == ']' || data[p-1] == ')') &&
+            (p+6 == size || cupidimage_pdf_is_ws(data[p+6]) || cupidimage_pdf_is_delim(data[p+6]))) {
             *endobj_pos = p;
             return 1;
         }
@@ -383,56 +386,22 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
 
 static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
                             const char *key, int *value) {
-    size_t key_len = strlen(key);
-    if (end <= start || end - start <= key_len) {
-        return 0;
-    }
-    for (size_t pos = start; pos + key_len <= end; pos++) {
-        if (memcmp(&data[pos], key, key_len) != 0) {
-            continue;
-        }
-        pos += key_len;
-        while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
-        int sign = 1;
-        int v = 0;
-        if (pos < end && data[pos] == '-') {
-            sign = -1;
-            pos++;
-        }
-        int got = 0;
-        while (pos < end && data[pos] >= '0' && data[pos] <= '9') {
-            got = 1;
-            if (v > (INT_MAX - (data[pos] - '0')) / 10) return 0;
-            v = v * 10 + (data[pos] - '0');
-            pos++;
-        }
-        if (got) {
-            size_t look = pos;
-            while (look < end && (data[look] == ' ' || data[look] == '\n' || data[look] == '\r' || data[look] == '\t')) {
-                look++;
-            }
-            if (look < end && data[look] >= '0' && data[look] <= '9') {
-                while (look < end && data[look] >= '0' && data[look] <= '9') {
-                    look++;
-                }
-                while (look < end && (data[look] == ' ' || data[look] == '\n' || data[look] == '\r' || data[look] == '\t')) {
-                    look++;
-                }
-                if (look < end && data[look] == 'R') {
-                    continue;
-                }
-            }
-            *value = v * sign;
-            return 1;
-        }
-    }
-    return 0;
+    if (end <= start || !key || key[0] != '/') return 0;
+    pdf_object_view dictionary = {data+start, end-start, NULL};
+    size_t pos;
+    int reference;
+    double number;
+    if (!cupidimage_pdf_page_value(&dictionary, key+1, &pos) ||
+        cupidimage_pdf_page_reference(&dictionary, pos, &reference) ||
+        !cupidimage_pdf_parse_pdf_number(dictionary.data, dictionary.len, &pos, &number) ||
+        number < INT_MIN || number > INT_MAX || floor(number) != number ||
+        (pos < dictionary.len && !cupidimage_pdf_is_ws(dictionary.data[pos]) && !cupidimage_pdf_is_delim(dictionary.data[pos]))) return 0;
+    *value = (int)number;
+    return 1;
 }
 
 static int parse_int_token(const unsigned char *data, size_t size, size_t *pos, int *out) {
-    while (*pos < size && (data[*pos] == ' ' || data[*pos] == '\n' || data[*pos] == '\r' || data[*pos] == '\t')) {
-        (*pos)++;
-    }
+    cupidimage_pdf_skip_ws_and_comments(data, size, pos);
     if (*pos >= size || data[*pos] < '0' || data[*pos] > '9') {
         return 0;
     }
@@ -481,6 +450,7 @@ int cupidimage_pdf_extract_stream_from_object(const unsigned char *obj_data, siz
 static int extract_object_from_objstm(const unsigned char *data, size_t size, int target_obj,
                                       pdf_object_view *view) {
     for (size_t pos = 0; pos < size; pos++) {
+        if (data[pos] == '%') { while (pos < size && data[pos] != '\r' && data[pos] != '\n') pos++; if (pos == size) break; }
         int obj_num = 0;
         size_t obj_start = 0;
         if (!parse_obj_header_at(data, size, pos, &obj_num, &obj_start)) {
@@ -492,10 +462,9 @@ static int extract_object_from_objstm(const unsigned char *data, size_t size, in
             continue;
         }
 
-        if (!cupidimage_pdf_buffer_contains(data, obj_start, obj_end, "/Type") ||
-            !cupidimage_pdf_buffer_contains(data, obj_start, obj_end, "/ObjStm")) {
-            pos = obj_end;
-            continue;
+        pdf_object_view container = {data+obj_start, obj_end-obj_start, NULL};
+        if (!cupidimage_pdf_image_name_is(&container, "Type", "ObjStm")) {
+            pos = obj_end; continue;
         }
 
         int n_objects = 0;
@@ -509,25 +478,16 @@ static int extract_object_from_objstm(const unsigned char *data, size_t size, in
 
         const unsigned char *stream_data = NULL;
         size_t stream_len = 0;
-        if (!extract_stream(data, obj_start, obj_end, &stream_data, &stream_len, NULL)) {
-            pos = obj_end;
-            continue;
-        }
+        int direct_length;
+        int stream_ok = extract_dict_int(data, obj_start, obj_end, "/Length", &direct_length)
+            ? cupidimage_pdf_object_stream(data, size, &container, &stream_data, &stream_len)
+            : extract_stream(data, obj_start, obj_end, &stream_data, &stream_len, NULL);
+        if (!stream_ok) { pos = obj_end; continue; }
 
         unsigned char *decoded = NULL;
         size_t decoded_len = 0;
-        if (cupidimage_pdf_buffer_contains(data, obj_start, obj_end, "/FlateDecode")) {
-            if (!cupidimage_pdf_inflate_auto(stream_data, stream_len, &decoded, &decoded_len)) {
-                pos = obj_end;
-                continue;
-            }
-        } else {
-            decoded = (unsigned char *)malloc(stream_len);
-            if (!decoded) {
-                return 0;
-            }
-            memcpy(decoded, stream_data, stream_len);
-            decoded_len = stream_len;
+        if (!cupidimage_pdf_decode_stream(&container, stream_data, stream_len, &decoded, &decoded_len)) {
+            pos = obj_end; continue;
         }
 
         if ((size_t)first_offset >= decoded_len) {
@@ -548,12 +508,16 @@ static int extract_object_from_objstm(const unsigned char *data, size_t size, in
         size_t hp = 0;
         int ok_hdr = 1;
         for (int i = 0; i < n_objects; i++) {
-            if (!parse_int_token(decoded, decoded_len, &hp, &ids[i]) ||
-                !parse_int_token(decoded, decoded_len, &hp, &offs[i])) {
+            if (!parse_int_token(decoded, (size_t)first_offset, &hp, &ids[i]) ||
+                !parse_int_token(decoded, (size_t)first_offset, &hp, &offs[i])) {
                 ok_hdr = 0;
                 break;
             }
+            if (ids[i] <= 0 || offs[i] < 0 || (size_t)offs[i] >= decoded_len-(size_t)first_offset ||
+                (i && offs[i] <= offs[i-1])) { ok_hdr = 0; break; }
         }
+        cupidimage_pdf_skip_ws_and_comments(decoded, (size_t)first_offset, &hp);
+        if (hp != (size_t)first_offset) ok_hdr = 0;
         if (!ok_hdr) {
             free(ids);
             free(offs);
@@ -607,6 +571,7 @@ int cupidimage_pdf_get_object_content(const unsigned char *data, size_t size, in
     view->owned = NULL;
 
     for (size_t pos = 0; pos < size; pos++) {
+        if (data[pos] == '%') { while (pos < size && data[pos] != '\r' && data[pos] != '\n') pos++; if (pos == size) break; }
         int num = 0;
         size_t obj_start = 0;
         if (!parse_obj_header_at(data, size, pos, &num, &obj_start)) {

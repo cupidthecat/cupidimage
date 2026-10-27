@@ -8,6 +8,7 @@ from test_pdf_images import fixture, image_stream
 from test_pdf_packed_images import encode, pack
 from test_pdf_lzw import literals
 from test_pdf_pages import document
+from test_pdf_object_syntax import pdf as syntax_pdf, stream as syntax_stream
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
@@ -84,5 +85,15 @@ save_document('fill-stroke-opacity.pdf', document(page,
     stream='/G gs 1 0 0 rg 0 0 1 RG 3 w 0 0 18 12 re B',
     extra={8:'<< /ca .5 /CA .5 >>'}),
     lambda x,y:(128,128,255) if x<2 or x>=22 or y<2 or y>=14 else (255,128,128))
+save_document('compact-objects.pdf', syntax_pdf(ws=b'\t', separator=b' ', compact=True), lambda x,y:(255,0,0))
+compressed_objects = [b'<< /Type /Catalog /Pages 2 0 R >>', b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+                      b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 18 12] /Contents 4 0 R >>']
+object_offsets = [0, len(compressed_objects[0])+1, len(compressed_objects[0])+len(compressed_objects[1])+2]
+object_header = ' '.join(f'{i+1} {offset}' for i,offset in enumerate(object_offsets)).encode()+b' '
+object_data = object_header+b' '.join(compressed_objects)
+save_document('lzw-object-stream.pdf', syntax_pdf({
+    4: syntax_stream(b'1 0 0 rg 0 0 18 12 re f'),
+    5: syntax_stream(literals(object_data, 1), f'/Type /ObjStm /N 3 /First {len(object_header)} /Filter /LZWDecode')},
+    compressed=[1,2,3]), lambda x,y:(255,0,0))
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

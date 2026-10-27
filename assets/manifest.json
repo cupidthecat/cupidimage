@@ -559,6 +559,10 @@
       "sha256": "882e494b107ead819956d7a0aa9048c13d3e9ecd3b4d11a38e496587f54dc989"
     },
     {
+      "path": "assets/pdf/reference/compact-objects.pdf",
+      "sha256": "36908476a663deae41e6e578535401a63ca9832c4ae35943cf137b665ef57150"
+    },
+    {
       "path": "assets/pdf/reference/eof-without-newline.pdf",
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },
@@ -581,6 +585,10 @@
     {
       "path": "assets/pdf/reference/indirect-flate-length.pdf",
       "sha256": "28d1418811c6fcd48d3f0bf5f692b95c837ad7f57b995d17f4bf69779a5da1ab"
+    },
+    {
+      "path": "assets/pdf/reference/lzw-object-stream.pdf",
+      "sha256": "c563e79ca1807773c080c91e3b3732435c9973115545e060a4536e5ebb930053"
     },
     {
       "path": "assets/pdf/reference/lzw-predictor.pdf",

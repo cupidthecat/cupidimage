@@ -98,6 +98,20 @@
       "height": 16,
       "rgba_zlib": "eJxraPj/v2EYYGobOGr+qPmj5o+aT6z5QxUDAH+3fT0=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/compact-objects.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/lzw-object-stream.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
     }
   ]
 }

@@ -258,3 +258,15 @@ Character maps are limited to 65,536 entries per font and 256 fonts per resource
 scope. Oversized ranges and allocation failures discard the metadata instead of
 attempting unbounded expansion. Entries are sorted once, duplicate codes keep
 the last definition, and glyph lookup uses binary search.
+
+## PDF object syntax
+
+Object headers accept PDF whitespace and comments between tokens, and an object
+body may begin directly after the `obj` keyword when separated by a delimiter.
+Object scanning skips comments, literal strings, and hexadecimal strings rather
+than treating embedded `obj`, `stream`, or `endobj` text as structure.
+Object streams use the shared byte filters. Their object counts, header extent,
+body offsets, and ordering are checked before extracting an object.
+
+The object resolver still uses recovery scanning in places; this is not complete
+cross-reference, generation-number, or incremental-update support.
