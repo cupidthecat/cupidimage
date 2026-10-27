@@ -4,15 +4,15 @@ import base64
 import json
 from pathlib import Path
 import zlib
-from test_pdf_images import fixture
+from test_pdf_images import fixture, image_stream
 from test_pdf_packed_images import encode, pack
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
 
-def save(name,payload,attrs,expected,content='18 0 0 12 0 0 cm /Im0 Do'):
+def save(name,payload,attrs,expected,content='18 0 0 12 0 0 cm /Im0 Do', extra=None):
     path=ROOT/'assets/pdf/reference'/name
-    path.write_bytes(fixture(payload,attrs,content=content).replace(b'%PDF-1.4',b'%PDF-1.7'))
+    path.write_bytes(fixture(payload,attrs,content=content,extra=extra).replace(b'%PDF-1.4',b'%PDF-1.7'))
     pixels=bytes(c for y in range(16)for x in range(24)for c in (*expected(x,y),255))
     rows.append({'asset':str(path.relative_to(ROOT)),'width':24,'height':16,
                  'rgba_zlib':base64.b64encode(zlib.compress(pixels)).decode(),'tolerance':0})
@@ -37,5 +37,19 @@ save('stencil-mask.pdf',b'\x40\xa0','/Width 3 /Height 2 /ImageMask true',
 save('color-key-mask.pdf',bytes(c for pixel in colors for c in pixel),
      '/Width 3 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceRGB /Mask [255 255 0 0 0 0]',
      lambda x,y:(128,128,128)if(y//8)*3+x//8==0 else colors[(y//8)*3+x//8])
-(ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, Decode rules, and stencil/color-key masks.','cases':rows},indent=2)+'\n')
+mask_attrs = '/Width 2 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray'
+alpha_values = [0, 85, 170, 255]
+save('soft-mask.pdf', bytes((255, 0, 0)),
+     '/Width 1 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceRGB /SMask 8 0 R',
+     lambda x, y: tuple(int(alpha_values[(y//8)*2+x//12]/255*c + (1-alpha_values[(y//8)*2+x//12]/255)*128 + .5) for c in (255, 0, 0)),
+     extra={8: image_stream(bytes(alpha_values), mask_attrs)})
+save('soft-mask-matte.pdf', bytes((255, 127, 127)),
+     '/Width 1 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceRGB /SMask 8 0 R',
+     lambda x, y: (192, 64, 64),
+     extra={8: image_stream(b'\x80', '/Width 1 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceGray /Matte [1 1 1]')})
+save('explicit-image-mask.pdf', bytes((0, 255, 0)),
+     '/Width 1 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceRGB /Mask 8 0 R',
+     lambda x, y: (0, 255, 0) if x//12 == y//8 else (128, 128, 128),
+     extra={8: image_stream(b'\x40\x80', '/Width 2 /Height 2 /ImageMask true')})
+(ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, Decode rules, and stencil, color-key, explicit, and soft masks.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

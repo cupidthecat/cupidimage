@@ -11,95 +11,9 @@
 
 #include "pdf_internal.h"
 
-typedef struct {
-    float x0;
-    float y0;
-    float x1;
-    float y1;
-    int starts_subpath;
-} pdf_seg;
+#include "pdf_render_internal.h"
 
-typedef struct {
-    pdf_seg segs[4096];
-    int seg_count;
-    int subpath_first_seg;
-    float current_x;
-    float current_y;
-    float subpath_start_x;
-    float subpath_start_y;
-    int has_current;
-    int has_subpath;
-    int overflow;
-} pdf_path;
-
-typedef struct {
-    unsigned references;
-    size_t bytes;
-    unsigned char bits[];
-} pdf_clip_mask;
-
-typedef struct {
-    size_t bytes_used;
-    size_t tests_left;
-    unsigned calls_left;
-} pdf_clip_budget;
-
-typedef struct {
-    float ctm[6];
-    uint8_t fill_r;
-    uint8_t fill_g;
-    uint8_t fill_b;
-    uint8_t stroke_r;
-    uint8_t stroke_g;
-    uint8_t stroke_b;
-    float line_width_pts;
-    int fill_space;
-    int stroke_space;
-    pdf_clip_mask *clip;
-} pdf_graphics_state;
-
-typedef struct {
-    double inverse[6];
-    double box[4];
-} pdf_form_clip;
-
-typedef struct {
-    size_t bytes_left;
-    unsigned calls_left;
-} pdf_form_budget;
-
-typedef struct {
-    cupidimage_image *img;
-    const unsigned char *document;
-    size_t document_size;
-    int page_object;
-    int image_failed;
-    char *error;
-    size_t error_capacity;
-    float page_x0_pts;
-    float page_top_pts;
-    float line_x_pts;
-    float line_y_pts;
-    float text_x_pts;
-    float text_y_pts;
-    float font_size_pts;
-    float leading_pts;
-    pdf_graphics_state gs;
-    pdf_graphics_state gs_stack[32];
-    int gs_stack_len;
-    pdf_path path;
-    int pending_clip;
-    pdf_clip_budget *clip_budget;
-    int in_text;
-    const pdf_font_table *font_table;
-    const pdf_font_map *current_font;
-    int form_objects[16];
-    pdf_form_clip form_clips[16];
-    int form_depth;
-    pdf_form_budget *form_budget;
-} pdf_render_state;
-
-static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
+int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len);
 static int pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth);
 
@@ -119,7 +33,7 @@ static void pdf_render_state_release(pdf_render_state *st) {
     for (int i = 0; i < st->gs_stack_len; i++) pdf_clip_release(st, st->gs_stack[i].clip);
 }
 
-static unsigned char pdf_clamp_u8(double v) {
+unsigned char cupidimage_pdf_clamp_u8(double v) {
     if (v < 0.0) v = 0.0;
     if (v > 1.0) v = 1.0;
     return (unsigned char)(v * 255.0 + 0.5);
@@ -490,7 +404,7 @@ static int pdf_parse_array_token(const unsigned char *data, size_t size, size_t 
     return 0;
 }
 
-static void pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     cupidimage_image *img = st->img;
     if (!img || !img->rgba) {
         return;
@@ -536,360 +450,12 @@ static void pdf_matrix_concat(float dst[6], const float left[6]) {
     dst[5] = f;
 }
 
-static void pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px, float *py) {
+void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px, float *py) {
     float tx = st->gs.ctm[0] * ux + st->gs.ctm[2] * uy + st->gs.ctm[4];
     float ty = st->gs.ctm[1] * ux + st->gs.ctm[3] * uy + st->gs.ctm[5];
     float s = 96.0f / 72.0f;
     *px = (tx - st->page_x0_pts) * s;
     *py = (st->page_top_pts - ty) * s;
-}
-
-/* Borrow an inline dictionary or own a resolved indirect dictionary. The parent
- * view must stay alive until a borrowed result has been consumed. */
-static int pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,
-                                 const char *key, pdf_object_view *result) {
-    size_t pos;
-    int object;
-    if (!cupidimage_pdf_page_value(parent, key, &pos)) return 0;
-    if (cupidimage_pdf_page_reference(parent, pos, &object)) {
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, result)) return 0;
-        pos = 0;
-        cupidimage_pdf_skip_ws_and_comments(result->data, result->len, &pos);
-        if (result->len - pos < 2 || result->data[pos] != '<' || result->data[pos + 1] != '<') {
-            cupidimage_pdf_object_view_release(result);
-            return 0;
-        }
-        return 1;
-    }
-    if (pos + 1 >= parent->len || parent->data[pos] != '<' || parent->data[pos + 1] != '<') return 0;
-    result->data = parent->data + pos;
-    result->len = parent->len - pos;
-    return 1;
-}
-
-static int pdf_image_object(const pdf_render_state *st, const char *name, int *object) {
-    int page = st->page_object;
-    for (int depth = 0; page > 0 && depth < 64; depth++) {
-        pdf_object_view node = {0}, resources = {0}, xobjects = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, page, &node)) return 0;
-        size_t pos;
-        int parent = 0, found = 0;
-        if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
-            found = pdf_image_dictionary(st, &node, "Resources", &resources) &&
-                    pdf_image_dictionary(st, &resources, "XObject", &xobjects) &&
-                    cupidimage_pdf_page_value(&xobjects, name, &pos) &&
-                    cupidimage_pdf_page_reference(&xobjects, pos, object);
-            /* The closest Resources entry replaces the entire ancestor entry. */
-            cupidimage_pdf_object_view_release(&xobjects);
-            cupidimage_pdf_object_view_release(&resources);
-            cupidimage_pdf_object_view_release(&node);
-            return found;
-        }
-        if (cupidimage_pdf_page_value(&node, "Parent", &pos)) cupidimage_pdf_page_reference(&node, pos, &parent);
-        cupidimage_pdf_object_view_release(&node);
-        page = parent;
-    }
-    return 0;
-}
-
-static int pdf_image_integer(const pdf_render_state *st, const pdf_object_view *view,
-                              const char *key, int *value) {
-    return cupidimage_pdf_dictionary_integer(st->document, st->document_size, view, key, value);
-}
-
-int cupidimage_pdf_image_name_is(const pdf_object_view *view, const char *key, const char *name) {
-    size_t pos, length = strlen(name);
-    if (!cupidimage_pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '/') return 0;
-    return length <= view->len - pos && memcmp(view->data + pos, name, length) == 0 &&
-           (pos + length == view->len || cupidimage_pdf_is_ws(view->data[pos + length]) ||
-            cupidimage_pdf_is_delim(view->data[pos + length]));
-}
-
-static int pdf_image_stream(const pdf_render_state *st, const pdf_object_view *view,
-                             const unsigned char **stream, size_t *length) {
-    return cupidimage_pdf_object_stream(st->document, st->document_size, view, stream, length);
-}
-
-static unsigned char pdf_image_paeth(int a, int b, int c) {
-    int p = a + b - c, da = abs(p - a), db = abs(p - b), dc = abs(p - c);
-    return (unsigned char)(da <= db && da <= dc ? a : db <= dc ? b : c);
-}
-
-int cupidimage_pdf_image_filter_is(const pdf_object_view *view, const char *name) {
-    if (cupidimage_pdf_image_name_is(view, "Filter", name)) return 1;
-    size_t pos, length = strlen(name);
-    if (!cupidimage_pdf_page_value(view, "Filter", &pos) || pos >= view->len || view->data[pos++] != '[') return 0;
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (pos >= view->len || view->data[pos++] != '/' || length > view->len - pos ||
-        memcmp(view->data + pos, name, length) != 0) return 0;
-    pos += length;
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    return pos < view->len && view->data[pos] == ']';
-}
-
-/* Check the frame before invoking the decoder so a small image dictionary cannot
- * hide a JPEG frame with enormous dimensions or a different component count. */
-static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length,
-                                   int width, int height, int components, int transform) {
-    if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8) return 0;
-    size_t pos = 2;
-    int have_frame = 0;
-    while (pos < length) {
-        if (stream[pos++] != 0xff) return 0;
-        while (pos < length && stream[pos] == 0xff) pos++;
-        if (pos >= length) return 0;
-        unsigned marker = stream[pos++];
-        if (marker == 0xda) return have_frame;
-        if (marker == 0xd9 || marker == 0) return 0;
-        if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
-        if (length - pos < 2) return 0;
-        size_t segment = (size_t)stream[pos] * 256u + stream[pos + 1];
-        if (segment < 2 || segment > length - pos) return 0;
-        if (components == 3 && marker == 0xee && segment >= 14 &&
-            memcmp(stream + pos + 2, "Adobe", 5) == 0 &&
-            stream[pos + 13] == 0 && transform != 1) return 0;
-        if (marker == 0xc0 || marker == 0xc2) {
-            if (have_frame || !(segment >= 8 && stream[pos + 2] == 8 &&
-                   (int)stream[pos + 3] * 256 + stream[pos + 4] == height &&
-                   (int)stream[pos + 5] * 256 + stream[pos + 6] == width &&
-                   stream[pos + 7] == components)) return 0;
-            have_frame = 1;
-        }
-        pos += segment;
-    }
-    return 0;
-}
-
-static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_view *view,
-                                   int width, int height, int components, unsigned char **samples) {
-    pdf_object_view params = {0};
-    size_t pos;
-    int transform = -1;
-    if (cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {
-        int ok = pdf_image_dictionary(st, view, "DecodeParms", &params) &&
-                 (!cupidimage_pdf_page_value(&params, "ColorTransform", &pos) ||
-                  pdf_image_integer(st, &params, "ColorTransform", &transform));
-        cupidimage_pdf_object_view_release(&params);
-        if (!ok || (transform != -1 && transform != 1)) return 0;
-    }
-    const unsigned char *stream;
-    size_t length;
-    if (!pdf_image_stream(st, view, &stream, &length) ||
-        !pdf_image_jpeg_matches(stream, length, width, height, components, transform)) return 0;
-    cupidimage_image image = {0};
-    if (!cupidimage_load_jpeg(stream, length, &image, NULL, 0)) return 0;
-    size_t count = (size_t)width * height;
-    unsigned char *decoded = (unsigned char *)malloc(count * components);
-    if (!decoded || image.width != (uint32_t)width || image.height != (uint32_t)height) {
-        free(decoded);
-        cupidimage_free(&image);
-        return 0;
-    }
-    for (size_t i = 0; i < count; i++) {
-        for (int c = 0; c < components; c++) decoded[i * components + c] = image.rgba[i * 4 + c];
-    }
-    cupidimage_free(&image);
-    *samples = decoded;
-    return 1;
-}
-
-static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bits) {
-    if (bits == 8) return row[index];
-    if (bits == 16) return (uint32_t)row[index * 2] * 256u + row[index * 2 + 1];
-    size_t bit = index * (unsigned)bits;
-    return (row[bit / 8] >> (8 - bits - (int)(bit & 7))) & ((1u << bits) - 1u);
-}
-
-static void pdf_store_packed_sample(unsigned char *row, size_t index, int bits, uint32_t value) {
-    if (bits == 8) { row[index] = (unsigned char)value; return; }
-    if (bits == 16) { row[index * 2] = (unsigned char)(value >> 8); row[index * 2 + 1] = (unsigned char)value; return; }
-    size_t bit = index * (unsigned)bits;
-    unsigned shift = 8u - (unsigned)bits - (unsigned)(bit & 7);
-    unsigned mask = ((1u << bits) - 1u) << shift;
-    row[bit / 8] = (unsigned char)((row[bit / 8] & ~mask) | ((value << shift) & mask));
-}
-
-static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view,
-                              int width, int height, int components, int image_bits, unsigned char **samples) {
-    const unsigned char *stream;
-    size_t length, row = ((size_t)width * components * image_bits + 7u) / 8u;
-    size_t bytes = row * height, pos;
-    if (bytes > 64u * 1024u * 1024u) return 0;
-    if (cupidimage_pdf_image_filter_is(view, "DCTDecode"))
-        return image_bits == 8 && (components == 1 || components == 3) &&
-               pdf_image_jpeg_samples(st, view, width, height, components, samples);
-    int predictor = 1, flate = cupidimage_pdf_image_filter_is(view, "FlateDecode");
-    if (cupidimage_pdf_page_value(view, "Filter", &pos) && !flate) return 0;
-    pdf_object_view params = {0};
-    if (cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {
-        if (!flate || !pdf_image_dictionary(st, view, "DecodeParms", &params)) return 0;
-        int columns = 1, colors = 1, bits = 8;
-        int ok = (!cupidimage_pdf_page_value(&params, "Predictor", &pos) || pdf_image_integer(st, &params, "Predictor", &predictor)) &&
-                 (!cupidimage_pdf_page_value(&params, "Columns", &pos) || pdf_image_integer(st, &params, "Columns", &columns)) &&
-                 (!cupidimage_pdf_page_value(&params, "Colors", &pos) || pdf_image_integer(st, &params, "Colors", &colors)) &&
-                 (!cupidimage_pdf_page_value(&params, "BitsPerComponent", &pos) || pdf_image_integer(st, &params, "BitsPerComponent", &bits));
-        cupidimage_pdf_object_view_release(&params);
-        if (!ok || (predictor != 1 && (columns != width || colors != components || bits != image_bits))) return 0;
-    }
-    if (predictor != 1 && predictor != 2 && (predictor < 10 || predictor > 15)) return 0;
-    if (!pdf_image_stream(st, view, &stream, &length)) return 0;
-    size_t encoded_row = row + (predictor >= 10 ? 1u : 0u);
-    size_t expected = encoded_row * height;
-    if (expected > 64u * 1024u * 1024u) return 0;
-    unsigned char *decoded = (unsigned char *)malloc(expected);
-    if (!decoded) return 0;
-    size_t actual = 0;
-    if (flate) {
-        if (!cupidimage_inflate_zlib(stream, length, decoded, expected, &actual) || actual != expected) goto fail;
-    } else {
-        if (length != bytes) goto fail;
-        memcpy(decoded, stream, bytes);
-    }
-    size_t bpp = ((unsigned)components * (unsigned)image_bits + 7u) / 8u;
-    uint32_t maximum = (1u << image_bits) - 1u;
-    for (int y = 0; y < height; y++) {
-        unsigned char *scan = decoded + (size_t)y * encoded_row;
-        int filter = predictor >= 10 ? *scan++ : 0;
-        if (filter > 4) goto fail;
-        if (predictor == 2) {
-            for (size_t sample = (size_t)components; sample < (size_t)width * components; sample++) {
-                uint32_t value = pdf_packed_sample(scan, sample, image_bits) +
-                                 pdf_packed_sample(scan, sample - components, image_bits);
-                pdf_store_packed_sample(scan, sample, image_bits, value & maximum);
-            }
-        } else for (size_t x = 0; x < row; x++) {
-            int left = x >= bpp ? scan[x - bpp] : 0;
-            int up = y ? decoded[(size_t)(y - 1) * row + x] : 0;
-            int upper_left = y && x >= bpp ? decoded[(size_t)(y - 1) * row + x - bpp] : 0;
-            if (filter == 1) scan[x] = (unsigned char)(scan[x] + left);
-            else if (filter == 2) scan[x] = (unsigned char)(scan[x] + up);
-            else if (filter == 3) scan[x] = (unsigned char)(scan[x] + (left + up) / 2);
-            else if (filter == 4) scan[x] = (unsigned char)(scan[x] + pdf_image_paeth(left, up, upper_left));
-        }
-        memmove(decoded + (size_t)y * row, scan, row);
-    }
-    *samples = decoded;
-    return 1;
-fail:
-    free(decoded);
-    return 0;
-}
-
-static int pdf_draw_image(pdf_render_state *st, const char *name) {
-    pdf_object_view image = {0};
-    unsigned char *samples = NULL;
-    int object, width, height, bits, components, ok = 0;
-    size_t pos;
-    if (!pdf_image_object(st, name, &object) ||
-        !cupidimage_pdf_get_object_content(st->document, st->document_size, object, &image)) goto done;
-    if (cupidimage_pdf_image_name_is(&image, "Subtype", "Form")) {
-        ok = pdf_draw_form(st, object, &image);
-        cupidimage_pdf_object_view_release(&image);
-        return ok;
-    }
-    if (!cupidimage_pdf_image_name_is(&image, "Subtype", "Image")) goto done;
-    int stencil = 0;
-    if (cupidimage_pdf_page_value(&image, "ImageMask", &pos)) {
-        size_t n = image.len - pos;
-        if (n >= 4 && memcmp(image.data + pos, "true", 4) == 0 &&
-            (n == 4 || cupidimage_pdf_is_ws(image.data[pos+4]) || cupidimage_pdf_is_delim(image.data[pos+4]))) stencil = 1;
-        else if (!(n >= 5 && memcmp(image.data + pos, "false", 5) == 0 &&
-            (n == 5 || cupidimage_pdf_is_ws(image.data[pos+5]) || cupidimage_pdf_is_delim(image.data[pos+5])))) goto done;
-    }
-    components = stencil ? 1 : cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceRGB") ? 3 :
-                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1 :
-                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceCMYK") ? 4 : 0;
-    bits = stencil ? 1 : 8;
-    if (!components || !pdf_image_integer(st, &image, "Width", &width) ||
-        !pdf_image_integer(st, &image, "Height", &height) ||
-        ((!stencil || cupidimage_pdf_page_value(&image, "BitsPerComponent", &pos)) &&
-         !pdf_image_integer(st, &image, "BitsPerComponent", &bits)) ||
-        (bits != 1 && bits != 2 && bits != 4 && bits != 8 && bits != 16) ||
-        (stencil && (bits != 1 || cupidimage_pdf_page_value(&image, "ColorSpace", &pos))) ||
-        width < 1 || height < 1 || (double)width * height * components > 64.0 * 1024 * 1024 ||
-        cupidimage_pdf_page_value(&image, "SMask", &pos)) goto done;
-    double decode[8] = {0, 1, 0, 1, 0, 1, 0, 1};
-    if (cupidimage_pdf_page_value(&image, "Decode", &pos)) {
-        if (pos >= image.len || image.data[pos++] != '[') goto done;
-        for (int i = 0; i < 2 * components; i++) {
-            cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-            if (!cupidimage_pdf_parse_pdf_number(image.data, image.len, &pos, &decode[i])) goto done;
-        }
-        cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-        if (pos >= image.len || image.data[pos] != ']') goto done;
-    }
-    if (stencil && !((decode[0] == 0 && decode[1] == 1) || (decode[0] == 1 && decode[1] == 0))) goto done;
-    uint32_t color_key[8] = {0};
-    uint32_t maximum = (1u << bits) - 1u;
-    int has_color_key = cupidimage_pdf_page_value(&image, "Mask", &pos);
-    if (has_color_key) {
-        if (stencil || pos >= image.len || image.data[pos++] != '[') goto done;
-        for (int i = 0; i < components * 2; i++) {
-            double value;
-            cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-            if (!cupidimage_pdf_parse_pdf_number(image.data, image.len, &pos, &value) ||
-                value < 0 || value > maximum || floor(value) != value) goto done;
-            color_key[i] = (uint32_t)value;
-            if ((i & 1) && color_key[i] < color_key[i-1]) goto done;
-        }
-        cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-        if (pos >= image.len || image.data[pos] != ']') goto done;
-    }
-    if (!pdf_image_samples(st, &image, width, height, components, bits, &samples)) goto done;
-    size_t sample_row = ((size_t)width * components * bits + 7u) / 8u;
-    const float *m = st->gs.ctm;
-    double det = (double)m[0] * m[3] - (double)m[1] * m[2];
-    if (!isfinite(det)) goto done;
-    if (det == 0) { ok = 1; goto done; }
-    double min_x = st->img->width, max_x = 0, min_y = st->img->height, max_y = 0;
-    for (int corner = 0; corner < 4; corner++) {
-        float x, y;
-        pdf_user_to_pixel(st, (float)(corner & 1), (float)(corner >> 1), &x, &y);
-        if (!isfinite(x) || !isfinite(y)) goto done;
-        min_x = fmin(min_x, x); max_x = fmax(max_x, x);
-        min_y = fmin(min_y, y); max_y = fmax(max_y, y);
-    }
-    /* Clamp before integer conversion, including for enormous off-page transforms. */
-    int x0 = (int)fmax(0, fmin(st->img->width, floor(min_x)));
-    int x1 = (int)fmax(0, fmin(st->img->width, ceil(max_x)));
-    int y0 = (int)fmax(0, fmin(st->img->height, floor(min_y)));
-    int y1 = (int)fmax(0, fmin(st->img->height, ceil(max_y)));
-    for (int y = y0; y < y1; y++) {
-        for (int x = x0; x < x1; x++) {
-            double tx = (x + 0.5) * (72.0 / 96.0) + st->page_x0_pts - m[4];
-            double ty = st->page_top_pts - (y + 0.5) * (72.0 / 96.0) - m[5];
-            double u = (m[3] * tx - m[2] * ty) / det;
-            double v = (m[0] * ty - m[1] * tx) / det;
-            if (u < 0 || u >= 1 || v <= 0 || v > 1) continue;
-            int sx = (int)(u * width), sy = (int)((1 - v) * height);
-            if (sx >= width || sy >= height) continue;
-            const unsigned char *sample = samples + (size_t)sy * sample_row;
-            double values[4] = {0};
-            int transparent = has_color_key;
-            for (int c = 0; c < components; c++) {
-                uint32_t value = pdf_packed_sample(sample, (size_t)sx * components + c, bits);
-                if (has_color_key && (value < color_key[c*2] || value > color_key[c*2+1])) transparent = 0;
-                values[c] = decode[2*c] + ((double)value / maximum) * (decode[2*c+1] - decode[2*c]);
-            }
-            if (transparent || (stencil && values[0] >= 0.5)) continue;
-            uint8_t rgb[3];
-            if (stencil) {
-                rgb[0] = st->gs.fill_r; rgb[1] = st->gs.fill_g; rgb[2] = st->gs.fill_b;
-            } else if (components == 4) {
-                double black = fmin(1, fmax(0, values[3]));
-                for (int c = 0; c < 3; c++) rgb[c] = pdf_clamp_u8(1 - fmin(1, fmax(0, values[c]) + black));
-            } else {
-                for (int c = 0; c < 3; c++) rgb[c] = pdf_clamp_u8(values[components == 1 ? 0 : c]);
-            }
-            pdf_set_pixel(st, x, y, rgb[0], rgb[1], rgb[2]);
-        }
-    }
-    ok = 1;
-done:
-    free(samples);
-    cupidimage_pdf_object_view_release(&image);
-    if (!ok) cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid or unsupported image XObject");
-    return ok;
 }
 
 static void pdf_path_clear(pdf_path *p) {
@@ -954,13 +520,13 @@ static void pdf_path_close(pdf_path *p) {
 /* Paths retain device coordinates when cm or q/Q changes the graphics state. */
 static void pdf_path_move_user(pdf_render_state *st, float x, float y) {
     float px, py;
-    pdf_user_to_pixel(st, x, y, &px, &py);
+    cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
     pdf_path_move_to(&st->path, px, py);
 }
 
 static void pdf_path_line_user(pdf_render_state *st, float x, float y) {
     float px, py;
-    pdf_user_to_pixel(st, x, y, &px, &py);
+    cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
     pdf_path_line_to(&st->path, px, py);
 }
 
@@ -1021,10 +587,10 @@ static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1,
     if (first_is_current) {
         x1 = st->path.current_x; y1 = st->path.current_y;
     } else {
-        pdf_user_to_pixel(st, x1, y1, &x1, &y1);
+        cupidimage_pdf_user_to_pixel(st, x1, y1, &x1, &y1);
     }
-    pdf_user_to_pixel(st, x2, y2, &x2, &y2);
-    pdf_user_to_pixel(st, x3, y3, &x3, &y3);
+    cupidimage_pdf_user_to_pixel(st, x2, y2, &x2, &y2);
+    cupidimage_pdf_user_to_pixel(st, x3, y3, &x3, &y3);
     if (!isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2) ||
         !isfinite(x3) || !isfinite(y3)) { st->path.overflow = 1; return; }
     pdf_flatten_curve(st, st->path.current_x, st->path.current_y,
@@ -1056,7 +622,7 @@ static void pdf_stroke_path(pdf_render_state *st) {
                 float px = (float)x + 0.5f;
                 float d2 = pdf_point_to_segment_dist_sq(px, py, x0, y0, x1, y1);
                 if (d2 <= half_w_sq) {
-                    pdf_set_pixel(st, x, y, st->gs.stroke_r, st->gs.stroke_g, st->gs.stroke_b);
+                    cupidimage_pdf_set_pixel(st, x, y, st->gs.stroke_r, st->gs.stroke_g, st->gs.stroke_b);
                 }
             }
         }
@@ -1126,7 +692,7 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
                     size_t pixel = (size_t)y * st->img->width + (size_t)x;
                     mask[pixel / 8] |= (unsigned char)(1u << (pixel % 8));
                 } else {
-                    pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
+                    cupidimage_pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
                 }
             }
         }
@@ -1340,7 +906,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
             double gx = ((ux - st->page_x0_pts) * px_per_pt - base_x) / scale_x;
             double gy = ((st->page_top_pts - uy) * px_per_pt - top_y) / scale_y;
             if (gx >= 0 && gx < 8 && gy >= 0 && gy < 8 && (glyph[(int)gy] & (1u << (int)gx)))
-                pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
+                cupidimage_pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
         }
     }
 }
@@ -1574,8 +1140,8 @@ static int pdf_color_space(const pdf_render_state *st, const char *name, unsigne
         size_t pos;
         int parent = 0, space = 0;
         if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
-            if (pdf_image_dictionary(st, &node, "Resources", &resources) &&
-                pdf_image_dictionary(st, &resources, "ColorSpace", &spaces) &&
+            if (cupidimage_pdf_image_dictionary(st, &node, "Resources", &resources) &&
+                cupidimage_pdf_image_dictionary(st, &resources, "ColorSpace", &spaces) &&
                 cupidimage_pdf_page_value(&spaces, name, &pos)) {
                 space = pdf_color_space_value(st, &spaces, pos, depth + 1);
             }
@@ -1597,19 +1163,19 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space,
     for (int i = 0; i < count; i++) if (!pdf_expect_num(&ops[i])) return 0;
     uint8_t r, g, b;
     if (space == 1) {
-        r = g = b = pdf_clamp_u8(ops[0].num);
+        r = g = b = cupidimage_pdf_clamp_u8(ops[0].num);
     } else if (space == 3) {
-        r = pdf_clamp_u8(ops[0].num);
-        g = pdf_clamp_u8(ops[1].num);
-        b = pdf_clamp_u8(ops[2].num);
+        r = cupidimage_pdf_clamp_u8(ops[0].num);
+        g = cupidimage_pdf_clamp_u8(ops[1].num);
+        b = cupidimage_pdf_clamp_u8(ops[2].num);
     } else {
         double c = fmin(1, fmax(0, ops[0].num));
         double m = fmin(1, fmax(0, ops[1].num));
         double y = fmin(1, fmax(0, ops[2].num));
         double k = fmin(1, fmax(0, ops[3].num));
-        r = pdf_clamp_u8(1 - fmin(1, c + k));
-        g = pdf_clamp_u8(1 - fmin(1, m + k));
-        b = pdf_clamp_u8(1 - fmin(1, y + k));
+        r = cupidimage_pdf_clamp_u8(1 - fmin(1, c + k));
+        g = cupidimage_pdf_clamp_u8(1 - fmin(1, m + k));
+        b = cupidimage_pdf_clamp_u8(1 - fmin(1, y + k));
     }
     if (stroke) {
         st->gs.stroke_r = r; st->gs.stroke_g = g; st->gs.stroke_b = b;
@@ -1626,7 +1192,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
     int n = *count;
 
     if (strcmp(op, "Do") == 0) {
-        if (n != 1 || ops[0].type != PDF_OPERAND_NAME || !pdf_draw_image(st, ops[0].str)) {
+        if (n != 1 || ops[0].type != PDF_OPERAND_NAME || !cupidimage_pdf_draw_image(st, ops[0].str)) {
             st->image_failed = 1;
             if (n != 1 || ops[0].type != PDF_OPERAND_NAME)
                 cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid image draw operands");
@@ -1985,7 +1551,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
     return 1;
 }
 
-static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form) {
+int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form) {
     size_t pos, length;
     int type = 1, ok = 0;
     const unsigned char *stream;
@@ -1999,7 +1565,7 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
         if (st->form_objects[i] == object) goto done;
     }
     if ((cupidimage_pdf_page_value(form, "FormType", &pos) &&
-         (!pdf_image_integer(st, form, "FormType", &type) || type != 1)) ||
+         (!cupidimage_pdf_image_integer(st, form, "FormType", &type) || type != 1)) ||
         cupidimage_pdf_page_value(form, "Group", &pos) || cupidimage_pdf_page_value(form, "Ref", &pos)) goto done;
     child = (pdf_render_state *)malloc(sizeof(*child));
     if (!child) goto done;
@@ -2049,7 +1615,7 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
     child->form_objects[child->form_depth++] = object;
     if (cupidimage_pdf_page_value(form, "Resources", &pos)) {
         pdf_object_view resources = {0};
-        int valid = pdf_image_dictionary(st, form, "Resources", &resources);
+        int valid = cupidimage_pdf_image_dictionary(st, form, "Resources", &resources);
         cupidimage_pdf_object_view_release(&resources);
         if (!valid) goto done;
         child->page_object = object;
@@ -2061,7 +1627,7 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
     }
     int flate = cupidimage_pdf_image_filter_is(form, "FlateDecode");
     if ((cupidimage_pdf_page_value(form, "Filter", &pos) && !flate) ||
-        cupidimage_pdf_page_value(form, "DecodeParms", &pos) || !pdf_image_stream(st, form, &stream, &length)) goto done;
+        cupidimage_pdf_page_value(form, "DecodeParms", &pos) || !cupidimage_pdf_image_stream(st, form, &stream, &length)) goto done;
     if (flate) {
         if (!cupidimage_pdf_inflate_auto(stream, length, &inflated, &length)) goto done;
         stream = inflated;

@@ -56,7 +56,7 @@ Synthetic cases cover misleading nested keys and a missing real root.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects | Font rendering, transparency, patterns, annotations, filters, object structures, real-document corpus |
+| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects and masks | Font rendering, transparency groups and blend modes, patterns, annotations, filters, object structures, real-document corpus |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -160,3 +160,16 @@ In a targeted all-page run on the same 225 cached corpus files, document errors
 fell from 114 to 8 and rendered pages increased from 70 to 103. Additional image
 failures became visible once those documents parsed. These are decoding results,
 not a visual-conformance score, and do not substitute for a complete-corpus rerun.
+
+## Image mask coverage
+
+Image XObjects now support explicit one-bit masks and grayscale soft masks,
+including independent mask dimensions, Decode polarity, SMask precedence, and
+Matte recovery. The implementation follows ISO 32000-1 sections 8.9.6.3 and
+11.6.5.3. Synthetic fixtures have analytic pixel expectations; an optional
+independent raster comparison checks them with vector antialiasing disabled.
+Malformed and nested masks are rejected. Mask allocation failures are covered by
+the render allocation-injection test.
+
+This does not add graphics-state soft masks, transparency groups, blend modes,
+or image interpolation. A successful real-document decode is not a visual pass.

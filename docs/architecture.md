@@ -23,7 +23,9 @@ Each codec lives under `src/formats/<format>/`. Smaller codecs remain one focuse
 translation unit. Larger ones have private contracts and separate responsibilities:
 
 - PDF: public page APIs, document/object parsing and streams, font maps and the
-  bitmap fallback, and graphics/content rendering.
+  bitmap fallback, image samples and masks, and graphics/content rendering.
+  Image XObjects live in `pdf_images.c`; the private render-state contract lives
+  in `pdf_render_internal.h`.
 - SVG: public APIs, parsing, styles, definitions, CSS, geometry, paint, text,
   rasterization, render orchestration, filter parsing, filter execution, and blur.
   Shared private scene and style types live in `svg_internal.h`.

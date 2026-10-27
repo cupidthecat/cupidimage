@@ -1,5 +1,5 @@
 {
-  "provenance": "Owned synthetic pixels; expected RGBA is calculated from the source samples, Decode rules, and stencil/color-key masks.",
+  "provenance": "Owned synthetic pixels; expected RGBA is calculated from the source samples, Decode rules, and stencil, color-key, explicit, and soft masks.",
   "cases": [
     {
       "asset": "assets/pdf/reference/packed-gray-1bit.pdf",
@@ -34,6 +34,27 @@
       "width": 24,
       "height": 16,
       "rgba_zlib": "eJxraGj434AHMxCCDP/xYnxmj5o/av5Amw9EeDGlCkbNHzV/MJsPAE3U3K4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/soft-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj430ACXhUaShImxexR80fNp7f5V7W1ScL/GRhIwqPmj5o/mM0HALtTXe4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/soft-mask-matte.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJw74ODw/8AoHsWjeBSP4hGHAT8zXq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/explicit-image-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj+M9AEmxoaCAJk2b6qPmj5tPX/MHmnlHzR82np/kAPkZd7g==",
       "tolerance": 0
     }
   ]

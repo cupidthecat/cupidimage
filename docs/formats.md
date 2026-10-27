@@ -78,7 +78,7 @@ DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
 nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, text
-clipping modes, transparency, patterns, and annotations are unsupported.
+clipping modes, transparency groups, blend modes, patterns, and annotations are unsupported.
 
 ## PDF details and limits
 
@@ -102,7 +102,7 @@ JPEG images support DCTDecode as a name or a single-filter array, including
 ColorTransform 1 and Decode array inversion. Their frame dimensions, bit depth,
 and component count must match the image dictionary. FlateDecode also accepts a
 single-filter array. Raw RGB JPEG images, ColorTransform 0, JPX, filter chains,
-soft masks, mask-image streams, indexed color, and inline images
+indexed color and inline images
 are outside the supported subset.
 Drawing an invalid or unsupported XObject returns a load error.
 
@@ -170,7 +170,24 @@ retain their precision through prediction and Decode mapping before conversion t
 
 Stencil ImageMask images use the current fill color, with normal or inverted
 Decode polarity. Color-key Mask arrays make matching source samples transparent.
-Soft masks and external mask-image streams remain unsupported. DeviceCMYK images
+Explicit Mask image streams support one-bit stencils. DeviceGray SMask images
+support 1/2/4/8/16-bit samples, Decode arrays, raw/Flate streams, and supported
+predictors. Masks can have different dimensions from the parent image and are
+sampled independently over its unit square. Image sampling remains nearest-neighbor;
+Interpolate is not implemented.
+
+SMask takes precedence over Mask. A Matte array removes preblending in the parent
+color space before color conversion. Matte masks must have the same dimensions as
+the parent. Nested masks, malformed masks, and unsupported mask codecs return an
+error rather than drawing an opaque substitute. Graphics-state soft masks,
+transparency groups, and blend modes are not implemented.
+
+Run `make test-pdf-masks` for exact-pixel and malformed-input coverage. The optional
+`python3 scripts/test_pdf_masks.py bin/test_pdf_pages --reference` also compares
+successful fixtures against an installed independent rasterizer, with vector
+antialiasing disabled to match pixel-center clipping.
+
+DeviceCMYK images
 use the same unmanaged conversion as device-color paint; DCT-compressed CMYK
 images and color-managed conversion remain outside this subset.
 

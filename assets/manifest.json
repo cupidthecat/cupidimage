@@ -551,6 +551,10 @@
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },
     {
+      "path": "assets/pdf/reference/explicit-image-mask.pdf",
+      "sha256": "9894db4b391331e06afa1c30a1883da9a7016aac292d1d982cdc07e57ec8d0f0"
+    },
+    {
       "path": "assets/pdf/reference/gray-16bit-tiff-predictor.pdf",
       "sha256": "61b55241f59c1a234421bbc777abbac34de9e2453f023c39b0f009f9ea821648"
     },
@@ -573,6 +577,14 @@
     {
       "path": "assets/pdf/reference/quadrants.pdf",
       "sha256": "9f2fa1b0e7eb0b0ea83b4795c449fd6f65bcf2c4e736f9cc60c624bd57fc118e"
+    },
+    {
+      "path": "assets/pdf/reference/soft-mask-matte.pdf",
+      "sha256": "9efc14da3e6430846c13a4d81d21201b4885e7ef38a96c2318a4c47c3c4cf6a8"
+    },
+    {
+      "path": "assets/pdf/reference/soft-mask.pdf",
+      "sha256": "10b02c491c96a069792b8762d14722a58402adb659e508824b80e1d3407eda0c"
     },
     {
       "path": "assets/pdf/reference/stencil-mask.pdf",
