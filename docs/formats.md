@@ -116,7 +116,7 @@ Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PD
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive and
-external-reference forms are rejected. Isolated and non-isolated, non-knockout RGB transparency
+external-reference forms are rejected. Isolated and non-isolated, non-knockout RGB/gray transparency
 groups are supported; other group configurations remain unsupported. See
 [PDF transparency](pdf-transparency.md) for compositing and memory limits.
 
@@ -190,8 +190,9 @@ Interpolate is not implemented.
 SMask takes precedence over Mask. A Matte array removes preblending in the parent
 color space before color conversion. Matte masks must have the same dimensions as
 the parent. Nested masks, malformed masks, and unsupported mask codecs return an
-error rather than drawing an opaque substitute. Graphics-state soft masks,
-and graphics-state soft-mask groups are not implemented.
+error rather than drawing an opaque substitute. Graphics-state Alpha/Luminosity masks are also supported for the group spaces
+described in [PDF transparency](pdf-transparency.md). Image-local masks override
+the graphics-state mask for that image only.
 
 Run `make test-pdf-masks` for exact-pixel and malformed-input coverage. The optional
 `python3 scripts/test_pdf_masks.py bin/test_pdf_pages --reference` also compares
@@ -237,11 +238,11 @@ coverage. This avoids dark seams caused by repeatedly blending the same object.
 The tests compare analytic pixels and independent raster output, including blend
 endpoint cases, state restoration, and mask/opacity combinations.
 
-Blending currently uses the output device RGB space. Isolated and non-isolated, non-knockout RGB
-groups are supported. Other group color spaces, knockout groups,
-graphics-state soft-mask dictionaries,
-overprinting, and full text-transparency semantics remain unsupported. `/SMask
-/None` is accepted; other graphics-state soft masks return an error. Stroke styling is described below.
+Page blending uses the output device RGB space; group blending also supports
+DeviceGray. Non-knockout groups and graphics-state Alpha/Luminosity masks are
+supported. CMYK/CIE/ICC group spaces, knockout groups, overprinting and full
+text-transparency semantics remain incomplete. See [PDF transparency](pdf-transparency.md)
+for mask precedence and group limits. Stroke styling is described below.
 
 ## PDF character maps
 
@@ -448,8 +449,8 @@ The cell cache preserves RGBA transparency. Cell alpha constants and blend mode
 start at their defaults; the caller's transparency applies when the resulting
 pattern paints an object. Normal-blend transparency and nested patterns are
 supported. A cell that requests a non-Normal blend mode is rejected because its
-result depends on the backdrop and cannot use this cache. Soft-mask groups and
-general transparency groups remain separate work. Eight-bit
+result depends on the backdrop and cannot use this cache. A mask definition
+inside a pattern has its own fixed backdrop and may use blend modes there. Eight-bit
 cached alpha can differ by one channel value from a higher-precision pipeline.
 
 Uncoloured cells reject colour-setting operators and ordinary colour images;

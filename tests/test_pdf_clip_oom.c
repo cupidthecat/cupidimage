@@ -37,6 +37,7 @@
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
 #include "../src/formats/pdf/pdf_shading.c"
+#include "../src/formats/pdf/pdf_soft_masks.c"
 #include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_text_outline.c"
@@ -185,13 +186,54 @@ int main(void) {
         parent.document = data; parent.document_size = sizeof(data) - 1;
         pdf_transparency_group group = {0};
         allocation_count = 0; fail_at = 0; checks++;
-        if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count || budget.group_bytes_live)
+        if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count || budget.transparency_bytes_live)
             failures++;
-        image.width = image.height = 1; budget.group_bytes_live = PDF_GROUP_MEMORY_LIMIT;
+        image.width = image.height = 1; budget.transparency_bytes_live = PDF_TRANSPARENCY_MEMORY_LIMIT;
         checks++;
         if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count ||
-            budget.group_bytes_live != PDF_GROUP_MEMORY_LIMIT) failures++;
+            budget.transparency_bytes_live != PDF_TRANSPARENCY_MEMORY_LIMIT) failures++;
         cupidimage_pdf_group_free(&parent, &group);
+    }
+    /* Soft-mask state owns its sampled values independently of temporary group surfaces. */
+    for (unsigned variant = 0; variant < 8; variant++) {
+        const char *body = variant == 6 ? "/Nested gs 1 g 0 0 18 12 re f" :
+                           variant == 7 ? "/Nested gs 0 0 18 12 re f (unterminated" :
+                           variant == 3 ? "/M gs 0 0 18 12 re f" :
+                           variant == 4 ? "0 0 18 12 re f (unterminated" : "1 g 0 0 8.8 12 re f";
+        const char *transfer = variant == 2 ? "/TR 9 0 R" :
+                               variant == 1 ? "/TR << /FunctionType 2 /Domain [0 1] /C0 [1] /C1 [0] /N 1 >>" : "";
+        const char *calculator = "{ 1 exch sub }";
+        const char *nested_body = "1 g 0 0 8.8 12 re f";
+        const char *paint = variant == 5 ? "18 0 0 12 0 0 cm /Im Do" : "0 0 18 12 re f";
+        char mask_document[3072];
+        int length = snprintf(mask_document, sizeof(mask_document),
+            "3 0 obj << /Resources << /ExtGState << /M << /SMask 6 0 R >> /Nested << /SMask 7 0 R >> /Clear << /SMask /None >> >> /XObject << /F 8 0 R >> >> >> endobj\n"
+            "5 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceGray >> /Length %zu >> stream\n%s\nendstream endobj\n"
+            "6 0 obj << /S /%s /G 5 0 R %s >> endobj\n"
+            "7 0 obj << /S /Alpha /G 12 0 R >> endobj\n"
+            "8 0 obj << /Subtype /Form /BBox [0 0 18 12] /Resources << /XObject << /Im 10 0 R >> >> /Length %zu >> stream\n%s\nendstream endobj\n"
+            "9 0 obj << /FunctionType 4 /Domain [0 1] /Range [0 1] /Length %zu >> stream\n%s\nendstream endobj\n"
+            "10 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB /BitsPerComponent 8 /SMask 11 0 R /Filter /ASCIIHexDecode /Length 7 >> stream\nff0000>\nendstream endobj\n"
+            "11 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /ASCIIHexDecode /Length 3 >> stream\n80>\nendstream endobj\n"
+            "12 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceGray >> /Length %zu >> stream\n%s\nendstream endobj\n",
+            strlen(body), body, variant == 1 ? "Luminosity" : "Alpha", transfer,
+            strlen(paint), paint, strlen(calculator), calculator, strlen(nested_body), nested_body);
+        if (length < 0 || (size_t)length >= sizeof(mask_document)) return 1;
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            unsigned char pixels[24 * 16 * 4]; memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0}; image.width = 24; image.height = 16; image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16}; char error[128] = {0};
+            allocation_count = 0; fail_at = failure;
+            const char *content = "/M gs q /Clear gs Q /F Do q /Clear gs q Q Q";
+            int ok = cupidimage_pdf_render_content_stream((const unsigned char *)content, strlen(content),
+                (const unsigned char *)mask_document, (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure) total = allocation_count;
+            checks++;
+            if ((!failure && ok != (variant < 3 || variant == 5 || variant == 6)) || live_count) failures++;
+            while (live_count) fault_free(live[0]);
+        }
+        fail_at = 0;
     }
     /* Every fax allocation, including output growth, must unwind cleanly. */
     for (int malformed=0; malformed<2; malformed++) {

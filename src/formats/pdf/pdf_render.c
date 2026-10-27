@@ -29,12 +29,16 @@ static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
 
 static void pdf_render_state_release(pdf_render_state *st) {
     pdf_clip_release(st, st->gs.clip);
+    cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
     pdf_clip_release(st, st->text_clip);
     if (st->text_winding) {
         st->clip_budget->bytes_used-=st->text_winding_bytes;
         free(st->text_winding);
     }
-    for (int i = 0; i < st->gs_stack_len; i++) pdf_clip_release(st, st->gs_stack[i].clip);
+    for (int i = 0; i < st->gs_stack_len; i++) {
+        pdf_clip_release(st, st->gs_stack[i].clip);
+        cupidimage_pdf_soft_mask_release(st, st->gs_stack[i].soft_mask);
+    }
 }
 
 unsigned char cupidimage_pdf_clamp_u8(double v) {
@@ -432,6 +436,13 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
     if (alpha <= 0 || !pdf_pixel_visible(st, x, y)) return;
     cupidimage_image *img = st->img;
     size_t pixel = (size_t)y * img->width + (size_t)x;
+    if (st->gs.soft_mask) {
+        if (st->gs.soft_mask->width != img->width || st->gs.soft_mask->height != img->height) {
+            st->image_failed = 1; return;
+        }
+        alpha *= st->gs.soft_mask->values[pixel];
+        if (alpha <= 0) return;
+    }
     if (st->group) {
         double source[3] = {r / 255.0, g / 255.0, b / 255.0};
         cupidimage_pdf_group_paint(st->group, pixel, source, alpha, st->gs.blend_mode);
@@ -479,6 +490,13 @@ void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y,
                                     const double source[3], double alpha) {
     if (alpha <= 0 || !pdf_pixel_visible(st, x, y)) return;
     size_t pixel = (size_t)y * st->img->width + (size_t)x;
+    if (st->gs.soft_mask) {
+        if (st->gs.soft_mask->width != st->img->width || st->gs.soft_mask->height != st->img->height) {
+            st->image_failed = 1; return;
+        }
+        alpha *= st->gs.soft_mask->values[pixel];
+        if (alpha <= 0) return;
+    }
     if (st->group) {
         cupidimage_pdf_group_paint(st->group, pixel, source, alpha, st->gs.blend_mode);
         return;
@@ -772,7 +790,7 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
  * backdrop, not a fill that has already been composited onto it. */
 static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
     if (st->gs.fill_alpha == 1 && st->gs.stroke_alpha == 1 && !st->gs.blend_mode &&
-        !st->gs.fill_space.pattern && !st->gs.stroke_space.pattern) {
+        !st->gs.soft_mask && !st->gs.fill_space.pattern && !st->gs.stroke_space.pattern) {
         pdf_fill_path(st, even_odd); cupidimage_pdf_stroke_segments(st, &st->path, NULL); return;
     }
     size_t pixels = (size_t)st->img->width * st->img->height, bytes = (pixels+7)/8;
@@ -1187,6 +1205,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
     } else if (strcmp(op, "q") == 0) {
         if (st->gs_stack_len < (int)(sizeof(st->gs_stack) / sizeof(st->gs_stack[0]))) {
             pdf_clip_retain(st->gs.clip);
+            cupidimage_pdf_soft_mask_retain(st->gs.soft_mask);
             st->gs_stack[st->gs_stack_len++] = st->gs;
         } else {
             cupidimage_set_err(st->error, st->error_capacity, "pdf: graphics state stack limit exceeded");
@@ -1195,6 +1214,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
     } else if (strcmp(op, "Q") == 0) {
         if (st->gs_stack_len > 0) {
             pdf_clip_release(st, st->gs.clip);
+            cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
             st->gs = st->gs_stack[--st->gs_stack_len];
         }
     } else if (strcmp(op, "m") == 0) {
@@ -1469,6 +1489,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     *child = *parent;
     child->gs = parent->initial_gs;
     child->gs.clip = NULL;
+    child->gs.soft_mask = NULL;
     child->gs_stack_len = 0;
     child->text_clip = NULL;
     child->text_winding = NULL;
@@ -1478,6 +1499,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     child->image_failed = 0;
     child->img = image;
     child->group = NULL;
+    child->mask_rendering = 0;
     child->page_x0_pts = 0;
     child->page_top_pts = image->height * (72.0f / 96.0f);
     child->in_text = 0;
@@ -1516,6 +1538,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
                                                    &fonts, parent->error, parent->error_capacity);
     child->font_table = &fonts;
     child->initial_gs = child->gs;
+    child->initial_gs.soft_mask = NULL;
     if (ok)
         ok = pdf_render_stream(child, stream, length);
     pdf_render_state_release(child);
@@ -1544,10 +1567,12 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     *child = *parent;
     child->gs = parent->initial_gs;
     child->gs.clip = NULL;
+    child->gs.soft_mask = NULL;
     child->gs.fill_alpha = child->gs.stroke_alpha = 1;
     child->gs.blend_mode = 0;
     child->img = image;
     child->group = NULL;
+    child->mask_rendering = 0;
     child->form_depth = 0;
     child->gs_stack_len = 0;
     child->text_clip = NULL;
@@ -1601,6 +1626,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st,const pdf_font_map *fon
     st->form_budget->bytes_left-=length;
     child=malloc(sizeof(*child));if(!child)goto done;
     *child=*st;pdf_clip_retain(child->gs.clip);
+    cupidimage_pdf_soft_mask_retain(child->gs.soft_mask);
     child->gs_stack_len=0;child->pending_clip=0;child->image_failed=0;
     child->text_clip=NULL;child->text_winding=NULL;child->text_winding_bytes=0;
     child->in_text=0;child->glyph_active=1;child->glyph_seen_metrics=0;child->glyph_uncolored=st->glyph_uncolored;
@@ -1617,6 +1643,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st,const pdf_font_map *fon
         child->font_table=&fonts;
     }
     child->initial_gs = child->gs;
+    child->initial_gs.soft_mask = NULL;
     child->initial_gs.clip = NULL;
     ok=pdf_render_stream(child,decoded,length) && child->glyph_seen_metrics;
 done:
@@ -1648,6 +1675,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     if (!child) goto done;
     *child = *st;
     pdf_clip_retain(child->gs.clip);
+    cupidimage_pdf_soft_mask_retain(child->gs.soft_mask);
     child->gs_stack_len = 0;
     child->text_clip = NULL;
     child->text_winding = NULL;
@@ -1714,6 +1742,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     st->form_budget->bytes_left -= length;
     if (!cupidimage_pdf_group_begin(child, st, form, &group)) goto done;
     child->initial_gs = child->gs;
+    child->initial_gs.soft_mask = NULL;
     child->initial_gs.clip = NULL;
     ok = pdf_render_stream(child, stream, length);
     if (ok) ok = cupidimage_pdf_group_finish(st, &group);
@@ -1770,6 +1799,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     st.gs.current_font = NULL;
 
     st.initial_gs = st.gs;
+    st.initial_gs.soft_mask = NULL;
     st.initial_gs.clip = NULL;
     int ok = pdf_render_stream(&st, stream, stream_len);
     pdf_render_state_release(&st);

@@ -62,7 +62,6 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
     }
     if (!cupidimage_pdf_apply_stroke_view(st, view, &next))
         return 0;
-    if (cupidimage_pdf_page_value(view, "SMask", &pos) && !cupidimage_pdf_image_name_is(view, "SMask", "None")) return 0;
     if (cupidimage_pdf_page_value(view, "BM", &pos)) {
         int mode = -1;
         if (pos < view->len && view->data[pos] == '[') {
@@ -84,8 +83,17 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
         next.blend_mode=st->gs.blend_mode;
     }
     /* Cached cells are backdrop-independent only with Normal blending. */
-    if (st->pattern_depth && next.blend_mode != 0)
+    if (st->pattern_depth && !st->mask_rendering && next.blend_mode != 0)
         return 0;
+    if (!st->glyph_uncolored && cupidimage_pdf_page_value(view, "SMask", &pos)) {
+        pdf_soft_mask *mask = NULL;
+        int replace;
+        if (!cupidimage_pdf_load_soft_mask(st, &next, view, &mask, &replace)) return 0;
+        if (replace) {
+            cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
+            next.soft_mask = mask;
+        }
+    }
     st->gs = next;
     return 1;
 }

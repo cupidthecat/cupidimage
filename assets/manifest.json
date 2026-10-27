@@ -623,6 +623,18 @@
       "sha256": "c3b4c82626474ff0ad1d8ac568cf699a2644a4fbf7e72b00b7aa3bc86f65d225"
     },
     {
+      "path": "assets/pdf/reference/graphics-alpha-mask.pdf",
+      "sha256": "9f4d50d2c3ae1d2850d2a1faf3c0769a0919c26cf3ff03575941b1867bcb6b18"
+    },
+    {
+      "path": "assets/pdf/reference/graphics-gray-mask-transfer.pdf",
+      "sha256": "2a110a66f660c4aeee879e9a9dc4cbe1c41df340357de51960991471b4361833"
+    },
+    {
+      "path": "assets/pdf/reference/graphics-luminosity-mask.pdf",
+      "sha256": "1e1522d951de459ff3654bdbc1bff8288c6302d3294d0013b4185f7282736af9"
+    },
+    {
       "path": "assets/pdf/reference/graphics-state-font-object-stream.pdf",
       "sha256": "4aa8eb358201a1e3ead3d41ba11c38e9602655dca4fae537a7ca9a9a47f8ddb1"
     },

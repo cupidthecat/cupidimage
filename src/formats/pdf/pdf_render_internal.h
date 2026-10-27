@@ -57,9 +57,17 @@ typedef struct {
 } pdf_pattern_store;
 
 typedef struct {
+    unsigned references;
+    uint32_t width, height;
+    size_t bytes;
+    double values[];
+} pdf_soft_mask;
+
+typedef struct {
     float ctm[6];
     double font_size_pts, leading_pts, char_space, word_space, horizontal_scale, text_rise;
     int text_mode;
+    pdf_soft_mask *soft_mask;
     const pdf_font_map *current_font;
     uint8_t fill_r;
     uint8_t fill_g;
@@ -89,7 +97,7 @@ typedef struct {
     size_t shade_evaluations_left;
     unsigned glyph_calls_left;
     size_t cmap_steps_left;
-    size_t group_bytes_live;
+    size_t transparency_bytes_live;
 } pdf_form_budget;
 
 typedef struct pdf_transparency_group pdf_transparency_group;
@@ -111,7 +119,7 @@ typedef struct {
     pdf_graphics_state initial_gs;
     pdf_pattern_store *patterns;
     unsigned pattern_depth;
-    int pattern_uncolored;
+    int pattern_uncolored, mask_rendering;
     pdf_graphics_state gs_stack[32];
     int gs_stack_len;
     pdf_path path;
@@ -131,17 +139,26 @@ typedef struct {
     pdf_form_budget *form_budget;
 } pdf_render_state;
 
-#define PDF_GROUP_MEMORY_LIMIT (256u * 1024u * 1024u)
+#define PDF_TRANSPARENCY_MEMORY_LIMIT (256u * 1024u * 1024u)
 struct pdf_transparency_group {
     cupidimage_image image;
     double *alpha, *color;
     const pdf_transparency_group *parent;
     const cupidimage_image *backdrop;
-    int isolated;
+    int isolated, gray;
     size_t bytes;
 };
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel,
                                 const double source[3], double alpha, int blend_mode);
+int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
+                               int required, int *gray);
+int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
+                                 int isolated, const double background[3]);
+void cupidimage_pdf_soft_mask_retain(pdf_soft_mask *mask);
+void cupidimage_pdf_soft_mask_release(pdf_render_state *st, pdf_soft_mask *mask);
+int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state *graphics,
+                                  const pdf_object_view *view, pdf_soft_mask **mask, int *replace);
+
 int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
                                const pdf_object_view *form, pdf_transparency_group *group);
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group);

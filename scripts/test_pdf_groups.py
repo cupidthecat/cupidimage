@@ -104,6 +104,9 @@ def main():
                 program='/B gs '+' '.join(str(v/255) for v in source)+' rg 0 0 18 12 re f'
                 attrs=f'/Resources << /ExtGState << /B << /BM /{mode} /ca {inner_alpha} >> >> >>'
                 check('nonisolated-blend-'+mode+'-'+str(inner_alpha),fixture(program,bg+'/A gs /G Do',group=nonisolated,attrs=attrs),lambda x,y:expected,tolerance=1)
+        check('gray-group-native',fixture(ALPHA+' g 0 0 18 12 re f',group='<< /S /Transparency /I true /CS /DeviceGray >>'),lambda x,y:(128,128,128),tolerance=1)
+        check('gray-group-conversion',fixture(group='<< /S /Transparency /I true /CS /DeviceGray >>'),lambda x,y:(77,77,77),reference=False)
+        check('gray-group-parent-composition',fixture(content='0 1 0 rg 0 0 18 12 re f /A gs /G Do',group='<< /S /Transparency /I true /CS /DeviceGray >>'),lambda x,y:(38,165,38),reference=False)
         tiny='.'+'0'*61+'1'
         tiny_resources='/ExtGState << /Tiny << /ca '+tiny+' >> >>'
         nested={}
@@ -112,7 +115,7 @@ def main():
             resources=tiny_resources+(f' /XObject << /Next {number+1} 0 R >>' if number<9 else '')
             nested[number]=form(program,'/BBox [0 0 18 12] /Group << /S /Transparency >> /Resources << '+resources+' >>')
         check('subnormal-nested-alpha',fixture('/Tiny gs /Next Do',group=nonisolated,attrs='/Resources << '+tiny_resources+' /XObject << /Next 6 0 R >> >>',extra=nested),lambda x,y:white)
-        for group in ('<< /S /Transparency /I true /K true >>','<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I true /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
+        for group in ('<< /S /Transparency /I true /K true >>','<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I false /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
             check('unsupported-or-invalid',fixture(group=group),reject=True)
         check('default-colour-space',fixture(attrs='/Resources << /ColorSpace << /DefaultRGB [/CalRGB << /WhitePoint [1 1 1] >>] >> >>'),reject=True)
         check('group-cycle',fixture('/G Do'),reject=True)

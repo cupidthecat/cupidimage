@@ -259,6 +259,27 @@
       "height": 16,
       "rgba_zlib": "eJxj2O/wn2EUj+JRPIpH8YjDACx5/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-alpha-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7X1///z8pmFQwav6o+aPmj5o/av6gNB8AjVE6TA==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-luminosity-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzLzPz/P5METCogxexR80fNHzV/1PxR8+lnPgB9yBlM",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-gray-mask-transfer.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw/z8pmFQwav6o+aPmj5o/av6gNB8AMlw7zA==",
+      "tolerance": 0
     }
   ]
 }

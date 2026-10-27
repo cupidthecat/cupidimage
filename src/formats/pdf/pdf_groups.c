@@ -41,7 +41,13 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel,
     double a0 = group_initial_alpha(group, pixel), ag = group->alpha[pixel];
     double ab = ag + a0 * (1 - ag), ar = alpha + ab * (1 - alpha);
     if (ar <= 0) return;
-    double *color = group->color + pixel * 3, blended[3];
+    double *color = group->color + pixel * 3, blended[3], converted[3];
+    if (group->gray) {
+        double g = source[0] == source[1] && source[1] == source[2] ? source[0] :
+                   .3 * source[0] + .59 * source[1] + .11 * source[2];
+        converted[0] = converted[1] = converted[2] = g;
+        source = converted;
+    }
     cupidimage_pdf_blend_colors(blend_mode, source, color, blended);
     for (unsigned i = 0; i < 3; i++) {
         double value = (alpha * ((1 - ab) * source[i] + ab * blended[i]) +
@@ -52,11 +58,77 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel,
     group->alpha[pixel] = fmin(1, alpha + ag * (1 - alpha));
     group->image.rgba[pixel * 4 + 3] = cupidimage_pdf_clamp_u8(ar);
 }
+int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
+                                 int isolated, const double background[3]) {
+    if (background) for (unsigned i = 0; i < 3; i++) if (!isfinite(background[i])) return 0;
+    size_t pixels = (size_t)parent->img->width * parent->img->height;
+    const size_t limit = PDF_TRANSPARENCY_MEMORY_LIMIT;
+    if (parent->img->width && pixels / parent->img->width != parent->img->height) return 0;
+    size_t per_pixel = 4 + 4 * sizeof(double);
+    if (parent->form_budget->transparency_bytes_live > limit ||
+        pixels > (limit - parent->form_budget->transparency_bytes_live) / per_pixel)
+        return 0;
+    group->image.rgba = calloc(pixels, 4);
+    if (!group->image.rgba) return 0;
+    group->alpha = calloc(pixels, 4 * sizeof(*group->alpha));
+    if (!group->alpha) { free(group->image.rgba); group->image.rgba = NULL; return 0; }
+    group->color = group->alpha + pixels;
+    group->isolated = isolated;
+    group->gray = parent->group ? parent->group->gray : 0;
+    group->parent = parent->group;
+    group->backdrop = parent->img;
+    if (!isolated) {
+        memcpy(group->image.rgba, parent->img->rgba, pixels * 4);
+        for (size_t i = 0; i < pixels; i++) group_initial_color(group, i, group->color + i * 3);
+    }
+    group->image.width = parent->img->width;
+    group->image.height = parent->img->height;
+    group->bytes = pixels * per_pixel;
+    parent->form_budget->transparency_bytes_live += group->bytes;
+    if (background) {
+        for (size_t pixel = 0; pixel < pixels; pixel++) {
+            group->alpha[pixel] = 1;
+            for (unsigned i = 0; i < 3; i++) {
+                group->color[pixel * 3 + i] = fmax(0, fmin(1, background[i]));
+                group->image.rgba[pixel * 4 + i] = cupidimage_pdf_clamp_u8(group->color[pixel * 3 + i]);
+            }
+            group->image.rgba[pixel * 4 + 3] = 255;
+        }
+    }
+    return 1;
+}
+int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
+                               int required, int *gray) {
+    size_t pos;
+    if (cupidimage_pdf_page_value(attributes, "CS", &pos)) {
+        pdf_object_view space = {0};
+        int ok = cupidimage_pdf_dictionary_value(st->document, st->document_size, attributes, "CS", &space);
+        if (ok && group_keyword(&space, "null")) ok = !required;
+        else if (ok) {
+            pdf_image_colors colors = {0}; char name[128]; pos = 0;
+            if (cupidimage_pdf_read_name(&space, &pos, name))
+                ok = cupidimage_pdf_color_space(st, name, 0, &colors);
+            else { pos = 0; ok = cupidimage_pdf_image_color_space(st, &space, &pos, 0, &colors); }
+            ok = ok && (colors.components == 1 || colors.components == 3) && !colors.pattern && !colors.indexed;
+            if (ok) *gray = colors.components == 1;
+        }
+        cupidimage_pdf_object_view_release(&space);
+        if (!ok) return 0;
+    } else if (required) return 0;
+    const char *defaults[] = {"DefaultRGB", "DefaultGray", "DefaultCMYK"};
+    for (unsigned i = 0; i < 3; i++) {
+        pdf_object_view value = {0};
+        int remapped = cupidimage_pdf_find_resource(st, "ColorSpace", defaults[i], &value, NULL);
+        cupidimage_pdf_object_view_release(&value);
+        if (remapped) return 0;
+    }
+    return 1;
+}
 int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
                                const pdf_object_view *form, pdf_transparency_group *group) {
     size_t pos;
     if (!cupidimage_pdf_page_value(form, "Group", &pos)) return 1;
-    pdf_object_view attributes = {0}, space = {0};
+    pdf_object_view attributes = {0};
     int isolated = 0, knockout = 0, ok = 0;
     if (!cupidimage_pdf_dictionary_value(parent->document, parent->document_size, form, "Group", &attributes))
         goto done;
@@ -68,57 +140,19 @@ int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *
         !group_boolean(parent, &attributes, "I", &isolated) ||
         !group_boolean(parent, &attributes, "K", &knockout) || knockout)
         goto done;
-    if (cupidimage_pdf_page_value(&attributes, "CS", &pos)) {
-        if (!cupidimage_pdf_dictionary_value(parent->document, parent->document_size, &attributes, "CS", &space))
-            goto done;
-        if (!group_keyword(&space, "null")) {
-            pdf_image_colors colors = {0};
-            pos = 0;
-            char name[128];
-            int valid;
-            if (cupidimage_pdf_read_name(&space, &pos, name))
-                valid = cupidimage_pdf_color_space(child, name, 0, &colors);
-            else {
-                pos = 0;
-                valid = cupidimage_pdf_image_color_space(child, &space, &pos, 0, &colors);
-            }
-            if (!valid || colors.components != 3 || colors.pattern || colors.indexed) goto done;
-        }
-    }
-    pdf_object_view default_rgb = {0};
-    int remapped = cupidimage_pdf_find_resource(child, "ColorSpace", "DefaultRGB", &default_rgb, NULL);
-    cupidimage_pdf_object_view_release(&default_rgb);
-    if (remapped) goto done;
-    size_t pixels = (size_t)parent->img->width * parent->img->height;
-    const size_t limit = PDF_GROUP_MEMORY_LIMIT;
-    if (parent->img->width && pixels / parent->img->width != parent->img->height) goto done;
-    size_t per_pixel = 4 + 4 * sizeof(double);
-    if (parent->form_budget->group_bytes_live > limit ||
-        pixels > (limit - parent->form_budget->group_bytes_live) / per_pixel)
-        goto done;
-    group->image.rgba = calloc(pixels, 4);
-    if (!group->image.rgba) goto done;
-    group->alpha = calloc(pixels, 4 * sizeof(*group->alpha));
-    if (!group->alpha) { free(group->image.rgba); group->image.rgba = NULL; goto done; }
-    group->color = group->alpha + pixels;
-    group->isolated = isolated;
-    group->parent = parent->group;
-    group->backdrop = parent->img;
-    if (!isolated) {
-        memcpy(group->image.rgba, parent->img->rgba, pixels * 4);
-        for (size_t i = 0; i < pixels; i++) group_initial_color(group, i, group->color + i * 3);
-    }
-    group->image.width = parent->img->width;
-    group->image.height = parent->img->height;
-    group->bytes = pixels * per_pixel;
-    parent->form_budget->group_bytes_live += group->bytes;
+    int gray = parent->group ? parent->group->gray : 0;
+    if (!cupidimage_pdf_group_space(child, &attributes, 0, &gray) ||
+        (!isolated && gray != (parent->group ? parent->group->gray : 0))) goto done;
+    if (!cupidimage_pdf_group_surface(parent, group, isolated, NULL)) goto done;
+    group->gray = gray;
     child->img = &group->image;
     child->group = group;
+    cupidimage_pdf_soft_mask_release(child, child->gs.soft_mask);
+    child->gs.soft_mask = NULL;
     child->gs.fill_alpha = child->gs.stroke_alpha = 1;
     child->gs.blend_mode = 0;
     ok = 1;
 done:
-    cupidimage_pdf_object_view_release(&space);
     cupidimage_pdf_object_view_release(&attributes);
     return ok;
 }
@@ -146,7 +180,7 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
 }
 void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group) {
     if (group->image.rgba) {
-        parent->form_budget->group_bytes_live -= group->bytes;
+        parent->form_budget->transparency_bytes_live -= group->bytes;
         free(group->image.rgba);
         free(group->alpha);
         memset(group, 0, sizeof(*group));

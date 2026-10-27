@@ -323,7 +323,7 @@ names and nested form/Type 3 scopes. The checked-in compressed-object asset has
 an analytic rectangle oracle. Optional exact comparisons are listed in
 [PDF fonts and text](pdf-fonts.md).
 
-## RGB transparency groups
+## Transparency groups and graphics-state masks
 
 `make test-pdf-groups` verifies that group opacity is applied once, members use
 reset alpha/blend state, and nested groups preserve their caller. Non-isolated
@@ -332,3 +332,10 @@ modes and cache/alpha separation. It also covers
 text, images, patterns, shading, clipping and unsupported configurations. See
 [PDF transparency](pdf-transparency.md) for independent-comparison tolerances,
 the analytic bounding-box case and memory limits.
+
+`make test-pdf-soft-masks` covers Alpha/Luminosity masks, captured transforms,
+transfer functions, BC, state restoration, nested masks, image-mask precedence,
+patterns and combined fill/stroke coverage. Allocation-failure tests also walk
+mask construction and nested cleanup. The transparency guide records analytic-only
+cases where independent renderers disagree. Three generated mask assets have
+exact-pixel corpus expectations.

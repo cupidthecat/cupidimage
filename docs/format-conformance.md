@@ -429,10 +429,8 @@ Type 1 and CFF suites have 27, 21 and 25 independent raster comparisons.
 ## Isolated RGB transparency groups
 
 Transparency Form XObjects with I true and K false now composite on a transparent
-RGBA backdrop, then apply their caller's alpha and blend mode once. The 38-case
-suite includes 22 optional independent comparisons with documented rounding and
-boundary rules. Non-isolated groups, knockout groups, other group color spaces,
-DefaultRGB remapping and graphics-state soft masks remain unsupported. Details
+RGBA backdrop, then apply their caller's alpha, blend mode and mask once.
+Later additions below cover non-isolated groups and gray blending. Details
 and memory limits are in [PDF transparency](pdf-transparency.md).
 
 ## Non-isolated RGB groups and precision
@@ -443,7 +441,22 @@ alpha allows that initial contribution to be removed before the group is painted
 into its parent. Both group types retain floating-point color and alpha through
 nesting. Pattern/shading cache construction is kept outside that tracking.
 
-The group suite has 79 cases and 65 optional independent comparisons, including
+The group suite has 82 cases and 66 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-group-memory cap is now 256 MiB; the PDF allocation-failure suite has 1,380 checks.
-Knockout groups, other blending spaces and graphics-state soft masks remain open.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,513 checks.
+Knockout and CMYK/CIE/ICC blending remain open.
+
+
+## Graphics-state soft masks and gray groups
+
+Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
+q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
+as a group blending space alongside DeviceRGB. The focused suites have 56 mask
+checks and 82 group checks, with 44 and 66 optional independent comparisons.
+The allocation-failure suite has 1,513 checks. Three new analytic assets cover
+alpha masks, luminosity masks and a gray mask with an inverse transfer function.
+
+[PDF transparency](pdf-transparency.md) records the analytic-only differences,
+shared 256 MiB memory bound and remaining limitations. Knockout, page-group
+selection, CMYK/CIE/ICC blending, default-space remapping and full shape/text
+transparency are still open. These changes do not establish complete PDF support.

@@ -315,6 +315,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     image.owned = NULL; /* The caller retains the dictionary and stream. */
     unsigned char *samples = NULL;
     pdf_image_mask mask = {0};
+    pdf_soft_mask *graphics_mask = st->gs.soft_mask;
     pdf_image_colors colors = {0};
     int width, height, bits, components, ok = 0;
     size_t pos;
@@ -397,6 +398,8 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     int x1 = (int)fmax(0, fmin(st->img->width, ceil(max_x)));
     int y0 = (int)fmax(0, fmin(st->img->height, floor(min_y)));
     int y1 = (int)fmax(0, fmin(st->img->height, ceil(max_y)));
+    /* An image's explicit, color-key or soft mask replaces the graphics-state mask. */
+    if (mask.samples || has_color_key) st->gs.soft_mask = NULL;
     for (int y = y0; y < y1; y++) {
         for (int x = x0; x < x1; x++) {
             double tx = (x + 0.5) * (72.0 / 96.0) + st->page_x0_pts - m[4];
@@ -445,6 +448,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     }
     ok = 1;
 done:
+    st->gs.soft_mask = graphics_mask;
     free(mask.samples);
     free(samples);
     cupidimage_pdf_object_view_release(&image);
