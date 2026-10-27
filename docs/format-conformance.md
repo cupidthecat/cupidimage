@@ -341,3 +341,17 @@ found during that check now has an authored regression. This was not the full
 
 [The font guide](pdf-fonts.md) records the missing hinting, charstring and encoding
 work, authoritative specifications, and the limited role of RFC 7995.
+
+## Encoding CMaps
+
+Embedded maps support one-to-four-byte codespaces, CID and notdef ranges,
+UseCMap inheritance, invalid-code recovery and original-source word spacing.
+The focused suite has 68 checks and seven optional exact raster comparisons.
+The bundled 59 standard CJK maps are checked against 885,128 source mappings,
+including repeated/inherited entries, with six additional authored rendering
+cases and exact independent comparisons. These are mapping checks, not proof
+that every CJK glyph renders correctly. Missing font programs still need
+faithful substitutes. The PDF allocation-failure suite has 414 checks.
+
+The resources retain their BSD notices and pinned hashes. Full ordinary and
+sanitizer validation must accompany changes to the decoder or generated data.

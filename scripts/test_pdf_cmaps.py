@@ -107,6 +107,8 @@ def main():
                         one+'1 usefont',one+'/WMode 2 def',one+'/Missing usecmap',
                         two+'1 begincidrange <0140> <02FC> 1 endcidrange'):
             check('invalid',invalid,'41',[],reject=True)
+        check('named-map-inheritance','/90ms-RKSJ-H usecmap 1 begincidchar <8140> 2 endcidchar','418140',[(1,65,264,0,1),(2,0x8140,2,0,1)],attributes='/UseCMap /90ms-RKSJ-H')
+        check('unknown-predefined',one,'41',[],reject=True,attributes='/UseCMap /Unknown-CMap')
         check('cycle',one,'41',[],reject=True,attributes='/UseCMap 10 0 R')
         check('mode-disagreement',one+'/WMode 1 def','41',[],reject=True,attributes='/WMode 0')
         same('render-cidchar',one+mapping,'4142','00010002')

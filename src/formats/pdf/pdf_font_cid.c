@@ -183,12 +183,6 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
         return 0;
     int vertical = cid_value_name(&encoding, 0, "Identity-V");
     int identity = vertical || cid_value_name(&encoding, 0, "Identity-H");
-    size_t encoding_pos = 0;
-    cupidimage_pdf_skip_ws_and_comments(encoding.data, encoding.len, &encoding_pos);
-    if (!identity && encoding_pos < encoding.len && encoding.data[encoding_pos] == '/') {
-        cupidimage_pdf_object_view_release(&encoding);
-        return 1;
-    }
     if (!cupidimage_pdf_page_value(view, "DescendantFonts", &pos)) {
         cupidimage_pdf_object_view_release(&encoding);
         return 0;

@@ -426,6 +426,33 @@ int main(void) {
         }
         fail_at = 0;
     }
+    {
+        const char *names[] = {"/90ms-RKSJ-H", "/UniJIS-UTF16-V", "/GBK2K-V", "/Missing"};
+        for (unsigned sample = 0; sample < 4; sample++) {
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                pdf_object_view view = {0};
+                view.data = (const unsigned char *)names[sample];
+                view.len = strlen(names[sample]);
+                pdf_cmap *map = NULL;
+                allocation_count = 0;
+                fail_at = failure;
+                int ok = cupidimage_pdf_cmap_load(NULL, 0, &view, &map);
+                if (!failure)
+                    total = allocation_count;
+                checks++;
+                if (!failure && ok != (sample < 3))
+                    failures++;
+                cupidimage_pdf_cmap_free(map);
+                if (live_count) {
+                    failures++;
+                    while (live_count)
+                        fault_free(live[0]);
+                }
+            }
+        }
+        fail_at = 0;
+    }
     printf("PDF clip allocation failures: %zu checks, %zu failures\n", checks, failures);
     return failures != 0;
 }

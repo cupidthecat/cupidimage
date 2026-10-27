@@ -257,10 +257,16 @@ The regular suite does not require FontTools or a reference renderer.
 ## PDF encoding CMaps
 
 `make test-pdf-cmaps` checks variable-length codespaces, CID ranges, missing-glyph
-recovery, inheritance, writing modes and source-code word spacing. The 66 checks
+recovery, inheritance, writing modes and source-code word spacing. The 68 checks
 include malformed maps, cycles and mapping-work exhaustion. Seven optional exact
 raster comparisons run with:
 
     python3 scripts/test_pdf_cmaps.py bin/test_pdf_pages bin/test_pdf_cmap --reference
 
 These are focused fixtures, not the full manual PDF rating pass.
+
+`make test-pdf-predefined-cmaps` verifies the bundled standard CMaps against their
+pinned definitions, then renders six authored glyph-selection fixtures. Add
+`--reference` to scripts/test_pdf_predefined_cmaps.py for six independent exact
+pixel comparisons. Mapping counts measure resource correspondence, not visual
+coverage of that many distinct characters.

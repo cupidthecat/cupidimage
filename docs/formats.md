@@ -383,7 +383,7 @@ regardless of its Unicode mapping.
 Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
-described below. Predefined collection CMaps, complete standard-font metrics and embedded
+described below. Complete standard-font metrics and embedded
 Type 1/CFF outlines and complete TrueType fidelity remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes are not equivalent to actual
 font outlines.
@@ -516,8 +516,9 @@ Unicode. Invalid and truncated codes use CID zero with codespace-based byte
 recovery. Malformed font metadata retains the
 existing font-table fallback policy. Supported embedded TrueType programs instead
 select outlines through CIDToGIDMap. Embedded maps support CID ranges, notdef
-recovery and UseCMap inheritance. Predefined collection CMaps other than
-Identity-H/V and complete CJK text rendering remain open.
+recovery and UseCMap inheritance. The 59 predefined CJK maps in ISO 32000-1 Table 118 are bundled along with
+Identity-H/V. Complete CJK text rendering still depends on the remaining font
+program and fallback work.
 
 Metric tables are bounded to the 65,536-CID space, with at most 65,536 assignments
 per W/W2 array, 16 levels of indirect-value resolution and 64 MiB of CID metadata

@@ -49,7 +49,11 @@ chain. Retained maps count against the CID metadata budget. Disjoint ranges use
 binary search; overlapping definitions preserve last-definition precedence and
 use a bounded scan. All text on a page shares a mapping-work budget.
 
-Unknown predefined collections remain unsupported. This parser reads the CMap
+All 59 predefined CJK maps listed in ISO 32000-1 Table 118 are bundled, alongside
+Identity-H/V. Their horizontal and vertical mappings cover the Adobe CNS1, GB1,
+Japan1 and Korea1 collections, including mixed-width and UTF-16 codes. They select
+CIDs, not replacement font outlines: faithful rendering still requires a supported
+font program. Other named maps remain unsupported. This parser reads the CMap
 data format; it is not a general PostScript interpreter. Invalid maps retain the
 font table's existing fallback policy rather than establishing faithful text.
 
@@ -96,7 +100,7 @@ rather than quietly dropping that glyph.
 - TrueType instruction execution, grid fitting and antialiased font coverage.
 - CFF/Type 1 charstrings, other OpenType outline formats and variable-font data.
 - Complete post-table name variants and the remaining cmap forms.
-- Predefined collection CMaps other than Identity-H/V and complete CJK support.
+- Complete CJK font rendering beyond the supported encodings and embedded TrueType programs.
 - Complete standard-font metrics and faithful outlines when fonts are not embedded.
 
 These gaps can still change glyph shape, pixel phase or text coverage. Successful
@@ -104,12 +108,21 @@ loading is not enough to mark a font or document correct.
 
 ## Tests and provenance
 
-`make test-pdf-cmaps` runs 66 encoding, recovery, inheritance and rendering checks.
+`make test-pdf-cmaps` runs 68 encoding, recovery, inheritance and rendering checks.
 Seven selected cases also compare exact pixels with an independent renderer:
 
     python3 scripts/test_pdf_cmaps.py bin/test_pdf_pages bin/test_pdf_cmap --reference
 
-The allocation-failure suite exercises inherited encoding maps and their cleanup.
+`make test-pdf-predefined-cmaps` checks all 59 bundled resources and 885,128
+character mappings against their pinned source definitions. That count includes
+inherited and shared mappings; it is not a count of independent rendering
+features. Six authored PDF cases cover the four collections, vertical selection
+and a four-byte UTF-16 code. Optional exact raster comparisons run with:
+
+    python3 scripts/test_pdf_predefined_cmaps.py bin/test_pdf_cmap bin/test_pdf_pages --reference
+
+The allocation-failure suite exercises embedded and predefined encoding maps,
+including inherited maps and cleanup after decompression or parsing failures.
 
 
 `make test-pdf-truetype` runs binary-table/glyph-name checks and 45 PDF rendering
@@ -130,7 +143,9 @@ boundary rule. No whole-page visual-parity claim follows from these checks.
 
 The Adobe Glyph List is pinned under `third_party/adobe-glyph-list`, with its
 copyright and BSD-3-Clause notice retained. [Third-party notices](../THIRD_PARTY_NOTICES.md)
-must accompany binary distributions. Base encoding tables follow ISO 32000-1
+must accompany binary distributions. The 59 predefined CMaps are pinned under
+`third_party/adobe-cmaps`, with their original BSD notices and per-file hashes.
+Base encoding tables follow ISO 32000-1
 Annex D.2, including its duplicate-space, soft-hyphen and currency rules.
 
 ## Standards

@@ -1,4 +1,5 @@
 #include "cmap.h"
+#include "cmap_predefined.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -387,14 +388,41 @@ static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_vie
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &p);
     if (p < view->len && view->data[p] == '/') {
         cmap_token name = cmap_lex(view->data, view->len, &p, 0);
-        if (name.type != CM_NAME ||
-            (strcmp(name.text, "Identity-H") && strcmp(name.text, "Identity-V")))
+        if (name.type != CM_NAME)
             goto done;
         memcpy(map->name, name.text, sizeof(map->name));
-        map->vertical = !strcmp(name.text, "Identity-V");
-        cmap_range identity = {0, 65535, 0, 2, 0};
-        if (!cmap_space(map, identity) || !cmap_append(map, identity) || !cmap_index(map))
-            goto done;
+        if (!strcmp(name.text, "Identity-H") || !strcmp(name.text, "Identity-V")) {
+            map->vertical = !strcmp(name.text, "Identity-V");
+            cmap_range identity = {0, 65535, 0, 2, 0};
+            if (!cmap_space(map, identity) || !cmap_append(map, identity) || !cmap_index(map))
+                goto done;
+        } else {
+            const pdf_predefined_cmap *resource = cupidimage_pdf_predefined_cmap(name.text);
+            if (!resource || resource->length > 4u * 1024u * 1024u - *decoded_bytes)
+                goto done;
+            *decoded_bytes += resource->length;
+            if (*resource->base) {
+                unsigned char base_name[130];
+                size_t n = strlen(resource->base);
+                if (n > 127)
+                    goto done;
+                base_name[0] = '/';
+                memcpy(base_name + 1, resource->base, n);
+                pdf_object_view inherited = {0};
+                inherited.data = base_name;
+                inherited.len = n + 1;
+                if (!cmap_load(doc, size, &inherited, &map->base, chain, depth + 1,
+                               decoded_bytes))
+                    goto done;
+                map->space_count = map->base->space_count;
+                memcpy(map->spaces, map->base->spaces, map->space_count * sizeof(*map->spaces));
+            }
+            decoded = malloc(resource->length);
+            if (!decoded || !cupidimage_inflate_zlib(resource->data, resource->packed_length,
+                                                    decoded, resource->length, &length) ||
+                length != resource->length || !cmap_program(map, decoded, length, -1))
+                goto done;
+        }
         ok = 1;
         goto done;
     }
