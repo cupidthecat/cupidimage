@@ -224,3 +224,13 @@ to check selected rasters independently. That optional pass needs the reference
 command-line tools and PyMuPDF; the regular suite needs neither. The 39 optional
 comparisons include explicit one- or two-channel-unit tolerances for gradient
 approximation. Small analytic raster expectations remain exact.
+
+## PDF stroke geometry
+
+`make test-pdf-strokes` runs 60 checks for caps, joins, miter limits, dashes,
+transforms, dictionary state and bounded failures. Run
+`python3 scripts/test_pdf_strokes.py bin/test_pdf_pages --reference` for 26 exact
+independent comparisons; that optional pass needs the reference command-line
+tools and PyMuPDF. Analytic circle and polygon checks cover boundary cases where
+independent rasterizers use different edge rules. The ordinary suite requires
+neither reference dependency.

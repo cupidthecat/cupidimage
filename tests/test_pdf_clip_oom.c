@@ -19,6 +19,7 @@
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
 #include "../src/formats/pdf/pdf_shading.c"
+#include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #undef malloc
@@ -27,27 +28,29 @@
 #undef free
 
 int main(void) {
-    static const struct { const char *content; int valid; } fixtures[] = {
-        {"0 0 9 6 re W n q 3 0 6 12 re W* n 1 0 0 rg 0 0 18 12 re f Q q q", 1},
-        {"q 0 0 9 12 re W n q 0 0 18 6 re W n Q Q 0 0 18 12 re W n", 1},
-        {"0 0 9 12 re W n q (unterminated", 0},
-        {"0 0 9 12 re W n /F0 Do 0 0 1 rg 0 6 18 6 re f", 1},
-        {"0 0 9 12 re W n 18 0 0 12 0 0 cm /Im0 Do", 1},
-        {"18 0 0 12 0 0 cm /Im1 Do", 1},
-        {"/G gs 3 w 0 6 m 18 6 l 0 6 m 18 6 l S", 1},
-        {"/G gs 0 0 18 12 re B", 1},
-        {"/FontForm Do", 1},
-        {"/Sampled sh", 1},
-        {"/Broken sh", 0},
-        {"/Calculator sh", 1},
-        { "18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G ID x EI", 1},
-        { "18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G /F /AHx ID ff> EI", 1},
-        { "BI /W 1 /H 1 /BPC 8 /CS /G ID x EIx", 0},
-        { "BT /F1 12 Tf 1 Tr (AB) Tj ET", 1},
-        { "BT /F1 12 Tf 6 Tr (AB) Tj ET 0 0 18 12 re f", 1},
-        { "BT /F1 12 Tf 7 Tr (AB) Tj ET 0 0 18 12 re f", 1},
-        {"/BadCalculator sh", 0}
-    };
+    static const struct { const char *content; int valid;
+    } fixtures[] = {{"1 J 2 j 2 M [1 2 3] .5 d 3 w 1 1 m 17 1 l 17 11 l S", 1},
+                    {"[.01 .01] 0 d 1 w 0 6 m 18 6 l S", 1},
+                    {"[0 0] 0 d 1 1 m 17 11 l S", 0},
+                    {"0 0 9 6 re W n q 3 0 6 12 re W* n 1 0 0 rg 0 0 18 12 re f Q q q", 1},
+                    {"q 0 0 9 12 re W n q 0 0 18 6 re W n Q Q 0 0 18 12 re W n", 1},
+                    {"0 0 9 12 re W n q (unterminated", 0},
+                    {"0 0 9 12 re W n /F0 Do 0 0 1 rg 0 6 18 6 re f", 1},
+                    {"0 0 9 12 re W n 18 0 0 12 0 0 cm /Im0 Do", 1},
+                    {"18 0 0 12 0 0 cm /Im1 Do", 1},
+                    {"/G gs 3 w 0 6 m 18 6 l 0 6 m 18 6 l S", 1},
+                    {"/G gs 0 0 18 12 re B", 1},
+                    {"/FontForm Do", 1},
+                    {"/Sampled sh", 1},
+                    {"/Broken sh", 0},
+                    {"/Calculator sh", 1},
+                    {"18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G ID x EI", 1},
+                    {"18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G /F /AHx ID ff> EI", 1},
+                    {"BI /W 1 /H 1 /BPC 8 /CS /G ID x EIx", 0},
+                    {"BT /F1 12 Tf 1 Tr (AB) Tj ET", 1},
+                    {"BT /F1 12 Tf 6 Tr (AB) Tj ET 0 0 18 12 re f", 1},
+                    {"BT /F1 12 Tf 7 Tr (AB) Tj ET 0 0 18 12 re f", 1},
+                    {"/BadCalculator sh", 0}};
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
     const char *font_content = "BT /F1 6 Tf 0 6 Td (Z) Tj ET";
     const char *cmap = "1 beginbfchar <5A> <0041> endbfchar";

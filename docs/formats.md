@@ -237,8 +237,7 @@ endpoint cases, state restoration, and mask/opacity combinations.
 Blending currently uses the output device RGB space. Transparency-group color
 spaces, isolated or knockout groups, graphics-state soft-mask dictionaries,
 overprinting, and full text-transparency semantics remain unsupported. `/SMask
-/None` is accepted; other graphics-state soft masks return an error. Stroke caps
-and joins still use the existing approximate geometry.
+/None` is accepted; other graphics-state soft masks return an error. Stroke styling is described below.
 
 ## PDF character maps
 
@@ -385,8 +384,8 @@ supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Type 0 CID metrics, vertical writing metrics,
 complete standard-font metrics and embedded
 Type 1/TrueType font outlines remain separate work. Malformed font metadata still uses the
-existing fallback policy. Bitmap glyph shapes and the existing stroke
-approximation are not equivalent to actual font outlines.
+existing fallback policy. Bitmap glyph shapes are not equivalent to actual
+font outlines.
 
 Text clipping uses the page's bounded clipping allocations and work budget.
 Transforms must remain finite. Zero font size and zero horizontal scale do not
@@ -455,7 +454,7 @@ transparent cells without entering a large replication loop.
 
 Stroke coverage now measures width through the current affine transform,
 including nonuniform scale and shear; zero-width hairlines use device-pixel
-coverage. Line cap/join and dash fidelity still need further work.
+coverage. Cap, join and dash handling is described below.
 
 ## PDF shading patterns
 
@@ -471,3 +470,25 @@ tiling-only cell dimension limits do not apply. The caller's alpha and blend
 mode apply when the pattern paints. Nondefault transparency in a shading
 pattern's own ExtGState is rejected, rather than silently ignored. Mesh shadings
 and general transparency groups remain unsupported.
+
+## PDF stroke styling
+
+`J`, `j`, `M` and `d` control butt/round/projecting-square caps, miter/round/bevel
+joins, miter limits and dash arrays. Defaults are butt caps, miter joins, a miter
+limit of 10 and a solid line. Graphics-state dictionaries accept LC, LJ, ML and D,
+including indirect dash arrays, phases and numeric entries. `q`/`Q` preserve them.
+
+Dash lengths follow the current user-space metric, including nonuniform scale
+and shear. Odd arrays repeat twice to complete a cycle. The phase restarts for
+each subpath, while dashes continue through corners and flattened curves. Zero
+lengths are allowed when the array has a positive total; round zero-length dashes
+paint dots. Closed dashed paths retain capped endpoints at the traversal seam.
+Solid closed paths join there. Degenerate butt/square subpaths do not paint;
+round-capped ones paint a circle.
+
+All stroke primitives share one coverage mask, so caps, joins and overlapping
+segments do not multiply opacity. Limits are 32 dash entries, 65,536 expansion
+steps/fragments and 262,144 primitives per stroke, plus the shared pixel-work
+budget. Invalid arrays and exhausted budgets fail explicitly. Curve flattening
+and pixel-centre coverage remain approximations; this is not antialiased outline
+parity. Automatic stroke adjustment is not implemented.

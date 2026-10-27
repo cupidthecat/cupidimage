@@ -50,6 +50,8 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
         if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1e6) return 0;
         next.line_width_pts = (float)value;
     }
+    if (!cupidimage_pdf_apply_stroke_view(st, view, &next))
+        return 0;
     if (cupidimage_pdf_page_value(view, "SMask", &pos) && !cupidimage_pdf_image_name_is(view, "SMask", "None")) return 0;
     if (cupidimage_pdf_page_value(view, "BM", &pos)) {
         int mode = -1;

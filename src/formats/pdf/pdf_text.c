@@ -128,8 +128,12 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
                             st->image_failed = 1;
                             return;
                         }
-                    *seg = (pdf_seg){(float)points[0], (float)points[1], (float)points[2],
-                                     (float)points[3], 1};
+                    *seg = (pdf_seg){(float)points[0],
+                                     (float)points[1],
+                                     (float)points[2],
+                                     (float)points[3],
+                                     1,
+                                     0};
                 }
             }
         size_t bytes = ((size_t)st->img->width * st->img->height + 7) / 8;

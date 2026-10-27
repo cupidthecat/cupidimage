@@ -297,3 +297,19 @@ The targeted three-document nested-Type-3 check now renders two pages and
 rejects the cyclic example; both rendered pages still have reference pixel
 differences. This is not a full-corpus or visual-parity result. Full user ratings
 remain deferred while feature coverage grows.
+
+## Stroke geometry and dash state
+
+Stroke styling follows ISO 32000-1 sections 8.4.3.3–8.4.3.6. The new module
+covers caps, joins, miter cutoff, odd/zero dash entries, phase, affine metrics,
+subpath resets and graphics-state dictionaries. The 60-case suite includes
+analytic circles/polygons and 26 exact optional independent comparisons. A second
+renderer checks selected vertical endpoints where the first adds a boundary
+pixel. Round/bevel boundary cases use exact analytic expectations rather than
+claiming identical scan conversion across renderers.
+
+The old degenerate-curve assertion assumed a round cap without selecting it.
+It now checks that default butt caps leave the point unpainted, alongside an
+explicit round-cap dot check. The PDF allocation-failure suite has 173 checks,
+including dash parsing and fragment-buffer growth. Stroke adjustment and
+antialiased font-outline fidelity remain open.

@@ -28,7 +28,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   bitmap fallback, image samples and masks, and graphics/content rendering.
   Type 3 font metadata lives in `pdf_font_type3.c`, and shared resource-scope
   lookup lives in `pdf_resources.c`. Pattern validation and the bounded
-  per-page cell/gradient cache live in `pdf_patterns.c`.
+  per-page cell/gradient cache live in `pdf_patterns.c`. Stroke geometry, dash
+  expansion and bounded union coverage live in `pdf_stroke.c`.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;

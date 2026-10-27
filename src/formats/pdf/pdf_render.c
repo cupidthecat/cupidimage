@@ -546,6 +546,7 @@ static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1
     p->segs[p->seg_count].x1 = x1;
     p->segs[p->seg_count].y1 = y1;
     p->segs[p->seg_count].starts_subpath = p->seg_count == p->subpath_first_seg;
+    p->segs[p->seg_count].closes_subpath = 0;
     p->seg_count++;
 }
 
@@ -577,6 +578,8 @@ static void pdf_path_close(pdf_path *p) {
         fabsf(p->current_y - p->subpath_start_y) > 1e-4f) {
         pdf_path_add_seg(p, p->current_x, p->current_y, p->subpath_start_x, p->subpath_start_y);
     }
+    if (p->seg_count > p->subpath_first_seg)
+        p->segs[p->seg_count - 1].closes_subpath = 1;
     p->current_x = p->subpath_start_x;
     p->current_y = p->subpath_start_y;
 }
@@ -661,82 +664,6 @@ static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1,
                        x1, y1, x2, y2, x3, y3, 0);
 }
 
-void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path, unsigned char *target) {
-    if (!st || !st->img || path->seg_count <= 0) return;
-
-    unsigned char *coverage = target;
-    if (!coverage &&
-        (st->gs.stroke_alpha < 1 || st->gs.blend_mode || st->gs.stroke_space.pattern)) {
-        size_t pixels = (size_t)st->img->width * st->img->height;
-        coverage = (unsigned char *)calloc((pixels+7)/8, 1);
-        if (!coverage) { st->image_failed=1; cupidimage_set_err(st->error, st->error_capacity, "pdf: stroke coverage allocation failed"); return; }
-    }
-    const double ratio = 96.0 / 72.0;
-    const float *m = st->gs.ctm;
-    double det = (double)m[0] * m[3] - (double)m[1] * m[2];
-    double radius = st->gs.line_width_pts * .5;
-    int hairline = radius == 0;
-    if (!isfinite(det) || !isfinite(radius)) {
-        st->image_failed = 1;
-        if (!target)
-            free(coverage);
-        return;
-    }
-    if (det == 0 && !hairline) {
-        if (!target)
-            free(coverage);
-        return;
-    }
-    double ia = 1, ib = 0, ic = 0, id = 1, margin_x = .5, margin_y = .5;
-    if (hairline)
-        radius = .5;
-    else {
-        ia = m[3] / (det * ratio);
-        ic = m[2] / (det * ratio);
-        ib = -m[1] / (det * ratio);
-        id = -m[0] / (det * ratio);
-        margin_x = radius * ratio * hypot(m[0], m[2]);
-        margin_y = radius * ratio * hypot(m[1], m[3]);
-    }
-    double radius_squared = radius * radius;
-
-    for (int i = 0; i < path->seg_count; i++) {
-        float x0 = path->segs[i].x0, y0 = path->segs[i].y0;
-        float x1 = path->segs[i].x1, y1 = path->segs[i].y1;
-
-        if (!isfinite(x0) || !isfinite(y0) || !isfinite(x1) || !isfinite(y1)) continue;
-        double w = st->img->width - 1, h = st->img->height - 1;
-        int min_x = (int)fmin(w, fmax(0, floor(fmin(x0, x1) - margin_x - 1)));
-        int min_y = (int)fmin(h, fmax(0, floor(fmin(y0, y1) - margin_y - 1)));
-        int max_x = (int)fmin(w, fmax(0, ceil(fmax(x0, x1) + margin_x + 1)));
-        int max_y = (int)fmin(h, fmax(0, ceil(fmax(y0, y1) + margin_y + 1)));
-        double vx = ia * ((double)x1 - x0) + ic * ((double)y1 - y0),
-               vy = ib * ((double)x1 - x0) + id * ((double)y1 - y0);
-        double length_squared = vx * vx + vy * vy;
-        for (int y = min_y; y <= max_y; y++) {
-            for (int x = min_x; x <= max_x; x++) {
-                double dx = x + .5 - x0, dy = y + .5 - y0;
-                double ux = ia * dx + ic * dy, uy = ib * dx + id * dy;
-                double t =
-                    length_squared > 0 ? fmax(0, fmin(1, (ux * vx + uy * vy) / length_squared)) : 0;
-                ux -= t * vx;
-                uy -= t * vy;
-                if (ux * ux + uy * uy <= radius_squared) {
-                    if (coverage) {
-                        size_t pixel = (size_t)y*st->img->width+x;
-                        unsigned char bit = (unsigned char)(1u << (pixel%8));
-                        if (coverage[pixel/8] & bit) continue;
-                        coverage[pixel/8] |= bit;
-                    }
-                    if (target) continue;
-                    cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
-                }
-            }
-        }
-    }
-    if (!target) free(coverage);
-}
-
 static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
     float y0 = seg->y0;
     float y1 = seg->y1;
@@ -771,7 +698,7 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
         max_y = fmaxf(max_y, fmaxf(edge.y0, edge.y1));
         if (i + 1 == st->path.seg_count || st->path.segs[i + 1].starts_subpath) {
             /* Fill closes each subpath without adding a closing stroke. */
-            pdf_seg closing = {edge.x1, edge.y1, start_x, start_y, 0};
+            pdf_seg closing = {edge.x1, edge.y1, start_x, start_y, 0, 0};
             xformed[n++] = closing;
         }
     }
@@ -1184,13 +1111,33 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             st->image_failed = 1;
         } else if (stroke) st->gs.stroke_space = colors;
         else st->gs.fill_space = colors;
-    } else if (strcmp(op, "w") == 0) {
-        if (n >= 1 && pdf_expect_num(&ops[n - 1])) {
-            float w = (float)ops[n - 1].num;
-            if (w >= 0.0f && w < 1000.0f) {
-                st->gs.line_width_pts = w;
+    } else if (!strcmp(op, "w") || !strcmp(op, "J") || !strcmp(op, "j") || !strcmp(op, "M")) {
+        int valid = n == 1 && pdf_expect_num(ops) && isfinite(ops[0].num);
+        double value = valid ? ops[0].num : -1;
+        if (!strcmp(op, "w")) {
+            valid = valid && value >= 0 && value <= 1e6;
+            if (valid)
+                st->gs.line_width_pts = (float)value;
+        } else if (!strcmp(op, "M")) {
+            valid = valid && value >= 1 && value <= 1e6;
+            if (valid)
+                st->gs.miter_limit = value;
+        } else {
+            valid = valid && value >= 0 && value <= 2 && floor(value) == value;
+            if (valid) {
+                if (!strcmp(op, "J"))
+                    st->gs.line_cap = (int)value;
+                else
+                    st->gs.line_join = (int)value;
             }
         }
+        if (!valid)
+            st->image_failed = 1;
+    } else if (!strcmp(op, "d")) {
+        if (n != 2 || ops[0].type != PDF_OPERAND_ARRAY || !pdf_expect_num(ops + 1) ||
+            !cupidimage_pdf_set_dash(&st->gs, (const unsigned char *)ops[0].str, ops[0].len,
+                                     ops[1].num))
+            st->image_failed = 1;
     } else if (strcmp(op, "cm") == 0) {
         if (n >= 6 &&
             pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
@@ -1774,6 +1721,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     st.gs.stroke_g = 0;
     st.gs.stroke_b = 0;
     st.gs.line_width_pts = 1.0f;
+    st.gs.miter_limit = 10;
     st.gs.fill_alpha = st.gs.stroke_alpha = 1;
     st.gs.fill_space.components = st.gs.stroke_space.components = 1;
     st.gs_stack_len = 0;
