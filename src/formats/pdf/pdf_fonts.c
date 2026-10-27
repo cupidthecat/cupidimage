@@ -488,7 +488,7 @@ static int pdf_font_dictionary(const unsigned char *data, size_t size,
 static int pdf_parse_font_widths(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, pdf_font_map *font) {
     size_t pos;
-    if (cupidimage_pdf_font_is_name(data, size, view, "Subtype", "Type0")) return 1;
+    if (cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type0")) return 1;
     if (!font->type3 && cupidimage_pdf_page_value(view,"FontDescriptor",&pos)) {
         pdf_object_view descriptor={0};
         if (!pdf_font_dictionary(data,size,view,"FontDescriptor",&descriptor)) return 0;
@@ -543,7 +543,7 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
         cupidimage_pdf_skip_ws_and_comments(dict_data, dict_end, &pos);
         if (pos == dict_end) break;
         char name[128];
-        if (!cupidimage_pdf_font_name(&dictionary, &pos, name)) return 0;
+        if (!cupidimage_pdf_read_name(&dictionary, &pos, name)) return 0;
         cupidimage_pdf_skip_ws_and_comments(dict_data, dict_end, &pos);
         pdf_object_view font_view = {0};
         if (!pdf_font_dictionary(data, size, &dictionary, name, &font_view)) return 0;

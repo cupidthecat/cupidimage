@@ -22,12 +22,14 @@
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_cid.c"
+#include "../src/formats/pdf/pdf_object_values.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_program.c"
 #include "../src/formats/pdf/pdf_standard_font.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
+#include "../src/formats/pdf/pdf_groups.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_inline.c"
@@ -131,7 +133,7 @@ int main(void) {
             "/Function << /FunctionType 2 /Domain [0 1] /N 1 >> >> endobj\n";
         uint8_t pixels[16]; memset(pixels, 255, sizeof(pixels));
         cupidimage_image image = {0}; image.width=2; image.height=2; image.rgba=pixels;
-        pdf_form_budget budget = {0, 3, 3, 0, 0};
+        pdf_form_budget budget = {0, 3, 3, 0, 0, 0};
         pdf_render_state state = {0}; state.img=&image; state.document=(const unsigned char *)shading_doc;
         state.document_size=strlen(shading_doc); state.page_object=3; state.page_top_pts=1.5f;
         state.gs.ctm[0]=state.gs.ctm[3]=1; state.gs.fill_alpha=1; state.form_budget=&budget;
@@ -143,6 +145,53 @@ int main(void) {
         checks++;
         if (cupidimage_pdf_draw_shading(&state,"Sh")) failures++;
         if (live_count) { failures++; while(live_count) fault_free(live[0]); }
+    }
+    /* Group buffers are atomic with respect to the parent and unwind at every allocation. */
+    for (unsigned variant = 0; variant < 3; variant++) {
+        const char *body = variant == 2 ? "/Inner Do" :
+                           variant == 1 ? "0 0 18 12 re f (unterminated" : "0 0 18 12 re f";
+        const char *inner = "0 0 18 12 re f";
+        char group_document[1024];
+        int length = snprintf(group_document, sizeof(group_document),
+            "3 0 obj << /Resources << /XObject << /G 5 0 R /Inner 6 0 R >> >> >> endobj\n"
+            "5 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group 10 0 R /Length %zu >> stream\n%s\nendstream endobj\n"
+            "6 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group 10 0 R /Length %zu >> stream\n%s\nendstream endobj\n"
+            "10 0 obj << /S /Transparency /I 11 0 R /K false /CS /DeviceRGB >> endobj\n"
+            "11 0 obj true endobj\n", strlen(body), body, strlen(inner), inner);
+        if (length < 0 || (size_t)length >= sizeof(group_document)) return 1;
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            uint8_t pixels[24 * 16 * 4]; memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0}; image.width = 24; image.height = 16; image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16}; char error[128] = {0};
+            allocation_count = 0; fail_at = failure;
+            const char *content = "/G Do";
+            int ok = cupidimage_pdf_render_content_stream((const unsigned char *)content, strlen(content),
+                (const unsigned char *)group_document, (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure) total = allocation_count;
+            checks++;
+            if ((!failure && ok != (variant != 1)) || live_count) failures++;
+            if (!ok) for (size_t i = 0; i < sizeof(pixels); i++) if (pixels[i] != 255) { failures++; break; }
+            while (live_count) fault_free(live[0]);
+        }
+        fail_at = 0;
+    }
+    {
+        const unsigned char data[] = "<< /Group << /S /Transparency /I true >> >>";
+        pdf_object_view form = {data, sizeof(data) - 1, NULL};
+        cupidimage_image image = {0}; image.width = image.height = 5000;
+        pdf_form_budget budget = {0}; pdf_render_state parent = {0}, child = {0};
+        parent.img = &image; parent.form_budget = &budget;
+        parent.document = data; parent.document_size = sizeof(data) - 1;
+        pdf_transparency_group group = {0};
+        allocation_count = 0; fail_at = 0; checks++;
+        if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count || budget.group_bytes_live)
+            failures++;
+        image.width = image.height = 1; budget.group_bytes_live = 64u * 1024u * 1024u;
+        checks++;
+        if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count ||
+            budget.group_bytes_live != 64u * 1024u * 1024u) failures++;
+        cupidimage_pdf_group_free(&parent, &group);
     }
     /* Every fax allocation, including output growth, must unwind cleanly. */
     for (int malformed=0; malformed<2; malformed++) {

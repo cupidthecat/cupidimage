@@ -8,7 +8,7 @@ static int type3_array(const unsigned char *data, size_t size, const pdf_object_
                        const char *name, double *numbers, int count) {
     pdf_object_view array = {0};
     size_t pos = 0;
-    int ok = cupidimage_pdf_font_value(data, size, view, name, &array);
+    int ok = cupidimage_pdf_dictionary_value(data, size, view, name, &array);
     cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
     ok = ok && pos < array.len && array.data[pos++] == '[';
     for (int i = 0; ok && i < count; i++) {
@@ -36,8 +36,8 @@ int cupidimage_pdf_parse_type3_font(const unsigned char *data, size_t size,
     pdf_object_view subtype_value = {0};
     char subtype[128];
     pos = 0;
-    int valid = cupidimage_pdf_font_value(data, size, view, "Subtype", &subtype_value) &&
-                cupidimage_pdf_font_name(&subtype_value, &pos, subtype);
+    int valid = cupidimage_pdf_dictionary_value(data, size, view, "Subtype", &subtype_value) &&
+                cupidimage_pdf_read_name(&subtype_value, &pos, subtype);
     cupidimage_pdf_object_view_release(&subtype_value);
     if (!valid) return 0;
     if (strcmp(subtype, "Type3")) return 1;
@@ -48,8 +48,8 @@ int cupidimage_pdf_parse_type3_font(const unsigned char *data, size_t size,
     int ok = 0;
     if (!type || !type3_array(data, size, view, "FontMatrix", type->matrix, 6) ||
         !type3_array(data, size, view, "FontBBox", type->bounds, 4) ||
-        !cupidimage_pdf_font_value(data, size, view, "Encoding", &encoding) ||
-        !cupidimage_pdf_font_value(data, size, view, "CharProcs", &procs))
+        !cupidimage_pdf_dictionary_value(data, size, view, "Encoding", &encoding) ||
+        !cupidimage_pdf_dictionary_value(data, size, view, "CharProcs", &procs))
         goto done;
     if (type->bounds[0] > type->bounds[2] || type->bounds[1] > type->bounds[3])
         goto done;

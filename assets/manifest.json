@@ -643,6 +643,10 @@
       "sha256": "28d1418811c6fcd48d3f0bf5f692b95c837ad7f57b995d17f4bf69779a5da1ab"
     },
     {
+      "path": "assets/pdf/reference/isolated-opacity-group.pdf",
+      "sha256": "216a24bc27cb1e1c70dbd4cd6cc51bc690c83c858ecd73144c75db73a3142e66"
+    },
+    {
       "path": "assets/pdf/reference/lzw-object-stream.pdf",
       "sha256": "c563e79ca1807773c080c91e3b3732435c9973115545e060a4536e5ebb930053"
     },

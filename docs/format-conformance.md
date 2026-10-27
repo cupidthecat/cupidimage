@@ -425,3 +425,12 @@ of retaining a stale glyph. Font and embedded CFF stream subtypes resolve throug
 bounded indirect references. The Type 3 suite has 60 cases, with 40 optional
 comparisons under its documented boundary rules; the corresponding TrueType,
 Type 1 and CFF suites have 27, 21 and 25 independent raster comparisons.
+
+## Isolated RGB transparency groups
+
+Transparency Form XObjects with I true and K false now composite on a transparent
+RGBA backdrop, then apply their caller's alpha and blend mode once. The 38-case
+suite includes 22 optional independent comparisons with documented rounding and
+boundary rules. Non-isolated groups, knockout groups, other group color spaces,
+DefaultRGB remapping and graphics-state soft masks remain unsupported. Details
+and memory limits are in [PDF transparency](pdf-transparency.md).

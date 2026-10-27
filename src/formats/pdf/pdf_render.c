@@ -1602,6 +1602,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     const unsigned char *stream;
     unsigned char *inflated = NULL;
     pdf_render_state *child = NULL;
+    pdf_transparency_group group = {0};
     pdf_font_table fonts;
     cupidimage_pdf_font_table_init(&fonts);
     if (st->form_depth >= 16 || !st->form_budget->calls_left) goto done;
@@ -1611,7 +1612,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     }
     if ((cupidimage_pdf_page_value(form, "FormType", &pos) &&
          (!cupidimage_pdf_image_integer(st, form, "FormType", &type) || type != 1)) ||
-        cupidimage_pdf_page_value(form, "Group", &pos) || cupidimage_pdf_page_value(form, "Ref", &pos)) goto done;
+        cupidimage_pdf_page_value(form, "Ref", &pos)) goto done;
     child = (pdf_render_state *)malloc(sizeof(*child));
     if (!child) goto done;
     *child = *st;
@@ -1680,14 +1681,17 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     stream = inflated;
     if (length > st->form_budget->bytes_left) goto done;
     st->form_budget->bytes_left -= length;
+    if (!cupidimage_pdf_group_begin(child, st, form, &group)) goto done;
     child->initial_gs = child->gs;
     child->initial_gs.clip = NULL;
     ok = pdf_render_stream(child, stream, length);
+    if (ok) ok = cupidimage_pdf_group_finish(st, &group);
 done:
     cupidimage_pdf_font_table_free(&fonts);
     free(inflated);
     if (child) pdf_render_state_release(child);
     free(child);
+    cupidimage_pdf_group_free(st, &group);
     if (!ok) cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid, recursive, or unsupported Form XObject");
     return ok;
 }
@@ -1701,7 +1705,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
     pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536,
-                                   256u * 1024u * 1024u};
+                                   256u * 1024u * 1024u, 0};
     st.form_budget = &form_budget;
     pdf_pattern_store patterns = {0};
     st.patterns = &patterns;

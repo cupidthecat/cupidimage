@@ -115,8 +115,10 @@ Built-in text glyphs follow the text matrix and current transformation matrix.
 Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PDF fonts and text](pdf-fonts.md) for glyph selection and remaining font limitations.
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
-decoded form content per page, counting repeated invocations. Recursive forms, transparency
-groups, external-reference forms, filter chains, and form DecodeParms are rejected.
+decoded form content per page, counting repeated invocations. Recursive and
+external-reference forms are rejected. Isolated, non-knockout RGB transparency
+groups are supported; other group configurations remain unsupported. See
+[PDF transparency](pdf-transparency.md) for compositing and memory limits.
 
 Run the generated form checks with Python 3:
 
@@ -189,7 +191,7 @@ SMask takes precedence over Mask. A Matte array removes preblending in the paren
 color space before color conversion. Matte masks must have the same dimensions as
 the parent. Nested masks, malformed masks, and unsupported mask codecs return an
 error rather than drawing an opaque substitute. Graphics-state soft masks,
-and transparency groups are not implemented.
+and graphics-state soft-mask groups are not implemented.
 
 Run `make test-pdf-masks` for exact-pixel and malformed-input coverage. The optional
 `python3 scripts/test_pdf_masks.py bin/test_pdf_pages --reference` also compares
@@ -235,8 +237,9 @@ coverage. This avoids dark seams caused by repeatedly blending the same object.
 The tests compare analytic pixels and independent raster output, including blend
 endpoint cases, state restoration, and mask/opacity combinations.
 
-Blending currently uses the output device RGB space. Transparency-group color
-spaces, isolated or knockout groups, graphics-state soft-mask dictionaries,
+Blending currently uses the output device RGB space. Isolated, non-knockout RGB
+groups are supported. Other group color spaces, non-isolated or knockout groups,
+graphics-state soft-mask dictionaries,
 overprinting, and full text-transparency semantics remain unsupported. `/SMask
 /None` is accepted; other graphics-state soft masks return an error. Stroke styling is described below.
 

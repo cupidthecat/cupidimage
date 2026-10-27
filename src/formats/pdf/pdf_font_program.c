@@ -34,7 +34,7 @@ static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
     if (cupidimage_pdf_page_value(descriptor, "Flags", &p)) {
         pdf_object_view value = {0};
         size_t at = 0;
-        int valid = cupidimage_pdf_font_value(data, size, descriptor, "Flags", &value);
+        int valid = cupidimage_pdf_dictionary_value(data, size, descriptor, "Flags", &value);
         cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
         valid = valid && cupidimage_pdf_parse_pdf_number(value.data, value.len, &at, &flags) &&
                 isfinite(flags) && flags >= 0 && flags <= 0x7fffffff && floor(flags) == flags;
@@ -43,19 +43,19 @@ static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
             return 0;
     }
     int symbolic = ((unsigned)flags & 4) != 0,
-        has_encoding = cupidimage_pdf_font_value(data, size, view, "Encoding", &encoding), ok = 1;
+        has_encoding = cupidimage_pdf_dictionary_value(data, size, view, "Encoding", &encoding), ok = 1;
     char base[128] = "StandardEncoding";
     size_t pos = 0;
     cupidimage_pdf_skip_ws_and_comments(encoding.data, encoding.len, &pos);
     int encoding_dictionary = encoding.len - pos >= 2 && encoding.data[pos] == '<' && encoding.data[pos + 1] == '<';
     if (!symbolic && has_encoding) {
         if (pos < encoding.len && encoding.data[pos] == '/')
-            ok = cupidimage_pdf_font_name(&encoding, &pos, base);
+            ok = cupidimage_pdf_read_name(&encoding, &pos, base);
         else if (cupidimage_pdf_page_value(&encoding, "BaseEncoding", &pos)) {
             pdf_object_view value = {0};
             size_t at = 0;
-            ok = cupidimage_pdf_font_value(data, size, &encoding, "BaseEncoding", &value) &&
-                 cupidimage_pdf_font_name(&value, &at, base);
+            ok = cupidimage_pdf_dictionary_value(data, size, &encoding, "BaseEncoding", &value) &&
+                 cupidimage_pdf_read_name(&value, &at, base);
             cupidimage_pdf_object_view_release(&value);
         }
         if (strcmp(base, "StandardEncoding") && strcmp(base, "WinAnsiEncoding") &&
@@ -82,7 +82,7 @@ static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
     }
     if (ok && !symbolic && has_encoding && encoding_dictionary &&
         cupidimage_pdf_page_value(&encoding, "Differences", &pos)) {
-        ok = cupidimage_pdf_font_value(data, size, &encoding, "Differences", &differences);
+        ok = cupidimage_pdf_dictionary_value(data, size, &encoding, "Differences", &differences);
         pos = 0;
         cupidimage_pdf_skip_ws_and_comments(differences.data, differences.len, &pos);
         ok = ok && pos < differences.len && differences.data[pos++] == '[';
@@ -98,7 +98,7 @@ static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
             }
             if (pos < differences.len && differences.data[pos] == '/') {
                 char name[128];
-                ok = code >= 0 && code < 256 && cupidimage_pdf_font_name(&differences, &pos, name);
+                ok = code >= 0 && code < 256 && cupidimage_pdf_read_name(&differences, &pos, name);
                 if (ok)
                     program->glyphs[code++] = tt_named_glyph(&program->font, name);
             } else {
@@ -212,9 +212,9 @@ double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsi
 int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                        const pdf_object_view *view, pdf_font_map *font,
                                        size_t *budget) {
-    int type1 = cupidimage_pdf_font_is_name(data, size, view, "Subtype", "Type1") ||
-                cupidimage_pdf_font_is_name(data, size, view, "Subtype", "MMType1");
-    if (!font->cid && !cupidimage_pdf_font_is_name(data, size, view, "Subtype", "TrueType") && !type1)
+    int type1 = cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type1") ||
+                cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "MMType1");
+    if (!font->cid && !cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "TrueType") && !type1)
         return 1;
     pdf_object_view descendant = {0}, array = {0}, descriptor = {0}, stream = {0}, map = {0};
     const pdf_object_view *owner = view;
@@ -222,7 +222,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
     int ok = 0;
     size_t p = 0;
     if (font->cid) {
-        if (!cupidimage_pdf_font_value(data, size, view, "DescendantFonts", &array))
+        if (!cupidimage_pdf_dictionary_value(data, size, view, "DescendantFonts", &array))
             goto done;
         cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &p);
         if (p == array.len || array.data[p++] != '[')
@@ -230,8 +230,8 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
         if (!cupidimage_pdf_font_dictionary_at(data, size, &array, p, &descendant))
             goto done;
         owner = &descendant;
-        if (!cupidimage_pdf_font_is_name(data, size, owner, "Subtype", "CIDFontType2") &&
-            !cupidimage_pdf_font_is_name(data, size, owner, "Subtype", "CIDFontType0")) {
+        if (!cupidimage_pdf_entry_is_name(data, size, owner, "Subtype", "CIDFontType2") &&
+            !cupidimage_pdf_entry_is_name(data, size, owner, "Subtype", "CIDFontType0")) {
             ok = 1;
             goto done;
         }
@@ -251,12 +251,12 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
             program_key = "FontFile";
         else { ok = 1; goto done; }
     }
-    if (!cupidimage_pdf_font_value(data, size, &descriptor, program_key, &stream))
+    if (!cupidimage_pdf_dictionary_value(data, size, &descriptor, program_key, &stream))
         goto done;
-    int cff_stream = cupidimage_pdf_font_is_name(data, size, &stream, "Subtype", "Type1C") ||
-                     cupidimage_pdf_font_is_name(data, size, &stream, "Subtype", "CIDFontType0C");
+    int cff_stream = cupidimage_pdf_entry_is_name(data, size, &stream, "Subtype", "Type1C") ||
+                     cupidimage_pdf_entry_is_name(data, size, &stream, "Subtype", "CIDFontType0C");
     if (!strcmp(program_key, "FontFile3") && !cff_stream &&
-        !cupidimage_pdf_font_is_name(data, size, &stream, "Subtype", "OpenType")) {
+        !cupidimage_pdf_entry_is_name(data, size, &stream, "Subtype", "OpenType")) {
         ok = 1;
         goto done;
     }
@@ -280,7 +280,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
             double number;
             if(i==2&&!cupidimage_pdf_page_value(&stream,keys[i],&at)) continue;
             at=0;
-            int valid=cupidimage_pdf_font_value(data,size,&stream,keys[i],&value);
+            int valid=cupidimage_pdf_dictionary_value(data,size,&stream,keys[i],&value);
             cupidimage_pdf_skip_ws_and_comments(value.data,value.len,&at);
             valid=valid && cupidimage_pdf_parse_pdf_number(value.data,value.len,&at,&number) &&
                 isfinite(number)&&number>=0&&number<=16u*1024u*1024u&&floor(number)==number;
@@ -303,11 +303,11 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
         goto done;
     if (program->cid && !program->is_cff && !program->is_type1) {
         if (cupidimage_pdf_page_value(owner, "CIDToGIDMap", &p)) {
-            if (!cupidimage_pdf_font_value(data, size, owner, "CIDToGIDMap", &map))
+            if (!cupidimage_pdf_dictionary_value(data, size, owner, "CIDToGIDMap", &map))
                 goto done;
             char name[128];
             size_t at = 0;
-            if (!(cupidimage_pdf_font_name(&map, &at, name) && !strcmp(name, "Identity"))) {
+            if (!(cupidimage_pdf_read_name(&map, &at, name) && !strcmp(name, "Identity"))) {
                 if (!cupidimage_pdf_object_stream(data, size, &map, &bytes, &length) ||
                     !cupidimage_pdf_decode_stream(&map, bytes, length, &program->gid_map,
                                                   &program->gid_length) ||

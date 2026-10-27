@@ -245,6 +245,13 @@
       "height": 120,
       "rgba_zlib": "eJzt0kENACAMwMD5Nz08AEk/d0kddBcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3szMVfCD/yj5j5L/KPmPkv8o+Y+S/yj5j5L/KPmPkv8o+Y+S/yj5j5L/KPmPkv8AAAAAAAAAAAAAAAAAAAAAAN4d0hb0Pg==",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/isolated-opacity-group.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7X1///z8eTECaICakYNT8UfNHzR81f9T8gTEfAAyQej0=",
+      "tolerance": 0
     }
   ]
 }

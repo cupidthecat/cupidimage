@@ -89,6 +89,7 @@ typedef struct {
     size_t shade_evaluations_left;
     unsigned glyph_calls_left;
     size_t cmap_steps_left;
+    size_t group_bytes_live;
 } pdf_form_budget;
 
 typedef struct {
@@ -126,6 +127,15 @@ typedef struct {
     double glyph_expected_width;
     pdf_form_budget *form_budget;
 } pdf_render_state;
+
+typedef struct {
+    cupidimage_image image;
+    size_t bytes;
+} pdf_transparency_group;
+int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
+                               const pdf_object_view *form, pdf_transparency_group *group);
+int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group);
+void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group);
 
 int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,

@@ -12,7 +12,7 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
@@ -263,3 +263,6 @@ test-pdf-standard-fonts: $(BINDIR)/test_pdf_standard $(BINDIR)/test_pdf_pages
 
 test-pdf-graphics-fonts: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_graphics_fonts.py $(BINDIR)/test_pdf_pages
+
+test-pdf-groups: $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_groups.py $(BINDIR)/test_pdf_pages
