@@ -252,6 +252,13 @@
       "height": 16,
       "rgba_zlib": "eJz7X1///z8eTECaICakYNT8UfNHzR81f9T8gTEfAAyQej0=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj2O/wn2EUj+JRPIpH8YjDACx5/R8=",
+      "tolerance": 0
     }
   ]
 }

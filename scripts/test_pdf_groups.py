@@ -79,10 +79,43 @@ def main():
         check('pattern-in-group',fixture('/Pattern cs /P scn 0 0 18 12 re f','/A gs /G Do',attrs='/Resources << /Pattern << /P 6 0 R >> >>',extra={6:pattern}),lambda x,y:(255,127,127) if x%8<4 and y%8>=4 else white)
         check('parent-state-preserved',fixture(content='0 1 0 rg /G Do 0 0 2.8 2.8 re f'),lambda x,y:(0,255,0) if x<4 and y>=12 else red)
         check('cyclic-group-flag',fixture(group='<< /S /Transparency /I 6 0 R >>',extra={6:b'6 0 R'}),reject=True)
-        for group in ('<< /S /Transparency >>','<< /S /Transparency /I false >>','<< /S /Transparency /I true /K true >>','<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I true /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
+        nonisolated='<< /S /Transparency >>'
+        bg='0.25098039215686274 0.5019607843137255 0.7529411764705882 rg 0 0 18 12 re f '
+        check('nonisolated-default',fixture(group=nonisolated),lambda x,y:red)
+        check('nonisolated-explicit',fixture(group='<< /S /Transparency /I false >>'),lambda x,y:red)
+        check('nonisolated-empty',fixture('',bg+'/A gs /Screen gs /G Do',group=nonisolated),lambda x,y:(64,128,192))
+        check('nonisolated-alpha',fixture('/A gs 0 0 1 rg 0 0 18 12 re f','0 1 0 rg 0 0 18 12 re f /A gs /G Do',group=nonisolated),lambda x,y:(0,191,64),tolerance=1)
+        check('nonisolated-backdrop-blend',fixture('/M gs 0 0 1 rg 0 0 18 12 re f','0 1 0 rg 0 0 18 12 re f /G Do',group=nonisolated,attrs='/Resources << /ExtGState << /M << /BM /Multiply >> >> >>'),lambda x,y:(0,0,0))
+        check('isolated-backdrop-blend',fixture('/M gs 0 0 1 rg 0 0 18 12 re f','0 1 0 rg 0 0 18 12 re f /G Do',attrs='/Resources << /ExtGState << /M << /BM /Multiply >> >> >>'),lambda x,y:blue)
+        inner_nonisolated=form('/A gs 0 0 1 rg 0 0 18 12 re f','/BBox [0 0 18 12] /Group << /S /Transparency >>')
+        for outer in ('<< /S /Transparency /I true >>',nonisolated):
+            check('nonisolated-partial-backdrop',fixture('/A gs 1 0 0 rg 0 0 18 12 re f /Inner Do',group=outer,attrs='/Resources << /XObject << /Inner 6 0 R >> '+STATES+' >>',extra={6:inner_nonisolated}),lambda x,y:(191,95,159),tolerance=1)
+        check('nonisolated-pattern-cache',fixture('/Pattern cs /P scn 0 0 18 12 re f',bg+'/A gs /Screen gs /G Do',group=nonisolated,attrs='/Resources << /Pattern << /P 6 0 R >> >>',extra={6:pattern}),lambda x,y:(160,128,192) if x%8<4 and y%8>=4 else (64,128,192),tolerance=1)
+        shade_pattern=b'<< /PatternType 2 /Shading '+shading+b' >>'
+        check('nonisolated-shading-cache',fixture('/Pattern cs /P scn 0 0 5.8 5.8 re f',bg+'/A gs /Screen gs /G Do',group=nonisolated,attrs='/Resources << /Pattern << /P 6 0 R >> >>',extra={6:shade_pattern}),lambda x,y:(160,128,192) if x<8 and y>=8 else (64,128,192),tolerance=1)
+        from test_pdf_transparency import MODES,blend
+        source=(192,64,128);back=(64,128,192)
+        clamp=lambda v:max(0,min(255,int(v*255+.5)))
+        for mode in MODES:
+            for inner_alpha in (1,128/255):
+                mixed=blend(mode,[v/255 for v in source],[v/255 for v in back])
+                outer_alpha=inner_alpha*128/255
+                expected=tuple(clamp(outer_alpha*c+(1-outer_alpha)*b/255) for c,b in zip(mixed,back))
+                program='/B gs '+' '.join(str(v/255) for v in source)+' rg 0 0 18 12 re f'
+                attrs=f'/Resources << /ExtGState << /B << /BM /{mode} /ca {inner_alpha} >> >> >>'
+                check('nonisolated-blend-'+mode+'-'+str(inner_alpha),fixture(program,bg+'/A gs /G Do',group=nonisolated,attrs=attrs),lambda x,y:expected,tolerance=1)
+        tiny='.'+'0'*61+'1'
+        tiny_resources='/ExtGState << /Tiny << /ca '+tiny+' >> >>'
+        nested={}
+        for number in range(6,10):
+            program='/Tiny gs '+('/Next Do' if number<9 else '1 0 0 rg 0 0 18 12 re f')
+            resources=tiny_resources+(f' /XObject << /Next {number+1} 0 R >>' if number<9 else '')
+            nested[number]=form(program,'/BBox [0 0 18 12] /Group << /S /Transparency >> /Resources << '+resources+' >>')
+        check('subnormal-nested-alpha',fixture('/Tiny gs /Next Do',group=nonisolated,attrs='/Resources << '+tiny_resources+' /XObject << /Next 6 0 R >> >>',extra=nested),lambda x,y:white)
+        for group in ('<< /S /Transparency /I true /K true >>','<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I true /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
             check('unsupported-or-invalid',fixture(group=group),reject=True)
         check('default-colour-space',fixture(attrs='/Resources << /ColorSpace << /DefaultRGB [/CalRGB << /WhitePoint [1 1 1] >>] >> >>'),reject=True)
         check('group-cycle',fixture('/G Do'),reject=True)
-    print(f'Isolated RGB groups: {checks} checks passed; {refs} independent comparisons')
+    print(f'RGB transparency groups: {checks} checks passed; {refs} independent comparisons')
 
 if __name__=='__main__':main()

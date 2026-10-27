@@ -14,7 +14,7 @@ PDF previews include packed, indexed and fax-compressed images, inline images,
 image masks, filter chains, opacity and RGB blending. Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard-font substitutes, and unhinted embedded TrueType, CFF and Type 1 outlines. Tiling/shading patterns and styled dashed strokes
-are also supported, along with isolated RGB transparency groups. Full font fidelity,
+are also supported, along with non-knockout RGB transparency groups. Full font fidelity,
 general transparency groups,
 mesh shadings and annotations still need work. See the [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.

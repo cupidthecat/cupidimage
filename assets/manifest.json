@@ -659,6 +659,10 @@
       "sha256": "a3b9d2450db54cc71af0377d3dcf76c91cf32f0ed278f1318499369ac9e7d3ee"
     },
     {
+      "path": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
+      "sha256": "c7bd14a3fcd08d7688cb7b79c156a9cbeb672e6cbe6dd5bcaae4e64a154009dc"
+    },
+    {
       "path": "assets/pdf/reference/packed-gray-1bit.pdf",
       "sha256": "5321670cc14e471f0ea9155f2b1f97f367c0ab07ea7ca965cca5920d0863445b"
     },

@@ -323,10 +323,12 @@ names and nested form/Type 3 scopes. The checked-in compressed-object asset has
 an analytic rectangle oracle. Optional exact comparisons are listed in
 [PDF fonts and text](pdf-fonts.md).
 
-## Isolated RGB transparency groups
+## RGB transparency groups
 
 `make test-pdf-groups` verifies that group opacity is applied once, members use
-reset alpha/blend state, and nested groups preserve their caller. It also covers
+reset alpha/blend state, and nested groups preserve their caller. Non-isolated
+groups additionally check backdrop removal, partial-alpha backdrops, all blend
+modes and cache/alpha separation. It also covers
 text, images, patterns, shading, clipping and unsupported configurations. See
 [PDF transparency](pdf-transparency.md) for independent-comparison tolerances,
 the analytic bounding-box case and memory limits.

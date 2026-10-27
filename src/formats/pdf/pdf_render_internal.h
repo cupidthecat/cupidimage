@@ -92,8 +92,11 @@ typedef struct {
     size_t group_bytes_live;
 } pdf_form_budget;
 
+typedef struct pdf_transparency_group pdf_transparency_group;
+
 typedef struct {
     cupidimage_image *img;
+    pdf_transparency_group *group;
     const unsigned char *document;
     size_t document_size;
     int page_object;
@@ -128,10 +131,17 @@ typedef struct {
     pdf_form_budget *form_budget;
 } pdf_render_state;
 
-typedef struct {
+#define PDF_GROUP_MEMORY_LIMIT (256u * 1024u * 1024u)
+struct pdf_transparency_group {
     cupidimage_image image;
+    double *alpha, *color;
+    const pdf_transparency_group *parent;
+    const cupidimage_image *backdrop;
+    int isolated;
     size_t bytes;
-} pdf_transparency_group;
+};
+void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel,
+                                const double source[3], double alpha, int blend_mode);
 int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
                                const pdf_object_view *form, pdf_transparency_group *group);
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group);
@@ -156,6 +166,8 @@ int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name,
                                unsigned depth, pdf_image_colors *colors);
 
 int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name);
+void cupidimage_pdf_blend_colors(int mode, const double source[3], const double backdrop[3], double result[3]);
+void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const double source[3], double alpha);
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3], double result[3]);
 void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha);
 

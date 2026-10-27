@@ -123,7 +123,12 @@ static void pdf_set_saturation(double c[3], double target) {
 /* ISO 32000-1, 11.3.5: blend source and backdrop in the output RGB space. */
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3], double result[3]) {
     double s[3], b[3];
-    for (int i = 0; i < 3; i++) { s[i]=source[i]/255.0; b[i]=backdrop[i]/255.0; result[i]=s[i]; }
+    for (int i = 0; i < 3; i++) { s[i] = source[i] / 255.0; b[i] = backdrop[i] / 255.0; }
+    cupidimage_pdf_blend_colors(mode, s, b, result);
+}
+void cupidimage_pdf_blend_colors(int mode, const double source[3], const double backdrop[3], double result[3]) {
+    double s[3], b[3];
+    for (int i = 0; i < 3; i++) { s[i] = source[i]; b[i] = backdrop[i]; result[i] = s[i]; }
     if (mode >= 12) {
         if (mode == 12) { pdf_set_saturation(result, pdf_saturation(b)); pdf_set_luminance(result, pdf_luminance(b)); }
         else if (mode == 13) { memcpy(result, b, sizeof(b)); pdf_set_saturation(result, pdf_saturation(s)); pdf_set_luminance(result, pdf_luminance(b)); }

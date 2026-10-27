@@ -7,7 +7,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [Source architecture](architecture.md): module responsibilities and build boundaries.
 - [Formats](formats.md): decoder features, rendering behavior, and limits.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
-- [PDF transparency](pdf-transparency.md): compositing, isolated groups, validation and remaining limits.
+- [PDF transparency](pdf-transparency.md): compositing, RGB groups, validation and remaining limits.
 - [Conformance tracker](format-conformance.md): standards, evidence, and unfinished work.
 - [Interactive visual review](visual-review.md): render selections and save manual ratings.
 - [Testing](testing.md): focused suites, all-asset tests, and the full PDF corpus runner.

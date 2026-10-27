@@ -46,7 +46,7 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   named fonts and ExtGState font references before drawing. Graphics-state font
   references use a separate object-keyed lookup so they cannot collide with
   resource names. `pdf_object_values.c` resolves bounded indirect values and
-  names independently of fonts. `pdf_groups.c` manages isolated RGB group buffers,
+  names independently of fonts. `pdf_groups.c` manages floating-point RGB group buffers,
   state initialization, compositing and their shared memory budget.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.

@@ -181,13 +181,14 @@ def main():
               extra={6: form('/F0 Do', '/BBox [0 0 9 6] /Resources << /XObject << /F0 5 0 R >> >>')}), reject=True)
         check('indirect-resources-not-dictionary', fixture(form(attrs='/BBox [0 0 9 6] /Resources 6 0 R'),
               extra={6: '12'}), reject=True)
+        check('non-isolated-group', fixture(form(attrs='/BBox [0 0 9 6] /Group << /S /Transparency >>')),
+              expected=lambda x,y: RED if x<12 and y>=8 else GRAY)
         for name, body in (
             ('missing-bbox', form(attrs='')),
             ('invalid-bbox', form(attrs='/BBox [0 0 bad 6]')),
             ('matrix-short', form(attrs='/BBox [0 0 9 6] /Matrix [1 0 0]')),
             ('matrix-extra', form(attrs='/BBox [0 0 9 6] /Matrix [1 0 0 1 0 0 9]')),
             ('form-type', form(attrs='/BBox [0 0 9 6] /FormType 2')),
-            ('group', form(attrs='/BBox [0 0 9 6] /Group << /S /Transparency >>')),
             ('reference', form(attrs='/BBox [0 0 9 6] /Ref << >>')),
             ('resources', form(attrs='/BBox [0 0 9 6] /Resources /bad')),
             ('filter', form(attrs='/BBox [0 0 9 6] /Filter /LZWDecode')),

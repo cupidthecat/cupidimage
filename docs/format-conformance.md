@@ -434,3 +434,16 @@ suite includes 22 optional independent comparisons with documented rounding and
 boundary rules. Non-isolated groups, knockout groups, other group color spaces,
 DefaultRGB remapping and graphics-state soft masks remain unsupported. Details
 and memory limits are in [PDF transparency](pdf-transparency.md).
+
+## Non-isolated RGB groups and precision
+
+Non-knockout groups now support I false, including its default when I is omitted.
+Their colors blend against the accumulated backdrop; separately tracked group
+alpha allows that initial contribution to be removed before the group is painted
+into its parent. Both group types retain floating-point color and alpha through
+nesting. Pattern/shading cache construction is kept outside that tracking.
+
+The group suite has 79 cases and 65 optional independent comparisons, including
+all 16 blend modes at two member opacities and subnormal nested alpha. The shared
+group-memory cap is now 256 MiB; the PDF allocation-failure suite has 1,380 checks.
+Knockout groups, other blending spaces and graphics-state soft masks remain open.

@@ -408,16 +408,14 @@ static int pdf_parse_array_token(const unsigned char *data, size_t size, size_t 
     return 0;
 }
 
-void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha) {
-    cupidimage_image *img = st->img;
-    if (!img || !img->rgba || alpha <= 0) {
-        return;
-    }
+static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
+    const cupidimage_image *img = st->img;
+    if (!img || !img->rgba) return 0;
     if (x < 0 || y < 0 || x >= (int)img->width || y >= (int)img->height) {
-        return;
+        return 0;
     }
     size_t pixel = (size_t)y * img->width + (size_t)x;
-    if (st->gs.clip && !(st->gs.clip->bits[pixel / 8] & (1u << (pixel % 8)))) return;
+    if (st->gs.clip && !(st->gs.clip->bits[pixel / 8] & (1u << (pixel % 8)))) return 0;
     double px = st->page_x0_pts + (x + 0.5) * (72.0 / 96.0);
     double py = st->page_top_pts - (y + 0.5) * (72.0 / 96.0);
     for (int i = 0; i < st->form_depth; i++) {
@@ -425,7 +423,19 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
         const double *m = clip->inverse;
         double u = m[0] * px + m[2] * py + m[4];
         double v = m[1] * px + m[3] * py + m[5];
-        if (u < clip->box[0] || u >= clip->box[2] || v < clip->box[1] || v >= clip->box[3]) return;
+        if (u < clip->box[0] || u >= clip->box[2] || v < clip->box[1] || v >= clip->box[3]) return 0;
+    }
+    return 1;
+}
+
+void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha) {
+    if (alpha <= 0 || !pdf_pixel_visible(st, x, y)) return;
+    cupidimage_image *img = st->img;
+    size_t pixel = (size_t)y * img->width + (size_t)x;
+    if (st->group) {
+        double source[3] = {r / 255.0, g / 255.0, b / 255.0};
+        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, st->gs.blend_mode);
+        return;
     }
     size_t idx = pixel * 4u;
     if (st->gs.blend_mode == 0 && alpha == 1) {
@@ -463,6 +473,25 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
         img->rgba[idx + i] = cupidimage_pdf_clamp_u8(value / output_alpha);
     }
     img->rgba[idx + 3] = cupidimage_pdf_clamp_u8(output_alpha);
+}
+
+void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y,
+                                    const double source[3], double alpha) {
+    if (alpha <= 0 || !pdf_pixel_visible(st, x, y)) return;
+    size_t pixel = (size_t)y * st->img->width + (size_t)x;
+    if (st->group) {
+        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, st->gs.blend_mode);
+        return;
+    }
+    unsigned char *p = st->img->rgba + pixel * 4;
+    double backdrop[3] = {p[0] / 255.0, p[1] / 255.0, p[2] / 255.0};
+    double ab = p[3] / 255.0, ar = alpha + ab * (1 - alpha), blended[3];
+    cupidimage_pdf_blend_colors(st->gs.blend_mode, source, backdrop, blended);
+    if (ar <= 0) return;
+    for (unsigned i = 0; i < 3; i++)
+        p[i] = cupidimage_pdf_clamp_u8((alpha * ((1 - ab) * source[i] + ab * blended[i]) +
+                                       ab * (1 - alpha) * backdrop[i]) / ar);
+    p[3] = cupidimage_pdf_clamp_u8(ar);
 }
 
 void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage) {
@@ -1448,6 +1477,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     child->pending_clip = 0;
     child->image_failed = 0;
     child->img = image;
+    child->group = NULL;
     child->page_x0_pts = 0;
     child->page_top_pts = image->height * (72.0f / 96.0f);
     child->in_text = 0;
@@ -1517,6 +1547,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     child->gs.fill_alpha = child->gs.stroke_alpha = 1;
     child->gs.blend_mode = 0;
     child->img = image;
+    child->group = NULL;
     child->form_depth = 0;
     child->gs_stack_len = 0;
     child->text_clip = NULL;

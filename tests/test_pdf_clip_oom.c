@@ -147,9 +147,9 @@ int main(void) {
         if (live_count) { failures++; while(live_count) fault_free(live[0]); }
     }
     /* Group buffers are atomic with respect to the parent and unwind at every allocation. */
-    for (unsigned variant = 0; variant < 3; variant++) {
-        const char *body = variant == 2 ? "/Inner Do" :
-                           variant == 1 ? "0 0 18 12 re f (unterminated" : "0 0 18 12 re f";
+    for (unsigned variant = 0; variant < 6; variant++) {
+        const char *body = variant % 3 == 2 ? "/Inner Do" :
+                           variant % 3 == 1 ? "0 0 18 12 re f (unterminated" : "0 0 18 12 re f";
         const char *inner = "0 0 18 12 re f";
         char group_document[1024];
         int length = snprintf(group_document, sizeof(group_document),
@@ -157,7 +157,7 @@ int main(void) {
             "5 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group 10 0 R /Length %zu >> stream\n%s\nendstream endobj\n"
             "6 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group 10 0 R /Length %zu >> stream\n%s\nendstream endobj\n"
             "10 0 obj << /S /Transparency /I 11 0 R /K false /CS /DeviceRGB >> endobj\n"
-            "11 0 obj true endobj\n", strlen(body), body, strlen(inner), inner);
+            "11 0 obj %s endobj\n", strlen(body), body, strlen(inner), inner, variant >= 3 ? "false" : "true");
         if (length < 0 || (size_t)length >= sizeof(group_document)) return 1;
         size_t total = 0;
         for (size_t failure = 0; failure <= total; failure++) {
@@ -170,7 +170,7 @@ int main(void) {
                 (const unsigned char *)group_document, (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
             if (!failure) total = allocation_count;
             checks++;
-            if ((!failure && ok != (variant != 1)) || live_count) failures++;
+            if ((!failure && ok != (variant % 3 != 1)) || live_count) failures++;
             if (!ok) for (size_t i = 0; i < sizeof(pixels); i++) if (pixels[i] != 255) { failures++; break; }
             while (live_count) fault_free(live[0]);
         }
@@ -187,10 +187,10 @@ int main(void) {
         allocation_count = 0; fail_at = 0; checks++;
         if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count || budget.group_bytes_live)
             failures++;
-        image.width = image.height = 1; budget.group_bytes_live = 64u * 1024u * 1024u;
+        image.width = image.height = 1; budget.group_bytes_live = PDF_GROUP_MEMORY_LIMIT;
         checks++;
         if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count ||
-            budget.group_bytes_live != 64u * 1024u * 1024u) failures++;
+            budget.group_bytes_live != PDF_GROUP_MEMORY_LIMIT) failures++;
         cupidimage_pdf_group_free(&parent, &group);
     }
     /* Every fax allocation, including output growth, must unwind cleanly. */

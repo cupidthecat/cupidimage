@@ -116,7 +116,7 @@ Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PD
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive and
-external-reference forms are rejected. Isolated, non-knockout RGB transparency
+external-reference forms are rejected. Isolated and non-isolated, non-knockout RGB transparency
 groups are supported; other group configurations remain unsupported. See
 [PDF transparency](pdf-transparency.md) for compositing and memory limits.
 
@@ -237,8 +237,8 @@ coverage. This avoids dark seams caused by repeatedly blending the same object.
 The tests compare analytic pixels and independent raster output, including blend
 endpoint cases, state restoration, and mask/opacity combinations.
 
-Blending currently uses the output device RGB space. Isolated, non-knockout RGB
-groups are supported. Other group color spaces, non-isolated or knockout groups,
+Blending currently uses the output device RGB space. Isolated and non-isolated, non-knockout RGB
+groups are supported. Other group color spaces, knockout groups,
 graphics-state soft-mask dictionaries,
 overprinting, and full text-transparency semantics remain unsupported. `/SMask
 /None` is accepted; other graphics-state soft masks return an error. Stroke styling is described below.
