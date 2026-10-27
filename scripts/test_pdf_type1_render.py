@@ -52,6 +52,7 @@ def main():
         text='BT /F 30 Tf 20 30 Td (A) Tj ET';box='20 30 12 18 re f'
         same('simple',text,box)
         same('multiple-master-snapshot',text,box,subtype='MMType1')
+        same('indirect-subtype',text,box,extra={5:b'<< /Type /Font /Subtype 10 0 R /BaseFont /CupidShapes /FontDescriptor 8 0 R /Encoding /WinAnsiEncoding /FirstChar 65 /LastChar 65 /Widths [600] >>',10:b'/Type1'})
         same('binary-newline-after-CR',text,box,separator=b'\r',iv_first=26)
         same('unencrypted-outer-program',text,box,outer_encrypted=False,reference=False)
         same('filtered',text,box,compressed=True)

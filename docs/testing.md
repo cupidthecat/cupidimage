@@ -213,7 +213,8 @@ the still-incomplete font-outline renderer.
 ## Type 3 glyph programs
 
 `make test-pdf-type3` compares glyph programs with explicit vector equivalents
-and checks malformed/recursive programs. For optional independent comparisons,
+and checks malformed/recursive programs. Its 60 cases include named/base
+encodings, later missing-name overrides and indirect font subtypes. For optional independent comparisons,
 run `python3 scripts/test_pdf_type3.py bin/test_pdf_pages --reference` with the
 reference command-line tools and PyMuPDF installed. One shared-stream case uses
 an explicit one-pixel boundary tolerance; the corresponding analytic comparison

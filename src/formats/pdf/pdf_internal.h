@@ -164,7 +164,8 @@ void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *
 int cupidimage_pdf_font_value(const unsigned char *data, size_t size,
                               const pdf_object_view *view, const char *key, pdf_object_view *out);
 int cupidimage_pdf_font_name(const pdf_object_view *view, size_t *pos, char name[128]);
-int cupidimage_pdf_font_is_name(const pdf_object_view *view, const char *key, const char *expected);
+int cupidimage_pdf_font_is_name(const unsigned char *data, size_t size,
+                                const pdf_object_view *view, const char *key, const char *expected);
 int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
                                    const pdf_object_view *view, unsigned glyphs[256],
                                    const void *context,

@@ -63,11 +63,15 @@ int cupidimage_pdf_font_name(const pdf_object_view *v, size_t *p, char name[128]
     name[count] = 0;
     return count != 0;
 }
-int cupidimage_pdf_font_is_name(const pdf_object_view *v, const char *key, const char *expected) {
-    size_t p;
+int cupidimage_pdf_font_is_name(const unsigned char *data, size_t size,
+                                const pdf_object_view *view, const char *key, const char *expected) {
+    pdf_object_view value = {0};
+    size_t pos = 0;
     char name[128];
-    return cupidimage_pdf_page_value(v, key, &p) && cupidimage_pdf_font_name(v, &p, name) &&
-           !strcmp(name, expected);
+    int ok = cupidimage_pdf_font_value(data, size, view, key, &value) &&
+             cupidimage_pdf_font_name(&value, &pos, name) && !strcmp(name, expected);
+    cupidimage_pdf_object_view_release(&value);
+    return ok;
 }
 int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
                             const pdf_object_view *view, unsigned glyphs[256],

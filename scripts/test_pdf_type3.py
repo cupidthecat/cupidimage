@@ -17,10 +17,10 @@ def stream(data,attrs=''):
 
 def fixture(content, programs=None, font_extra='', matrix='.001 0 0 .001 0 0',
             encoding='<< /Differences [65 /A /B] >>', resources='', extra=None,
-            widths='[600 500]', direct=False, charprocs='/A 6 0 R /B 7 0 R'):
+            widths='[600 500]', direct=False, charprocs='/A 6 0 R /B 7 0 R',first=65,last=66,subtype="/Type3"):
     programs=programs or ['600 0 d0 0 0 500 700 re f','500 0 0 0 500 700 d1 0 0 m 500 0 l 250 700 l h f']
-    font=(f'<< /Type /Font /Subtype /Type3 /FontBBox [0 0 500 700] /FontMatrix [{matrix}] '
-          f'/CharProcs << {charprocs} >> /Encoding {encoding} /FirstChar 65 /LastChar 66 /Widths {widths} {font_extra} >>')
+    font=(f'<< /Type /Font /Subtype {subtype} /FontBBox [0 0 500 700] /FontMatrix [{matrix}] '
+          f'/CharProcs << {charprocs} >> /Encoding {encoding} /FirstChar {first} /LastChar {last} /Widths {widths} {font_extra} >>')
     objects={5:font,6:stream(programs[0]),7:stream(programs[1])}
     objects.update(extra or {})
     font_value=font if direct else '5 0 R'
@@ -78,6 +78,7 @@ def main():
         check('square',fixture(start+'(A) Tj ET'),square)
         check('pair',fixture(start+'(AB) Tj ET'),pair,reference=False)
         check('direct-font',fixture(start+'(A) Tj ET',direct=True),square)
+        check('indirect-subtype',fixture(start+'(A) Tj ET',subtype='8 0 R',extra={8:b'/Type3'}),square)
         check('compressed-glyph',fixture(start+'(A) Tj ET',extra={6:stream(zlib.compress(b'600 0 d0 0 0 500 700 re f'),'/Filter /FlateDecode')}),square)
         check('width-array-reference',fixture(start+'(AB) Tj ET',widths='8 0 R',extra={8:'[600 500]'}),pair,reference=False)
         for mode in range(8):
@@ -97,6 +98,14 @@ def main():
         check('zero-bbox',fixture(start+'(A) Tj ET').replace(b'/FontBBox [0 0 500 700]',b'/FontBBox [0 0 0 0]    '),square)
         check('escaped-glyph-name',fixture(start+'(A) Tj ET',encoding='<< /Differences [65 /A#23B] >>',
               charprocs='/A#23B 6 0 R /B 7 0 R'),square)
+        for base in ('WinAnsiEncoding','MacRomanEncoding','StandardEncoding'):
+            check('named-'+base,fixture(start+'(A) Tj ET',encoding='/'+base),square)
+            check('base-'+base,fixture(start+'(A) Tj ET',encoding='<< /BaseEncoding /'+base+' >>'),square)
+        check('base-and-differences',fixture(start+'(A) Tj ET',encoding='<< /BaseEncoding /WinAnsiEncoding /Differences [65 /B] >>',widths='[500 500]',programs=['600 0 d0 0 0 500 700 re f','500 0 d0 0 0 250 700 re f']),'q .02 0 0 .02 10 20 cm 0 0 250 700 re f Q')
+        check('mac-expert-name',fixture(start+'(G) Tj ET',encoding='/MacExpertEncoding',charprocs='/onequarter 6 0 R',first=71,last=71,widths='[600]'),square)
+        check('missing-overrides-earlier',fixture(start+'(A) Tj ET',encoding='<< /Differences [65 /A 65 /Missing] >>'),'q Q')
+        check('missing-overrides-base',fixture(start+'(A) Tj ET',encoding='<< /BaseEncoding /WinAnsiEncoding /Differences [65 /Missing] >>'),'q Q')
+        check('indirect-base-name',fixture(start+'(A) Tj ET',encoding='<< /BaseEncoding 8 0 R >>',extra={8:b'/WinAnsiEncoding'}),square)
         check('named-encoding-reference',fixture(start+'(A) Tj ET',encoding='8 0 R',extra={8:'<< /Differences [65 /A /B] >>'}),square)
         form=stream('0 0 500 700 re f','/Type /XObject /Subtype /Form /BBox [0 0 500 700]')
         check('font-resources',fixture(start+'(A) Tj ET',programs=['600 0 d0 /Shape Do','500 0 d0'],

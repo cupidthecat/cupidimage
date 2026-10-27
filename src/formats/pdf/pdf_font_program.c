@@ -212,9 +212,9 @@ double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsi
 int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                        const pdf_object_view *view, pdf_font_map *font,
                                        size_t *budget) {
-    int type1 = cupidimage_pdf_font_is_name(view, "Subtype", "Type1") ||
-                cupidimage_pdf_font_is_name(view, "Subtype", "MMType1");
-    if (!font->cid && !cupidimage_pdf_font_is_name(view, "Subtype", "TrueType") && !type1)
+    int type1 = cupidimage_pdf_font_is_name(data, size, view, "Subtype", "Type1") ||
+                cupidimage_pdf_font_is_name(data, size, view, "Subtype", "MMType1");
+    if (!font->cid && !cupidimage_pdf_font_is_name(data, size, view, "Subtype", "TrueType") && !type1)
         return 1;
     pdf_object_view descendant = {0}, array = {0}, descriptor = {0}, stream = {0}, map = {0};
     const pdf_object_view *owner = view;
@@ -230,8 +230,8 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
         if (!cupidimage_pdf_font_dictionary_at(data, size, &array, p, &descendant))
             goto done;
         owner = &descendant;
-        if (!cupidimage_pdf_font_is_name(owner, "Subtype", "CIDFontType2") &&
-            !cupidimage_pdf_font_is_name(owner, "Subtype", "CIDFontType0")) {
+        if (!cupidimage_pdf_font_is_name(data, size, owner, "Subtype", "CIDFontType2") &&
+            !cupidimage_pdf_font_is_name(data, size, owner, "Subtype", "CIDFontType0")) {
             ok = 1;
             goto done;
         }
@@ -253,10 +253,10 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
     }
     if (!cupidimage_pdf_font_value(data, size, &descriptor, program_key, &stream))
         goto done;
-    int cff_stream = cupidimage_pdf_font_is_name(&stream, "Subtype", "Type1C") ||
-                     cupidimage_pdf_font_is_name(&stream, "Subtype", "CIDFontType0C");
+    int cff_stream = cupidimage_pdf_font_is_name(data, size, &stream, "Subtype", "Type1C") ||
+                     cupidimage_pdf_font_is_name(data, size, &stream, "Subtype", "CIDFontType0C");
     if (!strcmp(program_key, "FontFile3") && !cff_stream &&
-        !cupidimage_pdf_font_is_name(&stream, "Subtype", "OpenType")) {
+        !cupidimage_pdf_font_is_name(data, size, &stream, "Subtype", "OpenType")) {
         ok = 1;
         goto done;
     }

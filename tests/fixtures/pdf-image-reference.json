@@ -238,6 +238,13 @@
       "height": 120,
       "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/type3-base-encoding.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nz08AEk/d0kddBcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3szMVfCD/yj5j5L/KPmPkv8o+Y+S/yj5j5L/KPmPkv8o+Y+S/yj5j5L/KPmPkv8AAAAAAAAAAAAAAAAAAAAAAN4d0hb0Pg==",
+      "tolerance": 0
     }
   ]
 }

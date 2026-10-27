@@ -488,9 +488,7 @@ static int pdf_font_dictionary(const unsigned char *data, size_t size,
 static int pdf_parse_font_widths(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, pdf_font_map *font) {
     size_t pos;
-    if (cupidimage_pdf_page_value(view,"Subtype",&pos) && view->len-pos>=6 &&
-        !memcmp(view->data+pos,"/Type0",6) &&
-        (view->len-pos==6 || cupidimage_pdf_is_ws(view->data[pos+6]) || cupidimage_pdf_is_delim(view->data[pos+6]))) return 1;
+    if (cupidimage_pdf_font_is_name(data, size, view, "Subtype", "Type0")) return 1;
     if (!font->type3 && cupidimage_pdf_page_value(view,"FontDescriptor",&pos)) {
         pdf_object_view descriptor={0};
         if (!pdf_font_dictionary(data,size,view,"FontDescriptor",&descriptor)) return 0;

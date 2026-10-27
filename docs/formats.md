@@ -398,8 +398,8 @@ paint; negative values reflect the fallback glyph geometry.
 
 ## PDF Type 3 glyph programs
 
-Type 3 fonts with an Encoding Differences dictionary execute their CharProcs
-streams. FontMatrix maps glyph space into the full text transform. Widths are
+Type 3 fonts use named simple-font encodings or Encoding dictionaries with
+BaseEncoding/Differences to select their CharProcs streams. FontMatrix maps glyph space into the full text transform. Widths are
 interpreted in glyph space; only the horizontal component of the transformed
 advance is used. Missing glyph names paint nothing and still use the declared
 advance. ToUnicode does not replace the Encoding-to-CharProcs mapping.

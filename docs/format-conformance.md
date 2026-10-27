@@ -416,3 +416,12 @@ resources, indirect and compressed values, malformed arrays and escaped names;
 19 optional comparisons match independently rendered pixels. The PDF
 allocation-failure suite now has 1,330 checks with no leaks in its tracked
 allocations. Other ExtGState and transparency-group features remain incomplete.
+
+## Shared simple-font encoding resolution
+
+Type 3 fonts now use the same named/base encoding tables and Differences resolver
+as other name-keyed fonts. Missing-name overrides clear earlier mappings instead
+of retaining a stale glyph. Font and embedded CFF stream subtypes resolve through
+bounded indirect references. The Type 3 suite has 60 cases, with 40 optional
+comparisons under its documented boundary rules; the corresponding TrueType,
+Type 1 and CFF suites have 27, 21 and 25 independent raster comparisons.

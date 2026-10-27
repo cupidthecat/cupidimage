@@ -29,6 +29,20 @@ valid outline program, Type 3 font or CID metrics. Partial Unicode mappings
 are cleared on failure. Named encodings cannot read Differences from unrelated
 dictionaries later in the font object.
 
+## Type 3 encodings
+
+Type 3 glyph selection uses the shared simple-font encoding resolver. Named
+WinAnsi, MacRoman and MacExpert tables, BaseEncoding dictionaries and Differences
+map character codes to CharProcs names. StandardEncoding is also accepted for
+compatibility. A later mapping to a missing name clears any earlier mapping for
+that code; a missing CharProcs name paints nothing.
+
+Font Subtype names, including Type 0 descendant types and embedded CFF stream
+types, may be indirect objects. They use the same bounded name resolver as font
+encodings. The Type 3 suite has 60 checks and 40 optional raster comparisons;
+the existing shared-stream boundary-tolerance case remains documented in the
+[testing guide](testing.md#type-3-glyph-programs).
+
 ## Font selection through graphics state
 
 An ExtGState Font entry can select a font and size without Tf. It contains a
@@ -248,9 +262,9 @@ including inherited maps and cleanup after decompression or parsing failures.
 
 
 `make test-pdf-cff` runs 56 data-primitive checks, 186 structure/truncation checks,
-152 Type 2 checks and 33 PDF rendering checks. The rendering tests cover cubic
+152 Type 2 checks and 34 PDF rendering checks. The rendering tests cover cubic
 geometry, CID fonts, encoding overrides, accents, FontMatrix, all text modes and
-OpenType wrapping. Twenty-four optional independent comparisons use:
+OpenType wrapping. Twenty-five optional independent comparisons use:
 
     python3 scripts/test_pdf_cff_render.py bin/test_pdf_pages --reference
 
@@ -280,8 +294,8 @@ An optional independent outline/advance comparison requires FontTools:
 This checks the actual Type 2 paths before rasterization. It does not treat
 unhinted raster output as identical to a hinted font rasterizer.
 
-`make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 30
-rendering checks. Twenty selected raster comparisons run with:
+`make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 31
+rendering checks. Twenty-one selected raster comparisons run with:
 
     python3 scripts/test_pdf_type1_render.py bin/test_pdf_pages --reference
 
@@ -295,7 +309,7 @@ the fractions of different color channels fell from 7.865% to 3.337% and from
 7.847% to 3.370%. Both pages still differ. The full 1,007-document manual review
 remains deferred.
 
-`make test-pdf-truetype` runs binary-table/glyph-name checks and 51 PDF rendering
+`make test-pdf-truetype` runs binary-table/glyph-name checks and 53 PDF rendering
 checks. The 4,360 lower-level checks include the full pinned glyph-name dataset;
 they are not thousands of independent font-rendering features. The authored
 geometric font covers holes, quadratic curves, off-curve contour starts, affine
@@ -312,7 +326,7 @@ features. Optional independent checks need FreeType and FontTools:
 These compare 39 cmap results and 774 name lookups. The legacy post comparison
 uses FreeType because the other font parser does not accept version 2.5.
 
-For 25 optional independent raster comparisons, run:
+For 27 optional independent raster comparisons, run:
 
     python3 scripts/test_pdf_embedded_fonts.py bin/test_pdf_pages --reference
 

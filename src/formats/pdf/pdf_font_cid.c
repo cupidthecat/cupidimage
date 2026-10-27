@@ -97,10 +97,7 @@ static int cid_value_name(const pdf_object_view *v, size_t p, const char *name) 
     }
     return at == n;
 }
-static int cid_name(const pdf_object_view *v, const char *key, const char *name) {
-    size_t p;
-    return cupidimage_pdf_page_value(v, key, &p) && cid_value_name(v, p, name);
-}
+
 static int cid_width_array(const unsigned char *data, size_t size, const pdf_object_view *v,
                            size_t p, pdf_cid_font *font, int vertical) {
     pdf_object_view array = {0};
@@ -173,7 +170,7 @@ static int cid_width_array(const unsigned char *data, size_t size, const pdf_obj
 }
 int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
                                   const pdf_object_view *view, pdf_font_map *font, size_t *budget) {
-    if (!cid_name(view, "Subtype", "Type0"))
+    if (!cupidimage_pdf_font_is_name(data, size, view, "Subtype", "Type0"))
         return 1;
     size_t pos;
     if (!cupidimage_pdf_page_value(view, "Encoding", &pos))
@@ -204,8 +201,8 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
         pos += descendant.len;
     cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
     if (pos == array.len || array.data[pos] != ']' ||
-        (!cid_name(&descendant, "Subtype", "CIDFontType0") &&
-         !cid_name(&descendant, "Subtype", "CIDFontType2")))
+        (!cupidimage_pdf_font_is_name(data, size, &descendant, "Subtype", "CIDFontType0") &&
+         !cupidimage_pdf_font_is_name(data, size, &descendant, "Subtype", "CIDFontType2")))
         goto done;
     if (*budget > 64u * 1024u * 1024u - sizeof(*cid))
         goto done;

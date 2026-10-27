@@ -58,6 +58,8 @@ def main():
                 refs+=1
         box='20 30 12 18 re f'
         same('simple','BT /F 30 Tf 20 30 Td (A) Tj ET',box)
+        same('indirect-CFF-subtype','BT /F 30 Tf 20 30 Td (A) Tj ET','20 30 12 18 re f',
+             extra={9:stream(cff_font(programs=[b'\x0e',b'\x0e',BOX,CURVE]),'/Subtype 10 0 R'),10:b'/Type1C'})
         same('builtin-encoding','BT /F 30 Tf 20 30 Td (A) Tj ET',box,encoding='')
         same('custom-encoding','BT /F 30 Tf 20 30 Td (X) Tj ET',box,encoding='',font=cff_font(encoding=b'\0\2\x20\x58',programs=[b'\x0e',b'\x0e',BOX,CURVE]),metrics='/FirstChar 88 /LastChar 88 /Widths [600]')
         same('name-override','BT /F 30 Tf 20 30 Td (B) Tj ET',box,encoding='<< /Differences [66 /A] >>',metrics='/FirstChar 66 /LastChar 66 /Widths [600]')

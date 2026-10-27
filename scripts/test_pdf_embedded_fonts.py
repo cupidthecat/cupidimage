@@ -75,6 +75,11 @@ def main():
         post=struct.pack('>I',0x25000)+bytes(28)+struct.pack('>H',glyph_count)+bytes([0,post_names.index('A')-1]+[0]*(glyph_count-2))
         same('post-legacy-offset','BT /F 30 Tf 20 30 Td (A) Tj ET',box,
              font_data=replace_tables(FONT,{b'post':post,b'cmap':b'\0\0\0\0'}),secondary=True)
+        same('indirect-TrueType-subtype','BT /F 30 Tf 20 30 Td (A) Tj ET',box,
+             extra={5:b'<< /Type /Font /Subtype 10 0 R /BaseFont /CupidImageTestShapes /FontDescriptor 8 0 R /Encoding /WinAnsiEncoding /FirstChar 65 /LastChar 65 /Widths [1000] >>',10:b'/TrueType'})
+        same('indirect-CID-subtypes','BT /F 30 Tf 20 30 Td <0001> Tj ET',box,cid=True,
+             extra={5:b'<< /Type /Font /Subtype 10 0 R /BaseFont /CupidImageTestShapes /Encoding /Identity-H /DescendantFonts [6 0 R] >>',
+                    6:b'<< /Type /Font /Subtype 11 0 R /BaseFont /CupidImageTestShapes /FontDescriptor 8 0 R /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /CIDToGIDMap /Identity /DW 1000 >>',10:b'/Type0',11:b'/CIDFontType2'})
         same('CID-box','BT /F 30 Tf 20 30 Td <0001> Tj ET',box,cid=True)
         same('CID-without-Unicode','BT /F 30 Tf 20 30 Td <00010001> Tj ET',box+' 50 30 12 18 re f',cid=True)
         same('hmtx-advance','BT /F 30 Tf 20 30 Td (AA) Tj ET',box+' 50 30 12 18 re f',metrics='',reference=False)
