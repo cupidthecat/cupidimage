@@ -26,7 +26,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   bitmap fallback, image samples and masks, and graphics/content rendering.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
-  axial/radial shading lives in `pdf_shading.c`.
+  axial/radial shading lives in `pdf_shading.c`. Bounded color-function trees
+  are parsed and evaluated in `pdf_functions.c`.
   Image XObjects live in `pdf_images.c`, with palette parsing in `pdf_image_colors.c`; the private render-state contract lives
   in `pdf_render_internal.h`.
 - SVG: public APIs, parsing, styles, definitions, CSS, geometry, paint, text,

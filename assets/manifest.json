@@ -567,6 +567,10 @@
       "sha256": "36908476a663deae41e6e578535401a63ca9832c4ae35943cf137b665ef57150"
     },
     {
+      "path": "assets/pdf/reference/component-functions.pdf",
+      "sha256": "cd8453fb32ac354a9f8b2e62e449a802b268168292935c427386fbe3533e169f"
+    },
+    {
       "path": "assets/pdf/reference/eof-without-newline.pdf",
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },
@@ -633,6 +637,10 @@
     {
       "path": "assets/pdf/reference/stencil-mask.pdf",
       "sha256": "e2f2b9a55b1082b876d1b08395d8d935b9bfbcf9f7a14528603efd801efc2ed5"
+    },
+    {
+      "path": "assets/pdf/reference/stitching-function.pdf",
+      "sha256": "1dfb12fcaf2e030f5107e5108a2fb48a4e7f52cea9eff268497baf75834d56ff"
     },
     {
       "path": "assets/pdf/shapes.pdf",

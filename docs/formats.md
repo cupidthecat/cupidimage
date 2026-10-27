@@ -116,7 +116,7 @@ otherwise. Drawing a form preserves the caller's graphics state and current path
 Built-in text glyphs follow the current transformation matrix. General text
 matrices and complex font rendering remain unsupported.
 
-Forms are limited to 16 nesting levels, 4096 invocations, and 64 MiB of combined
+Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive forms, transparency
 groups, external-reference forms, filter chains, and form DecodeParms are rejected.
 
@@ -274,16 +274,18 @@ cross-reference, generation-number, or incremental-update support.
 ## PDF shadings
 
 The `sh` operator paints Type 2 axial and Type 3 radial shadings in DeviceGray,
-DeviceRGB, or DeviceCMYK. Supported color functions are single-input Type 2
-exponential functions with Domain, C0/C1, N, and optional Range entries. The
+DeviceRGB, or DeviceCMYK. Supported color functions include single-input Type 2
+exponential functions, Type 3 stitching functions, and arrays of single-output
+functions. Exponential functions accept Domain, C0/C1, N, and optional Range.
+Stitching functions accept nested Functions, Bounds, Encode, Domain, and Range. The
 renderer applies shading Domain and Extend values, BBox, the current transform,
 path/form clipping, opacity, and blend mode. Numeric arrays and exponents may
 be indirect objects. Gray functions can use the default C0/C1 values.
 
-Each page has a shared budget of 128 million shading pixel visits, including
-nested forms. Unknown shading or function types return an error rather than
-silently leaving a blank area. Function arrays, sampled/stitching/calculator
-functions, mesh shadings, shading patterns, and color-managed shading spaces
+Each page has a shared budget of 128 million color-function evaluations, including
+nested forms and stitched/component functions. Function trees are limited to
+64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
+silently leaving a blank area. Sampled/calculator functions, mesh shadings, shading patterns, and color-managed shading spaces
 remain unsupported.
 
 Small fixtures require exact analytic pixels. Optional independent comparisons
@@ -291,3 +293,8 @@ use native-resolution pages, with one channel unit allowed for linear axial
 shading and two for nonlinear reference approximation. A second rasterizer checks
 radial gradients extending beyond the page, where the primary comparison tool
 leaves a boundary-color rim. No resizing or alignment is used to obtain a match.
+
+Stitching honors half-open subdomains, reversed Encode mappings, output Range
+clipping, and the defined zero-width final subdomain. A single-piece stitch may
+have a zero-width Domain. Function arrays and stitch children may use inline or
+indirect dictionaries; cyclic references and over-budget trees return errors.

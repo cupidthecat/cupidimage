@@ -60,7 +60,7 @@ typedef struct {
 typedef struct {
     size_t bytes_left;
     unsigned calls_left;
-    size_t shade_pixels_left;
+    size_t shade_evaluations_left;
 } pdf_form_budget;
 
 typedef struct {

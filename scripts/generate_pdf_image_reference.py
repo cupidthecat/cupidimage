@@ -108,5 +108,13 @@ save_document('radial-shading.pdf', shading_pdf(
 save_document('exponential-shading.pdf', shading_pdf(
     '<< /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 18 0] /Function 6 0 R >>',
     '<< /FunctionType 2 /Domain [0 1] /N 2 >>'),lambda x,y:(int(((x+.5)/24)**2*255+.5),)*3)
+axial = '<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 18 0] /Function 6 0 R >>'
+save_document('stitching-function.pdf', shading_pdf(axial,
+    '<< /FunctionType 3 /Domain [0 1] /Functions [7 0 R 7 0 R] /Bounds [.5] /Encode [0 1 1 0] >>',
+    extra={7:gradient_function}),lambda x,y:gradient_rgb(2*(x+.5)/24 if x<12 else 2*(1-(x+.5)/24)))
+component_functions = '[ << /FunctionType 2 /Domain [0 1] /C0 [1] /C1 [0] /N 1 >> '+\
+    '<< /FunctionType 2 /Domain [0 1] /C0 [0] /C1 [0] /N 1 >> '+\
+    '<< /FunctionType 2 /Domain [0 1] /N 1 >> ]'
+save_document('component-functions.pdf',shading_pdf(axial,component_functions),lambda x,y:gradient_rgb((x+.5)/24))
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

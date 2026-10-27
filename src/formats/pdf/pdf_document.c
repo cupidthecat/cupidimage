@@ -36,6 +36,43 @@ void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size,
     }
 }
 
+/* Return a bounded borrowed dictionary, respecting strings and comments. */
+int cupidimage_pdf_dictionary_view(const pdf_object_view *parent, size_t start,
+                                   pdf_object_view *view, size_t *end) {
+    size_t pos = start;
+    memset(view, 0, sizeof(*view));
+    cupidimage_pdf_skip_ws_and_comments(parent->data, parent->len, &pos);
+    start = pos;
+    if (parent->len-pos < 2 || memcmp(parent->data+pos, "<<", 2)) return 0;
+    pos += 2; unsigned depth = 1;
+    while (pos < parent->len) {
+        cupidimage_pdf_skip_ws_and_comments(parent->data, parent->len, &pos);
+        if (pos == parent->len) break;
+        unsigned char c = parent->data[pos++];
+        if (c == '(') {
+            unsigned nesting = 1;
+            while (pos < parent->len && nesting) {
+                c = parent->data[pos++];
+                if (c == '\\' && pos < parent->len) pos++;
+                else if (c == '(') nesting++;
+                else if (c == ')') nesting--;
+            }
+            if (nesting) return 0;
+        } else if (c == '<') {
+            if (pos < parent->len && parent->data[pos] == '<') { pos++; if (++depth > 64) return 0; }
+            else {
+                while (pos < parent->len && parent->data[pos] != '>') pos++;
+                if (pos == parent->len) return 0;
+                pos++;
+            }
+        } else if (c == '>' && pos < parent->len && parent->data[pos] == '>') {
+            pos++;
+            if (--depth == 0) { view->data=parent->data+start; view->len=pos-start; *end=pos; return 1; }
+        }
+    }
+    return 0;
+}
+
 int cupidimage_pdf_dictionary_integer(const unsigned char *document, size_t document_size,
                                       const pdf_object_view *view,
                                       const char *key, int *value) {

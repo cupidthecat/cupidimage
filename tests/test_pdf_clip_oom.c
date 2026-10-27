@@ -10,6 +10,7 @@
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_transparency.c"
+#include "../src/formats/pdf/pdf_functions.c"
 #include "../src/formats/pdf/pdf_shading.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
@@ -82,15 +83,15 @@ int main(void) {
             "/Function << /FunctionType 2 /Domain [0 1] /N 1 >> >> endobj\n";
         uint8_t pixels[16]; memset(pixels, 255, sizeof(pixels));
         cupidimage_image image = {0}; image.width=2; image.height=2; image.rgba=pixels;
-        pdf_form_budget budget = {0,0,3};
+        pdf_form_budget budget = {0,3,3};
         pdf_render_state state = {0}; state.img=&image; state.document=(const unsigned char *)shading_doc;
         state.document_size=strlen(shading_doc); state.page_object=3; state.page_top_pts=1.5f;
         state.gs.ctm[0]=state.gs.ctm[3]=1; state.gs.fill_alpha=1; state.form_budget=&budget;
         fail_at=0; allocation_count=0;
         checks++;
-        if (cupidimage_pdf_draw_shading(&state,"Sh") || budget.shade_pixels_left != 3) failures++;
-        budget.shade_pixels_left=4; checks++;
-        if (!cupidimage_pdf_draw_shading(&state,"Sh") || budget.shade_pixels_left || pixels[0]!=64 || pixels[4]!=191) failures++;
+        if (cupidimage_pdf_draw_shading(&state,"Sh") || budget.shade_evaluations_left != 3) failures++;
+        budget.shade_evaluations_left=4; checks++;
+        if (!cupidimage_pdf_draw_shading(&state,"Sh") || budget.shade_evaluations_left || pixels[0]!=64 || pixels[4]!=191) failures++;
         checks++;
         if (cupidimage_pdf_draw_shading(&state,"Sh")) failures++;
         if (live_count) { failures++; while(live_count) fault_free(live[0]); }

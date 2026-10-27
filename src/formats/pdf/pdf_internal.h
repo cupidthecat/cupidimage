@@ -115,4 +115,7 @@ int cupidimage_pdf_object_stream(const unsigned char *document, size_t document_
 int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned char *data,
                                 size_t length, unsigned char **decoded, size_t *decoded_length);
 
+int cupidimage_pdf_dictionary_view(const pdf_object_view *parent, size_t start,
+                                   pdf_object_view *view, size_t *end);
+
 #endif
