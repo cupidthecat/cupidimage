@@ -102,7 +102,7 @@ JPEG images support DCTDecode as a name or a single-filter array, including
 ColorTransform 1 and Decode array inversion. Their frame dimensions, bit depth,
 and component count must match the image dictionary. FlateDecode also accepts a
 single-filter array. Non-JPEG images also accept ASCIIHexDecode, ASCII85Decode,
-RunLengthDecode, LZWDecode, and chains of these byte filters with FlateDecode.
+RunLengthDecode, LZWDecode, CCITTFaxDecode, and chains of these filters with FlateDecode.
 LZW supports both EarlyChange values. Flate/LZW stages accept direct predictor
 dictionaries, including packed and 16-bit TIFF/PNG prediction. Raw RGB JPEG images, ColorTransform 0, JPX,
 inline images
@@ -327,3 +327,19 @@ select palette entry zero initially; `sc`, `scn`, `SC`, and `SCN` round and clam
 the requested index. Fill and stroke palettes are independent and survive
 graphics-state save/restore and form calls. Device-color operators replace
 the selected palette with their device space.
+
+## PDF fax images
+
+`CCITTFaxDecode` (`CCF`) decodes one-bit Group 3 one-dimensional, mixed
+one-/two-dimensional, and Group 4 data. DecodeParms supports `K`, `Columns`,
+`Rows`, `EndOfLine`, `EncodedByteAlign`, `EndOfBlock`, `BlackIs1`, and
+`DamagedRowsBeforeError`. End-of-block mode uses RTC/EOFB markers and takes
+precedence over the row count. Decoded rows are byte-padded.
+
+Damaged-row recovery is enabled only for nonnegative `K` with `EndOfLine true`.
+It searches for the next line boundary and copies the preceding good row;
+consecutive damaged rows become white. Recovery shares the decoder's work
+budget and stops when the declared allowance is exhausted. Truncated codes,
+out-of-range runs, missing required markers, and unsupported uncompressed
+extension modes return errors. Width is limited to 1,048,576 pixels and decoded
+output to 64 MiB.

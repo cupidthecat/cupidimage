@@ -12,6 +12,8 @@ symbols.
   longer part of the JPEG decoder.
 - `src/compression/zlib.c` supplies checked DEFLATE/zlib decoding and terminal
   compression. PNG, TIFF, and PDF share this implementation.
+- `src/compression/ccitt.c` handles bounded PDF fax streams; its run-code tables
+  are shared with the TIFF strip decoder.
 - `src/output/ansi/`, `kitty/`, and `sixel/` own terminal protocols. They consume
   RGBA images rather than parsing source-file formats.
 - `src/cli/main.c` owns argument parsing, terminal selection, animation playback,

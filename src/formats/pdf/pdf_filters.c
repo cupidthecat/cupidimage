@@ -1,4 +1,5 @@
 #include "pdf_internal.h"
+#include "compression/ccitt.h"
 #include <stdint.h>
 #include <limits.h>
 #include <math.h>
@@ -104,6 +105,7 @@ static int pdf_filter_runlength(const unsigned char *data, size_t length, pdf_fi
 
 typedef struct {
     int predictor, colors, columns, bits, early;
+    cupidimage_ccitt_options fax;
 } pdf_filter_params;
 
 static int pdf_filter_lzw(const unsigned char *data, size_t length, int early, pdf_filter_buffer *out) {
@@ -226,18 +228,37 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos, pdf_f
         while (*pos < view->len && !cupidimage_pdf_is_ws(view->data[*pos]) && !cupidimage_pdf_is_delim(view->data[*pos])) (*pos)++;
         size_t n = *pos-start;
         int *value = NULL;
+        int boolean = 0;
         if (n == 9 && !memcmp(view->data+start, "Predictor", n)) value = &params->predictor;
         else if (n == 6 && !memcmp(view->data+start, "Colors", n)) value = &params->colors;
         else if (n == 7 && !memcmp(view->data+start, "Columns", n)) value = &params->columns;
         else if (n == 16 && !memcmp(view->data+start, "BitsPerComponent", n)) value = &params->bits;
         else if (n == 11 && !memcmp(view->data+start, "EarlyChange", n)) value = &params->early;
+        else if (n == 1 && view->data[start] == 'K') value = &params->fax.k;
+        else if (n == 4 && !memcmp(view->data+start, "Rows", n)) value = &params->fax.rows;
+        else if (n == 22 && !memcmp(view->data+start, "DamagedRowsBeforeError", n)) value = &params->fax.damaged_rows;
+        else if (n == 9 && !memcmp(view->data+start, "EndOfLine", n)) { value = &params->fax.end_of_line; boolean = 1; }
+        else if (n == 16 && !memcmp(view->data+start, "EncodedByteAlign", n)) { value = &params->fax.byte_align; boolean = 1; }
+        else if (n == 10 && !memcmp(view->data+start, "EndOfBlock", n)) { value = &params->fax.end_of_block; boolean = 1; }
+        else if (n == 8 && !memcmp(view->data+start, "BlackIs1", n)) { value = &params->fax.black_is_one; boolean = 1; }
         if (!value) return 0;
+        if (boolean) {
+            cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+            const char *word = view->len-*pos>=4 && !memcmp(view->data+*pos,"true",4) ? "true" : "false";
+            size_t length = strlen(word);
+            if (view->len-*pos<length || memcmp(view->data+*pos,word,length)) return 0;
+            *pos += length;
+            if (*pos<view->len && !cupidimage_pdf_is_ws(view->data[*pos]) && !cupidimage_pdf_is_delim(view->data[*pos])) return 0;
+            *value = length==4;
+            continue;
+        }
         double number;
         cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
         if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &number) ||
-            number < 0 || number > INT_MAX || floor(number) != number ||
+            number < (value == &params->fax.k ? INT_MIN : 0) || number > INT_MAX || floor(number) != number ||
             (*pos < view->len && !cupidimage_pdf_is_ws(view->data[*pos]) && !cupidimage_pdf_is_delim(view->data[*pos]))) return 0;
         *value = (int)number;
+        if (value == &params->columns) params->fax.columns = (int)number;
     }
 }
 
@@ -245,7 +266,7 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
                                 size_t length, unsigned char **decoded, size_t *decoded_length) {
     char filters[8][32];
     pdf_filter_params params[8];
-    for (int i = 0; i < 8; i++) params[i] = (pdf_filter_params){1, 1, 1, 8, 1};
+    for (int i = 0; i < 8; i++) params[i] = (pdf_filter_params){1, 1, 1, 8, 1, {0, 1728, 0, 0, 0, 1, 0, 0}};
     int count = 0;
     size_t pos;
     *decoded = NULL; *decoded_length = 0;
@@ -287,6 +308,8 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
             ok = (params[i].early == 0 || params[i].early == 1) && pdf_filter_lzw(data, length, params[i].early, &out);
         else if (!strcmp(name, "ASCIIHexDecode") || !strcmp(name, "AHx")) ok = pdf_filter_hex(data, length, &out);
         else if (!strcmp(name, "ASCII85Decode") || !strcmp(name, "A85")) ok = pdf_filter_ascii85(data, length, &out);
+        else if (!strcmp(name, "CCITTFaxDecode") || !strcmp(name, "CCF"))
+            ok = cupidimage_ccitt_decode(data, length, &params[i].fax, &out.data, &out.used);
         else if (!strcmp(name, "RunLengthDecode") || !strcmp(name, "RL")) ok = pdf_filter_runlength(data, length, &out);
         if (ok && (!strcmp(name, "FlateDecode") || !strcmp(name, "Fl") ||
                    !strcmp(name, "LZWDecode") || !strcmp(name, "LZW"))) ok = pdf_filter_predict(&out, &params[i]);

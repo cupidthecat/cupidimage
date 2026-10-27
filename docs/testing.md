@@ -176,3 +176,13 @@ the optional `fitz` Python module for full 16-bit predictor/mask precision. The
 secondary comparisons allow one channel level for gray-background tie rounding;
 the normal analytic pixel checks remain exact. None of those external tools are
 needed for `make test-pdf-packed-images`.
+
+## PDF fax regression fixtures
+
+`make test-pdf-ccitt` runs direct filter checks and 180 exact image comparisons.
+The fixed rasters and their compressed bytes are in
+`tests/fixtures/pdf-ccitt.json`; routine tests use only Python's standard library.
+To regenerate this authored fixture set with Pillow's TIFF encoder, run
+`python3 scripts/test_pdf_ccitt.py --generate`. Review the fixture diff before
+committing it. Patterns include solid rows, stripes, alternating pixels, random
+bits, non-byte-aligned widths, and long makeup runs.

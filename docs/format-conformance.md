@@ -184,8 +184,10 @@ The rules come from ISO 32000-1 sections 7.4.2 through 7.4.5.
 Direct DecodeParms dictionaries and aligned parameter arrays support Flate/LZW
 prediction. LZW tests cover both EarlyChange values, all code widths, table
 saturation, resets, and the next-code special case. Chained predictor tests cover
-1/2/4/8/16-bit gray, RGB, and CMYK samples. Specialized image filters and indirect
-parameter objects in general chains remain separate work.
+1/2/4/8/16-bit gray, RGB, and CMYK samples. CCITT fax decoding adds Group 3, mixed
+Group 3, and Group 4 one-bit images, including bounded damaged-row recovery.
+JPX, JBIG2, fax uncompressed extension modes, and indirect parameter objects in
+general chains remain separate work.
 
 ## Graphics-state opacity and blend modes
 
@@ -197,3 +199,24 @@ fill, as required by ISO 32000-1 section 11.6.2. Blend functions follow section
 11.3.5. Independent comparisons use a second rasterizer for combined fill/stroke,
 where the installed primary rasterizer composites the two operations separately.
 This remains device-RGB compositing, not full transparency-group support.
+
+## Fax image validation
+
+Fax decoding follows ISO 32000-1 section 7.4.6 and Table 11, with run codes
+from ITU-T T.4/T.6. The decoder lives in `src/compression/ccitt.c`; TIFF and PDF
+share the existing run-code tables without changing TIFF's strip decoder.
+Thirty-four direct filter checks cover row counts, RTC/EOFB, mixed coding,
+polarity, byte padding/alignment, malformed parameters, truncated runs and
+recovery limits. Sixty independently encoded fixtures produce 180 exact PDF
+full-resolution decoded-raster and rendered-image comparisons across both
+polarities and applicable termination modes.
+Allocation-failure tests cover initial buffers and output growth.
+
+These tests establish the listed fax subset. They do not establish full PDF
+rendering conformance or visual correctness for unrelated real-document features.
+
+The pinned `ccitt_EndOfBlock_false.pdf` corpus document now decodes. All six
+embedded fax images match an independent decoder at every visible source pixel,
+covering all three `K` modes with both termination settings. The full rendered
+page still differs in 1.585% of RGB channels from the comparison raster. It
+remains a visual difference, not a corpus pixel pass.

@@ -4,6 +4,7 @@
 #define calloc fault_calloc
 #define realloc fault_realloc
 #define free fault_free
+#include "../src/compression/ccitt.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_fonts.c"
@@ -108,6 +109,23 @@ int main(void) {
         checks++;
         if (cupidimage_pdf_draw_shading(&state,"Sh")) failures++;
         if (live_count) { failures++; while(live_count) fault_free(live[0]); }
+    }
+    /* Every fax allocation, including output growth, must unwind cleanly. */
+    for (int malformed=0; malformed<2; malformed++) {
+        size_t total=0;
+        for (size_t failure=0; failure<=total; failure++) {
+            const unsigned char encoded[]={0x9c,0xe7,0x38}; /* Four white 8-pixel rows. */
+            cupidimage_ccitt_options options={0,8,4,0,0,0,0,0};
+            unsigned char *decoded=NULL; size_t size=0;
+            allocation_count=0; fail_at=failure;
+            int ok=cupidimage_ccitt_decode(encoded,malformed?1:sizeof(encoded),&options,&decoded,&size);
+            if (!failure) total=allocation_count;
+            checks++;
+            if ((!failure && !malformed && (!ok || size!=4)) ||
+                (failure && ok) || (!ok && (decoded || size))) failures++;
+            fault_free(decoded);
+            if (live_count) { failures++; while(live_count) fault_free(live[0]); }
+        }
     }
     printf("PDF clip allocation failures: %zu checks, %zu failures\n", checks, failures);
     return failures != 0;
