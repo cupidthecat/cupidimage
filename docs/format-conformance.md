@@ -369,3 +369,16 @@ A focused cached-font check found a zero-stem counter mask with no mask bytes.
 The reader now treats it as an empty mask, and the regression suite covers it.
 Two selected cached CFF programs decode all their glyphs after that repair.
 This is not a full-corpus rendering or visual review.
+
+## Type 1 programs and empty text clips
+
+Binary Type 1 font streams now use their decoded outlines instead of bitmap
+fallback glyphs. The font parser and charstring interpreter are separate modules.
+The tests cover encryption, readstring boundaries, encoding overrides, flex and
+accent composition. MacExpertEncoding is included for Type 1 and CFF fonts.
+Hinting, custom OtherSubrs and general PostScript font-program execution remain
+open; the current implementation does not claim complete Type 1 fidelity.
+
+A space-only clipping regression was confirmed against an independent renderer.
+The text object now retains an empty glyph clip and intersects it at ET. Type 3
+fonts retain their separate text-rendering-mode behavior.

@@ -14,8 +14,8 @@ header+='static const struct {const char *name; uint32_t scalar; unsigned char s
 header+=''.join('    {"%s", 0x%x, %d},\n'%row for row in rows)+'};\n'
 Path('src/formats/pdf/fonts/glyph_names_data.h').write_text(header)
 data=json.loads(Path('tests/fixtures/pdf-encodings.json').read_text())
-header='/* ISO 32000-1:2008, Annex D.2, including duplicate-space/hyphen notes. */\n'
-for key in ('StandardEncoding','MacRomanEncoding','WinAnsiEncoding'):
+header='/* ISO 32000-1:2008, Annex D.2/D.4, including duplicate-space/hyphen notes. */\n'
+for key in ('StandardEncoding','MacRomanEncoding','WinAnsiEncoding','MacExpertEncoding'):
     header+='static const char *const pdf_'+key+'[256] = {\n'
     header+=''.join('    '+', '.join(json.dumps(n) for n in data[key][i:i+8])+',\n' for i in range(0,256,8))+'};\n'
 Path('src/formats/pdf/fonts/encoding_data.h').write_text(header)

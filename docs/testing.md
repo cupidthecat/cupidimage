@@ -285,3 +285,15 @@ For the optional independent raster comparisons:
     python3 scripts/test_pdf_cff_render.py bin/test_pdf_pages --reference
 
 Unhinted comparisons do not establish hinted or antialiased font fidelity.
+
+## Type 1 fonts
+
+`make test-pdf-type1` covers binary font decryption, explicit byte lengths, font
+encodings, sidebearings, paths, standard subroutines and malformed input. The
+owned geometric fixtures include encrypted and filtered font streams. Run
+`python3 scripts/test_pdf_type1_render.py bin/test_pdf_pages --reference` for the
+selected independent comparisons. Clear private dictionaries and a FontMatrix
+rejected by the independent loader remain analytic-only tests.
+
+The shared text tests also verify that showing a space in a clipping mode creates
+an empty clip, rather than leaving the previous clip unchanged.

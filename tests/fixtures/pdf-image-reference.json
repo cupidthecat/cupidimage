@@ -196,6 +196,20 @@
       "height": 16,
       "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-type1.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-type1-filtered.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
     }
   ]
 }

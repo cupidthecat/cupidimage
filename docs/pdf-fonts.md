@@ -1,6 +1,6 @@
 # PDF fonts and text
 
-PDF text is still a work in progress. Supported embedded TrueType and CFF fonts use
+PDF text is still a work in progress. Supported embedded TrueType, CFF and Type 1 fonts use
 their outlines instead of the bitmap fallback. This is unhinted rendering, not a
 claim of complete font support or identical pixels across rasterizers.
 
@@ -113,6 +113,38 @@ levels and 65,536 interpreter steps. Outlines are bounded to 65,536 segments.
 Malformed programs fail cleanly; these limits do not establish compatibility
 with every font in the broader corpus.
 
+## Type 1 programs
+
+FontFile streams use Length1/Length2/Length3 after PDF stream filters have been
+removed. The reader decrypts the binary eexec portion and the individual
+charstrings, preserving their declared byte boundaries. In particular, a line
+feed at the beginning of binary charstring data is not trimmed after a carriage
+return delimiter. Private dictionaries with no eexec layer are accepted as a
+compatibility form. The PDF reader does not load standalone PFB containers or
+ASCII-hex eexec files.
+
+The parser reads the standard font dictionary organization, FontMatrix,
+StandardEncoding/custom encoding arrays, Subrs, CharStrings and lenIV. It
+recognizes RD, -| and equivalent named readstring procedures. Redefinitions replace
+the preceding Subrs or CharStrings dictionary. Glyph definitions are sorted and
+deduplicated once, then names use binary lookup rather than a growing linear scan. The lenIV=-1 convention is accepted
+without charstring decryption. The parser does not execute arbitrary PostScript.
+
+Type 1 outlines support sidebearings and width vectors, line/cubic paths,
+subroutines, division, seac accents, and standard OtherSubrs 0 through 3 for flex
+and hint replacement. Stems and hint replacement are parsed but not grid-fitted.
+Open strokes remain open; explicit closepath closes the path without resetting
+the charstring's current point. Accents use StandardEncoding component names.
+PDF encodings can override the program's vector, including MacExpertEncoding's
+165 named entries from ISO 32000-1 Annex D.4.
+
+Programs are limited to 16 MiB, 65,535 glyphs, 65,536 subroutines, 127-byte names,
+24 charstring operands, ten nested subroutine calls and 65,536 execution steps
+per glyph. Glyph and subroutine strings are bounded to 65,535 encoded bytes.
+The decoded private section and lookup arrays count against retained font storage.
+Custom OtherSubrs, dynamically generated PostScript font data and synthetic or
+multiple-master programs remain unsupported.
+
 ## Bounds and ownership
 
 Each retained font program is limited to 16 MiB, with 64 MiB of program storage
@@ -129,7 +161,7 @@ rather than quietly dropping that glyph.
 ## What remains
 
 - TrueType instruction execution, grid fitting and antialiased font coverage.
-- Non-CFF Type 1 programs, CFF2, synthetic/multiple-master fonts and variable-font data.
+- CFF2, synthetic/multiple-master fonts, custom Type 1 procedures and variable-font data.
 - Complete post-table name variants and the remaining cmap forms.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
 - Complete standard-font metrics and faithful outlines when fonts are not embedded.
@@ -157,20 +189,35 @@ including inherited maps and cleanup after decompression or parsing failures.
 
 
 `make test-pdf-cff` runs 56 data-primitive checks, 186 structure/truncation checks,
-152 Type 2 checks and 30 PDF rendering checks. The rendering tests cover cubic
+152 Type 2 checks and 33 PDF rendering checks. The rendering tests cover cubic
 geometry, CID fonts, encoding overrides, accents, FontMatrix, all text modes and
-OpenType wrapping. Twenty-two optional independent comparisons use:
+OpenType wrapping. Twenty-four optional independent comparisons use:
 
     python3 scripts/test_pdf_cff_render.py bin/test_pdf_pages --reference
 
 The clip-only comparison uses a second rasterizer because the first applies a
 different boundary rule. The cubic arch also has an analytic per-pixel test.
 The optional font-fixture regeneration script uses FontTools; ordinary tests do
-not require it. The PDF allocation-failure suite has 568 checks, including
+not require it. The PDF allocation-failure suite has 750 checks, including
 CFF font dictionaries, outlines and composite cleanup.
 
+`make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 29
+rendering checks. Nineteen selected raster comparisons run with:
+
+    python3 scripts/test_pdf_type1_render.py bin/test_pdf_pages --reference
+
+The clear-private and 90-degree Type 1 FontMatrix fixtures have analytic tests
+only because the independent font loader rejects them. A normal sheared matrix
+and matrix translation do have exact raster comparisons. Missing PDF Widths
+uses an explicit fallback test, not a reference-fidelity claim.
+
+Six selected cached Type 1 programs decode all their glyphs. In a two-page check,
+the fractions of different color channels fell from 7.865% to 3.337% and from
+7.847% to 3.370%. Both pages still differ. The full 1,007-document manual review
+remains deferred.
+
 `make test-pdf-truetype` runs binary-table/glyph-name checks and 45 PDF rendering
-checks. The 4,356 lower-level checks include the full pinned glyph-name dataset;
+checks. The 4,360 lower-level checks include the full pinned glyph-name dataset;
 they are not thousands of independent font-rendering features. The authored
 geometric font covers holes, quadratic curves, off-curve contour starts, affine
 components and point attachment. Regular tests need only Python's standard
@@ -193,6 +240,9 @@ Base encoding tables follow ISO 32000-1
 Annex D.2, including its duplicate-space, soft-hyphen and currency rules.
 
 ## Standards
+
+- [Adobe Type 1 Font Format](https://adobe-type-tools.github.io/font-tech-notes/pdfs/T1_SPEC.pdf)
+  describes Type 1 dictionaries, encryption, charstrings and standard subroutines.
 
 - Adobe Technical Notes [5176: CFF](https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf)
   and [5177: Type 2](https://adobe-type-tools.github.io/font-tech-notes/pdfs/5177.Type2.pdf)

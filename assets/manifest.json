@@ -587,6 +587,14 @@
       "sha256": "e2c9018976dd3719ed3a7b2feaec89eb69d195284abab856ada26a2cac4d85fb"
     },
     {
+      "path": "assets/pdf/reference/embedded-type1-filtered.pdf",
+      "sha256": "8a1d798b11e7507e248f0e0750e8cbb874063510c6317ef6c685836b30924fb5"
+    },
+    {
+      "path": "assets/pdf/reference/embedded-type1.pdf",
+      "sha256": "1cbde90a8ddfc3d95cec125cf19e9eceb28edb8f2ac2f59b4b39d2f6ead21d41"
+    },
+    {
       "path": "assets/pdf/reference/eof-without-newline.pdf",
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },

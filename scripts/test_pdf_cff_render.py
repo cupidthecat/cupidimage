@@ -61,6 +61,7 @@ def main():
         same('builtin-encoding','BT /F 30 Tf 20 30 Td (A) Tj ET',box,encoding='')
         same('custom-encoding','BT /F 30 Tf 20 30 Td (X) Tj ET',box,encoding='',font=cff_font(encoding=b'\0\2\x20\x58',programs=[b'\x0e',b'\x0e',BOX,CURVE]),metrics='/FirstChar 88 /LastChar 88 /Widths [600]')
         same('name-override','BT /F 30 Tf 20 30 Td (B) Tj ET',box,encoding='<< /Differences [66 /A] >>',metrics='/FirstChar 66 /LastChar 66 /Widths [600]')
+        same('mac-expert','BT /F 30 Tf 20 30 Td <47> Tj ET',box,encoding='/MacExpertEncoding',font=cff_font(charset=b'\0\0\1\0\x9e\1\x87',programs=[b'\x0e',b'\x0e',BOX,CURVE]),metrics='/FirstChar 71 /LastChar 71 /Widths [600]')
         same('program-width','BT /F 30 Tf 20 30 Td (AA) Tj ET',box+' 38 30 12 18 re f',metrics='',reference=False)
         same('pdf-width','BT /F 30 Tf 20 30 Td (AA) Tj ET',box+' 35 30 12 18 re f',metrics='/FirstChar 65 /LastChar 65 /Widths [500]')
         opentype=base64.b64decode(json.loads(Path('tests/fixtures/pdf-cff-opentype.json').read_text())['font'])
@@ -74,6 +75,8 @@ def main():
             same('clip-'+str(mode),f'BT /F 30 Tf {mode} Tr 20 30 Td (A) Tj ET 1 0 0 rg 0 0 120 90 re f',('20 30 12 18 re S ' if mode in (5,6) else '')+'20 30 12 18 re W n 1 0 0 rg 0 0 120 90 re f',reference=mode==7,secondary=True)
         same('rotated','BT /F 30 Tf 0 1 -1 0 80 20 Tm (A) Tj ET','62 20 18 12 re f')
         same('scale-rise','BT /F 30 Tf 50 Tz 6 Ts 20 30 Td (A) Tj ET','20 36 6 18 re f')
+        same('empty-outline-clip','BT /F 30 Tf 7 Tr 20 30 Td ( ) Tj ET 1 0 0 rg 0 0 120 90 re f','q Q')
+        same('zero-size-clip','BT /F 0 Tf 7 Tr 20 30 Td (A) Tj ET 1 0 0 rg 0 0 120 90 re f','q Q',reference=False)
         same('invisible','BT /F 30 Tf 3 Tr 20 30 Td (A) Tj ET','q Q')
         same('missing-cid','BT /F 30 Tf 20 30 Td <FFFF> Tj ET','q Q',cid=True)
         same('mapped-cid','BT /F 30 Tf 20 30 Td <41> Tj ET',box,cid=True,extra={

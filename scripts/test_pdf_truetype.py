@@ -42,6 +42,9 @@ def main():
             assert int(run(font,'map',3,1,code))==glyph
         for glyph,name in ((1,'box'),(2,'hole'),(4,'scaled'),(5,'attached'),(0,'unknown')):
             assert int(run(font,'post',name))==glyph
+        encodings=json.loads(Path('tests/fixtures/pdf-encodings.json').read_text())
+        for name in ('StandardEncoding','MacRomanEncoding','WinAnsiEncoding','MacExpertEncoding'):
+            assert run(font,'encoding',name).splitlines()==encodings[name]
         source=Path('third_party/adobe-glyph-list/glyphlist.txt').read_text()
         names=[];want=[]
         for line in source.splitlines():

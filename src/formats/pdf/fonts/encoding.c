@@ -55,6 +55,8 @@ const char *cupidimage_pdf_encoding_name(const char *encoding, unsigned code) {
         return ".notdef";
     if (!strcmp(encoding, "MacRomanEncoding"))
         return pdf_MacRomanEncoding[code];
+    if (!strcmp(encoding, "MacExpertEncoding"))
+        return pdf_MacExpertEncoding[code];
     if (!strcmp(encoding, "WinAnsiEncoding"))
         return pdf_WinAnsiEncoding[code];
     return pdf_StandardEncoding[code];

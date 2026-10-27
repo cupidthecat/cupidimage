@@ -43,6 +43,11 @@ int main(int argc, char **argv) {
         free(data);
         return 0;
     }
+    if (!strcmp(argv[2], "encoding") && argc == 4) {
+        for (unsigned i = 0; i < 256; i++) puts(cupidimage_pdf_encoding_name(argv[3], i));
+        free(data);
+        return 0;
+    }
     if (!strcmp(argv[2], "post") && argc == 4) {
         printf("%u\n", cupidimage_pdf_tt_name(&font, argv[3]));
         free(data);

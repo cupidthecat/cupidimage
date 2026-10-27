@@ -9,6 +9,8 @@
 #include "../src/formats/pdf/fonts/bitmap.c"
 #include "../src/formats/pdf/fonts/cff.c"
 #include "../src/formats/pdf/fonts/type2.c"
+#include "../src/formats/pdf/fonts/type1.c"
+#include "../src/formats/pdf/fonts/type1_charstring.c"
 #include "../src/formats/pdf/fonts/cmap.c"
 #include "../src/formats/pdf/fonts/encoding.c"
 #include "../src/formats/pdf/fonts/truetype.c"
@@ -33,6 +35,7 @@
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "fixtures/pdf-truetype.inc"
 #include "fixtures/pdf-cff.inc"
+#include "fixtures/pdf-type1.inc"
 #undef malloc
 #undef calloc
 #undef realloc
@@ -328,17 +331,21 @@ int main(void) {
         }
         fail_at = 0;
     }
-    for (unsigned kind = 0; kind < 2; kind++) {
-        const unsigned char *font_data = kind ? test_cff_font : test_truetype_font;
-        size_t font_size = kind ? sizeof(test_cff_font) : sizeof(test_truetype_font);
+    for (unsigned kind = 0; kind < 3; kind++) {
+        const unsigned char *font_data = kind == 2 ? test_type1_font : kind ? test_cff_font : test_truetype_font;
+        size_t font_size = kind == 2 ? sizeof(test_type1_font) : kind ? sizeof(test_cff_font) : sizeof(test_truetype_font);
+        char attributes[128] = "";
+        if (kind == 2)
+            snprintf(attributes,sizeof(attributes),"/Length1 %u /Length2 %u /Length3 0",test_type1_font_clear,test_type1_font_encrypted);
+        else if (kind) strcpy(attributes,"/Subtype /Type1C");
         char document[16384];
         int length = snprintf(document, sizeof(document),
                               "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n5 0 obj "
                               "<< /Subtype /%s /Encoding /WinAnsiEncoding /FontDescriptor 6 "
                               "0 R >> endobj\n6 0 obj << /Flags 32 /%s 7 0 R >> endobj\n7 0 "
                               "obj << %s /Filter /ASCIIHexDecode /Length %zu >> stream\n",
-                              kind ? "Type1" : "TrueType", kind ? "FontFile3" : "FontFile2",
-                              kind ? "/Subtype /Type1C" : "", font_size * 2 + 1);
+                              kind ? "Type1" : "TrueType", kind == 2 ? "FontFile" : kind ? "FontFile3" : "FontFile2",
+                              attributes, font_size * 2 + 1);
         for (size_t i = 0; i < font_size; i++)
             length += snprintf(document + length, sizeof(document) - (size_t)length, "%02x",
                                font_data[i]);
@@ -487,6 +494,31 @@ int main(void) {
                     failures++;
                     while (live_count) fault_free(live[0]);
                 }
+            }
+        }
+        fail_at = 0;
+    }
+    {
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            allocation_count = 0; fail_at = failure;
+            pdf_type1_font font;
+            int ok = cupidimage_pdf_type1_init(&font,test_type1_composite,sizeof(test_type1_composite),
+                                               test_type1_composite_clear,test_type1_composite_encrypted);
+            if (ok) {
+                for (unsigned i = 0; i < font.glyph_count; i++) {
+                    pdf_cff_outline outline;
+                    if (!cupidimage_pdf_type1_outline(&font,i,&outline)) { ok = 0; break; }
+                    cupidimage_pdf_type2_free(&outline);
+                }
+            }
+            cupidimage_pdf_type1_free(&font);
+            if (!failure) total = allocation_count;
+            checks++;
+            if (!failure && !ok) failures++;
+            if (live_count) {
+                failures++;
+                while (live_count) fault_free(live[0]);
             }
         }
         fail_at = 0;

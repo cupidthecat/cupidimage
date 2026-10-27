@@ -1,7 +1,7 @@
 #ifndef CUPIDIMAGE_PDF_TYPE2_H
 #define CUPIDIMAGE_PDF_TYPE2_H
 #include "cff.h"
-enum { PDF_CFF_MOVE, PDF_CFF_LINE, PDF_CFF_CURVE, PDF_CFF_CLOSE };
+enum { PDF_CFF_MOVE, PDF_CFF_LINE, PDF_CFF_CURVE, PDF_CFF_CLOSE, PDF_CFF_END, PDF_CFF_SETPOINT };
 typedef struct {
     double points[6];
     unsigned kind;
@@ -9,7 +9,7 @@ typedef struct {
 typedef struct {
     pdf_cff_segment *segments;
     unsigned count, capacity;
-    double width;
+    double width, width_y;
     int composite;
     unsigned base, accent;
     double accent_x, accent_y;

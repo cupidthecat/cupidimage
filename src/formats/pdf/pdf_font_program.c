@@ -180,10 +180,15 @@ static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
     cupidimage_pdf_object_view_release(&encoding);
     return ok;
 }
-static int cff_pdf_encoding(const unsigned char *data, size_t size,
+static unsigned ps_named_glyph(const pdf_font_program *program, const char *name) {
+    return program->is_type1 ? cupidimage_pdf_type1_name(&program->type1,name)
+                             : cupidimage_pdf_cff_name(&program->cff,name);
+}
+static int ps_pdf_encoding(const unsigned char *data, size_t size,
                             const pdf_object_view *view, pdf_font_program *program) {
     pdf_object_view encoding = {0}, differences = {0};
-    memcpy(program->glyphs, program->cff.encoding, sizeof(program->glyphs));
+    memcpy(program->glyphs, program->is_type1 ? program->type1.encoding : program->cff.encoding,
+           sizeof(program->glyphs));
     size_t pos;
     if (!cupidimage_pdf_page_value(view, "Encoding", &pos))
         return 1;
@@ -204,10 +209,10 @@ static int cff_pdf_encoding(const unsigned char *data, size_t size,
     }
     if (*base) {
         if (strcmp(base, "StandardEncoding") && strcmp(base, "WinAnsiEncoding") &&
-            strcmp(base, "MacRomanEncoding"))
+            strcmp(base, "MacRomanEncoding") && strcmp(base, "MacExpertEncoding"))
             ok = 0;
         for (unsigned i = 0; ok && i < 256; i++)
-            program->glyphs[i] = cupidimage_pdf_cff_name(&program->cff,
+            program->glyphs[i] = ps_named_glyph(program,
                                                        cupidimage_pdf_encoding_name(base, i));
     }
     if (ok && cupidimage_pdf_page_value(&encoding, "Differences", &pos)) {
@@ -225,7 +230,7 @@ static int cff_pdf_encoding(const unsigned char *data, size_t size,
             if (pos < differences.len && differences.data[pos] == '/') {
                 char name[128];
                 ok = code >= 0 && code < 256 && tt_pdf_name(&differences, &pos, name);
-                if (ok) program->glyphs[code++] = cupidimage_pdf_cff_name(&program->cff, name);
+                if (ok) program->glyphs[code++] = ps_named_glyph(program, name);
             } else {
                 double value;
                 ok = cupidimage_pdf_parse_pdf_number(differences.data, differences.len, &pos,
@@ -260,11 +265,15 @@ size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
     return program ? sizeof(*program) + program->length + program->gid_length +
                          (program->is_cff ? 65536 * sizeof(uint16_t) +
                               program->cff.private_count * sizeof(pdf_cff_private) +
-                              (program->cff.fdselect ? program->cff.chars.count : 0) : 0) : 0;
+                              (program->cff.fdselect ? program->cff.chars.count : 0) : 0) +
+                         (program->is_type1 ? program->type1.private_length +
+                              program->type1.glyph_capacity * sizeof(pdf_type1_glyph) +
+                              program->type1.subr_count * sizeof(pdf_cff_slice) : 0) : 0;
 }
 void cupidimage_pdf_font_program_free(pdf_font_program *program) {
     if (program) {
         cupidimage_pdf_cff_free(&program->cff);
+        cupidimage_pdf_type1_free(&program->type1);
         free(program->bytes);
         free(program->gid_map);
         free(program);
@@ -283,6 +292,8 @@ unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsi
     return glyph < program->font.glyphs ? glyph : 0;
 }
 int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code) {
+    if (program->is_type1)
+        return code < 256 && program->glyphs[code] < program->type1.glyph_count;
     if (program->is_cff)
         return !code || (program->cid ? code < 65536 && program->cff.selectors[code] != 0
                                      : code < 256 && program->glyphs[code] != 0);
@@ -299,6 +310,13 @@ int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsig
     return glyph > 0 && glyph < program->font.glyphs;
 }
 double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsigned glyph) {
+    if (program->is_type1) {
+        pdf_cff_outline outline;
+        if (!cupidimage_pdf_type1_outline(&program->type1,glyph,&outline)) return 0;
+        double width=outline.width*program->type1.matrix[0]+outline.width_y*program->type1.matrix[2];
+        cupidimage_pdf_type2_free(&outline);
+        return width;
+    }
     if (program->is_cff) {
         pdf_cff_outline outline;
         if (!cupidimage_pdf_type2_outline(&program->cff, glyph, &outline)) return 0;
@@ -343,11 +361,12 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
         goto done;
     const char *program_key = "FontFile2";
     if (!cupidimage_pdf_page_value(&descriptor, "FontFile2", &p)) {
-        if (!cupidimage_pdf_page_value(&descriptor, "FontFile3", &p)) {
-            ok = 1;
-            goto done;
-        }
-        program_key = "FontFile3";
+        if (cupidimage_pdf_page_value(&descriptor, "FontFile3", &p))
+            program_key = "FontFile3";
+        else if (!font->cid && tt_pdf_is_name(owner,"Subtype","Type1") &&
+                 cupidimage_pdf_page_value(&descriptor,"FontFile",&p))
+            program_key = "FontFile";
+        else { ok = 1; goto done; }
     }
     if (!tt_pdf_value(data, size, &descriptor, program_key, &stream))
         goto done;
@@ -369,15 +388,37 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
         goto done;
     program->cid = font->cid != NULL;
     pdf_cff_slice cff = {program->bytes, program->length};
-    if (cff_stream || cff_sfnt_table(program->bytes, program->length, &cff)) {
+    if (!strcmp(program_key,"FontFile")) {
+        size_t parts[3]={0};
+        const char *keys[]={"Length1","Length2","Length3"};
+        for(unsigned i=0;i<3;i++) {
+            pdf_object_view value={0};
+            size_t at=0;
+            double number;
+            if(i==2&&!cupidimage_pdf_page_value(&stream,keys[i],&at)) continue;
+            at=0;
+            int valid=tt_pdf_value(data,size,&stream,keys[i],&value);
+            cupidimage_pdf_skip_ws_and_comments(value.data,value.len,&at);
+            valid=valid && cupidimage_pdf_parse_pdf_number(value.data,value.len,&at,&number) &&
+                isfinite(number)&&number>=0&&number<=16u*1024u*1024u&&floor(number)==number;
+            cupidimage_pdf_object_view_release(&value);
+            if(!valid)goto done;
+            parts[i]=(size_t)number;
+        }
+        if(parts[0]>program->length||parts[1]>program->length-parts[0]||
+           parts[2]>program->length-parts[0]-parts[1])goto done;
+        program->is_type1=1;
+        if(!cupidimage_pdf_type1_init(&program->type1,program->bytes,program->length,parts[0],parts[1])||
+           !ps_pdf_encoding(data,size,view,program))goto done;
+    } else if (cff_stream || cff_sfnt_table(program->bytes, program->length, &cff)) {
         program->is_cff = 1;
         if (!cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length) ||
             program->cff.top.cid != (unsigned)program->cid ||
-            (!program->cid && !cff_pdf_encoding(data, size, view, program)))
+            (!program->cid && !ps_pdf_encoding(data, size, view, program)))
             goto done;
     } else if (!cupidimage_pdf_tt_init(&program->font, program->bytes, program->length))
         goto done;
-    if (program->cid && !program->is_cff) {
+    if (program->cid && !program->is_cff && !program->is_type1) {
         if (cupidimage_pdf_page_value(owner, "CIDToGIDMap", &p)) {
             if (!tt_pdf_value(data, size, owner, "CIDToGIDMap", &map))
                 goto done;
@@ -391,7 +432,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                     goto done;
             }
         }
-    } else if (!program->cid && !program->is_cff &&
+    } else if (!program->cid && !program->is_cff && !program->is_type1 &&
                !tt_pdf_simple_encoding(data, size, view, &descriptor, program))
         goto done;
     size_t cost = cupidimage_pdf_font_program_bytes(program);

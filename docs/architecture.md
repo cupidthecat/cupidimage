@@ -35,7 +35,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   encoding data, the bounded PDF encoding CMap parser and the bitmap fallback. `pdf_font_program.c` connects embedded
   programs to PDF resources; `pdf_text_outline.c` handles quadratic/cubic glyph
   coverage and text clipping. `fonts/cff.c` reads compact font data, and
-  `fonts/type2.c` interprets its bounded charstrings.
+  `fonts/type2.c` interprets its bounded charstrings. `fonts/type1.c` reads and
+  decrypts Type 1 programs; `fonts/type1_charstring.c` interprets their outlines
+  and standard subroutine operations.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;

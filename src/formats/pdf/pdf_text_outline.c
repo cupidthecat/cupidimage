@@ -72,13 +72,14 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
             p[j]=(outline_point){(float)tx,(float)ty};
         }
         if(segment->kind==PDF_CFF_MOVE) { current=p[0];first=1;continue; }
+        if(segment->kind==PDF_CFF_SETPOINT) { current=p[0];continue; }
         if(segment->kind==PDF_CFF_CURVE) {
             edges[(*count)++]=(outline_edge){current,p[0],p[2],2,p[1]};
             if(path&&!outline_cubic(path,current,p[0],p[1],p[2],first,0)) return 0;
             current=p[2];
         } else {
             edges[(*count)++]=(outline_edge){current,current,p[0],0,{0,0}};
-            if(path&&!outline_line(path,current,p[0],first)) return 0;
+            if(path&&segment->kind!=PDF_CFF_END&&!outline_line(path,current,p[0],first)) return 0;
             current=p[0];
             if(path&&segment->kind==PDF_CFF_CLOSE) path->segs[path->seg_count-1].closes_subpath=1;
         }
@@ -264,12 +265,14 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_
     int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     unsigned char *stroke = NULL;
     int ok = 0;
-    if (program->is_cff) {
+    if (program->is_type1) {
+        if (!cupidimage_pdf_type1_outline(&program->type1,glyph,&cff_outline)) goto done;
+    } else if (program->is_cff) {
         if (!cupidimage_pdf_cff_glyph_outline(&program->cff, glyph, &cff_outline))
             goto done;
     } else if (!cupidimage_pdf_tt_outline(&program->font, glyph, &outline))
         goto done;
-    unsigned count = program->is_cff ? cff_outline.count : outline.count;
+    unsigned count = (program->is_cff || program->is_type1) ? cff_outline.count : outline.count;
     if (!count) {
         ok = 1;
         goto done;
@@ -284,7 +287,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_
     }
     const double *t = st->text_matrix;
     const float *c = st->gs.ctm;
-    double ratio = (double)(96.0f / 72.0f), scale = st->gs.font_size_pts / (program->is_cff ? 1 : program->font.units);
+    double ratio = (double)(96.0f / 72.0f), scale = st->gs.font_size_pts / ((program->is_cff || program->is_type1) ? 1 : program->font.units);
     double m[6] = {(c[0] * t[0] + c[2] * t[1]) * scale * st->gs.horizontal_scale * ratio,
                    -(c[1] * t[0] + c[3] * t[1]) * scale * st->gs.horizontal_scale * ratio,
                    (c[0] * t[2] + c[2] * t[3]) * scale * ratio,
@@ -295,9 +298,9 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_
                    (st->page_top_pts - c[1] * (t[4] + st->gs.text_rise * t[2]) -
                     c[3] * (t[5] + st->gs.text_rise * t[3]) - c[5]) *
                        ratio};
-    if (program->is_cff) {
+    if (program->is_cff || program->is_type1) {
         unsigned fd = program->cff.fdselect ? program->cff.fdselect[glyph] : 0;
-        const double *f = program->cff.private_dicts[fd].matrix;
+        const double *f = program->is_type1 ? program->type1.matrix : program->cff.private_dicts[fd].matrix;
         double a[6]; memcpy(a,m,sizeof(a));
         m[0]=a[0]*f[0]+a[2]*f[1]; m[1]=a[1]*f[0]+a[3]*f[1];
         m[2]=a[0]*f[2]+a[2]*f[3]; m[3]=a[1]*f[2]+a[3]*f[3];

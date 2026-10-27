@@ -145,5 +145,18 @@ for cid, name in ((False, 'embedded-cff-simple.pdf'), (True, 'embedded-cff-cid.p
     save_document(name,document('/MediaBox [0 0 18 12] /Resources << /Font << /F 5 0 R >> >>',
         stream='BT /F 15 Tf 3 1.5 Td '+('<0022>' if cid else '(A)')+' Tj ET',extra=extra),
         lambda x,y:(0,0,0) if 4<=x<12 and 2<=y<14 else (255,255,255))
+from test_pdf_type1 import fixture as type1_program
+from test_pdf_type1_charstrings import BOX as type1_box, WIDTH as type1_width
+for compressed, name in ((False,'embedded-type1.pdf'),(True,'embedded-type1-filtered.pdf')):
+    program,length1,length2=type1_program(glyphs=[('.notdef',type1_width+b'\x0e'),('A',type1_box)])
+    attrs=f'/Length1 {length1} /Length2 {length2} /Length3 0'
+    if compressed:
+        program=zlib.compress(program);attrs+=' /Filter /FlateDecode'
+    extra={5:b'<< /Type /Font /Subtype /Type1 /BaseFont /CupidShapes /Encoding /WinAnsiEncoding /FontDescriptor 8 0 R /FirstChar 65 /LastChar 65 /Widths [600] >>',
+           8:b'<< /Type /FontDescriptor /FontName /CupidShapes /Flags 32 /FontBBox [0 0 400 600] /Ascent 600 /Descent 0 /CapHeight 600 /ItalicAngle 0 /StemV 80 /FontFile 9 0 R >>',
+           9:syntax_stream(program,attrs)}
+    save_document(name,document('/MediaBox [0 0 18 12] /Resources << /Font << /F 5 0 R >> >>',
+        stream='BT /F 15 Tf 3 1.5 Td (A) Tj ET',extra=extra),
+        lambda x,y:(0,0,0) if 4<=x<12 and 2<=y<14 else (255,255,255))
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

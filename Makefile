@@ -12,11 +12,11 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
-TEST_BINS = test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+TEST_BINS = test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
@@ -158,7 +158,7 @@ $(BINDIR)/test_%: tests/test_%.c $(LIB) $(SRCDIR)/cupidimage.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_deflate_containers $(BINDIR)/test_pdf_graphics: tests/pdf_fixture.h
 $(BINDIR)/test_svg_css_oom: $(filter $(SRCDIR)/formats/svg/%,$(LIBSRC)) $(SRCDIR)/formats/svg/svg_internal.h tests/fault_alloc.h
-$(BINDIR)/test_pdf_clip_oom: $(filter $(SRCDIR)/formats/pdf/%,$(LIBSRC)) $(shell find $(SRCDIR)/formats/pdf -name '*.h') tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc $(shell find $(SRCDIR)/formats/pdf -name '*.inc') $(SRCDIR)/compression/ccitt.c $(SRCDIR)/compression/ccitt_tables.h tests/fault_alloc.h
+$(BINDIR)/test_pdf_clip_oom: $(filter $(SRCDIR)/formats/pdf/%,$(LIBSRC)) $(shell find $(SRCDIR)/formats/pdf -name '*.h') tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(shell find $(SRCDIR)/formats/pdf -name '*.inc') $(SRCDIR)/compression/ccitt.c $(SRCDIR)/compression/ccitt_tables.h tests/fault_alloc.h
 $(BINDIR)/test_jpeg_decoder: scripts/test_jpeg_decoder.c $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB) | $(BINDIR)
@@ -239,3 +239,11 @@ test-pdf-cff: $(BINDIR)/test_pdf_cff $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_cff.py $(BINDIR)/test_pdf_cff
 	python3 scripts/test_pdf_type2.py $(BINDIR)/test_pdf_cff
 	python3 scripts/test_pdf_cff_render.py $(BINDIR)/test_pdf_pages
+
+$(BINDIR)/test_pdf_type1: tests/test_pdf_type1.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-type1: $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_type1.py $(BINDIR)/test_pdf_type1
+	python3 scripts/test_pdf_type1_charstrings.py $(BINDIR)/test_pdf_type1
+	python3 scripts/test_pdf_type1_render.py $(BINDIR)/test_pdf_pages

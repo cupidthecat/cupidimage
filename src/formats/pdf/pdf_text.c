@@ -303,6 +303,12 @@ static unsigned char pdf_codepoint_to_ascii(uint32_t cp) {
 void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length) {
     if (!text || !st->in_text)
         return;
+    const pdf_font_map *current = st->gs.current_font;
+    if (length && st->gs.text_mode >= 4 && (!current || !current->type3) &&
+        !cupidimage_pdf_text_clip_prepare(st)) {
+        st->image_failed = 1;
+        return;
+    }
     const unsigned char *bytes = (const unsigned char *)text;
     size_t pos = 0;
     while (pos < length && !st->image_failed) {

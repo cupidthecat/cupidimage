@@ -78,7 +78,7 @@ FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType and CFF/Type 2 outlines are supported; non-CFF Type 1 programs, transparency groups, mesh shadings and annotations remain incomplete.
+nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType, CFF/Type 2 and Type 1 outlines are supported; complete font fidelity, transparency groups, mesh shadings and annotations remain incomplete.
 
 ## PDF details and limits
 
@@ -112,7 +112,7 @@ the content, and BBox clips text, paths, and images, including nested forms.
 Forms use their own Resources dictionary when present, or the caller's resources
 otherwise. Drawing a form preserves the caller's graphics state and current path.
 Built-in text glyphs follow the text matrix and current transformation matrix.
-Supported embedded TrueType and CFF programs use their outlines. See [PDF fonts and text](pdf-fonts.md) for glyph selection and remaining font limitations.
+Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PDF fonts and text](pdf-fonts.md) for glyph selection and remaining font limitations.
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive forms, transparency
@@ -384,7 +384,7 @@ Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
 described below. Complete standard-font metrics and embedded
-Non-CFF Type 1 programs, hinting and complete font fidelity remain separate work. Malformed font metadata still uses the
+Hinting, custom Type 1 procedures and complete font fidelity remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes are not equivalent to actual
 font outlines.
 
