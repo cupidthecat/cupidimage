@@ -116,7 +116,7 @@ Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PD
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive and
-external-reference forms are rejected. Isolated and non-isolated, non-knockout RGB/gray transparency
+external-reference forms are rejected. Isolated and non-isolated, RGB/gray transparency
 groups are supported; other group configurations remain unsupported. See
 [PDF transparency](pdf-transparency.md) for compositing and memory limits.
 
@@ -240,8 +240,8 @@ endpoint cases, state restoration, and mask/opacity combinations.
 
 Pages render as isolated transparency groups and composite onto white only
 after their content finishes. Their Group dictionary selects DeviceRGB or
-DeviceGray; RGB is the default. Form groups also support these spaces. Non-knockout groups and graphics-state Alpha/Luminosity masks are
-supported. CMYK/CIE/ICC group spaces, knockout groups, overprinting and full
+DeviceGray; RGB is the default. Form groups also support these spaces. Knockout and non-knockout groups and graphics-state Alpha/Luminosity masks are
+supported. CMYK/CIE/ICC group spaces, overprinting and full
 text-transparency semantics remain incomplete. See [PDF transparency](pdf-transparency.md)
 for mask precedence and group limits. Stroke styling is described below.
 
@@ -446,13 +446,12 @@ operators do not move it. Form and glyph resource scopes retain their own initia
 transforms. Tiling types 1 and 3 use rounded device-grid step vectors; type 2 keeps
 the requested geometry. Singular original or rounded grids are rejected.
 
-The cell cache preserves RGBA transparency. Cell alpha constants and blend mode
+The cell cache preserves RGBA color and separate floating-point shape and alpha. Cell alpha constants and blend mode
 start at their defaults; the caller's transparency applies when the resulting
 pattern paints an object. Normal-blend transparency and nested patterns are
 supported. A cell that requests a non-Normal blend mode is rejected because its
 result depends on the backdrop and cannot use this cache. A mask definition
-inside a pattern has its own fixed backdrop and may use blend modes there. Eight-bit
-cached alpha can differ by one channel value from a higher-precision pipeline.
+inside a pattern has its own fixed backdrop and may use blend modes there. Cached colors remain eight-bit; shape and alpha retain double precision.
 
 Uncoloured cells reject colour-setting operators and ordinary colour images;
 image masks and transparency parameters are allowed. Resources are local to the

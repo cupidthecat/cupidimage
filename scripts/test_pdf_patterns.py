@@ -74,10 +74,10 @@ def main():
         check('compressed',fixture(program=zlib.compress(b'1 0 0 rg 0 0 1.5 1.5 re f'),pattern_extra='/Filter /FlateDecode'),base)
         check('empty-cell',fixture(program=''),lambda x,y:white)
         check('pattern-alpha',fixture(program='/Half gs 1 0 0 rg 0 0 1.5 1.5 re f',resources='<< /ExtGState << /Half << /ca .5 >> >> >>'),
-              lambda x,y:(255,127,127) if x%4<2 and y%4>=2 else white,reference=False)
+              lambda x,y:(255,128,128) if x%4<2 and y%4>=2 else white,reference=False)
         check('uncolored-alpha',fixture(content='/PC cs 1 0 0 /P scn 0 0 18 12 re f',paint=2,
               program='/Half gs 0 0 1.5 1.5 re f',resources='<< /ExtGState << /Half << /ca .5 >> >> >>'),
-              lambda x,y:(255,127,127) if x%4<2 and y%4>=2 else white,reference=False)
+              lambda x,y:(255,128,128) if x%4<2 and y%4>=2 else white,reference=False)
         check('backdrop-dependent-blend-rejected',fixture(program='/M gs 1 0 0 rg 0 0 1.5 1.5 re f',
               resources='<< /ExtGState << /M << /BM /Multiply >> >> >>'),reject=True)
         check('pattern-stroke',fixture(content='/Pattern CS /P SCN 3 w 0 6 m 18 6 l S'),
@@ -108,7 +108,7 @@ def main():
               lambda x,y:red if y%4>=2 else white)
         check('overlapping-alpha-cells',fixture(program='/Half gs 1 0 0 rg 0 0 4.5 1.5 re f',bbox='0 0 4.5 1.5',
               resources='<< /ExtGState << /Half << /ca .5 >> >> >>'),
-              lambda x,y:((255,63,63) if x%4<2 else (255,127,127)) if y%4>=2 else white,reference=False)
+              lambda x,y:((255,64,64) if x%4<2 else (255,128,128)) if y%4>=2 else white,reference=False)
         inner=stream('1 0 0 rg 0 0 1.5 1.5 re f','/Type /Pattern /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 1.5 1.5] /XStep 3 /YStep 3 /Resources << >>')
         check('nested-pattern',fixture(program='/Pattern cs /Q scn 0 0 3 3 re f',bbox='0 0 3 3',
               resources='<< /Pattern << /Q 6 0 R >> >>',extra={6:inner}),base,secondary=True)

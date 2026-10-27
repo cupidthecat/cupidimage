@@ -441,10 +441,10 @@ alpha allows that initial contribution to be removed before the group is painted
 into its parent. Both group types retain floating-point color and alpha through
 nesting. Pattern/shading cache construction is kept outside that tracking.
 
-The group suite has 82 cases and 66 optional independent comparisons, including
+The group suite has 81 cases and 66 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,716 checks.
-Knockout and CMYK/CIE/ICC blending remain open.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,781 checks.
+CMYK/CIE/ICC blending and text-knockout grouping remain open.
 
 
 ## Graphics-state soft masks and gray groups
@@ -452,12 +452,12 @@ Knockout and CMYK/CIE/ICC blending remain open.
 Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
 q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
 as a group blending space alongside DeviceRGB. The focused suites have 56 mask
-checks and 82 group checks, with 44 and 66 optional independent comparisons.
-The allocation-failure suite has 1,716 checks. Three new analytic assets cover
+checks and 81 group checks, with 44 and 66 optional independent comparisons.
+The allocation-failure suite has 1,781 checks. Three new analytic assets cover
 alpha masks, luminosity masks and a gray mask with an inverse transfer function.
 
 [PDF transparency](pdf-transparency.md) records the analytic-only differences,
-shared 256 MiB memory bound and remaining limitations. Knockout, CMYK/CIE/ICC blending, default-space remapping and full shape/text
+shared 256 MiB memory bound and remaining limitations. CMYK/CIE/ICC blending, default-space remapping and full shape/text
 transparency are still open. These changes do not establish complete PDF support.
 
 
@@ -470,9 +470,24 @@ indirect attributes and named spaces; its I flag cannot disable display isolatio
 The final composite does not reuse the last object's mask, clip or opacity.
 Empty pages also validate their group attributes.
 
-The page suite has 94 cases and 84 independent comparisons. Gray conversion
+The page suite has 93 cases and 84 independent comparisons. Gray conversion
 checks use analytic expectations, as explained in the transparency guide.
 Existing assets still pass unchanged. Two new page assets bring the manifest to
 346 files, with 178 reference passes and 160 decoded-but-unverified entries.
 Floating-point byte conversion corrects a one-ULP underflow at half-byte ties
 without changing the analytic shading expectations.
+
+
+## Knockout groups and shape tracking
+
+RGB/gray groups and pages now honor K. Group results retain shape separately
+from alpha, and AIS controls whether constants and masks modify shape or opacity.
+Non-isolated children of knockout groups inherit the initial backdrop. Images and
+pattern caches preserve the distinction between transparent paint and no shape.
+Pattern-cache alpha is no longer quantized before it paints into the page.
+
+The knockout suite has 73 analytic checks and 16 independent comparisons. The
+[transparency guide](pdf-transparency.md) records disagreements rather than
+relaxing the one-byte comparison tolerance. Two new analytic assets bring the
+manifest to 348 files. Text-object knockout, Type 3 grouping, overprint and
+additional blending spaces still need work.

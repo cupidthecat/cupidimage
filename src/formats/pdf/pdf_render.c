@@ -433,8 +433,8 @@ static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
     return 1;
 }
 
-void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha) {
-    if (alpha <= 0 || !pdf_pixel_visible(st, x, y)) return;
+void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha, double shape) {
+    if (shape <= 0 || !pdf_pixel_visible(st, x, y)) return;
     cupidimage_image *img = st->img;
     size_t pixel = (size_t)y * img->width + (size_t)x;
     if (st->gs.soft_mask) {
@@ -442,13 +442,17 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
             st->image_failed = 1; return;
         }
         alpha *= st->gs.soft_mask->values[pixel];
-        if (alpha <= 0) return;
+        if (st->gs.alpha_is_shape) shape *= st->gs.soft_mask->values[pixel];
+        if (shape <= 0) return;
     }
     if (st->group) {
         double source[3] = {r / 255.0, g / 255.0, b / 255.0};
-        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, st->gs.blend_mode);
+        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, shape, st->gs.blend_mode);
         return;
     }
+    if (st->shape_plane) st->shape_plane[pixel] = shape + st->shape_plane[pixel] * (1 - shape);
+    if (st->alpha_plane) st->alpha_plane[pixel] = alpha + st->alpha_plane[pixel] * (1 - alpha);
+    if (alpha <= 0) return;
     size_t idx = pixel * 4u;
     if (st->gs.blend_mode == 0 && alpha == 1) {
         img->rgba[idx] = r; img->rgba[idx+1] = g; img->rgba[idx+2] = b; img->rgba[idx+3] = 255;
@@ -488,20 +492,24 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
 }
 
 void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y,
-                                    const double source[3], double alpha) {
-    if (alpha <= 0 || !pdf_pixel_visible(st, x, y)) return;
+                                    const double source[3], double alpha, double shape) {
+    if (shape <= 0 || !pdf_pixel_visible(st, x, y)) return;
     size_t pixel = (size_t)y * st->img->width + (size_t)x;
     if (st->gs.soft_mask) {
         if (st->gs.soft_mask->width != st->img->width || st->gs.soft_mask->height != st->img->height) {
             st->image_failed = 1; return;
         }
         alpha *= st->gs.soft_mask->values[pixel];
-        if (alpha <= 0) return;
+        if (st->gs.alpha_is_shape) shape *= st->gs.soft_mask->values[pixel];
+        if (shape <= 0) return;
     }
     if (st->group) {
-        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, st->gs.blend_mode);
+        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, shape, st->gs.blend_mode);
         return;
     }
+    if (st->shape_plane) st->shape_plane[pixel] = shape + st->shape_plane[pixel] * (1 - shape);
+    if (st->alpha_plane) st->alpha_plane[pixel] = alpha + st->alpha_plane[pixel] * (1 - alpha);
+    if (alpha <= 0) return;
     unsigned char *p = st->img->rgba + pixel * 4;
     double backdrop[3] = {p[0] / 255.0, p[1] / 255.0, p[2] / 255.0};
     double ab = p[3] / 255.0, ar = alpha + ab * (1 - alpha), blended[3];
@@ -519,6 +527,7 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
     uint8_t rgb[4] = {stroke ? st->gs.stroke_r : st->gs.fill_r,
                       stroke ? st->gs.stroke_g : st->gs.fill_g,
                       stroke ? st->gs.stroke_b : st->gs.fill_b, 255};
+    double shape = coverage, intrinsic_alpha = 1;
     if (space->pattern) {
         if (!pattern) {
             st->image_failed = 1;
@@ -526,20 +535,23 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
         }
         double px = st->page_x0_pts + (x + .5) * (72.0 / 96.0),
                py = st->page_top_pts - (y + .5) * (72.0 / 96.0);
-        if (!cupidimage_pdf_pattern_sample(pattern, px, py, rgb)) {
+        if (!cupidimage_pdf_pattern_sample(pattern, px, py, rgb, &shape, &intrinsic_alpha)) {
             st->image_failed = 1;
             return;
         }
     }
-    double alpha = coverage * (stroke ? st->gs.stroke_alpha : st->gs.fill_alpha) * rgb[3] / 255.0;
-    cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2], alpha);
+    if (space->pattern) shape *= coverage;
+    if (st->gs.alpha_is_shape) shape *= stroke ? st->gs.stroke_alpha : st->gs.fill_alpha;
+    double alpha = coverage * (stroke ? st->gs.stroke_alpha : st->gs.fill_alpha) * intrinsic_alpha;
+    cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2], alpha, shape);
 }
 
 void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     if (st->gs.fill_space.pattern)
         cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
     else
-        cupidimage_pdf_composite_pixel(st, x, y, r, g, b, st->gs.fill_alpha);
+        cupidimage_pdf_composite_pixel(st, x, y, r, g, b, st->gs.fill_alpha,
+                                       st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
 }
 
 static void pdf_matrix_identity(float m[6]) {
@@ -1474,7 +1486,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
 
 int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
                                        const unsigned char *stream, size_t length,
-                                       cupidimage_image *image, double sx, double sy, double ox,
+                                       cupidimage_image *image, double *shape, double sx, double sy, double ox,
                                        double oy, const double bbox[4], int uncolored,
                                        const uint8_t color[3]) {
     if (!parent->form_budget->calls_left || length > parent->form_budget->bytes_left)
@@ -1499,6 +1511,8 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     child->pending_clip = 0;
     child->image_failed = 0;
     child->img = image;
+    child->shape_plane = shape;
+    child->alpha_plane = shape + (size_t)image->width * image->height;
     child->group = NULL;
     child->mask_rendering = 0;
     child->page_x0_pts = 0;
@@ -1556,7 +1570,7 @@ static void pdf_double_concat(double m[6],const double n[6]) {
 }
 
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], cupidimage_image *image) {
+                                          const double matrix[6], cupidimage_image *image, double *shape) {
     if (!parent->form_budget->calls_left)
         return 0;
     parent->form_budget->calls_left--;
@@ -1572,6 +1586,8 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     child->gs.fill_alpha = child->gs.stroke_alpha = 1;
     child->gs.blend_mode = 0;
     child->img = image;
+    child->shape_plane = shape;
+    child->alpha_plane = shape + (size_t)image->width * image->height;
     child->group = NULL;
     child->mask_rendering = 0;
     child->form_depth = 0;

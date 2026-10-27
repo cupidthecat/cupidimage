@@ -60,6 +60,7 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
         if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1e6) return 0;
         next.line_width_pts = (float)value;
     }
+    if (!cupidimage_pdf_dictionary_boolean(st, view, "AIS", &next.alpha_is_shape)) return 0;
     if (!cupidimage_pdf_apply_stroke_view(st, view, &next))
         return 0;
     if (cupidimage_pdf_page_value(view, "BM", &pos)) {
@@ -81,6 +82,7 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
     if (st->glyph_uncolored) {
         next.fill_alpha=st->gs.fill_alpha;next.stroke_alpha=st->gs.stroke_alpha;
         next.blend_mode=st->gs.blend_mode;
+        next.alpha_is_shape=st->gs.alpha_is_shape;
     }
     /* Cached cells are backdrop-independent only with Normal blending. */
     if (st->pattern_depth && !st->mask_rendering && next.blend_mode != 0)

@@ -294,6 +294,20 @@
       "height": 16,
       "rgba_zlib": "eJzz9fX97zuKR/EoHsWjeMRhAGIl2R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/knockout-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwzNv7/33gUj+JRPIpH8YjDAA5eli4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/knockout-shape.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwzZjjz33gUj+JRPIpH8YjDAKbq/R8=",
+      "tolerance": 0
     }
   ]
 }

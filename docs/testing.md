@@ -344,3 +344,8 @@ exact-pixel corpus expectations.
 backdrop, explicit RGB/gray selection, indirect attributes, noninheritance,
 empty-page validation and final-state separation. All assets retain their existing
 expectations; two new analytic assets exercise page isolation and gray blending.
+
+`make test-pdf-knockout` exercises separate shape/opacity, AIS, nested initial
+backdrops, cached pattern shape and zero-opacity members. It includes all 16 blend
+modes and two isolation settings. Optional comparisons use the secondary renderer;
+the transparency guide identifies cases that remain analytic-only.

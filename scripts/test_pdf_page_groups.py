@@ -57,7 +57,7 @@ def main():
         check('contentless-invalid-group',fixture('', '<< /S /Transparency /CS /DeviceCMYK >>'),reject=True)
         nested=form('1 0 0 rg 0 0 18 12 re f','/BBox [0 0 18 12] /Group << /S /Transparency /I false >>')
         check('nested-inherits-gray',fixture('/F Do',gray,'/XObject << /F 5 0 R >>',{5:nested}),lambda x,y:(77,77,77),reference=False)
-        for group in ('<< /S /Other >>','<< /S /Transparency /K true >>','<< /S /Transparency /I /Bad >>','<< /S /Transparency /CS /DeviceCMYK >>','<< /S /Transparency /CS [/Indexed /DeviceRGB 0 <000000>] >>'):
+        for group in ('<< /S /Other >>','<< /S /Transparency /I /Bad >>','<< /S /Transparency /CS /DeviceCMYK >>','<< /S /Transparency /CS [/Indexed /DeviceRGB 0 <000000>] >>'):
             check('unsupported-'+group,fixture('0 0 18 12 re f',group),reject=True)
     print(f'PDF page groups: {checks} checks passed; {refs} independent comparisons')
 

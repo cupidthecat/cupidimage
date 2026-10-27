@@ -667,6 +667,14 @@
       "sha256": "6ab42438827d98334dacb3e14166a3c6edbfcc1c9b31a2b9690937f2f9878b9e"
     },
     {
+      "path": "assets/pdf/reference/knockout-opacity.pdf",
+      "sha256": "62dc5350d77c6041311f3c713952ee338609f85ecbb5a3557ba1a38f51394518"
+    },
+    {
+      "path": "assets/pdf/reference/knockout-shape.pdf",
+      "sha256": "ca3f2c874be966a053810ad5e3b1f1128c8d09683bdbf40af0361073bb1af9a9"
+    },
+    {
       "path": "assets/pdf/reference/lzw-object-stream.pdf",
       "sha256": "c563e79ca1807773c080c91e3b3732435c9973115545e060a4536e5ebb930053"
     },

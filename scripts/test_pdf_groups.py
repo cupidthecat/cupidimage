@@ -115,7 +115,7 @@ def main():
             resources=tiny_resources+(f' /XObject << /Next {number+1} 0 R >>' if number<9 else '')
             nested[number]=form(program,'/BBox [0 0 18 12] /Group << /S /Transparency >> /Resources << '+resources+' >>')
         check('subnormal-nested-alpha',fixture('/Tiny gs /Next Do',group=nonisolated,attrs='/Resources << '+tiny_resources+' /XObject << /Next 6 0 R >> >>',extra=nested),lambda x,y:white)
-        for group in ('<< /S /Transparency /I true /K true >>','<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I false /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
+        for group in ('<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I false /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
             check('unsupported-or-invalid',fixture(group=group),reject=True)
         check('default-colour-space',fixture(attrs='/Resources << /ColorSpace << /DefaultRGB [/CalRGB << /WhitePoint [1 1 1] >>] >> >>'),reject=True)
         check('group-cycle',fixture('/G Do'),reject=True)

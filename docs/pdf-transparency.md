@@ -2,12 +2,13 @@
 
 Transparency support is incomplete. The renderer handles device-RGB compositing,
 the 16 standard blend modes, image masks, graphics-state soft masks and
-non-knockout RGB/gray transparency Form XObjects. Unsupported group
+RGB/gray transparency Form XObjects. Unsupported group
 configurations are rejected rather than rendered as ordinary opaque forms.
 
 ## Group Form XObjects
 
-A form with Group subtype Transparency and K false renders its members together.
+A form with Group subtype Transparency renders its members together. K selects
+knockout behavior independently of isolation.
 An isolated group (I true) starts on a transparent backdrop. A non-isolated group
 (I false, the default) starts with the parent's accumulated backdrop. On entry, both alpha
 constants reset to 1, the blend mode resets to Normal and the soft mask resets
@@ -37,6 +38,27 @@ Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
 remapping remain unsupported and are rejected for these groups.
 
+## Knockout and shape
+
+K true makes each member blend against the group's initial backdrop rather than
+against previous members. A non-isolated child of a knockout group also inherits
+that initial backdrop. Shape and opacity are tracked separately using the
+compositing equations in ISO 32000-1 section 11.4.8. A zero-opacity object can
+still replace earlier members where its shape is nonzero.
+
+ExtGState AIS chooses whether alpha constants and soft masks contribute to shape
+(true) or opacity (false, the default). It is saved by q/Q and accepts indirect
+boolean values. Image-local soft masks follow AIS; explicit binary and color-key
+image masks constrain intrinsic shape. Nested groups carry their accumulated
+shape even when their resulting alpha is zero.
+
+Tiling and shading caches retain separate double-precision shape and alpha
+planes alongside byte color samples. Fully transparent painted areas no longer
+look like unpainted holes to a containing knockout group. Keeping cache alpha
+unrounded also corrects three analytic pattern expectations by one byte; the
+checked-in assets are unchanged. Group surfaces use 44 bytes per pixel, and
+pattern caches use 20 bytes per pixel plus their descriptors.
+
 ## Displayed page groups
 
 Every displayed page starts as an isolated transparency group, including pages
@@ -47,7 +69,7 @@ Difference on the first object cannot blend against white prematurely.
 
 A page's Group dictionary selects DeviceRGB or DeviceGray, including named and
 indirect spaces. Its I flag does not change display isolation. Group is not
-inherited from the Pages tree. Unsupported group spaces and knockout are rejected,
+inherited from the Pages tree. Unsupported group spaces are rejected,
 including on empty pages. Page attributes are checked before content is rendered.
 The final medium composite ignores the last object's mask, clipping path, alpha
 and blend mode. Page buffers share the transparency-memory budget with nested
@@ -81,11 +103,11 @@ error. Mask evaluation uses the shared function-evaluation and pixel-work budget
 
 ## Limits
 
-- Knockout groups and CMYK, CIE-based or ICC group blending spaces are not implemented.
+- CMYK, CIE-based and ICC group blending spaces are not implemented.
   An omitted I flag uses the supported non-isolated behavior.
-- Overprinting, alpha-as-shape behavior and
-  full text-knockout semantics remain incomplete.
-- Group buffers keep floating-point RGB and accumulated alpha, plus an RGBA8
+- Overprinting and text-knockout semantics remain incomplete. Text objects still
+  need their implicit grouping rules, including multi-operation Type 3 glyphs.
+- Group buffers keep floating-point RGB, accumulated alpha and shape, plus an RGBA8
   mirror for existing raster surfaces. They are not wide-gamut color-managed
   surfaces.
 - Group buffers and retained double-precision soft masks share a 256 MiB limit.
@@ -100,12 +122,13 @@ error. Mask evaluation uses the shared function-evaluation and pixel-work budget
 
 Run:
 
-    make test-pdf-page-groups test-pdf-groups test-pdf-soft-masks
+    make test-pdf-knockout test-pdf-page-groups test-pdf-groups test-pdf-soft-masks
+    python3 scripts/test_pdf_knockout.py bin/test_pdf_pages --reference
     python3 scripts/test_pdf_page_groups.py bin/test_pdf_pages --reference
     python3 scripts/test_pdf_groups.py bin/test_pdf_pages --reference
     python3 scripts/test_pdf_soft_masks.py bin/test_pdf_pages --reference
 
-The suite has 82 cases and 66 optional independent comparisons. It checks opacity
+The suite has 81 cases and 66 optional independent comparisons. It checks opacity
 application, all 16 blend modes at two member opacities, backdrop removal, nested
 groups, transparent backdrops, very small alpha values, strokes, clipping, inherited and
 indirect attributes, text, images, patterns, shading and rejected configurations.
@@ -118,12 +141,21 @@ edge ties so they test compositing rather than differing boundary conventions.
 RGB-to-gray conversion and gray-group composition use analytic expectations
 because the independent renderers use different color-conversion behavior.
 
-The page-group suite has 94 cases and 84 optional independent comparisons.
+The page-group suite has 93 cases and 84 optional independent comparisons.
 It covers all 16 initial blend modes, default and explicit isolation, gray
 blending, indirect resources, empty pages and final-state separation. Gray
 conversion cases use the same analytic-only device conversion noted above.
 Two assets generated by `scripts/generate_pdf_page_group_fixtures.py` check
 initial Screen blending and a gray page with I false.
+
+The knockout suite has 73 exact analytic checks, including all 16 blend modes,
+both isolation modes, AIS, zero-opacity shape, masks, patterns, nested backdrops,
+page groups and transparent strokes. Its 16 optional independent comparisons use
+the secondary rasterizer. Other cases remain analytic-only: the independent
+implementations disagree on knockout color, AIS, zero-opacity members and page K,
+and some intermediate-alpha outputs differ by more than one byte. The comparison
+tolerance remains one RGB unit. Two generated assets distinguish shape from
+opacity; use `scripts/generate_pdf_knockout_fixtures.py` to rebuild them.
 
 The soft-mask suite has 56 checks and 44 optional independent comparisons.
 Five valid cases use analytic expectations only: transfer-output clamping,
@@ -138,7 +170,7 @@ The isolated-opacity asset is generated by
 `scripts/generate_pdf_group_fixture.py`; the non-isolated backdrop asset uses
 `scripts/generate_pdf_nonisolated_fixture.py`. The isolated fixture applies outer
 opacity once to overlapping members; the non-isolated fixture distinguishes
-group alpha from backdrop alpha. The PDF allocation-failure suite has 1,716 checks, including
+group alpha from backdrop alpha. The PDF allocation-failure suite has 1,781 checks, including
 group/mask allocation, transfer functions, malformed content, nesting and
 memory-budget failures. Three additional analytic mask assets are generated by
 `scripts/generate_pdf_soft_mask_fixtures.py`.

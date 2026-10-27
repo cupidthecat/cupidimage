@@ -173,7 +173,7 @@ int main(void) {
         fail_at = 0;
     }
     /* Group buffers are atomic with respect to the parent and unwind at every allocation. */
-    for (unsigned variant = 0; variant < 6; variant++) {
+    for (unsigned variant = 0; variant < 12; variant++) {
         const char *body = variant % 3 == 2 ? "/Inner Do" :
                            variant % 3 == 1 ? "0 0 18 12 re f (unterminated" : "0 0 18 12 re f";
         const char *inner = "0 0 18 12 re f";
@@ -182,8 +182,8 @@ int main(void) {
             "3 0 obj << /Resources << /XObject << /G 5 0 R /Inner 6 0 R >> >> >> endobj\n"
             "5 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group 10 0 R /Length %zu >> stream\n%s\nendstream endobj\n"
             "6 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group 10 0 R /Length %zu >> stream\n%s\nendstream endobj\n"
-            "10 0 obj << /S /Transparency /I 11 0 R /K false /CS /DeviceRGB >> endobj\n"
-            "11 0 obj %s endobj\n", strlen(body), body, strlen(inner), inner, variant >= 3 ? "false" : "true");
+            "10 0 obj << /S /Transparency /I 11 0 R /K %s /CS /DeviceRGB >> endobj\n"
+            "11 0 obj %s endobj\n", strlen(body), body, strlen(inner), inner, variant >= 6 ? "true" : "false", variant % 6 >= 3 ? "false" : "true");
         if (length < 0 || (size_t)length >= sizeof(group_document)) return 1;
         size_t total = 0;
         for (size_t failure = 0; failure <= total; failure++) {

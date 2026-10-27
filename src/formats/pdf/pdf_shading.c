@@ -109,7 +109,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
         if (has_box && (ux<box[0] || ux>=box[2] || uy<box[1] || uy>=box[3])) continue;
         if (background)
             cupidimage_pdf_composite_pixel(st, (int)x, (int)y, background_rgb[0], background_rgb[1],
-                                           background_rgb[2], 1);
+                                           background_rgb[2], 1, 1);
         if (empty)
             continue;
         double input[2]={0}, values[4];
@@ -133,7 +133,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
             for(int c=0;c<3;c++) rgb[c]=cupidimage_pdf_clamp_u8(1-fmin(1,fmax(0,values[c])+black));
         } else for(int c=0;c<3;c++) rgb[c]=cupidimage_pdf_clamp_u8(values[colors.components==1?0:c]);
         cupidimage_pdf_composite_pixel(st, (int)x, (int)y, rgb[0], rgb[1], rgb[2],
-                                       st->gs.fill_alpha);
+                                       st->gs.fill_alpha, st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
     }
     return 1;
 }

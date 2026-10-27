@@ -45,6 +45,7 @@ typedef struct {
 typedef struct pdf_pattern {
     struct pdf_pattern *next;
     cupidimage_image tile;
+    double *shape, *alpha;
     double inverse[6], xstep, ystep;
     int shading, resource_object;
     float initial_ctm[6];
@@ -79,7 +80,7 @@ typedef struct {
     int line_cap, line_join, dash_count;
     double miter_limit, dash_phase, dash[32];
     double fill_alpha, stroke_alpha;
-    int blend_mode;
+    int blend_mode, alpha_is_shape;
     pdf_image_colors fill_space;
     pdf_image_colors stroke_space;
     pdf_clip_mask *clip;
@@ -105,6 +106,7 @@ typedef struct pdf_transparency_group pdf_transparency_group;
 typedef struct {
     cupidimage_image *img;
     pdf_transparency_group *group;
+    double *shape_plane, *alpha_plane;
     const unsigned char *document;
     size_t document_size;
     int page_object;
@@ -142,14 +144,16 @@ typedef struct {
 #define PDF_TRANSPARENCY_MEMORY_LIMIT (256u * 1024u * 1024u)
 struct pdf_transparency_group {
     cupidimage_image image;
-    double *alpha, *color;
+    double *alpha, *color, *shape;
     const pdf_transparency_group *parent;
     const cupidimage_image *backdrop;
-    int isolated, gray;
+    int isolated, gray, knockout;
     size_t bytes;
 };
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel,
-                                const double source[3], double alpha, int blend_mode);
+                                const double source[3], double alpha, double shape, int blend_mode);
+int cupidimage_pdf_dictionary_boolean(const pdf_render_state *st, const pdf_object_view *view,
+                                      const char *key, int *value);
 int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
                                int required, int *gray);
 int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
@@ -185,9 +189,9 @@ int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name,
 
 int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name);
 void cupidimage_pdf_blend_colors(int mode, const double source[3], const double backdrop[3], double result[3]);
-void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const double source[3], double alpha);
+void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const double source[3], double alpha, double shape);
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3], double result[3]);
-void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha);
+void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha, double shape);
 
 int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view,
                               size_t pos, unsigned depth, double *value);
@@ -214,10 +218,10 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
 
 int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int stroke);
 void cupidimage_pdf_patterns_free(pdf_pattern_store *store);
-int cupidimage_pdf_pattern_sample(const pdf_pattern *pattern, double x, double y, uint8_t rgba[4]);
+int cupidimage_pdf_pattern_sample(const pdf_pattern *pattern, double x, double y, uint8_t rgba[4], double *shape, double *alpha);
 int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
                                        const unsigned char *stream, size_t length,
-                                       cupidimage_image *image, double sx, double sy, double ox,
+                                       cupidimage_image *image, double *shape, double sx, double sy, double ox,
                                        double oy, const double bbox[4], int uncolored,
                                        const uint8_t color[3]);
 void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage);
@@ -226,7 +230,7 @@ int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_vie
                                       int background);
 int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view);
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], cupidimage_image *image);
+                                          const double matrix[6], cupidimage_image *image, double *shape);
 
 int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, size_t length,
                             double phase);
