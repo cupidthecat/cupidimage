@@ -38,6 +38,8 @@ int cupidimage_deflate_compress(const uint8_t *data, size_t size,
                                 size_t *outlen);
 
 /* Decode one complete zlib stream, checking its header and Adler-32. */
+int cupidimage_inflate_zlib_prefix(const uint8_t *data, size_t size, uint8_t *out,
+                                   size_t outcap, size_t *outlen, size_t *consumed);
 int cupidimage_inflate_zlib(const uint8_t *data, size_t size, uint8_t *out,
                             size_t outcap, size_t *outlen);
 

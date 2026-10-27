@@ -557,29 +557,42 @@ static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, siz
     return 1;
 }
 
-int cupidimage_inflate_zlib(const uint8_t *data, size_t size, uint8_t *out,
-                            size_t outcap, size_t *outlen) {
-    if (!outlen) return 0;
+int cupidimage_inflate_zlib_prefix(const uint8_t *data, size_t size, uint8_t *out,
+                                   size_t outcap, size_t *outlen, size_t *consumed) {
+    if (!outlen || !consumed) return 0;
     *outlen = 0;
+    *consumed = 0;
     if (!data || (!out && outcap) || size < 6) return 0;
     uint8_t cmf = data[0], flg = data[1];
     if ((cmf & 15) != 8 || (cmf >> 4) > 7 ||
         (((unsigned)cmf << 8) | flg) % 31 || (flg & 32)) return 0;
-    struct bitstream bs = {data + 2, size - 6, 0, 0, 0, 0,
+    struct bitstream bs = {data + 2, size - 2, 0, 0, 0, 0,
                            (size_t)1 << ((cmf >> 4) + 8)};
     size_t produced = 0;
     if (!deflate_decode(&bs, out, outcap, &produced) || bs.failed) return 0;
     bs_align(&bs);
-    if (bs.pos != bs.size) return 0;
+    if (bs.pos > size - 6) return 0;
     uint32_t a = 1, b = 0;
     for (size_t i = 0; i < produced; i++) {
         a = (a + out[i]) % 65521u;
         b = (b + a) % 65521u;
     }
-    const uint8_t *sum = data + size - 4;
+    const uint8_t *sum = data + 2 + bs.pos;
     uint32_t expected = ((uint32_t)sum[0] << 24) | ((uint32_t)sum[1] << 16)
                       | ((uint32_t)sum[2] << 8) | sum[3];
     if (((b << 16) | a) != expected) return 0;
     *outlen = produced;
+    *consumed = bs.pos + 6;
+    return 1;
+}
+
+/* Container decoders retain strict whole-stream validation. Inline PDF images
+   use the prefix form to locate binary data without looking for text tokens. */
+int cupidimage_inflate_zlib(const uint8_t *data, size_t size, uint8_t *out,
+                            size_t outcap, size_t *outlen) {
+    size_t consumed=0;
+    if (!outlen) return 0;
+    int ok=cupidimage_inflate_zlib_prefix(data,size,out,outcap,outlen,&consumed);
+    if (!ok || consumed!=size) { *outlen=0; return 0; }
     return 1;
 }

@@ -125,4 +125,10 @@ int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view
                               size_t pos, unsigned depth, double *value);
 int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name);
 
+
+/* Borrowed image objects and bounded inline-image syntax. */
+int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view);
+int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *data,
+                                     size_t length, size_t *position);
+
 #endif

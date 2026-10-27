@@ -104,9 +104,7 @@ and component count must match the image dictionary. FlateDecode also accepts a
 single-filter array. Non-JPEG images also accept ASCIIHexDecode, ASCII85Decode,
 RunLengthDecode, LZWDecode, CCITTFaxDecode, and chains of these filters with FlateDecode.
 LZW supports both EarlyChange values. Flate/LZW stages accept direct predictor
-dictionaries, including packed and 16-bit TIFF/PNG prediction. Raw RGB JPEG images, ColorTransform 0, JPX,
-inline images
-are outside the supported subset.
+dictionaries, including packed and 16-bit TIFF/PNG prediction. Raw RGB JPEG images, ColorTransform 0, and JPX are outside the supported subset.
 Drawing an invalid or unsupported XObject returns a load error.
 
 Type 1 Form XObjects accept raw streams and the same byte filters as page content. Their Matrix transforms
@@ -343,3 +341,23 @@ budget and stops when the declared allowance is exhausted. Truncated codes,
 out-of-range runs, missing required markers, and unsupported uncompressed
 extension modes return errors. Width is limited to 1,048,576 pixels and decoded
 output to 64 MiB.
+
+## PDF inline images
+
+Content streams accept `BI`/`ID`/`EI` images with full dictionary keys or the
+standard inline abbreviations. Supported data boundaries are raw sample length,
+ASCIIHex, ASCII85, RunLength, Flate, and JPEG. A recognized outer filter can
+wrap other supported byte filters, such as ASCIIHex around LZW or fax data.
+Direct LZW and fax inline boundaries remain unsupported and return a load error.
+
+Raw samples use their dimensions and bit depth to locate the end. Flate uses
+its final block and checksum; JPEG uses segment lengths and entropy escapes.
+Text resembling `EI`, `endstream`, or `endobj` inside pixels or compressed
+payloads does not terminate the image. Missing or unmatched delimiters fail.
+
+Inline images reuse XObject sample decoding, palettes, stencils, clipping,
+transforms and compositing. Device and named resource colour spaces are
+supported, as are Indexed palettes and Decode arrays. Dictionary parsing is
+limited to 64 KiB, 128 entries and 16 nested containers; image data is bounded
+at 64 MiB. Unknown inline keys are ignored as required by ISO 32000-1 section
+8.9.7. This does not add image interpolation or the remaining colour spaces.

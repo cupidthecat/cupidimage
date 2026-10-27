@@ -220,3 +220,20 @@ embedded fax images match an independent decoder at every visible source pixel,
 covering all three `K` modes with both termination settings. The full rendered
 page still differs in 1.585% of RGB channels from the comparison raster. It
 remains a visual difference, not a corpus pixel pass.
+
+## Inline image boundaries
+
+`pdf_inline.c` parses inline dictionaries separately from ordinary content
+operators, expands standard abbreviations and passes a borrowed image view to
+the shared renderer. Raw, ASCIIHex, ASCII85, RunLength, Flate and JPEG boundaries
+are parsed from the encoding rather than guessed from an `EI` byte sequence.
+The DEFLATE prefix reader reports the checksum boundary; existing whole-stream
+callers still reject trailing bytes.
+
+The inline suite has 134 checks covering packed/16-bit samples, predictors,
+filter chains, stencils, palettes, named resources and cycles, transforms,
+clipping, forms, embedded marker-like bytes, malformed syntax and continued
+content after `EI`. Ten selected cases also pass an optional independent
+raster comparison within one channel value. The DEFLATE suite adds 60 prefix
+and trailer checks to its 307 existing cases. Direct LZW and fax inline images
+still need encoding-aware boundary readers.

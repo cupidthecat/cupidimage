@@ -10,6 +10,7 @@
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
+#include "../src/formats/pdf/pdf_inline.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_functions.c"
@@ -35,6 +36,9 @@ int main(void) {
         {"/Sampled sh", 1},
         {"/Broken sh", 0},
         {"/Calculator sh", 1},
+        { "18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G ID x EI", 1},
+        { "18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G /F /AHx ID ff> EI", 1},
+        { "BI /W 1 /H 1 /BPC 8 /CS /G ID x EIx", 0},
         {"/BadCalculator sh", 0}
     };
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";

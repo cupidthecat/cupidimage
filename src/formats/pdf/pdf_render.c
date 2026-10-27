@@ -1448,6 +1448,20 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
             }
             memcpy(opbuf, &stream[start], tok_len);
             opbuf[tok_len] = '\0';
+            if (!strcmp(opbuf, "BI")) {
+                int ok = op_count == 0 && cupidimage_pdf_draw_inline_image(st, stream, stream_len, &pos);
+                pdf_clear_operands(ops, &op_count);
+                if (!ok) {
+                    cupidimage_set_err(err, errcap, "pdf: invalid or unsupported inline image");
+                    return 0;
+                }
+                continue;
+            }
+            if (!strcmp(opbuf, "ID") || !strcmp(opbuf, "EI")) {
+                pdf_clear_operands(ops, &op_count);
+                cupidimage_set_err(err, errcap, "pdf: unmatched inline image delimiter");
+                return 0;
+            }
             pdf_execute_operator(st, opbuf, ops, &op_count);
             if (st->image_failed) return 0;
             continue;

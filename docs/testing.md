@@ -186,3 +186,12 @@ To regenerate this authored fixture set with Pillow's TIFF encoder, run
 `python3 scripts/test_pdf_ccitt.py --generate`. Review the fixture diff before
 committing it. Patterns include solid rows, stripes, alternating pixels, random
 bits, non-byte-aligned widths, and long makeup runs.
+
+## Inline PDF images
+
+`make test-pdf-inline` compares inline images with equivalent image XObjects
+and checks malformed input handling. The normal run has no extra dependencies.
+For the ten optional independent raster checks, run
+`python3 scripts/test_pdf_inline.py bin/test_pdf_pages --reference` with PyMuPDF
+installed. The whole-stream DEFLATE tests remain strict about trailing data;
+separate prefix tests check the byte count returned for inline Flate streams.

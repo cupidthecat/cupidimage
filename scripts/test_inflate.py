@@ -108,3 +108,22 @@ with tempfile.TemporaryDirectory(prefix='cupidimage-inflate-') as directory:
     for _ in range(2): bits.put(1, 1); bits.put(127, 7)
     check('code-length repeat overrun', wrap(bits.bytes(), b''), None)
 print(f'DEFLATE conformance: {checks} checks passed')
+
+# Prefix decoding reports the checksum boundary, while the strict entry point
+# continues rejecting trailing content. Lookahead must not consume PDF tokens.
+with tempfile.TemporaryDirectory(prefix='cupidimage-inflate-prefix-') as directory:
+    path=pathlib.Path(directory)/'prefix.zlib'
+    for level in (0,1,6,9):
+        for raw in (b'', b' EI Q endstream ', bytes(range(256))*32):
+            encoded=zlib.compress(raw,level)
+            for tail in (b'',b' EI q ',b'\x00\xff\x00'):
+                path.write_bytes(encoded+tail)
+                result=subprocess.run([binary,str(path),str(len(raw)), 'prefix'],capture_output=True)
+                assert result.returncode==0 and result.stdout==raw and int(result.stderr)==len(encoded)
+                checks+=1
+            for bad in (encoded[:-1],encoded[:-1]+bytes([encoded[-1]^1])):
+                path.write_bytes(bad+b' EI ')
+                result=subprocess.run([binary,str(path),str(len(raw)), 'prefix'],capture_output=True)
+                assert result.returncode==1,(level,len(raw),result.returncode)
+                checks+=1
+print(f'DEFLATE including prefix boundaries: {checks} checks passed')

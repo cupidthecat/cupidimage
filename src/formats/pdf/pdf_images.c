@@ -331,20 +331,14 @@ static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double 
     return mask->soft ? alpha : 1-alpha;
 }
 
-int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
-    pdf_object_view image = {0};
+int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view) {
+    pdf_object_view image = *view;
+    image.owned = NULL; /* The caller retains the dictionary and stream. */
     unsigned char *samples = NULL;
     pdf_image_mask mask = {0};
     pdf_image_colors colors = {0};
-    int object, width, height, bits, components, ok = 0;
+    int width, height, bits, components, ok = 0;
     size_t pos;
-    if (!pdf_image_object(st, name, &object) ||
-        !cupidimage_pdf_get_object_content(st->document, st->document_size, object, &image)) goto done;
-    if (cupidimage_pdf_image_name_is(&image, "Subtype", "Form")) {
-        ok = cupidimage_pdf_draw_form(st, object, &image);
-        cupidimage_pdf_object_view_release(&image);
-        return ok;
-    }
     if (!cupidimage_pdf_image_name_is(&image, "Subtype", "Image")) goto done;
     int stencil = 0;
     if (cupidimage_pdf_page_value(&image, "ImageMask", &pos)) {
@@ -471,3 +465,18 @@ done:
     return ok;
 }
 
+
+int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
+    pdf_object_view image = {0};
+    int object, ok = 0;
+    if (pdf_image_object(st, name, &object) &&
+        cupidimage_pdf_get_object_content(st->document, st->document_size, object, &image)) {
+        if (cupidimage_pdf_image_name_is(&image, "Subtype", "Form"))
+            ok = cupidimage_pdf_draw_form(st, object, &image);
+        else ok = cupidimage_pdf_draw_image_view(st, &image);
+    }
+    cupidimage_pdf_object_view_release(&image);
+    if (!ok && st->error && st->error_capacity && !st->error[0])
+        cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid image XObject");
+    return ok;
+}
