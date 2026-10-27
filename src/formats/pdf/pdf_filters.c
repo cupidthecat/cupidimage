@@ -1,5 +1,7 @@
 #include "pdf_internal.h"
 #include <stdint.h>
+#include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -100,17 +102,150 @@ static int pdf_filter_runlength(const unsigned char *data, size_t length, pdf_fi
     return 0;
 }
 
+typedef struct {
+    int predictor, colors, columns, bits, early;
+} pdf_filter_params;
+
+static int pdf_filter_lzw(const unsigned char *data, size_t length, int early, pdf_filter_buffer *out) {
+    uint16_t prefix[4096];
+    unsigned char suffix[4096], reverse[4096], phrase[4096];
+    unsigned width = 9, next = 258, buffered = 0;
+    uint32_t bits = 0;
+    size_t pos = 0;
+    int previous = -1;
+    unsigned char first = 0;
+    for (;;) {
+        while (buffered < width) {
+            if (pos == length) return 0;
+            bits = (bits << 8) | data[pos++]; buffered += 8;
+        }
+        buffered -= width;
+        unsigned code = (bits >> buffered) & ((1u << width)-1u);
+        if (code == 256) { width = 9; next = 258; previous = -1; continue; }
+        if (code == 257) return 1;
+        unsigned current = code;
+        size_t used = 0;
+        if (code >= next) {
+            if (code != next || previous < 0) return 0;
+            reverse[used++] = first;
+            current = (unsigned)previous;
+        }
+        while (current >= 256) {
+            if (current < 258 || current >= next || used == sizeof(reverse)) return 0;
+            reverse[used++] = suffix[current]; current = prefix[current];
+        }
+        if (used == sizeof(reverse)) return 0;
+        first = (unsigned char)current; reverse[used++] = first;
+        for (size_t i = 0; i < used; i++) phrase[i] = reverse[used-1-i];
+        if (!pdf_filter_append(out, phrase, used)) return 0;
+        if (previous >= 0 && next < 4096) {
+            prefix[next] = (uint16_t)previous; suffix[next++] = first;
+            if (width < 12 && next == (1u << width)-(unsigned)early) width++;
+        }
+        previous = (int)code;
+    }
+}
+
+static uint32_t pdf_filter_sample(const unsigned char *row, size_t sample, unsigned bits) {
+    if (bits == 16) return (uint32_t)row[sample*2] * 256 + row[sample*2+1];
+    size_t bit = sample * bits;
+    return (row[bit/8] >> (8-bits-(bit%8))) & ((1u << bits)-1);
+}
+
+static void pdf_filter_store(unsigned char *row, size_t sample, unsigned bits, uint32_t value) {
+    if (bits == 16) { row[sample*2] = (unsigned char)(value >> 8); row[sample*2+1] = (unsigned char)value; return; }
+    size_t bit = sample * bits;
+    unsigned shift = 8-bits-(unsigned)(bit%8), mask = ((1u << bits)-1) << shift;
+    row[bit/8] = (unsigned char)((row[bit/8] & ~mask) | ((value << shift) & mask));
+}
+
+static int pdf_filter_predict(pdf_filter_buffer *out, const pdf_filter_params *params) {
+    if (params->predictor == 1) return 1;
+    if (params->predictor != 2 && (params->predictor < 10 || params->predictor > 15)) return 0;
+    if (params->colors < 1 || params->columns < 1 ||
+        (params->bits != 1 && params->bits != 2 && params->bits != 4 && params->bits != 8 && params->bits != 16)) return 0;
+    uint64_t samples64 = (uint64_t)params->colors * (unsigned)params->columns;
+    if (samples64 > (uint64_t)PDF_FILTER_LIMIT * 8 / (unsigned)params->bits) return 0;
+    uint64_t row64 = (samples64 * (unsigned)params->bits + 7) / 8;
+    if (row64 > PDF_FILTER_LIMIT) return 0;
+    size_t row = (size_t)row64, samples = (size_t)samples64;
+    size_t stride = row + (params->predictor >= 10);
+    if (out->used % stride) return 0;
+    size_t rows = out->used / stride;
+    size_t bpp = ((size_t)params->colors * params->bits + 7) / 8;
+    for (size_t y = 0; y < rows; y++) {
+        unsigned char *scan = out->data + y * stride;
+        if (params->predictor == 2) {
+            for (size_t i = (size_t)params->colors; i < samples; i++) {
+                uint32_t value = pdf_filter_sample(scan, i, (unsigned)params->bits) +
+                                 pdf_filter_sample(scan, i-params->colors, (unsigned)params->bits);
+                pdf_filter_store(scan, i, (unsigned)params->bits, value);
+            }
+        } else {
+            unsigned filter = *scan++;
+            if (filter > 4) return 0;
+            for (size_t x = 0; x < row; x++) {
+                int a = x >= bpp ? scan[x-bpp] : 0;
+                int b = y ? out->data[(y-1)*row+x] : 0;
+                int c = y && x >= bpp ? out->data[(y-1)*row+x-bpp] : 0;
+                int prediction = 0;
+                if (filter == 1) prediction = a;
+                else if (filter == 2) prediction = b;
+                else if (filter == 3) prediction = (a+b)/2;
+                else if (filter == 4) {
+                    int p = a+b-c, da = abs(p-a), db = abs(p-b), dc = abs(p-c);
+                    prediction = da <= db && da <= dc ? a : db <= dc ? b : c;
+                }
+                scan[x] = (unsigned char)(scan[x] + prediction);
+            }
+        }
+        memmove(out->data+y*row, scan, row);
+    }
+    out->used = rows*row;
+    return 1;
+}
+
 static int pdf_filter_null(const pdf_object_view *view, size_t *pos) {
     if (view->len - *pos < 4 || memcmp(view->data + *pos, "null", 4)) return 0;
     *pos += 4;
     return *pos == view->len || cupidimage_pdf_is_ws(view->data[*pos]) || cupidimage_pdf_is_delim(view->data[*pos]);
 }
 
-/* Non-default predictors are handled by the sampled-image decoder. This path
- * accepts only null parameters, rather than silently ignoring a predictor. */
+/* Direct parameter dictionaries contain integer filter controls. Indirect
+ * parameter objects are still handled only by the single-Flate image path. */
+static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos, pdf_filter_params *params) {
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+    if (pdf_filter_null(view, pos)) return 1;
+    if (view->len-*pos < 2 || memcmp(view->data+*pos, "<<", 2)) return 0;
+    *pos += 2;
+    for (;;) {
+        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+        if (view->len-*pos >= 2 && !memcmp(view->data+*pos, ">>", 2)) { *pos += 2; return 1; }
+        if (*pos == view->len || view->data[(*pos)++] != '/') return 0;
+        size_t start = *pos;
+        while (*pos < view->len && !cupidimage_pdf_is_ws(view->data[*pos]) && !cupidimage_pdf_is_delim(view->data[*pos])) (*pos)++;
+        size_t n = *pos-start;
+        int *value = NULL;
+        if (n == 9 && !memcmp(view->data+start, "Predictor", n)) value = &params->predictor;
+        else if (n == 6 && !memcmp(view->data+start, "Colors", n)) value = &params->colors;
+        else if (n == 7 && !memcmp(view->data+start, "Columns", n)) value = &params->columns;
+        else if (n == 16 && !memcmp(view->data+start, "BitsPerComponent", n)) value = &params->bits;
+        else if (n == 11 && !memcmp(view->data+start, "EarlyChange", n)) value = &params->early;
+        if (!value) return 0;
+        double number;
+        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+        if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &number) ||
+            number < 0 || number > INT_MAX || floor(number) != number ||
+            (*pos < view->len && !cupidimage_pdf_is_ws(view->data[*pos]) && !cupidimage_pdf_is_delim(view->data[*pos]))) return 0;
+        *value = (int)number;
+    }
+}
+
 int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned char *data,
                                 size_t length, unsigned char **decoded, size_t *decoded_length) {
     char filters[8][32];
+    pdf_filter_params params[8];
+    for (int i = 0; i < 8; i++) params[i] = (pdf_filter_params){1, 1, 1, 8, 1};
     int count = 0;
     size_t pos;
     *decoded = NULL; *decoded_length = 0;
@@ -130,13 +265,16 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
         }
     }
     if (cupidimage_pdf_page_value(view, "DecodeParms", &pos) && !pdf_filter_null(view, &pos)) {
-        if (pos == view->len || view->data[pos++] != '[') return 0;
+        int array = pos < view->len && view->data[pos] == '[';
+        if (array) pos++;
+        else if (count != 1) return 0;
         for (int i = 0; i < count; i++) {
-            cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-            if (!pdf_filter_null(view, &pos)) return 0;
+            if (!pdf_filter_parameters(view, &pos, &params[i])) return 0;
         }
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-        if (pos == view->len || view->data[pos] != ']') return 0;
+        if (array) {
+            cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
+            if (pos == view->len || view->data[pos] != ']') return 0;
+        }
     }
     unsigned char *owned = NULL;
     for (int i = 0; i < count; i++) {
@@ -145,9 +283,14 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
         int ok = 0;
         if (!strcmp(name, "FlateDecode") || !strcmp(name, "Fl"))
             ok = cupidimage_pdf_inflate_auto(data, length, &out.data, &out.used);
+        else if (!strcmp(name, "LZWDecode") || !strcmp(name, "LZW"))
+            ok = (params[i].early == 0 || params[i].early == 1) && pdf_filter_lzw(data, length, params[i].early, &out);
         else if (!strcmp(name, "ASCIIHexDecode") || !strcmp(name, "AHx")) ok = pdf_filter_hex(data, length, &out);
         else if (!strcmp(name, "ASCII85Decode") || !strcmp(name, "A85")) ok = pdf_filter_ascii85(data, length, &out);
         else if (!strcmp(name, "RunLengthDecode") || !strcmp(name, "RL")) ok = pdf_filter_runlength(data, length, &out);
+        if (ok && (!strcmp(name, "FlateDecode") || !strcmp(name, "Fl") ||
+                   !strcmp(name, "LZWDecode") || !strcmp(name, "LZW"))) ok = pdf_filter_predict(&out, &params[i]);
+        else if (ok && params[i].predictor != 1) ok = 0;
         free(owned);
         if (!ok) { free(out.data); return 0; }
         owned = out.data; data = owned; length = out.used;

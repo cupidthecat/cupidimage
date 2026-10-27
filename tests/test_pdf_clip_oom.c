@@ -30,9 +30,9 @@ int main(void) {
         "5 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] /Length %zu >>\n"
         "stream\n%s\nendstream\nendobj\n"
         "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB "
-        "/BitsPerComponent 8 /SMask 7 0 R /Length 3 >> stream\nRGB\nendstream endobj\n"
+        "/BitsPerComponent 8 /SMask 7 0 R /Filter /ASCIIHexDecode /Length 7 >> stream\n524742>\nendstream endobj\n"
         "7 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray "
-        "/BitsPerComponent 8 /Matte [1 1 1] /Length 1 >> stream\nM\nendstream endobj\n", strlen(form_content), form_content);
+        "/BitsPerComponent 8 /Matte [1 1 1] /Filter /ASCIIHexDecode /Length 3 >> stream\n4D>\nendstream endobj\n", strlen(form_content), form_content);
     size_t checks = 0, failures = 0;
     for (size_t fixture = 0; fixture < sizeof(fixtures) / sizeof(fixtures[0]); fixture++) {
         size_t total = 0;

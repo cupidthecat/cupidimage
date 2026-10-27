@@ -177,10 +177,12 @@ or image interpolation. A successful real-document decode is not a visual pass.
 ## Stream filter coverage
 
 Page content, forms, and sampled images share bounded ASCIIHex, ASCII85,
-RunLength, and Flate byte decoding. Filter arrays apply each stage in order.
+RunLength, LZW, and Flate byte decoding. Filter arrays apply each stage in order.
 Tests cover ASCII85 partial tuples and overflow, run-length literal and repeat
 boundaries, missing terminators, invalid chains, and the decoded-size limit.
 The rules come from ISO 32000-1 sections 7.4.2 through 7.4.5.
-General filter chains currently require null DecodeParms; image predictor
-parameters still use the single-Flate path. LZW and specialized image filters
-remain separate work.
+Direct DecodeParms dictionaries and aligned parameter arrays support Flate/LZW
+prediction. LZW tests cover both EarlyChange values, all code widths, table
+saturation, resets, and the next-code special case. Chained predictor tests cover
+1/2/4/8/16-bit gray, RGB, and CMYK samples. Specialized image filters and indirect
+parameter objects in general chains remain separate work.

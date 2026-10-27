@@ -70,7 +70,7 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 
 ## PDF
 
-basic text, raw, FlateDecode, ASCIIHexDecode, ASCII85Decode, and RunLengthDecode page streams, gray/RGB/CMYK paint, line and cubic Bezier paths,
+basic text, raw, FlateDecode, ASCIIHexDecode, ASCII85Decode, RunLengthDecode, and LZWDecode page streams, gray/RGB/CMYK paint, line and cubic Bezier paths,
 nonzero/even-odd fills, and path clipping. Text uses built-in bitmap glyphs. Image XObjects
 support 1/2/4/8/16-bit DeviceRGB, DeviceGray, and DeviceCMYK samples in raw or
 FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
@@ -102,8 +102,9 @@ JPEG images support DCTDecode as a name or a single-filter array, including
 ColorTransform 1 and Decode array inversion. Their frame dimensions, bit depth,
 and component count must match the image dictionary. FlateDecode also accepts a
 single-filter array. Non-JPEG images also accept ASCIIHexDecode, ASCII85Decode,
-RunLengthDecode, and chains of these byte filters with FlateDecode, without
-predictor parameters. Raw RGB JPEG images, ColorTransform 0, JPX,
+RunLengthDecode, LZWDecode, and chains of these byte filters with FlateDecode.
+LZW supports both EarlyChange values. Flate/LZW stages accept direct predictor
+dictionaries, including packed and 16-bit TIFF/PNG prediction. Raw RGB JPEG images, ColorTransform 0, JPX,
 indexed color and inline images
 are outside the supported subset.
 Drawing an invalid or unsupported XObject returns a load error.
@@ -161,11 +162,13 @@ Run the generated image checks with Python 3:
 
 
 Page and form content accept FlateDecode (`Fl`), ASCIIHexDecode (`AHx`),
-ASCII85Decode (`A85`), and RunLengthDecode (`RL`). Filter arrays decode in order,
+ASCII85Decode (`A85`), RunLengthDecode (`RL`), and LZWDecode (`LZW`). Filter arrays decode in order,
 with at most eight stages and 64 MiB of output per stage. Unknown filters,
-truncated encodings, invalid ASCII85 tuples, and non-null DecodeParms are rejected.
-Predictor dictionaries remain supported on the existing single-Flate image path,
-not on the general byte-filter path. Combined page content is limited to 64 MiB.
+truncated encodings, and invalid ASCII85 tuples are rejected. DecodeParms may be
+null, a direct dictionary for one filter, or an array aligned with the filter
+array. Direct Flate/LZW dictionaries accept Predictor, Colors, Columns,
+BitsPerComponent, and EarlyChange. Indirect DecodeParms objects remain supported
+only by the single-Flate image path. Combined page content is limited to 64 MiB.
 
 ## Packed image samples and masks
 

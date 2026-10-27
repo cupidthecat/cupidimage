@@ -6,6 +6,7 @@ from pathlib import Path
 import zlib
 from test_pdf_images import fixture, image_stream
 from test_pdf_packed_images import encode, pack
+from test_pdf_lzw import literals
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
@@ -51,5 +52,15 @@ save('explicit-image-mask.pdf', bytes((0, 255, 0)),
      '/Width 1 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceRGB /Mask 8 0 R',
      lambda x, y: (0, 255, 0) if x//12 == y//8 else (128, 128, 128),
      extra={8: image_stream(b'\x40\x80', '/Width 2 /Height 2 /ImageMask true')})
-(ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, Decode rules, and stencil, color-key, explicit, and soft masks.','cases':rows},indent=2)+'\n')
+rows_rgb = [[255, 0, 0, 0, 255, 0, 0, 0, 255], [0, 255, 255, 255, 0, 255, 255, 255, 0]]
+predicted = encode(rows_rgb, 3, 8, 15)
+params = '<< /Predictor 15 /Colors 3 /Columns 3 /BitsPerComponent 8 >>'
+image_attrs = '/Width 3 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceRGB'
+save('lzw-predictor.pdf', literals(predicted, 1),
+     image_attrs + ' /Filter /LZWDecode /DecodeParms ' + params,
+     lambda x, y: colors[(y//8)*3+x//8])
+save('ascii85-flate-predictor.pdf', base64.a85encode(zlib.compress(predicted)) + b'~>',
+     image_attrs + ' /Filter [/ASCII85Decode /FlateDecode] /DecodeParms [null '+params+']',
+     lambda x, y: colors[(y//8)*3+x//8])
+(ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, and soft masks.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

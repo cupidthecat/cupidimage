@@ -543,6 +543,10 @@
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92"
     },
     {
+      "path": "assets/pdf/reference/ascii85-flate-predictor.pdf",
+      "sha256": "612a11950ea1e7571a4549407ab2c98af33be629611839a1958dac302f89a160"
+    },
+    {
       "path": "assets/pdf/reference/color-key-mask.pdf",
       "sha256": "882e494b107ead819956d7a0aa9048c13d3e9ecd3b4d11a38e496587f54dc989"
     },
@@ -561,6 +565,10 @@
     {
       "path": "assets/pdf/reference/indirect-flate-length.pdf",
       "sha256": "28d1418811c6fcd48d3f0bf5f692b95c837ad7f57b995d17f4bf69779a5da1ab"
+    },
+    {
+      "path": "assets/pdf/reference/lzw-predictor.pdf",
+      "sha256": "509371ebde953f97c637da49299f9569f0324065c3fa187901c64b7b9f888802"
     },
     {
       "path": "assets/pdf/reference/marked-content-properties.pdf",
