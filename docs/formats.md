@@ -251,8 +251,9 @@ These maps choose characters for the existing bitmap fallback. Embedded font
 glyph selection follows the font encoding instead; complete PDF CMap semantics
 remain open. Simple-font Widths
 and MissingWidth entries now control advances; fonts without supported metrics
-retain the approximate fallback advances. Invalid font metadata retains that fallback rather than a partially
-parsed character map. `make test-pdf-font-maps` checks those boundaries.
+retain the approximate fallback advances. Invalid outline metadata retains that
+fallback rather than a partially parsed font. An invalid ToUnicode map alone
+does not discard valid outlines, Type 3 programs or CID metrics. `make test-pdf-font-maps` checks those boundaries.
 
 Character maps are limited to 65,536 entries per font and 256 fonts per resource
 scope. Oversized ranges and allocation failures discard the metadata instead of
@@ -375,7 +376,7 @@ Text matrices themselves are not saved by `q`/`Q`.
 All eight `Tr` modes apply to the current fallback glyph shapes: fill, stroke,
 fill/stroke, invisible, and their clipping variants. Clipping accumulates the
 nonzero winding of nonempty bitmap glyph outlines and intersects the graphics clip at `ET`.
-Showing only spaces leaves the existing clip unchanged. Invisible
+Showing only spaces in a clipping text mode produces an empty text clip. Invisible
 text still advances. Newline bytes inside strings are character codes, not line
 positioning commands. Word spacing applies only to a single-byte code 32,
 regardless of its Unicode mapping.
@@ -383,9 +384,11 @@ regardless of its Unicode mapping.
 Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
-described below. Complete standard-font metrics and embedded
-Hinting, custom Type 1 procedures and complete font fidelity remain separate work. Malformed font metadata still uses the
-existing fallback policy. Bitmap glyph shapes are not equivalent to actual
+described below. The standard 14 Type 1 fonts use pinned Adobe metrics when
+PDF widths are absent, with bundled CFF substitute outlines. Extended substitute
+glyph coverage, hinting, custom Type 1 procedures and complete font fidelity
+remain separate work. Malformed glyph metadata still uses the existing
+fallback policy; invalid ToUnicode metadata is isolated from valid glyph data. Bitmap glyph shapes are not equivalent to actual
 font outlines.
 
 Text clipping uses the page's bounded clipping allocations and work budget.

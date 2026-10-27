@@ -13,12 +13,16 @@
 #include "../src/formats/pdf/fonts/type1_charstring.c"
 #include "../src/formats/pdf/fonts/cmap.c"
 #include "../src/formats/pdf/fonts/encoding.c"
+#include "../src/formats/pdf/fonts/standard.c"
+#include "../src/formats/pdf/fonts/standard_outlines.c"
 #include "../src/formats/pdf/fonts/truetype.c"
 #include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_cid.c"
+#include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_program.c"
+#include "../src/formats/pdf/pdf_standard_font.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
@@ -331,7 +335,7 @@ int main(void) {
         }
         fail_at = 0;
     }
-    for (unsigned kind = 0; kind < 3; kind++) {
+    for (unsigned kind = 0; kind < 5; kind++) {
         const unsigned char *font_data = kind == 2 ? test_type1_font : kind ? test_cff_font : test_truetype_font;
         size_t font_size = kind == 2 ? sizeof(test_type1_font) : kind ? sizeof(test_cff_font) : sizeof(test_truetype_font);
         char attributes[128] = "";
@@ -351,6 +355,11 @@ int main(void) {
                                font_data[i]);
         length +=
             snprintf(document + length, sizeof(document) - (size_t)length, ">\nendstream endobj\n");
+        if (kind >= 3)
+            length = snprintf(document, sizeof(document),
+                "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n"
+                "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /%s >> endobj\n",
+                kind == 3 ? "Helvetica" : "Symbol");
         for (int mode = 0; mode < 8; mode++) {
             size_t total = 0;
             for (size_t failure = 0; failure <= total; failure++) {

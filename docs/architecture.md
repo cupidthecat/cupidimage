@@ -37,7 +37,10 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   coverage and text clipping. `fonts/cff.c` reads compact font data, and
   `fonts/type2.c` interprets its bounded charstrings. `fonts/type1.c` reads and
   decrypts Type 1 programs; `fonts/type1_charstring.c` interprets their outlines
-  and standard subroutine operations.
+  and standard subroutine operations. Shared simple-font encoding resolution
+  lives in `pdf_font_encoding.c`; `pdf_standard_font.c` applies the immutable
+  standard-font metrics from `fonts/standard.c` and CFF substitutes from
+  `fonts/standard_outlines.c`.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;

@@ -23,3 +23,7 @@ assets/** -text
 
 # Retain upstream license text verbatim, including its original spacing.
 assets/pdf/pdfjs/LICENSE-DEJAVU.txt -whitespace
+
+# Preserve the original Adobe font metrics and license spacing.
+third_party/adobe-core14/*.afm -text -whitespace
+third_party/adobe-core14/readme.txt -text -whitespace

@@ -210,6 +210,13 @@
       "height": 16,
       "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/standard-font-metrics.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
     }
   ]
 }

@@ -568,7 +568,20 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
                  pdf_parse_font_widths(data, size, &font_view, font) &&
                  cupidimage_pdf_parse_font_program(data, size, &font_view, font,
                                                     &table->program_bytes) &&
-                 pdf_parse_font_tounicode(data, size, &font_view, font, err, errcap);
+                 cupidimage_pdf_parse_standard_font(data, size, &font_view, font, &table->program_bytes);
+        if (ok) {
+            /* Extraction metadata must not discard a valid glyph program or CID metrics. */
+            int independent = font->program || font->type3 || font->cid;
+            ok = pdf_parse_font_tounicode(data, size, &font_view, font,
+                                         independent ? NULL : err, independent ? 0 : errcap);
+            if (!ok && independent) {
+                free(font->entries);
+                font->entries = NULL;
+                font->count = font->cap = 0;
+                font->max_src_len = 1;
+                ok = 1;
+            }
+        }
         cupidimage_pdf_object_view_release(&font_view);
         if (!ok) return 0;
     }

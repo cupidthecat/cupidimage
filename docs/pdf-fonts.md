@@ -22,7 +22,34 @@ available.
 
 The distinction matters: changing a ToUnicode entry must not silently replace a
 TrueType glyph with a different outline. The tests cover that case, including a
-malformed multibyte ToUnicode entry attached to a single-byte font.
+malformed multibyte ToUnicode entry attached to a single-byte font. An invalid
+ToUnicode object, filter or map is discarded without discarding an otherwise
+valid outline program, Type 3 font or CID metrics. Partial Unicode mappings
+are cleared on failure. Named encodings cannot read Differences from unrelated
+dictionaries later in the font object.
+
+## Standard 14 fonts
+
+Nonembedded Type 1 fonts with one of the 14 canonical PDF font names use the
+original Adobe AFM widths. The built-in encodings include Symbol and
+ZapfDingbats. Explicit base encodings and Differences select named metrics;
+undefined names have zero advance. Explicit PDF Widths and MissingWidth still
+take precedence. No kerning pairs or automatic ligatures are applied.
+
+These simple fonts consume one byte per character, even when a malformed
+ToUnicode map describes longer codes. ToUnicode cannot change their advances.
+Their outlines come from bundled, BSD-licensed CFF substitutes, not the bitmap
+fallback. Symbol and ZapfDingbats cover all named glyphs in the pinned AFMs.
+Each Courier face omits 84 extended AFM names; each Helvetica/Times face omits
+86. Those missing names use the substitute's .notdef glyph while retaining the
+specified advance. There is no claim that these substitute shapes are identical
+to every platform's font choice. Hinting remains unimplemented.
+
+The pinned AFMs, original license, provenance and per-file hashes are in
+`third_party/adobe-core14`. The generated tables require no installed fonts or
+runtime filesystem access. Substitute programs and their original notices are
+pinned under `third_party/standard-fonts`; their generated representation keeps
+the original font bytes unchanged.
 
 ## Embedded encoding CMaps
 
@@ -164,7 +191,7 @@ rather than quietly dropping that glyph.
 - CFF2, synthetic/multiple-master fonts, custom Type 1 procedures and variable-font data.
 - Complete post-table name variants and the remaining cmap forms.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- Complete standard-font metrics and faithful outlines when fonts are not embedded.
+- Extended glyph coverage in the standard-font substitutes and general substitution for other nonembedded fonts.
 
 These gaps can still change glyph shape, pixel phase or text coverage. Successful
 loading is not enough to mark a font or document correct.
@@ -198,8 +225,28 @@ OpenType wrapping. Twenty-four optional independent comparisons use:
 The clip-only comparison uses a second rasterizer because the first applies a
 different boundary rule. The cubic arch also has an analytic per-pixel test.
 The optional font-fixture regeneration script uses FontTools; ordinary tests do
-not require it. The PDF allocation-failure suite has 750 checks, including
+not require it. The PDF allocation-failure suite has 1,050 checks, including
 CFF font dictionaries, outlines and composite cleanup.
+
+`make test-pdf-standard-fonts` verifies all 14 metric/encoding resources
+(7,756 data correspondences), rejects five unknown font names, checks 14
+metadata/budget boundaries, and runs 56
+positioning tests. Optional independent comparisons use:
+
+    python3 scripts/test_pdf_standard_fonts.py bin/test_pdf_pages --reference
+
+The standard-font text is invisible; an embedded geometric glyph marks the
+resulting text position. Expected markers lie on the pixel grid so edge
+rasterization rules do not obscure metric errors. These comparisons verify
+advances, not substitute outlines. Another 186 tests compare the bundled fonts
+with identical embedded programs across text modes, transforms, encoding
+overrides and ToUnicode changes. All 3,210 bundled glyphs decode in regular tests.
+An optional independent outline/advance comparison requires FontTools:
+
+    python3 scripts/compare_pdf_standard_outlines.py bin/test_pdf_standard
+
+This checks the actual Type 2 paths before rasterization. It does not treat
+unhinted raster output as identical to a hinted font rasterizer.
 
 `make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 29
 rendering checks. Nineteen selected raster comparisons run with:
@@ -238,6 +285,11 @@ must accompany binary distributions. The 59 predefined CMaps are pinned under
 `third_party/adobe-cmaps`, with their original BSD notices and per-file hashes.
 Base encoding tables follow ISO 32000-1
 Annex D.2, including its duplicate-space, soft-hyphen and currency rules.
+
+Two selected cached pages were also compared with independent rasters. Different
+color-channel fractions fell from 0.135% to 0.119% and from 5.288% to 2.795%.
+The second page exposed invalid ToUnicode metadata discarding valid outlines;
+that recovery path now has regression coverage. Neither page is an exact match.
 
 ## Standards
 

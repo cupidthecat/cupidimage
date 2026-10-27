@@ -671,6 +671,10 @@
       "sha256": "10b02c491c96a069792b8762d14722a58402adb659e508824b80e1d3407eda0c"
     },
     {
+      "path": "assets/pdf/reference/standard-font-metrics.pdf",
+      "sha256": "c11072cf01eb0d7b0d3b273d1068a306edbc1916a1e51ba18cab30dfed1aa5b7"
+    },
+    {
       "path": "assets/pdf/reference/stencil-mask.pdf",
       "sha256": "e2f2b9a55b1082b876d1b08395d8d935b9bfbcf9f7a14528603efd801efc2ed5"
     },
@@ -685,6 +689,10 @@
     {
       "path": "assets/pdf/shapes.tex",
       "sha256": "1d3e27ee1fb6ab3665f875c5fe08bddb25022783cf1e03ed367e36bc66c044e0"
+    },
+    {
+      "path": "assets/pdf/standard-font-substitutes.pdf",
+      "sha256": "e4a2c90a94b460408b2cbae92e4b9199e49c360488d1209f03ac6394ff1d4326"
     },
     {
       "path": "assets/pdf/zlib.3.pdf",

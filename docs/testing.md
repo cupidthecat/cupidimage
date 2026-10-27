@@ -1,5 +1,11 @@
 # Testing
 
+Standard-font positioning can also be checked without comparing substitute
+outlines: `make test-pdf-standard-fonts` validates the pinned AFMs and renders
+invisible text followed by an embedded geometric marker. It also compares
+bundled CFF substitutes with the same programs embedded in a PDF. See
+[PDF fonts and text](pdf-fonts.md) for optional independent comparisons.
+
 ## Everyday checks
 
 ```sh

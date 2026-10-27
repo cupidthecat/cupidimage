@@ -382,3 +382,15 @@ open; the current implementation does not claim complete Type 1 fidelity.
 A space-only clipping regression was confirmed against an independent renderer.
 The text object now retains an empty glyph clip and intersects it at ET. Type 3
 fonts retain their separate text-rendering-mode behavior.
+
+## Standard PDF font advances
+
+The 14 canonical nonembedded Type 1 fonts now use pinned Adobe AFM metrics,
+including the built-in Symbol and ZapfDingbats encodings. Base encodings and
+Differences select widths by glyph name. Explicit PDF widths take precedence;
+ToUnicode does not change the one-byte source encoding or advance. This covers
+spacing and bundled CFF substitute outlines. The 56 positioning fixtures, 186
+substitute rendering checks and optional independent path comparisons are
+described in [PDF fonts and text](pdf-fonts.md). Extended glyph coverage and
+hinting remain incomplete; substitute fonts are not identical to every host's
+font selection.
