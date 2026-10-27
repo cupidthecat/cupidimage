@@ -51,6 +51,7 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     temporary = malloc(sizeof(*temporary));
     if (!temporary) goto done;
     *temporary = *st;
+    temporary->text_group = NULL;
     temporary->gs = *graphics;
     temporary->gs.clip = NULL;
     temporary->gs.soft_mask = NULL;

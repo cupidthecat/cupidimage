@@ -443,8 +443,8 @@ nesting. Pattern/shading cache construction is kept outside that tracking.
 
 The group suite has 81 cases and 66 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,781 checks.
-CMYK/CIE/ICC blending and text-knockout grouping remain open.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,993 checks.
+CMYK/CIE/ICC blending remains open.
 
 
 ## Graphics-state soft masks and gray groups
@@ -453,7 +453,7 @@ Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
 q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
 as a group blending space alongside DeviceRGB. The focused suites have 56 mask
 checks and 81 group checks, with 44 and 66 optional independent comparisons.
-The allocation-failure suite has 1,781 checks. Three new analytic assets cover
+The allocation-failure suite has 1,993 checks. Three new analytic assets cover
 alpha masks, luminosity masks and a gray mask with an inverse transfer function.
 
 [PDF transparency](pdf-transparency.md) records the analytic-only differences,
@@ -489,5 +489,20 @@ Pattern-cache alpha is no longer quantized before it paints into the page.
 The knockout suite has 73 analytic checks and 16 independent comparisons. The
 [transparency guide](pdf-transparency.md) records disagreements rather than
 relaxing the one-byte comparison tolerance. Two new analytic assets bring the
-manifest to 348 files. Text-object knockout, Type 3 grouping, overprint and
-additional blending spaces still need work.
+manifest to 348 files. Overprint and additional blending spaces still need work.
+
+
+## Text knockout and glyph-object painting
+
+TK now controls whole-text-object grouping, with true as the default. Later
+glyphs replace earlier glyphs in overlap regions; TK false keeps per-glyph
+compositing. Type 3 d0 programs are collected as single glyph objects, while d1
+programs build only shape and receive caller paint once. This also fixes repeated
+opacity and soft-mask application within an uncolored glyph.
+
+There are 36 focused checks and 14 optional independent comparisons. The
+transparency guide explains where the tested independent renderers disagree.
+Two new analytic assets bring the manifest to 350 files, with 182 reference
+passes, 160 decoded-but-unverified files and 1,026 terminal round trips.
+The allocation-failure suite has 1,993 checks. Full font fidelity, color management
+and the remaining PDF features are not established by these tests.

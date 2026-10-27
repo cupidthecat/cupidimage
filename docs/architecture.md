@@ -53,7 +53,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   masks, evaluates their transfer functions and owns their reference-counted
   lifetime. Groups and retained masks share a transparency-memory budget.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
-  text parameters are part of the saved graphics state.
+  text parameters are part of the saved graphics state. `pdf_text_groups.c` owns
+  implicit text/glyph surfaces, neutral final compositing and Type 3 stencil paint.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
   axial/radial shading lives in `pdf_shading.c`. Bounded color-function trees

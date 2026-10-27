@@ -80,7 +80,7 @@ typedef struct {
     int line_cap, line_join, dash_count;
     double miter_limit, dash_phase, dash[32];
     double fill_alpha, stroke_alpha;
-    int blend_mode, alpha_is_shape;
+    int blend_mode, alpha_is_shape, text_knockout;
     pdf_image_colors fill_space;
     pdf_image_colors stroke_space;
     pdf_clip_mask *clip;
@@ -105,7 +105,7 @@ typedef struct pdf_transparency_group pdf_transparency_group;
 
 typedef struct {
     cupidimage_image *img;
-    pdf_transparency_group *group;
+    pdf_transparency_group *group, *text_group;
     double *shape_plane, *alpha_plane;
     const unsigned char *document;
     size_t document_size;
@@ -168,6 +168,12 @@ int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *
 int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group *group);
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group);
 void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group);
+
+int cupidimage_pdf_text_group_begin(pdf_render_state *st);
+int cupidimage_pdf_text_group_end(pdf_render_state *st);
+void cupidimage_pdf_text_group_discard(pdf_render_state *st);
+int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transparency_group *group);
+int cupidimage_pdf_composite_implicit_group(pdf_render_state *st, const pdf_transparency_group *group);
 
 int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,

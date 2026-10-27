@@ -271,7 +271,7 @@ OpenType wrapping. Twenty-five optional independent comparisons use:
 The clip-only comparison uses a second rasterizer because the first applies a
 different boundary rule. The cubic arch also has an analytic per-pixel test.
 The optional font-fixture regeneration script uses FontTools; ordinary tests do
-not require it. The PDF allocation-failure suite has 1,781 checks, including
+not require it. The PDF allocation-failure suite has 1,993 checks, including
 CFF font dictionaries, outlines and composite cleanup.
 
 `make test-pdf-standard-fonts` verifies all 14 metric/encoding resources
@@ -371,3 +371,19 @@ that recovery path now has regression coverage. Neither page is an exact match.
   requirements for RFCs, including embedded fonts and Unicode preservation.
   It is an application profile, not a replacement for the complete PDF
   specifications. This renderer does not claim PDF/A or PDF/UA validation.
+
+
+## Text-object compositing
+
+TK defaults to true: overlapping glyphs within one BT/ET object knock out earlier
+glyphs without increasing opacity. TK false allows them to composite separately.
+Type 3 d0 programs are collected as individual glyph objects; d1 programs supply
+only shape, with the caller's color, pattern, mask and opacity applied once.
+Text state changes survive ET, and text clipping takes effect after the implicit
+group is composited. Nested or unterminated text objects and mid-object TK changes
+are rejected.
+
+`make test-pdf-text-knockout` checks these rules, including TrueType and Type 3
+overlap, indirect TK values, saved state, missing glyphs and mask application.
+See [PDF transparency](pdf-transparency.md) for memory bounds and the independent
+renderers' differing text-overlap behavior.

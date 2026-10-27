@@ -40,6 +40,7 @@
 #include "../src/formats/pdf/pdf_soft_masks.c"
 #include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
+#include "../src/formats/pdf/pdf_text_groups.c"
 #include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "fixtures/pdf-truetype.inc"
@@ -73,7 +74,10 @@ int main(void) {
                     {"BT /F1 12 Tf 1 Tr (AB) Tj ET", 1},
                     {"BT /F1 12 Tf 6 Tr (AB) Tj ET 0 0 18 12 re f", 1},
                     {"BT /F1 12 Tf 7 Tr (AB) Tj ET 0 0 18 12 re f", 1},
-                    {"/BadCalculator sh", 0}};
+                    {"/BadCalculator sh", 0},
+                    {"BT /F1 6 Tf (AA) Tj ET", 1},
+                    {"BT /F1 6 Tf (AA) Tj", 0},
+                    {"BT /F1 6 Tf (AA) Tj (unterminated", 0}};
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
     const char *font_content = "BT /F1 6 Tf 0 6 Td (Z) Tj ET";
     const char *cmap = "1 beginbfchar <5A> <0041> endbfchar";

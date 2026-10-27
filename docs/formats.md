@@ -241,8 +241,8 @@ endpoint cases, state restoration, and mask/opacity combinations.
 Pages render as isolated transparency groups and composite onto white only
 after their content finishes. Their Group dictionary selects DeviceRGB or
 DeviceGray; RGB is the default. Form groups also support these spaces. Knockout and non-knockout groups and graphics-state Alpha/Luminosity masks are
-supported. CMYK/CIE/ICC group spaces, overprinting and full
-text-transparency semantics remain incomplete. See [PDF transparency](pdf-transparency.md)
+supported. CMYK/CIE/ICC group spaces and overprinting remain incomplete. Text objects
+honor TK, with true as the default. See [PDF transparency](pdf-transparency.md)
 for mask precedence and group limits. Stroke styling is described below.
 
 ## PDF character maps
@@ -411,8 +411,9 @@ advance. ToUnicode does not replace the Encoding-to-CharProcs mapping.
 
 The first operator must be `d0` or `d1`, with a zero vertical width and a width
 consistent with the font dictionary. `d0` permits coloured graphics. `d1`
-inherits the caller's colour, ignores colour-setting operators, and permits
-image masks but rejects ordinary colour images. Only text rendering mode 3
+builds a shape, ignores colour-setting operators, and permits
+image masks but rejects ordinary colour images. The caller's nonstroking colour,
+pattern, mask and opacity paint the completed d1 shape once. Only text rendering mode 3
 suppresses a Type 3 program; the other text rendering modes do not replace its
 paint operations.
 

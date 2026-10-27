@@ -349,3 +349,9 @@ expectations; two new analytic assets exercise page isolation and gray blending.
 backdrops, cached pattern shape and zero-opacity members. It includes all 16 blend
 modes and two isolation settings. Optional comparisons use the secondary renderer;
 the transparency guide identifies cases that remain analytic-only.
+
+`make test-pdf-text-knockout` checks overlapping glyphs, TK state, independent text
+objects, Type 3 internal painting and shape-only opacity. The independent
+rasterizers differ from the specification on several overlapping-text cases;
+those tests keep exact analytic expectations. Allocation-failure cases cover
+both complete and unterminated text streams.

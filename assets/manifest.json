@@ -731,8 +731,16 @@
       "sha256": "1dfb12fcaf2e030f5107e5108a2fb48a4e7f52cea9eff268497baf75834d56ff"
     },
     {
+      "path": "assets/pdf/reference/text-object-knockout.pdf",
+      "sha256": "0591556b3e927aa976c0fd1e74189892dcf65c4de6f362c288e119e776bceca5"
+    },
+    {
       "path": "assets/pdf/reference/type3-base-encoding.pdf",
       "sha256": "f0f2e2255988f924b9b917ae2b1891d86804914b7939e9e6d6ca79e5a38f24bb"
+    },
+    {
+      "path": "assets/pdf/reference/type3-shape-opacity.pdf",
+      "sha256": "fe51b134b47f8eefc4d110764be9e89af3d6721dae26634948b2c839248c1829"
     },
     {
       "path": "assets/pdf/shapes.pdf",

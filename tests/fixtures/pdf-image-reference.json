@@ -308,6 +308,20 @@
       "height": 16,
       "rgba_zlib": "eJwzZjjz33gUj+JRPIpH8YjDAKbq/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/text-object-knockout.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/type3-shape-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
     }
   ]
 }
