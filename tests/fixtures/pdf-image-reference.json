@@ -112,6 +112,27 @@
       "height": 16,
       "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/axial-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/radial-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzFlKGLQmEQxAcuGC5cObBcuWoR5LLJYjrMYrDZxCL4DwgWsdkMcvkwWUxmESxWi+XgisFgEEZ+Gy3vKTwNA8vuzLzd/b73SbYS8KKzX3X0mw4BYnJJujS+7/r3p3YuaOuiNgFictTu/U5OJ39oH35lLV3V3N+aBYjJUYMD99a+0X1pFV51/bilsdsaBYjJUYMD95Y5mJve0Dc1cVcD99XzUJ0AMTlqcOCiSds7u2V+esQHz6ka/lUtQEyOGhy4aNLMwN3g/OiLPdArfgtVvFYpQEyOGhy4aNAm+XP/mJdzZNf0Sc/4/ikfICZHDQ5cNGif7Z/1frI+36zv5yP+r6zfh0e8b9ffufd9vgCTYv0f",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/exponential-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzDEZRREAgFE+n8FgupPNaDXf+QYQQAENNBBBBBl00EEI+/9qvMEJcIQQSClRSqG1xhiDtZbneXDO4b0nhECMkfd9+b6PlBI5Z0op1FpprdF7Z4zBnJO1FntvzjmI+9///ve//1/+P7yd/R8=",
+      "tolerance": 0
     }
   ]
 }

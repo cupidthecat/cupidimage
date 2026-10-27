@@ -270,3 +270,24 @@ body offsets, and ordering are checked before extracting an object.
 
 The object resolver still uses recovery scanning in places; this is not complete
 cross-reference, generation-number, or incremental-update support.
+
+## PDF shadings
+
+The `sh` operator paints Type 2 axial and Type 3 radial shadings in DeviceGray,
+DeviceRGB, or DeviceCMYK. Supported color functions are single-input Type 2
+exponential functions with Domain, C0/C1, N, and optional Range entries. The
+renderer applies shading Domain and Extend values, BBox, the current transform,
+path/form clipping, opacity, and blend mode. Numeric arrays and exponents may
+be indirect objects. Gray functions can use the default C0/C1 values.
+
+Each page has a shared budget of 128 million shading pixel visits, including
+nested forms. Unknown shading or function types return an error rather than
+silently leaving a blank area. Function arrays, sampled/stitching/calculator
+functions, mesh shadings, shading patterns, and color-managed shading spaces
+remain unsupported.
+
+Small fixtures require exact analytic pixels. Optional independent comparisons
+use native-resolution pages, with one channel unit allowed for linear axial
+shading and two for nonlinear reference approximation. A second rasterizer checks
+radial gradients extending beyond the page, where the primary comparison tool
+leaves a boundary-color rim. No resizing or alignment is used to obtain a match.

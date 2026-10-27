@@ -547,6 +547,10 @@
       "sha256": "612a11950ea1e7571a4549407ab2c98af33be629611839a1958dac302f89a160"
     },
     {
+      "path": "assets/pdf/reference/axial-shading.pdf",
+      "sha256": "cb611dbb21c90eb77fb94d6a1d07cf92ae74b525e1c3104438f3bee3fa127c1c"
+    },
+    {
       "path": "assets/pdf/reference/blend-multiply.pdf",
       "sha256": "6a892b165604a40eaba472493b005fe01e5f20d04b4d3b873eedd914520bc5c2"
     },
@@ -569,6 +573,10 @@
     {
       "path": "assets/pdf/reference/explicit-image-mask.pdf",
       "sha256": "9894db4b391331e06afa1c30a1883da9a7016aac292d1d982cdc07e57ec8d0f0"
+    },
+    {
+      "path": "assets/pdf/reference/exponential-shading.pdf",
+      "sha256": "2f9fd7d19be1a5d4ed059a0c17ef69bdfbe474af325b45c1e9411295af126952"
     },
     {
       "path": "assets/pdf/reference/fill-stroke-opacity.pdf",
@@ -609,6 +617,10 @@
     {
       "path": "assets/pdf/reference/quadrants.pdf",
       "sha256": "9f2fa1b0e7eb0b0ea83b4795c449fd6f65bcf2c4e736f9cc60c624bd57fc118e"
+    },
+    {
+      "path": "assets/pdf/reference/radial-shading.pdf",
+      "sha256": "0d006931f88655428ae5da63a4fa3ad5d6d001dd2f1ba054a234233c3721bf35"
     },
     {
       "path": "assets/pdf/reference/soft-mask-matte.pdf",

@@ -19,14 +19,14 @@ static int pdf_blend_name(const pdf_object_view *view, size_t *pos) {
     return -1;
 }
 
-static int pdf_graphics_number(const pdf_render_state *st, const pdf_object_view *view,
+int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view,
                                size_t pos, unsigned depth, double *value) {
     if (depth == 16) return 0;
     int object;
     if (cupidimage_pdf_page_reference(view, pos, &object)) {
         pdf_object_view indirect = {0};
         if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect)) return 0;
-        int ok = pdf_graphics_number(st, &indirect, 0, depth+1, value);
+        int ok = cupidimage_pdf_read_number(st, &indirect, 0, depth+1, value);
         cupidimage_pdf_object_view_release(&indirect); return ok;
     }
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
@@ -39,15 +39,15 @@ static int pdf_apply_graphics_dictionary(pdf_render_state *st, const pdf_object_
     size_t pos;
     double value;
     if (cupidimage_pdf_page_value(view, "ca", &pos)) {
-        if (!pdf_graphics_number(st, view, pos, 0, &value) || value < 0 || value > 1) return 0;
+        if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1) return 0;
         next.fill_alpha = value;
     }
     if (cupidimage_pdf_page_value(view, "CA", &pos)) {
-        if (!pdf_graphics_number(st, view, pos, 0, &value) || value < 0 || value > 1) return 0;
+        if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1) return 0;
         next.stroke_alpha = value;
     }
     if (cupidimage_pdf_page_value(view, "LW", &pos)) {
-        if (!pdf_graphics_number(st, view, pos, 0, &value) || value < 0 || value > 1e6) return 0;
+        if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1e6) return 0;
         next.line_width_pts = (float)value;
     }
     if (cupidimage_pdf_page_value(view, "SMask", &pos) && !cupidimage_pdf_image_name_is(view, "SMask", "None")) return 0;

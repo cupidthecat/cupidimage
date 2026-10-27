@@ -429,6 +429,11 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
         return;
     }
     uint8_t source[3] = {r,g,b};
+    if (st->gs.blend_mode == 0) {
+        for (int i = 0; i < 3; i++) img->rgba[idx+i] = (uint8_t)floor(alpha*source[i] + (1-alpha)*img->rgba[idx+i] + .5);
+        img->rgba[idx+3] = 255;
+        return;
+    }
     double blended[3];
     cupidimage_pdf_blend_rgb(st->gs.blend_mode, source, img->rgba+idx, blended);
     for (int i = 0; i < 3; i++) img->rgba[idx+i] = cupidimage_pdf_clamp_u8(alpha*blended[i] + (1-alpha)*img->rgba[idx+i]/255.0);
@@ -1114,7 +1119,12 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
                                  pdf_operand *ops, int *count) {
     int n = *count;
 
-    if (strcmp(op, "gs") == 0) {
+    if (strcmp(op, "sh") == 0) {
+        if (n != 1 || ops[0].type != PDF_OPERAND_NAME || !cupidimage_pdf_draw_shading(st, ops[0].str)) {
+            st->image_failed = 1;
+            cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid or unsupported shading");
+        }
+    } else if (strcmp(op, "gs") == 0) {
         if (n != 1 || ops[0].type != PDF_OPERAND_NAME || !cupidimage_pdf_apply_extgstate(st, ops[0].str)) {
             st->image_failed = 1;
             cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid or unsupported graphics state");
@@ -1574,7 +1584,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     pdf_render_state st = {0};
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
-    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096};
+    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u};
     st.form_budget = &form_budget;
     st.img = img;
     st.document = document;

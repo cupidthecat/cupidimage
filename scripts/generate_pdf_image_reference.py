@@ -2,6 +2,7 @@
 """Generate owned PDF image fixtures and analytic RGBA expectations."""
 import base64
 import json
+import math
 from pathlib import Path
 import zlib
 from test_pdf_images import fixture, image_stream
@@ -9,6 +10,7 @@ from test_pdf_packed_images import encode, pack
 from test_pdf_lzw import literals
 from test_pdf_pages import document
 from test_pdf_object_syntax import pdf as syntax_pdf, stream as syntax_stream
+from test_pdf_shading import shading_pdf
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
@@ -95,5 +97,16 @@ save_document('lzw-object-stream.pdf', syntax_pdf({
     4: syntax_stream(b'1 0 0 rg 0 0 18 12 re f'),
     5: syntax_stream(literals(object_data, 1), f'/Type /ObjStm /N 3 /First {len(object_header)} /Filter /LZWDecode')},
     compressed=[1,2,3]), lambda x,y:(255,0,0))
+gradient_function = '<< /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >>'
+gradient_rgb = lambda t: (int(255*(1-t)+.5), 0, int(255*t+.5))
+save_document('axial-shading.pdf', shading_pdf(
+    '<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 18 0] /Function 6 0 R >>', gradient_function),
+    lambda x,y:gradient_rgb((x+.5)/24))
+save_document('radial-shading.pdf', shading_pdf(
+    '<< /ShadingType 3 /ColorSpace /DeviceRGB /Coords [9 6 0 9 6 6] /Extend [true true] /Function 6 0 R >>', gradient_function),
+    lambda x,y:gradient_rgb(min(1,math.hypot((x+.5)*.75-9,12-(y+.5)*.75-6)/6)))
+save_document('exponential-shading.pdf', shading_pdf(
+    '<< /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 18 0] /Function 6 0 R >>',
+    '<< /FunctionType 2 /Domain [0 1] /N 2 >>'),lambda x,y:(int(((x+.5)/24)**2*255+.5),)*3)
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

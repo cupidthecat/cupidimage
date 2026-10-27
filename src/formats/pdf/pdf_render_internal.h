@@ -60,6 +60,7 @@ typedef struct {
 typedef struct {
     size_t bytes_left;
     unsigned calls_left;
+    size_t shade_pixels_left;
 } pdf_form_budget;
 
 typedef struct {
@@ -115,5 +116,9 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
 int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name);
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3], double result[3]);
 void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha);
+
+int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view,
+                              size_t pos, unsigned depth, double *value);
+int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name);
 
 #endif
