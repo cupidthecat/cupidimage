@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Render generated Form XObjects and compare their complete pixel output."""
+import base64
 import pathlib
 import struct
 import subprocess
@@ -64,6 +65,13 @@ def main():
                 print('FAIL', name, str(error), file=sys.stderr)
 
         lower_left = lambda x, y: RED if x < 12 and y >= 8 else GRAY
+        for label, payload, filters in (
+            ('hex', PAINT.encode().hex().encode() + b'>', '/ASCIIHexDecode'),
+            ('ascii85', base64.a85encode(PAINT.encode()) + b'~>', '/ASCII85Decode'),
+            ('runlength', bytes([len(PAINT)-1]) + PAINT.encode() + b'\x80', '/RunLengthDecode'),
+            ('ascii85-flate', base64.a85encode(zlib.compress(PAINT.encode())) + b'~>', '[/ASCII85Decode /FlateDecode]'),
+        ):
+            check('filtered-' + label, fixture(form(payload, attrs='/BBox [0 0 9 6] /Filter ' + filters)), lower_left)
         for compression in (None, 0, 6, 9):
             check('paint-' + str(compression), fixture(form(compression=compression)), lower_left)
         check('identity-matrix', fixture(form(attrs='/BBox [0 0 9 6] /Matrix [1 0 0 1 0 0]')), lower_left)

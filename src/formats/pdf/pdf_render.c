@@ -1625,13 +1625,9 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
         }
         child->font_table = &fonts;
     }
-    int flate = cupidimage_pdf_image_filter_is(form, "FlateDecode");
-    if ((cupidimage_pdf_page_value(form, "Filter", &pos) && !flate) ||
-        cupidimage_pdf_page_value(form, "DecodeParms", &pos) || !cupidimage_pdf_image_stream(st, form, &stream, &length)) goto done;
-    if (flate) {
-        if (!cupidimage_pdf_inflate_auto(stream, length, &inflated, &length)) goto done;
-        stream = inflated;
-    }
+    if (!cupidimage_pdf_image_stream(st, form, &stream, &length) ||
+        !cupidimage_pdf_decode_stream(form, stream, length, &inflated, &length)) goto done;
+    stream = inflated;
     if (length > st->form_budget->bytes_left) goto done;
     st->form_budget->bytes_left -= length;
     ok = pdf_render_stream(child, stream, length);

@@ -180,7 +180,15 @@ static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *
         return image_bits == 8 && (components == 1 || components == 3) &&
                pdf_image_jpeg_samples(st, view, width, height, components, samples);
     int predictor = 1, flate = cupidimage_pdf_image_filter_is(view, "FlateDecode");
-    if (cupidimage_pdf_page_value(view, "Filter", &pos) && !flate) return 0;
+    if (cupidimage_pdf_page_value(view, "Filter", &pos) && !flate) {
+        unsigned char *decoded = NULL;
+        size_t decoded_length = 0;
+        if (!cupidimage_pdf_image_stream(st, view, &stream, &length) ||
+            !cupidimage_pdf_decode_stream(view, stream, length, &decoded, &decoded_length)) return 0;
+        if (decoded_length != bytes) { free(decoded); return 0; }
+        *samples = decoded;
+        return 1;
+    }
     pdf_object_view params = {0};
     if (cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {
         if (!flate || !cupidimage_pdf_image_dictionary(st, view, "DecodeParms", &params)) return 0;

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check image XObjects using generated PDF files and exact RGBA output."""
+import base64
 import pathlib
 import struct
 import subprocess
@@ -96,6 +97,13 @@ def main():
             return ((RED, GREEN), (BLUE, YELLOW))[y >= 8][x >= 12]
 
         attrs = "/Width 2 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceRGB"
+        for label, payload, filters in (
+            ('hex', RGB.hex().encode() + b'>', '/ASCIIHexDecode'),
+            ('ascii85', base64.a85encode(RGB) + b'~>', '/ASCII85Decode'),
+            ('runlength', bytes([len(RGB)-1]) + RGB + b'\x80', '/RunLengthDecode'),
+            ('ascii85-flate', base64.a85encode(zlib.compress(RGB)) + b'~>', '[/ASCII85Decode /FlateDecode]'),
+        ):
+            check('filtered-' + label, fixture(payload, attrs + ' /Filter ' + filters), quadrants)
         for resource in ("inline", "inherited", "indirect"):
             check(resource, fixture(resource=resource), quadrants)
         check("flate", fixture(zlib.compress(RGB), attrs + " /Filter /FlateDecode"), quadrants)

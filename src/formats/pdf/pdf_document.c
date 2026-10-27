@@ -1051,32 +1051,6 @@ int cupidimage_pdf_buffer_contains(const unsigned char *data, size_t start, size
     return 0;
 }
 
-/* ISO 32000-1, 7.4.2: whitespace is ignored; an odd final nibble is padded. */
-static int pdf_ascii_hex_decode(const unsigned char *data, size_t length,
-                                unsigned char **out, size_t *out_length) {
-    if (length > 128u * 1024u * 1024u) return 0;
-    unsigned char *decoded = (unsigned char *)malloc(length / 2 + 1);
-    if (!decoded) return 0;
-    int high = -1;
-    size_t used = 0;
-    for (size_t i = 0; i < length; i++) {
-        unsigned char c = data[i];
-        if (c == '>') {
-            if (high >= 0) decoded[used++] = (unsigned char)(high * 16);
-            *out = decoded; *out_length = used; return 1;
-        }
-        if (c == 0 || c == 9 || c == 10 || c == 12 || c == 13 || c == 32) continue;
-        int value = c >= '0' && c <= '9' ? c - '0' :
-                    c >= 'A' && c <= 'F' ? c - 'A' + 10 :
-                    c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
-        if (value < 0) break;
-        if (high < 0) high = value;
-        else { decoded[used++] = (unsigned char)(high * 16 + value); high = -1; }
-    }
-    free(decoded);
-    return 0;
-}
-
 int cupidimage_pdf_get_page_content_stream(const unsigned char *data, size_t size, pdf_xref *xref,
                                    int page_obj, unsigned char **stream_data,
                                    size_t *stream_len, int *is_flate,
@@ -1135,34 +1109,13 @@ int cupidimage_pdf_get_page_content_stream(const unsigned char *data, size_t siz
             return 0;
         }
 
-        int stream_is_flate = cupidimage_pdf_image_filter_is(&contents, "FlateDecode") ||
-                              cupidimage_pdf_image_filter_is(&contents, "Fl");
-        int stream_is_hex = cupidimage_pdf_image_filter_is(&contents, "ASCIIHexDecode") ||
-                            cupidimage_pdf_image_filter_is(&contents, "AHx");
-        size_t filter_pos;
-        if (!stream_is_flate && !stream_is_hex && cupidimage_pdf_page_value(&contents, "Filter", &filter_pos)) {
-            cupidimage_pdf_object_view_release(&contents); free(combined);
-            cupidimage_set_err(err, errcap, "pdf: unsupported content stream filter"); return 0;
-        }
-
-        const unsigned char *decoded_ptr = stream_ptr;
-        size_t decoded_len = raw_len;
         unsigned char *decoded_owned = NULL;
-        if (stream_is_flate) {
-            if (!cupidimage_pdf_inflate_auto(stream_ptr, raw_len, &decoded_owned, &decoded_len)) {
-                cupidimage_pdf_object_view_release(&contents);
-                free(combined);
-                cupidimage_set_err(err, errcap, "pdf: failed to decode Flate stream");
-                return 0;
-            }
-            decoded_ptr = decoded_owned;
-        } else if (stream_is_hex) {
-            if (!pdf_ascii_hex_decode(stream_ptr, raw_len, &decoded_owned, &decoded_len)) {
-                cupidimage_pdf_object_view_release(&contents); free(combined);
-                cupidimage_set_err(err, errcap, "pdf: invalid ASCIIHex stream"); return 0;
-            }
-            decoded_ptr = decoded_owned;
+        size_t decoded_len = 0;
+        if (!cupidimage_pdf_decode_stream(&contents, stream_ptr, raw_len, &decoded_owned, &decoded_len)) {
+            cupidimage_pdf_object_view_release(&contents); free(combined);
+            cupidimage_set_err(err, errcap, "pdf: invalid or unsupported content stream filter"); return 0;
         }
+        const unsigned char *decoded_ptr = decoded_owned;
 
         if (decoded_len > 0) {
             const size_t limit = 64u * 1024u * 1024u;
@@ -1203,7 +1156,7 @@ int cupidimage_pdf_get_page_content_stream(const unsigned char *data, size_t siz
 int cupidimage_pdf_inflate_auto(const unsigned char *data, size_t size,
                             unsigned char **out_data, size_t *out_len) {
     const size_t max_cap = 64u * 1024u * 1024u;
-    size_t cap = size * 4u + 1024u;
+    size_t cap = size > (max_cap - 1024u) / 4u ? max_cap : size * 4u + 1024u;
     if (cap < 4096u) {
         cap = 4096u;
     }
@@ -1222,10 +1175,8 @@ int cupidimage_pdf_inflate_auto(const unsigned char *data, size_t size,
         }
 
         free(buf);
-        if (cap > max_cap / 2u) {
-            break;
-        }
-        cap *= 2u;
+        if (cap == max_cap) break;
+        cap = cap > max_cap / 2u ? max_cap : cap * 2u;
     }
 
     return 0;

@@ -4,6 +4,7 @@
 #define calloc fault_calloc
 #define realloc fault_realloc
 #define free fault_free
+#include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_images.c"

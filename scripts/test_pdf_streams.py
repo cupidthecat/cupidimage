@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check page dictionary scope and ASCIIHex content streams against raw pixels."""
 from pathlib import Path
+import base64
 import struct
 import subprocess
 import sys
@@ -49,6 +50,31 @@ cases.extend([
     ('nested-kids-decoy', pdf(pages='<< /Nested << /Kids [99 0 R] >> /Kids [3 0 R] /Count 1 /Type /Pages >>'), False),
     ('kids-missing-R', pdf(pages='<< /Kids [3 0] /Count 1 /Type /Pages >>'), True),
     ('kids-R-prefix', pdf(pages='<< /Kids [3 0 Really] /Count 1 /Type /Pages >>'), True),
+])
+for value in ('/ASCII85Decode', '/A85', '[/ASCII85Decode]'):
+    cases.append(('ascii85-' + value, pdf(base64.a85encode(content) + b'~>', value), False))
+for value in ('/RunLengthDecode', '/RL', '[/RunLengthDecode]'):
+    cases.append(('runlength-' + value, pdf(bytes([len(content)-1]) + content + b'\x80', value), False))
+cases.extend([
+    ('ascii85-whitespace', pdf(b' \n'.join(bytes([c]) for c in base64.a85encode(content)) + b'~>', '/ASCII85Decode'), False),
+    ('hex-flate-chain', pdf(zlib.compress(content).hex().encode() + b'>', '[/ASCIIHexDecode /FlateDecode]'), False),
+    ('a85-flate-chain', pdf(base64.a85encode(zlib.compress(content)) + b'~>', '[/ASCII85Decode /FlateDecode]', before='/DecodeParms [null null]'), False),
+    ('null-filter', pdf(filter_value='null'), False),
+    ('empty-filter-array', pdf(filter_value='[]'), False),
+    ('ascii85-overflow', pdf(b'uuuuu~>', '/ASCII85Decode'), True),
+    ('ascii85-single-tail', pdf(b'!~>', '/ASCII85Decode'), True),
+    ('ascii85-mid-z', pdf(b'!z~>', '/ASCII85Decode'), True),
+    ('ascii85-no-eod', pdf(base64.a85encode(content), '/ASCII85Decode'), True),
+    ('ascii85-bad-end', pdf(b'~ >', '/ASCII85Decode'), True),
+    ('ascii85-bad-char', pdf(b'v~>', '/ASCII85Decode'), True),
+    ('runlength-short-literal', pdf(b'\x04abc', '/RunLengthDecode'), True),
+    ('runlength-short-repeat', pdf(b'\xff', '/RunLengthDecode'), True),
+    ('runlength-no-eod', pdf(b'\x00a', '/RunLengthDecode'), True),
+    ('filter-depth', pdf(filter_value='[' + '/AHx '*9 + ']'), True),
+    ('filter-unclosed', pdf(filter_value='[/AHx'), True),
+    ('params-short', pdf(zlib.compress(content).hex().encode() + b'>', '[/AHx /Fl]', before='/DecodeParms [null]'), True),
+    ('params-long', pdf(zlib.compress(content), '/Fl', before='/DecodeParms [null null]'), True),
+    ('predictor-not-ignored', pdf(zlib.compress(content), '/Fl', before='/DecodeParms << /Predictor 12 >>'), True),
 ])
 for label, payload, filter_value in [('raw', content, None), ('flate', zlib.compress(content), '/FlateDecode'), ('hex', encoded, '/ASCIIHexDecode')]:
     cases.append(('indirect-length-' + label, pdf(payload, filter_value, length_value='5 0 R', extra_objects={5: str(len(payload))}), False))
