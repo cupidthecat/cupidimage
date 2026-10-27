@@ -11,6 +11,7 @@ from test_pdf_lzw import literals
 from test_pdf_pages import document
 from test_pdf_object_syntax import pdf as syntax_pdf, stream as syntax_stream
 from test_pdf_shading import shading_pdf
+from test_pdf_sampled_functions import sampled
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
@@ -116,5 +117,11 @@ component_functions = '[ << /FunctionType 2 /Domain [0 1] /C0 [1] /C1 [0] /N 1 >
     '<< /FunctionType 2 /Domain [0 1] /C0 [0] /C1 [0] /N 1 >> '+\
     '<< /FunctionType 2 /Domain [0 1] /N 1 >> ]'
 save_document('component-functions.pdf',shading_pdf(axial,component_functions),lambda x,y:gradient_rgb((x+.5)/24))
+save_document('sampled-32bit-function.pdf',shading_pdf(axial.replace('DeviceRGB','DeviceGray'),
+    sampled((0,1),32,components=1,attrs='/Decode [0 4294967295]')),lambda x,y:(int((x+.5)/24*255+.5),)*3)
+save_document('function-based-shading.pdf',shading_pdf(
+    '<< /ShadingType 1 /ColorSpace /DeviceRGB /Matrix [18 0 0 12 0 0] /Function 6 0 R >>',
+    sampled((255,0,0,0,255,0,0,0,255,255,255,255),size=(2,2))),
+    lambda x,y:tuple(int(c*255+.5) for c in ((1-(x+.5)/24)*(y+.5)/16+((x+.5)/24)*(1-(y+.5)/16),(x+.5)/24,1-(y+.5)/16)))
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

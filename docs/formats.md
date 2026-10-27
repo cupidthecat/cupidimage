@@ -273,8 +273,8 @@ cross-reference, generation-number, or incremental-update support.
 
 ## PDF shadings
 
-The `sh` operator paints Type 2 axial and Type 3 radial shadings in DeviceGray,
-DeviceRGB, or DeviceCMYK. Supported color functions include single-input Type 2
+The `sh` operator paints Type 1 function-based, Type 2 axial, and Type 3 radial shadings in DeviceGray,
+DeviceRGB, or DeviceCMYK. Supported color functions include one- or two-input Type 0 sampled functions, single-input Type 2
 exponential functions, Type 3 stitching functions, and arrays of single-output
 functions. Exponential functions accept Domain, C0/C1, N, and optional Range.
 Stitching functions accept nested Functions, Bounds, Encode, Domain, and Range. The
@@ -285,7 +285,7 @@ be indirect objects. Gray functions can use the default C0/C1 values.
 Each page has a shared budget of 128 million color-function evaluations, including
 nested forms and stitched/component functions. Function trees are limited to
 64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
-silently leaving a blank area. Sampled/calculator functions, mesh shadings, shading patterns, and color-managed shading spaces
+silently leaving a blank area. Calculator functions, cubic sampled interpolation, mesh shadings, shading patterns, and color-managed shading spaces
 remain unsupported.
 
 Small fixtures require exact analytic pixels. Optional independent comparisons
@@ -298,3 +298,15 @@ Stitching honors half-open subdomains, reversed Encode mappings, output Range
 clipping, and the defined zero-width final subdomain. A single-piece stitch may
 have a zero-width Domain. Function arrays and stitch children may use inline or
 indirect dictionaries; cyclic references and over-budget trees return errors.
+
+Sampled functions support 1/2/4/8/12/16/24/32-bit packed samples, linear interpolation,
+Size, Encode, Decode, and Range. The first input dimension varies fastest. Sample
+tables share a 64 MiB decoded-data limit per function tree and are released on
+both success and failure. Low-order bits remain available to Decode mappings,
+including mappings that magnify the lowest bits of a 32-bit sample. Cubic Order 3
+interpolation is rejected rather than treated as linear.
+
+Type 1 shading applies its Matrix and two-dimensional Domain before evaluating
+the color function. The `sh` operator does not paint the shading's Background
+entry, which applies only to shading patterns. Sample lookups are charged against
+the shared function-work budget along with function-node evaluations.

@@ -587,6 +587,10 @@
       "sha256": "3be8a0ae748c09cf3793748f3d83875665db7d45ed7eebae82b861684407132d"
     },
     {
+      "path": "assets/pdf/reference/function-based-shading.pdf",
+      "sha256": "c3b4c82626474ff0ad1d8ac568cf699a2644a4fbf7e72b00b7aa3bc86f65d225"
+    },
+    {
       "path": "assets/pdf/reference/gray-16bit-tiff-predictor.pdf",
       "sha256": "61b55241f59c1a234421bbc777abbac34de9e2453f023c39b0f009f9ea821648"
     },
@@ -625,6 +629,10 @@
     {
       "path": "assets/pdf/reference/radial-shading.pdf",
       "sha256": "0d006931f88655428ae5da63a4fa3ad5d6d001dd2f1ba054a234233c3721bf35"
+    },
+    {
+      "path": "assets/pdf/reference/sampled-32bit-function.pdf",
+      "sha256": "96284b146cfa75ecf9e5e98d408006cc4da5e83c9c430e7a4ae9aaa350cd5a41"
     },
     {
       "path": "assets/pdf/reference/soft-mask-matte.pdf",
