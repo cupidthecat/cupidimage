@@ -153,7 +153,8 @@ Use `make test-png`, `test-jpeg`, `test-jpeg-reference`, `test-webp`,
 
 PDF checks include `test-pdf-pages`, `test-pdf-streams`, `test-pdf-safety`,
 `test-pdf-graphics`, `test-pdf-images`, `test-pdf-packed-images`, `test-pdf-forms`, `test-pdf-clipping`,
-`test-pdf-colors`, and `test-pdf-clip-oom`. `test-pdf-audit` tests the corpus runner
+`test-pdf-colors`, `test-pdf-masks`, `test-pdf-filters`, `test-pdf-lzw`,
+`test-pdf-indexed`, and `test-pdf-clip-oom`. `test-pdf-audit` tests the corpus runner
 itself without network access. `test-deflate-containers` covers shared compression
 through complete PDF/TIFF containers, and `test-inflate` checks zlib directly.
 

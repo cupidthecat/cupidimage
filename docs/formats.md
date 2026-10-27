@@ -105,7 +105,7 @@ single-filter array. Non-JPEG images also accept ASCIIHexDecode, ASCII85Decode,
 RunLengthDecode, LZWDecode, and chains of these byte filters with FlateDecode.
 LZW supports both EarlyChange values. Flate/LZW stages accept direct predictor
 dictionaries, including packed and 16-bit TIFF/PNG prediction. Raw RGB JPEG images, ColorTransform 0, JPX,
-indexed color and inline images
+inline images
 are outside the supported subset.
 Drawing an invalid or unsupported XObject returns a load error.
 
@@ -204,3 +204,19 @@ images and color-managed conversion remain outside this subset.
 ## Deferred formats
 
 HEIC/HEIF is planned for later. It is not implemented or included in supported-format claims.
+
+## Indexed PDF images
+
+Image XObjects accept Indexed color spaces with DeviceGray, DeviceRGB, or
+DeviceCMYK palettes. Color-space arrays and palette strings may be indirect;
+palettes can also be filtered streams. Literal and hexadecimal palette strings
+follow PDF escaping and whitespace rules. Palette lengths and index bounds are
+validated. Decode mappings round indices and clamp them to the palette range.
+Color-key masks, explicit masks, and soft masks work with indexed images.
+Indexed images with Matte preblending remain unsupported and return an error.
+
+`make test-pdf-indexed` checks packed indices, palette sources, Decode mappings,
+masks, and malformed or cyclic references. Full 16-bit indices and tolerated
+indirect-reference chains use analytic expectations because the installed
+comparison renderers do not preserve those inputs. DeviceCMYK expectations use
+the library's unmanaged conversion.

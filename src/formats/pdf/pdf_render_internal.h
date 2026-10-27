@@ -103,4 +103,11 @@ uint8_t cupidimage_pdf_clamp_u8(double v);
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px, float *py);
 void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b);
 
+typedef struct {
+    int components, indexed, high;
+    unsigned char palette[1024];
+} pdf_image_colors;
+int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
+                                     size_t *pos, unsigned depth, pdf_image_colors *colors);
+
 #endif

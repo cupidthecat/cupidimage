@@ -7,6 +7,7 @@
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_fonts.c"
+#include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
@@ -21,18 +22,24 @@ int main(void) {
         "q 0 0 9 12 re W n q 0 0 18 6 re W n Q Q 0 0 18 12 re W n",
         "0 0 9 12 re W n q (unterminated",
         "0 0 9 12 re W n /F0 Do 0 0 1 rg 0 6 18 6 re f",
-        "0 0 9 12 re W n 18 0 0 12 0 0 cm /Im0 Do"
+        "0 0 9 12 re W n 18 0 0 12 0 0 cm /Im0 Do",
+        "18 0 0 12 0 0 cm /Im1 Do"
     };
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
-    char document[1024];
+    char document[2048];
     int document_size = snprintf(document, sizeof(document),
-        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R >> >> >> endobj\n"
+        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R >> >> >> endobj\n"
         "5 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] /Length %zu >>\n"
         "stream\n%s\nendstream\nendobj\n"
         "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB "
         "/BitsPerComponent 8 /SMask 7 0 R /Filter /ASCIIHexDecode /Length 7 >> stream\n524742>\nendstream endobj\n"
         "7 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray "
-        "/BitsPerComponent 8 /Matte [1 1 1] /Filter /ASCIIHexDecode /Length 3 >> stream\n4D>\nendstream endobj\n", strlen(form_content), form_content);
+        "/BitsPerComponent 8 /Matte [1 1 1] /Filter /ASCIIHexDecode /Length 3 >> stream\n4D>\nendstream endobj\n"
+        "8 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace [/Indexed /DeviceRGB 0 9 0 R] "
+        "/BitsPerComponent 8 /SMask 10 0 R /Filter /ASCIIHexDecode /Length 3 >> stream\n00>\nendstream endobj\n"
+        "9 0 obj << /Filter /ASCIIHexDecode /Length 7 >> stream\n524742>\nendstream endobj\n"
+        "10 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray "
+        "/BitsPerComponent 8 /Length 1 >> stream\nM\nendstream endobj\n", strlen(form_content), form_content);
     size_t checks = 0, failures = 0;
     for (size_t fixture = 0; fixture < sizeof(fixtures) / sizeof(fixtures[0]); fixture++) {
         size_t total = 0;

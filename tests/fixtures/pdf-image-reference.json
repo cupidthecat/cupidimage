@@ -70,6 +70,13 @@
       "height": 16,
       "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfMH2HywFXgwpQpGzR81fzCbDwA8mbxu",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/indexed-soft-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj43zCKR/EIxQwM//FjApCQAaPmj5o/mM0HAGbFXe4=",
+      "tolerance": 0
     }
   ]
 }

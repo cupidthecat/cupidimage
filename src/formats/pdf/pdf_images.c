@@ -335,6 +335,7 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
     pdf_object_view image = {0};
     unsigned char *samples = NULL;
     pdf_image_mask mask = {0};
+    pdf_image_colors colors = {0};
     int object, width, height, bits, components, ok = 0;
     size_t pos;
     if (!pdf_image_object(st, name, &object) ||
@@ -353,9 +354,9 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
         else if (!(n >= 5 && memcmp(image.data + pos, "false", 5) == 0 &&
             (n == 5 || cupidimage_pdf_is_ws(image.data[pos+5]) || cupidimage_pdf_is_delim(image.data[pos+5])))) goto done;
     }
-    components = stencil ? 1 : cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceRGB") ? 3 :
-                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1 :
-                 cupidimage_pdf_image_name_is(&image, "ColorSpace", "DeviceCMYK") ? 4 : 0;
+    if (!stencil && (!cupidimage_pdf_page_value(&image, "ColorSpace", &pos) ||
+        !cupidimage_pdf_image_color_space(st, &image, &pos, 0, &colors))) goto done;
+    components = stencil || colors.indexed ? 1 : colors.components;
     bits = stencil ? 1 : 8;
     if (!components || !cupidimage_pdf_image_integer(st, &image, "Width", &width) ||
         !cupidimage_pdf_image_integer(st, &image, "Height", &height) ||
@@ -365,6 +366,7 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
         (stencil && (bits != 1 || cupidimage_pdf_page_value(&image, "ColorSpace", &pos))) ||
         width < 1 || height < 1 || (double)width * height * components > 64.0 * 1024 * 1024) goto done;
     double decode[8] = {0, 1, 0, 1, 0, 1, 0, 1};
+    if (colors.indexed) decode[1] = (double)((1u << bits)-1u);
     if (cupidimage_pdf_page_value(&image, "Decode", &pos)) {
         if (pos >= image.len || image.data[pos++] != '[') goto done;
         for (int i = 0; i < 2 * components; i++) {
@@ -385,6 +387,7 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
         if (pos < image.len && image.data[pos] == '[') has_color_key = 1;
         else if (!pdf_load_image_mask(st, &image, "Mask", width, height, components, &mask)) goto done;
     }
+    if (colors.indexed && mask.has_matte) goto done;
     if (has_color_key) {
         if (stencil || pos >= image.len || image.data[pos++] != '[') goto done;
         for (int i = 0; i < components * 2; i++) {
@@ -437,6 +440,12 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
             if (transparent || (stencil && values[0] >= 0.5)) continue;
             double alpha = pdf_image_mask_alpha(&mask, u, v);
             if (alpha <= 0) continue;
+            int paint_components = components;
+            if (colors.indexed) {
+                unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, values[0])) + 0.5);
+                paint_components = colors.components;
+                for (int c = 0; c < paint_components; c++) values[c] = colors.palette[index*paint_components+c]/255.0;
+            }
             if (mask.has_matte) {
                 for (int c = 0; c < components; c++)
                     values[c] = mask.matte[c] + (values[c] - mask.matte[c]) / alpha;
@@ -444,11 +453,11 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
             uint8_t rgb[3];
             if (stencil) {
                 rgb[0] = st->gs.fill_r; rgb[1] = st->gs.fill_g; rgb[2] = st->gs.fill_b;
-            } else if (components == 4) {
+            } else if (paint_components == 4) {
                 double black = fmin(1, fmax(0, values[3]));
                 for (int c = 0; c < 3; c++) rgb[c] = cupidimage_pdf_clamp_u8(1 - fmin(1, fmax(0, values[c]) + black));
             } else {
-                for (int c = 0; c < 3; c++) rgb[c] = cupidimage_pdf_clamp_u8(values[components == 1 ? 0 : c]);
+                for (int c = 0; c < 3; c++) rgb[c] = cupidimage_pdf_clamp_u8(values[paint_components == 1 ? 0 : c]);
             }
             if (alpha < 1) {
                 const unsigned char *background = st->img->rgba + ((size_t)y * st->img->width + x) * 4;

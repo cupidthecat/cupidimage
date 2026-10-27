@@ -62,5 +62,10 @@ save('lzw-predictor.pdf', literals(predicted, 1),
 save('ascii85-flate-predictor.pdf', base64.a85encode(zlib.compress(predicted)) + b'~>',
      image_attrs + ' /Filter [/ASCII85Decode /FlateDecode] /DecodeParms [null '+params+']',
      lambda x, y: colors[(y//8)*3+x//8])
+save('indexed-soft-mask.pdf', bytes((0, 1, 2, 2, 1, 0)),
+     '/Width 3 /Height 2 /BitsPerComponent 8 /ColorSpace 8 0 R /SMask 9 0 R',
+     lambda x,y: (128,128,128) if y < 8 else ((0,0,255),(0,255,0),(255,0,0))[x//8],
+     extra={8:'[/Indexed /DeviceRGB 2 <ff000000ff000000ff>]',
+            9:image_stream(b'\x00\xff', '/Width 1 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray')})
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, and soft masks.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

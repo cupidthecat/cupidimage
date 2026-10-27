@@ -563,6 +563,10 @@
       "sha256": "61b55241f59c1a234421bbc777abbac34de9e2453f023c39b0f009f9ea821648"
     },
     {
+      "path": "assets/pdf/reference/indexed-soft-mask.pdf",
+      "sha256": "b4ef8642fe422e0d0d1271b4b90705de6e86eaa85bbfecddeecab143cae25199"
+    },
+    {
       "path": "assets/pdf/reference/indirect-flate-length.pdf",
       "sha256": "28d1418811c6fcd48d3f0bf5f692b95c837ad7f57b995d17f4bf69779a5da1ab"
     },
