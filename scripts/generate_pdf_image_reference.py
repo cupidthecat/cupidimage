@@ -12,6 +12,7 @@ from test_pdf_pages import document
 from test_pdf_object_syntax import pdf as syntax_pdf, stream as syntax_stream
 from test_pdf_shading import shading_pdf
 from test_pdf_sampled_functions import sampled
+from test_pdf_calculator import calculator
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
@@ -123,5 +124,9 @@ save_document('function-based-shading.pdf',shading_pdf(
     '<< /ShadingType 1 /ColorSpace /DeviceRGB /Matrix [18 0 0 12 0 0] /Function 6 0 R >>',
     sampled((255,0,0,0,255,0,0,0,255,255,255,255),size=(2,2))),
     lambda x,y:tuple(int(c*255+.5) for c in ((1-(x+.5)/24)*(y+.5)/16+((x+.5)/24)*(1-(y+.5)/16),(x+.5)/24,1-(y+.5)/16)))
+save_document('calculator-gradient.pdf',shading_pdf(axial,
+    calculator('{ 1 exch sub dup 0 exch 1 exch sub }',filtered=True)),lambda x,y:gradient_rgb((x+.5)/24))
+save_document('calculator-conditional.pdf',shading_pdf(axial,
+    calculator('{ .5 lt { 1 0 0 } { 0 0 1 } ifelse }')),lambda x,y:(255,0,0)if x<12 else(0,0,255))
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

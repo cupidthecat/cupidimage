@@ -559,6 +559,14 @@
       "sha256": "3e5fa90809504883829345a633e8e31859b3ddf6f6f04fdebe7a96ee9fa58673"
     },
     {
+      "path": "assets/pdf/reference/calculator-conditional.pdf",
+      "sha256": "191273243b105183ccdb47cb4e65edf0c8c1ae52df8e3d22cbdb4c73705ec5cb"
+    },
+    {
+      "path": "assets/pdf/reference/calculator-gradient.pdf",
+      "sha256": "5d84a7e46128159a7d136dcc2e853b788c3c5478adabd80632f80dfdea0c1af3"
+    },
+    {
       "path": "assets/pdf/reference/color-key-mask.pdf",
       "sha256": "882e494b107ead819956d7a0aa9048c13d3e9ecd3b4d11a38e496587f54dc989"
     },

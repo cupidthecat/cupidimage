@@ -10,6 +10,7 @@
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_transparency.c"
+#include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_functions.c"
 #include "../src/formats/pdf/pdf_shading.c"
 #include "../src/formats/pdf/pdf_render.c"
@@ -31,14 +32,16 @@ int main(void) {
         {"/G gs 0 0 18 12 re B", 1},
         {"/FontForm Do", 1},
         {"/Sampled sh", 1},
-        {"/Broken sh", 0}
+        {"/Broken sh", 0},
+        {"/Calculator sh", 1},
+        {"/BadCalculator sh", 0}
     };
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
     const char *font_content = "BT /F1 6 Tf 0 6 Td (Z) Tj ET";
     const char *cmap = "1 beginbfchar <5A> <0041> endbfchar";
     char document[3072];
     int document_size = snprintf(document, sizeof(document),
-        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R /FontForm 11 0 R >> /ExtGState << /G << /ca .5 /CA .5 /BM /Multiply >> >> /Shading << /Sampled 14 0 R /Broken 17 0 R >> >> >> endobj\n"
+        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R /FontForm 11 0 R >> /ExtGState << /G << /ca .5 /CA .5 /BM /Multiply >> >> /Shading << /Sampled 14 0 R /Broken 17 0 R /Calculator 18 0 R /BadCalculator 20 0 R >> >> >> endobj\n"
         "5 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] /Length %zu >>\n"
         "stream\n%s\nendstream\nendobj\n"
         "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB "
@@ -56,7 +59,10 @@ int main(void) {
         "14 0 obj << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 18 0] /Function 15 0 R >> endobj\n"
         "15 0 obj << /FunctionType 0 /Domain [0 1] /Range [0 1] /Size [2] /BitsPerSample 8 /Filter /ASCIIHexDecode /Length 5 >> stream\n00ff>\nendstream endobj\n"
         "16 0 obj << /FunctionType 2 /Domain [0 1] /C0 [0 1] /C1 [1] /N 1 >> endobj\n"
-        "17 0 obj << /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 18 0] /Function [15 0 R 16 0 R 15 0 R] >> endobj\n",
+        "17 0 obj << /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 18 0] /Function [15 0 R 16 0 R 15 0 R] >> endobj\n"
+        "18 0 obj << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 18 0] /Function 19 0 R >> endobj\n"
+        "19 0 obj << /FunctionType 4 /Domain [0 1] /Range [0 1] /Length 2 >> stream\n{}\nendstream endobj\n"
+        "20 0 obj << /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 18 0] /Function [19 0 R 16 0 R 19 0 R] >> endobj\n",
         strlen(form_content), form_content, strlen(font_content), font_content, strlen(cmap), cmap);
     if (document_size < 0 || (size_t)document_size >= sizeof(document)) return 1;
     size_t checks = 0, failures = 0;

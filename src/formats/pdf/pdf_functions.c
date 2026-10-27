@@ -116,8 +116,8 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
     if (!cupidimage_pdf_dictionary_view(parent,*pos,&view,&end)) return -1;
     *pos=end;
     if (!cupidimage_pdf_image_integer(st,&view,"FunctionType",&node->type) ||
-        (node->type!=0 && node->type!=2 && node->type!=3) ||
-        (node->type!=0 && inputs!=1) ||
+        (node->type!=0 && node->type!=2 && node->type!=3 && node->type!=4) ||
+        ((node->type==2 || node->type==3) && inputs!=1) ||
         !cupidimage_pdf_function_array(st,&view,"Domain",node->domain,inputs*2)) return -1;
     for(int axis=0;axis<inputs;axis++) if(node->domain[axis*2]>node->domain[axis*2+1])return -1;
     node->has_range=cupidimage_pdf_page_value(&view,"Range",&p);
@@ -125,7 +125,19 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
         if (!cupidimage_pdf_function_array(st,&view,"Range",node->range,components*2)) return -1;
         for(int i=0;i<components;i++) if(node->range[i*2]>node->range[i*2+1])return -1;
     }
-    if (node->type==0) {
+    if (node->type==4) {
+        if(!node->has_range)return -1;
+        pdf_object_view source={parent->data+value_start,parent->len-value_start,NULL};
+        const unsigned char *raw; size_t length,decoded_length;
+        unsigned char *decoded=NULL;
+        if(!cupidimage_pdf_object_stream(st->document,st->document_size,&source,&raw,&length) ||
+           !cupidimage_pdf_decode_stream(&source,raw,length,&decoded,&decoded_length))return -1;
+        if(decoded_length>64u*1024u*1024u-tree->sample_bytes) { free(decoded); return -1; }
+        node->calculator=cupidimage_pdf_calculator_compile(decoded,decoded_length);
+        free(decoded);
+        if(!node->calculator)return -1;
+        tree->sample_bytes+=decoded_length;
+    } else if (node->type==0) {
         double sizes[2]; int order=1;
         if (!node->has_range || !cupidimage_pdf_function_array(st,&view,"Size",sizes,inputs) ||
             !cupidimage_pdf_image_integer(st,&view,"BitsPerSample",&node->bits) ||
@@ -187,7 +199,8 @@ int cupidimage_pdf_load_function(const pdf_render_state *st, const pdf_object_vi
 }
 
 void cupidimage_pdf_free_function(pdf_function_tree *tree) {
-    for(int i=0;i<tree->count;i++) { free(tree->nodes[i].samples); tree->nodes[i].samples=NULL; }
+    for(int i=0;i<tree->count;i++) { free(tree->nodes[i].samples); tree->nodes[i].samples=NULL;
+        free(tree->nodes[i].calculator); tree->nodes[i].calculator=NULL; }
     tree->count=0; tree->sample_bytes=0;
 }
 
@@ -245,6 +258,8 @@ static int pdf_function_evaluate_node(const pdf_function_tree *tree,int index,co
             if(!pdf_function_evaluate_node(tree,node->children[i],x,component,budget))return 0;
             out[i]=component[0];
         }
+    } else if(node->type==4) {
+        if(!cupidimage_pdf_calculator_evaluate(node->calculator,x,node->inputs,out,node->components,budget))return 0;
     } else if(node->type==0) {
         if(!pdf_sampled_evaluate(node,x,out,budget))return 0;
     } else if(node->type==2) {

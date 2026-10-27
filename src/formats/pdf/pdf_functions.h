@@ -1,6 +1,7 @@
 #ifndef CUPIDIMAGE_PDF_FUNCTIONS_H
 #define CUPIDIMAGE_PDF_FUNCTIONS_H
 #include "pdf_render_internal.h"
+#include "pdf_calculator.h"
 
 #define PDF_FUNCTION_NODES 64
 #define PDF_FUNCTION_PARTS 32
@@ -13,6 +14,7 @@ typedef struct {
     int size[2], bits;
     double decode[8];
     unsigned char *samples;
+    pdf_calculator_program *calculator;
 } pdf_function_node;
 
 typedef struct {

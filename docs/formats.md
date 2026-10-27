@@ -275,7 +275,8 @@ cross-reference, generation-number, or incremental-update support.
 
 The `sh` operator paints Type 1 function-based, Type 2 axial, and Type 3 radial shadings in DeviceGray,
 DeviceRGB, or DeviceCMYK. Supported color functions include one- or two-input Type 0 sampled functions, single-input Type 2
-exponential functions, Type 3 stitching functions, and arrays of single-output
+exponential functions, Type 3 stitching functions, Type 4 calculator functions,
+and arrays of single-output
 functions. Exponential functions accept Domain, C0/C1, N, and optional Range.
 Stitching functions accept nested Functions, Bounds, Encode, Domain, and Range. The
 renderer applies shading Domain and Extend values, BBox, the current transform,
@@ -285,7 +286,8 @@ be indirect objects. Gray functions can use the default C0/C1 values.
 Each page has a shared budget of 128 million color-function evaluations, including
 nested forms and stitched/component functions. Function trees are limited to
 64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
-silently leaving a blank area. Calculator functions, cubic sampled interpolation, mesh shadings, shading patterns, and color-managed shading spaces
+silently leaving a blank area. Cubic sampled interpolation, mesh shadings,
+shading patterns, and color-managed shading spaces
 remain unsupported.
 
 Small fixtures require exact analytic pixels. Optional independent comparisons
@@ -310,3 +312,11 @@ Type 1 shading applies its Matrix and two-dimensional Domain before evaluating
 the color function. The `sh` operator does not paint the shading's Background
 entry, which applies only to shading patterns. Sample lookups are charged against
 the shared function-work budget along with function-node evaluations.
+
+Calculator streams support all 42 arithmetic, comparison, Boolean, bitwise,
+stack, and conditional operators listed in ISO 32000-1 section 7.10.5 and Annex C.
+Programs are compiled once into forward branches, with 4,096 instructions,
+256 stack entries, and 16 syntax levels per function. Each executed instruction
+and copied or rotated stack entry consumes the shared work budget. Invalid
+syntax, type errors, non-finite results, and stack errors reject the rendering.
+Calculator streams use the shared byte filters and decoded-data limit.

@@ -161,6 +161,20 @@
       "height": 16,
       "rgba_zlib": "eJwNzD1o1AwAgOHpIMsHtxk4F4dAoAgHooQ4lA6HqSAGOpgelCoSG1uKV1pperX+1F6vtKUnpRoNUkvhGodCRLApN5QOhqAIByIEMrh4ELcDl8At75fhWZ//ChkXihmXShlDUsbVcsawmjFayRjTMyaqGVNmxlwtY7mesdbI2GllvHUzDtsZx37GSSfjPMz43s34lWT87mX87Wf8G2RcLKRIxZTLpZRrUspwOeWGmqJXUsb1lHvVlGkzZb6W5n+a/ynbrZTXbsp+O+XIT/E7Kadhynk35VuS8rOXkvRT/gxShgoxV4oxailmRIoZLcfoasydSsykHvOgGjNrxjyuxTypx7xsxGy2YnbdmHftmAM/5mMnxg9jTroxZ0lM2Iv50Y/5NYi5XogYKUbcKEXckiLGyhHjasRkJcLUI2aqEXNmxGItYqUesdqI2GhF7LgRe+0I14846EQchRHH3YjPScRpL+KsH/F1EHGzEHC7GDBWCjCkgIlywD014EElYEYPeFQNWDADlmpB/gf5H7DeCthyA161A/b8gHedgP0w4LAb4CUBx72AT/2AL4OA8YLHRNHjbsnjvuQxVfaYVj1mKx5zusdC1WPR9FiueTyte7xoeKy1PDZcj622x47vsdvxeB16vO16vE88PvQ8DvseRwOPhwWHmaLDbMnhkeQwV3aYVx0eVxwWdYelqsOy6bBSc3hWd3jecFhtOay5Dutthw3fYbPjsB067HQdXiUOuz2Hvb7Dm4GDXWiyVMyVmtSlJsvlnNrkSaXJip6rNnlqNnlWy9Wb+Z9rNXnhNllt5/wmLztN1sJct0kjabLey/WbNAe5gs16MVeyaUg2a+WcavOyYrOq56o2L0yb57Vc3eZZI9eyeerarLRzvs2Tjs1ymOva1BObpV6ub2MPbN4ULPaKFrsli1eSxU7ZYlu12KxYbOgW61WLNdNitWblv5X/Fisti2XXYqltsehbPO5YzIcWc12LR4nFbM9ipm/xcGBxVDA4LBp8KBm8lwzelg1eqwa7FYMd3WCrarBhGqzVDF7UDZ42DJZbBouuwULbYM43mO0YTIcGU12D+4nB3Z7BRN9gfGDwpaDxqahxXNLwJI3Dssa+qvGuorGna7yqamyZGus1jdW6xkpDY6mlseBqPGprzPgaDzoa90KNia6GkWiM9TRu9zVuDjS+FhTOigqnJYXPksJxWeFIVTioKLi6wl5VYcdU2Kgp+a/kv8JiS2HOVZhpK5i+wmRHYTxUGOsq3EoUbvQURvoK1wcKvwoyP4oyYUnmTJI5Kcv4qszHisyBLvOuKrNrymzWZF7WZZ40ZB63ZGZdmQdtmUlf5k5HRg9lRrsyI4mM2pO50pcZGsj8KYgkRZGfJZFvksh5WeRUFfErIke6yH5V5LUpsl0TWauLLDdE5lsi067IvbbIuC+id0RuhCLDXZFricjlnojUF7k4EPlXEPhbFPhdEvglCXwvC5yrAicVgWNd4LAq8NYU2KkJ+S/kv8BcS2DKFZhoC4z5AqMdgeFQ4GpXYCgRuNQTuNAX+G8g8D9omLxu",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/calculator-gradient.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/calculator-conditional.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8JmETlpCkeNX/U/FHzR80fNZ9u5gMAjHn9Hw==",
+      "tolerance": 0
     }
   ]
 }
