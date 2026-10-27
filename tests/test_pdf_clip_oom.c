@@ -26,12 +26,15 @@ int main(void) {
         "0 0 9 12 re W n 18 0 0 12 0 0 cm /Im0 Do",
         "18 0 0 12 0 0 cm /Im1 Do",
         "/G gs 3 w 0 6 m 18 6 l 0 6 m 18 6 l S",
-        "/G gs 0 0 18 12 re B"
+        "/G gs 0 0 18 12 re B",
+        "/FontForm Do"
     };
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
-    char document[2048];
+    const char *font_content = "BT /F1 6 Tf 0 6 Td (Z) Tj ET";
+    const char *cmap = "1 beginbfchar <5A> <0041> endbfchar";
+    char document[3072];
     int document_size = snprintf(document, sizeof(document),
-        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R >> /ExtGState << /G << /ca .5 /CA .5 /BM /Multiply >> >> >> >> endobj\n"
+        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R /FontForm 11 0 R >> /ExtGState << /G << /ca .5 /CA .5 /BM /Multiply >> >> >> >> endobj\n"
         "5 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] /Length %zu >>\n"
         "stream\n%s\nendstream\nendobj\n"
         "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB "
@@ -42,7 +45,11 @@ int main(void) {
         "/BitsPerComponent 8 /SMask 10 0 R /Filter /ASCIIHexDecode /Length 3 >> stream\n00>\nendstream endobj\n"
         "9 0 obj << /Filter /ASCIIHexDecode /Length 7 >> stream\n524742>\nendstream endobj\n"
         "10 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray "
-        "/BitsPerComponent 8 /Length 1 >> stream\nM\nendstream endobj\n", strlen(form_content), form_content);
+        "/BitsPerComponent 8 /Length 1 >> stream\nM\nendstream endobj\n"
+        "11 0 obj << /Subtype /Form /BBox [0 0 18 12] /Resources << /Font << /F1 12 0 R >> >> /Length %zu >> stream\n%s\nendstream endobj\n"
+        "12 0 obj << /Type /Font /ToUnicode 13 0 R >> endobj\n"
+        "13 0 obj << /Length %zu >> stream\n%s\nendstream endobj\n",
+        strlen(form_content), form_content, strlen(font_content), font_content, strlen(cmap), cmap);
     size_t checks = 0, failures = 0;
     for (size_t fixture = 0; fixture < sizeof(fixtures) / sizeof(fixtures[0]); fixture++) {
         size_t total = 0;

@@ -32,6 +32,7 @@ typedef struct {
 typedef struct {
     uint32_t src_code;
     uint32_t dst_codepoint;
+    uint32_t order;
     uint8_t src_len;
 } pdf_tounicode_entry;
 
@@ -104,7 +105,6 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
                                      cupidimage_image *img, const pdf_page_geometry *geometry,
                                      char *err, size_t errcap);
 void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos);
-void cupidimage_pdf_trim_whitespace(cupidimage_image *img);
 
 int cupidimage_pdf_is_ws(unsigned char c);
 int cupidimage_pdf_dictionary_integer(const unsigned char *document, size_t document_size,

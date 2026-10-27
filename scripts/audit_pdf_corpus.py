@@ -129,7 +129,7 @@ def compare(reference, actual, dimensions):
     width, height, rgb = read_ppm(reference)
     if (width, height) != dimensions:
         return {'status': 'dimension-mismatch', 'reference_width': width, 'reference_height': height,
-                'note': 'The library currently trims page whitespace; no scaling or alignment is hidden in this comparison.'}
+                'note': 'Page bounds are preserved; no scaling, alignment, or cropping is hidden in this comparison.'}
     with actual.open('rb') as source:
         source.seek(12); rgba = source.read()
     total = changed = maximum = 0

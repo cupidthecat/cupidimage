@@ -993,8 +993,8 @@ int cupidimage_pdf_get_page_geometry(const unsigned char *data, size_t size, int
     geometry->y0 = fmax(media[1], crop[1]);
     geometry->x1 = fmin(media[2], crop[2]);
     geometry->y1 = fmin(media[3], crop[3]);
-    double width = floor((geometry->x1 - geometry->x0) * (96.0 / 72.0));
-    double height = floor((geometry->y1 - geometry->y0) * (96.0 / 72.0));
+    double width = ceil((geometry->x1 - geometry->x0) * (96.0 / 72.0));
+    double height = ceil((geometry->y1 - geometry->y0) * (96.0 / 72.0));
     /* Bound preview memory and validate before converting to integer dimensions. */
     if (!isfinite(width) || !isfinite(height) || width < 1 || height < 1 ||
         width > INT_MAX || height > INT_MAX || width * height > 64.0 * 1024 * 1024) goto invalid;

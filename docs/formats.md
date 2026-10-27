@@ -82,11 +82,11 @@ clipping modes, transparency groups, patterns, and annotations are unsupported.
 
 ## PDF details and limits
 
-PDF pages render at 96 DPI. CropBox is intersected with MediaBox, and page
+PDF pages render at 96 DPI, rounding fractional pixel extents upward. CropBox is intersected with MediaBox, and page
 rotation applies to both text and graphics. Direct and indirect page boxes and
 rotation values are supported. Invalid boxes, cyclic parent chains, and previews
-larger than 64 megapixels are rejected. The renderer still trims whitespace from
-the resulting preview.
+larger than 64 megapixels are rejected. Whitespace is preserved, so sparse content cannot change the
+page dimensions or shift its origin.
 
 Run the generated PDF page regressions with Python 3:
 
@@ -240,3 +240,21 @@ spaces, isolated or knockout groups, graphics-state soft-mask dictionaries,
 overprinting, and full text-transparency semantics remain unsupported. `/SMask
 /None` is accepted; other graphics-state soft masks return an error. Stroke caps
 and joins still use the existing approximate geometry.
+
+## PDF character maps
+
+ToUnicode streams use the shared byte-filter pipeline, including LZW and filter
+chains. Font resources follow page inheritance and nearest-resource replacement;
+inline font dictionaries and indirect resource/font dictionaries are supported.
+Nested dictionaries, comments, and strings do not override outer Resources,
+Font, ToUnicode, or Filter entries.
+
+These maps choose characters for the existing bitmap fallback. They do not load
+embedded font outlines, implement complete CMap semantics, or reproduce a font's
+metrics. Invalid font metadata retains that fallback rather than a partially
+parsed character map. `make test-pdf-font-maps` checks those boundaries.
+
+Character maps are limited to 65,536 entries per font and 256 fonts per resource
+scope. Oversized ranges and allocation failures discard the metadata instead of
+attempting unbounded expansion. Entries are sorted once, duplicate codes keep
+the last definition, and glyph lookup uses binary search.

@@ -779,129 +779,6 @@ static void pdf_path_end(pdf_render_state *st) {
     pdf_path_clear(&st->path);
 }
 
-static int pdf_is_nonwhite_pixel(const unsigned char *px) {
-    return px[0] < 250 || px[1] < 250 || px[2] < 250 || px[3] < 250;
-}
-
-void cupidimage_pdf_trim_whitespace(cupidimage_image *img) {
-    if (!img || !img->rgba || img->width == 0 || img->height == 0) {
-        return;
-    }
-
-    uint32_t w = img->width;
-    uint32_t h = img->height;
-    size_t *row_mass = (size_t *)calloc(h, sizeof(size_t));
-    size_t *col_mass = (size_t *)calloc(w, sizeof(size_t));
-    if (!row_mass || !col_mass) {
-        free(row_mass);
-        free(col_mass);
-        return;
-    }
-
-    size_t total_mass = 0;
-    for (uint32_t y = 0; y < h; y++) {
-        for (uint32_t x = 0; x < w; x++) {
-            const unsigned char *px = img->rgba + ((size_t)y * (size_t)w + (size_t)x) * 4u;
-            if (!pdf_is_nonwhite_pixel(px)) {
-                continue;
-            }
-            row_mass[y]++;
-            col_mass[x]++;
-            total_mass++;
-        }
-    }
-
-    if (total_mass == 0) {
-        free(row_mass);
-        free(col_mass);
-        return;
-    }
-
-    size_t cut_mass_y = total_mass / 300u;  /* Trim only sparse edge noise. */
-    size_t cut_mass_x = total_mass / 300u;
-
-    uint32_t top = 0;
-    size_t acc = 0;
-    while (top + 1 < h && acc + row_mass[top] <= cut_mass_y) {
-        acc += row_mass[top];
-        top++;
-    }
-
-    uint32_t bottom = h - 1u;
-    acc = 0;
-    while (bottom > top && acc + row_mass[bottom] <= cut_mass_y) {
-        acc += row_mass[bottom];
-        bottom--;
-    }
-
-    uint32_t left = 0;
-    acc = 0;
-    while (left + 1 < w && acc + col_mass[left] <= cut_mass_x) {
-        acc += col_mass[left];
-        left++;
-    }
-
-    uint32_t right = w - 1u;
-    acc = 0;
-    while (right > left && acc + col_mass[right] <= cut_mass_x) {
-        acc += col_mass[right];
-        right--;
-    }
-
-    /* Keep a page-like framing: don't trim more than ~1/6 from any side. */
-    uint32_t max_trim_y = h / 6u;
-    uint32_t max_trim_x = w / 6u;
-    if (top > max_trim_y) {
-        top = max_trim_y;
-    }
-    if (left > max_trim_x) {
-        left = max_trim_x;
-    }
-    uint32_t trimmed_bottom = (h - 1u) - bottom;
-    if (trimmed_bottom > max_trim_y) {
-        bottom = (h - 1u) - max_trim_y;
-    }
-    uint32_t trimmed_right = (w - 1u) - right;
-    if (trimmed_right > max_trim_x) {
-        right = (w - 1u) - max_trim_x;
-    }
-
-    free(row_mass);
-    free(col_mass);
-
-    if (right <= left || bottom <= top) {
-        return;
-    }
-
-    uint32_t pad = 16u;
-    if (left > pad) left -= pad; else left = 0;
-    if (top > pad) top -= pad; else top = 0;
-    if (right + pad < w) right += pad; else right = w - 1u;
-    if (bottom + pad < h) bottom += pad; else bottom = h - 1u;
-
-    uint32_t new_w = right - left + 1u;
-    uint32_t new_h = bottom - top + 1u;
-    if (new_w >= w || new_h >= h) {
-        return;
-    }
-
-    unsigned char *cropped = (unsigned char *)malloc((size_t)new_w * (size_t)new_h * 4u);
-    if (!cropped) {
-        return;
-    }
-
-    for (uint32_t y = 0; y < new_h; y++) {
-        const unsigned char *src = img->rgba + ((size_t)(top + y) * (size_t)w + (size_t)left) * 4u;
-        unsigned char *dst = cropped + (size_t)y * (size_t)new_w * 4u;
-        memcpy(dst, src, (size_t)new_w * 4u);
-    }
-
-    free(img->rgba);
-    img->rgba = cropped;
-    img->width = new_w;
-    img->height = new_h;
-}
-
 static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     if (!st || !st->img || !st->img->rgba) {
         return;
@@ -982,11 +859,13 @@ static int pdf_font_lookup_codepoint(const pdf_font_map *font, uint32_t src_code
     if (!font || !dst_codepoint || src_len == 0) {
         return 0;
     }
-    for (int i = 0; i < font->count; i++) {
-        if (font->entries[i].src_code == src_code && font->entries[i].src_len == src_len) {
-            *dst_codepoint = font->entries[i].dst_codepoint;
-            return 1;
-        }
+    int low = 0, high = font->count;
+    while (low < high) {
+        int mid = low + (high-low)/2;
+        const pdf_tounicode_entry *entry = &font->entries[mid];
+        if (entry->src_len == src_len && entry->src_code == src_code) { *dst_codepoint = entry->dst_codepoint; return 1; }
+        if (entry->src_len < src_len || (entry->src_len == src_len && entry->src_code < src_code)) low = mid+1;
+        else high = mid;
     }
     return 0;
 }

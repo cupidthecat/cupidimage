@@ -115,9 +115,8 @@ python3 scripts/audit_pdf_corpus.py --corpus assets/pdf/pdfjs \
 Reference pages use 96 DPI and the CropBox. Equal-sized pages are compared
 channel by channel, reporting maximum error, mean absolute error, and the fraction
 of differing channels. Different sizes are reported as dimension mismatches;
-the runner does not resize, align, or crop them to manufacture a match. The
-current library trims page whitespace, so some differences reflect that policy
-as well as incomplete rendering.
+the runner does not resize, align, or crop them to manufacture a match. The library preserves page whitespace; remaining dimension differences should
+be investigated as geometry or parsing discrepancies, not hidden by resizing.
 
 `--keep-images` saves full-resolution actual/reference PNGs, a side-by-side PNG,
 and a difference preview when page dimensions match. An HTML gallery is written
@@ -154,7 +153,7 @@ Use `make test-png`, `test-jpeg`, `test-jpeg-reference`, `test-webp`,
 PDF checks include `test-pdf-pages`, `test-pdf-streams`, `test-pdf-safety`,
 `test-pdf-graphics`, `test-pdf-images`, `test-pdf-packed-images`, `test-pdf-forms`, `test-pdf-clipping`,
 `test-pdf-colors`, `test-pdf-masks`, `test-pdf-filters`, `test-pdf-lzw`,
-`test-pdf-indexed`, `test-pdf-transparency`, and `test-pdf-clip-oom`. `test-pdf-audit` tests the corpus runner
+`test-pdf-indexed`, `test-pdf-transparency`, `test-pdf-font-maps`, and `test-pdf-clip-oom`. `test-pdf-audit` tests the corpus runner
 itself without network access. `test-deflate-containers` covers shared compression
 through complete PDF/TIFF containers, and `test-inflate` checks zlib directly.
 

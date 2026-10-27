@@ -46,8 +46,7 @@ uses the initial state. SVG animation and text support remain subsets of SVG.
 
 PDF files render every page unless `--pdf-page` is given. The CLI prints page
 progress to stderr and separates page output with newlines. PDF page numbers in
-the CLI are 1-based; the C page APIs are 0-based. Page previews use 96 DPI and
-currently trim whitespace.
+the CLI are 1-based; the C page APIs are 0-based. Page previews use 96 DPI and preserve the page bounds, including whitespace.
 
 PDF and SVG special CLI handling recognizes `.pdf`/`.PDF` and `.svg`/`.SVG`
 extensions. The general image loader also examines file contents, but giving a

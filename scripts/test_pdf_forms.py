@@ -11,6 +11,7 @@ import zlib
 from test_pdf_pages import document
 from test_pdf_images import image_stream
 from test_jpeg_decoder import jpeg, scan, EOI
+from test_pdf_lzw import literals
 
 RED, BLUE, GRAY = (255, 0, 0), (0, 0, 255), (128, 128, 128)
 PAINT = '1 0 0 rg -100 -100 300 300 re f'
@@ -155,6 +156,17 @@ def main():
                         7: b'<< /Length ' + str(len(cmap)).encode() + b' >>\nstream\n' + cmap + b'\nendstream'}
         check('form-font-map', fixture(form('1 0 0 rg ' + text.replace('(A)', '(Z)'),
               '/BBox [0 0 18 12] /Resources << /Font << /F1 6 0 R >> >>'), extra=font_objects), same=text_reference)
+        for label, payload, filters in (
+            ('hex', cmap.hex().encode() + b'>', '/ASCIIHexDecode'),
+            ('ascii85', base64.a85encode(cmap) + b'~>', '/ASCII85Decode'),
+            ('runlength', bytes([len(cmap)-1]) + cmap + b'\x80', '/RunLengthDecode'),
+            ('lzw', literals(cmap, 1), '/LZWDecode'),
+            ('chain', base64.a85encode(zlib.compress(cmap)) + b'~>', '[/ASCII85Decode /FlateDecode]'),
+        ):
+            cmap_stream=f'<< /Length {len(payload)} /Filter {filters} >>\nstream\n'.encode()+payload+b'\nendstream'
+            check('filtered-font-map-'+label, fixture(form('1 0 0 rg '+text.replace('(A)', '(Z)'),
+                  '/BBox [0 0 18 12] /Resources << /Font << /F1 6 0 R >> >>'),
+                  extra={**font_objects, 7:cmap_stream}), same=text_reference)
         check('indirect-form-font-map', fixture(form('1 0 0 rg ' + text.replace('(A)', '(Z)'),
               '/BBox [0 0 18 12] /Resources 8 0 R'), extra={**font_objects,
               8: '<< /Font 9 0 R >>', 9: '<< /F1 6 0 R >>'}), same=text_reference)

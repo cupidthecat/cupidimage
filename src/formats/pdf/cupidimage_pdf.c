@@ -186,7 +186,6 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
         cupidimage_set_err(err, errcap, "pdf: out of memory rotating page");
         return 0;
     }
-    cupidimage_pdf_trim_whitespace(img);
 
     img->hotspot_x = 0;
     img->hotspot_y = 0;
