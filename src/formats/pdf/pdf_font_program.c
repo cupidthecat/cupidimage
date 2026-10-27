@@ -212,8 +212,9 @@ double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsi
 int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                        const pdf_object_view *view, pdf_font_map *font,
                                        size_t *budget) {
-    if (!font->cid && !cupidimage_pdf_font_is_name(view, "Subtype", "TrueType") &&
-        !cupidimage_pdf_font_is_name(view, "Subtype", "Type1"))
+    int type1 = cupidimage_pdf_font_is_name(view, "Subtype", "Type1") ||
+                cupidimage_pdf_font_is_name(view, "Subtype", "MMType1");
+    if (!font->cid && !cupidimage_pdf_font_is_name(view, "Subtype", "TrueType") && !type1)
         return 1;
     pdf_object_view descendant = {0}, array = {0}, descriptor = {0}, stream = {0}, map = {0};
     const pdf_object_view *owner = view;
@@ -245,7 +246,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
     if (!cupidimage_pdf_page_value(&descriptor, "FontFile2", &p)) {
         if (cupidimage_pdf_page_value(&descriptor, "FontFile3", &p))
             program_key = "FontFile3";
-        else if (!font->cid && cupidimage_pdf_font_is_name(owner,"Subtype","Type1") &&
+        else if (!font->cid && type1 &&
                  cupidimage_pdf_page_value(&descriptor,"FontFile",&p))
             program_key = "FontFile";
         else { ok = 1; goto done; }

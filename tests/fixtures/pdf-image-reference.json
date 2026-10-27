@@ -217,6 +217,20 @@
       "height": 120,
       "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-cmap10.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-post-names.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
     }
   ]
 }

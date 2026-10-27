@@ -220,6 +220,9 @@ $(BINDIR)/test_pdf_truetype: tests/test_pdf_truetype.c $(LIB)
 
 test-pdf-truetype: $(BINDIR)/test_pdf_truetype $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_truetype.py $(BINDIR)/test_pdf_truetype
+	python3 scripts/test_pdf_truetype_cmaps.py $(BINDIR)/test_pdf_truetype
+	python3 scripts/generate_pdf_post_names.py --check
+	python3 scripts/test_pdf_truetype_names.py $(BINDIR)/test_pdf_truetype
 	python3 scripts/test_pdf_embedded_fonts.py $(BINDIR)/test_pdf_pages
 
 $(BINDIR)/test_pdf_cmap: tests/test_pdf_cmap.c $(LIB)

@@ -40,7 +40,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   and standard subroutine operations. Shared simple-font encoding resolution
   lives in `pdf_font_encoding.c`; `pdf_standard_font.c` applies the immutable
   standard-font metrics from `fonts/standard.c` and CFF substitutes from
-  `fonts/standard_outlines.c`.
+  `fonts/standard_outlines.c`. TrueType binary geometry remains in
+  `fonts/truetype.c`; cmap lookup and post names live in
+  `fonts/truetype_cmap.c` and `fonts/truetype_names.c`.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;

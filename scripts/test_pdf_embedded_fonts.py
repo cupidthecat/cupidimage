@@ -55,6 +55,26 @@ def main():
                 refs+=1
         box='20 30 12 18 re f'
         same('simple-font-box','BT /F 30 Tf 20 30 Td (A) Tj ET',box)
+        from test_pdf_truetype import replace_tables
+        from test_pdf_truetype_cmaps import format2,format8,format10
+        cmaps=[('mixed-byte',format2(),3,1,'/WinAnsiEncoding'),
+               ('mixed-word',format8(),3,10,'/WinAnsiEncoding'),
+               ('trimmed-BMP',format10(65,(1,2)),3,10,'/WinAnsiEncoding'),
+               ('trimmed-supplementary',format10(0x10000,(1,)),3,10,'<< /Differences [65 /u10000] >>')]
+        for label,table,platform,enc,encoding in cmaps:
+            cmap=struct.pack('>HHHHI',0,1,platform,enc,12)+table
+            same('cmap-'+label,'BT /F 30 Tf 20 30 Td (A) Tj ET',box,
+                 font_data=replace_tables(FONT,{b'cmap':cmap}),encoding=encoding,secondary=label!='mixed-byte')
+        from test_pdf_truetype import tables
+        post_names=json.loads(Path('tests/fixtures/pdf-post-names.json').read_text())['names']
+        _,maxp_at,_=tables(FONT)[b'maxp'];glyph_count=struct.unpack_from('>H',FONT,maxp_at+4)[0]
+        ids=[0,post_names.index('Delta')]+[0]*(glyph_count-2)
+        post=struct.pack('>I',0x20000)+bytes(28)+struct.pack('>H',glyph_count)+struct.pack('>'+str(glyph_count)+'H',*ids)
+        same('post-standard-extended','BT /F 30 Tf 20 30 Td (A) Tj ET',box,
+             font_data=replace_tables(FONT,{b'post':post,b'cmap':b'\0\0\0\0'}),encoding='<< /Differences [65 /Delta] >>',secondary=True)
+        post=struct.pack('>I',0x25000)+bytes(28)+struct.pack('>H',glyph_count)+bytes([0,post_names.index('A')-1]+[0]*(glyph_count-2))
+        same('post-legacy-offset','BT /F 30 Tf 20 30 Td (A) Tj ET',box,
+             font_data=replace_tables(FONT,{b'post':post,b'cmap':b'\0\0\0\0'}),secondary=True)
         same('CID-box','BT /F 30 Tf 20 30 Td <0001> Tj ET',box,cid=True)
         same('CID-without-Unicode','BT /F 30 Tf 20 30 Td <00010001> Tj ET',box+' 50 30 12 18 re f',cid=True)
         same('hmtx-advance','BT /F 30 Tf 20 30 Td (AA) Tj ET',box+' 50 30 12 18 re f',metrics='',reference=False)

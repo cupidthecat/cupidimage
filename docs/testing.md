@@ -303,3 +303,13 @@ rejected by the independent loader remain analytic-only tests.
 
 The shared text tests also verify that showing a space in a clipping mode creates
 an empty clip, rather than leaving the previous clip unchanged.
+
+## TrueType character maps and names
+
+`make test-pdf-truetype` includes mixed-byte cmap format 2, mixed-word format 8,
+trimmed full-width format 10, and all 258 standard Macintosh post names. It also
+covers legacy signed post offsets and malformed table boundaries. The two added
+asset PDFs have analytic rectangle oracles, not just successful decode checks.
+
+See [PDF fonts and text](pdf-fonts.md) for independent table and raster comparisons
+and the distinction between font cmaps and PDF encoding CMaps.

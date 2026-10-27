@@ -13,12 +13,12 @@ from audit_pdf_corpus import read_ppm
 CURVE=WIDTH+command([0,0],21)+command([400],6)+command([0,400,-400,0,0,-400],8)+b'\x09\x0e'
 
 
-def fixture(content,encoding='/WinAnsiEncoding',metrics='/FirstChar 65 /LastChar 66 /Widths [600 600]',glyphs=None,compressed=False,extra=None,**kwargs):
+def fixture(content,encoding='/WinAnsiEncoding',metrics='/FirstChar 65 /LastChar 66 /Widths [600 600]',glyphs=None,compressed=False,extra=None,subtype="Type1",**kwargs):
     if glyphs is None:glyphs=[('.notdef',WIDTH+b'\x0e'),('space',WIDTH+b'\x0e'),('A',BOX),('B',CURVE)]
     raw,l1,l2=font_program(glyphs=glyphs,**kwargs)
     attributes=f'/Length1 {l1} /Length2 {l2} /Length3 0'
     if compressed:raw=zlib.compress(raw);attributes+=' /Filter /FlateDecode'
-    objects={5:('<< /Type /Font /Subtype /Type1 /BaseFont /CupidShapes /FontDescriptor 8 0 R '+('/Encoding '+encoding if encoding else '')+' '+metrics+' >>').encode(),
+    objects={5:('<< /Type /Font /Subtype /'+subtype+' /BaseFont /CupidShapes /FontDescriptor 8 0 R '+('/Encoding '+encoding if encoding else '')+' '+metrics+' >>').encode(),
              8:b'<< /Type /FontDescriptor /FontName /CupidShapes /Flags 32 /FontBBox [0 -200 1000 1000] /Ascent 800 /Descent -200 /ItalicAngle 0 /CapHeight 600 /StemV 80 /FontFile 9 0 R >>',9:stream(raw,attributes)}
     objects.update(extra or {})
     return pdf(content,extra=objects)
@@ -51,6 +51,7 @@ def main():
                 refs+=1
         text='BT /F 30 Tf 20 30 Td (A) Tj ET';box='20 30 12 18 re f'
         same('simple',text,box)
+        same('multiple-master-snapshot',text,box,subtype='MMType1')
         same('binary-newline-after-CR',text,box,separator=b'\r',iv_first=26)
         same('unencrypted-outer-program',text,box,outer_encrypted=False,reference=False)
         same('filtered',text,box,compressed=True)

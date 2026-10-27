@@ -16,6 +16,8 @@
 #include "../src/formats/pdf/fonts/standard.c"
 #include "../src/formats/pdf/fonts/standard_outlines.c"
 #include "../src/formats/pdf/fonts/truetype.c"
+#include "../src/formats/pdf/fonts/truetype_cmap.c"
+#include "../src/formats/pdf/fonts/truetype_names.c"
 #include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"

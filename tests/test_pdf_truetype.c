@@ -30,6 +30,13 @@ int main(int argc, char **argv) {
         free(data);
         return 2;
     }
+    if (!strcmp(argv[2], "map-list") && argc >= 6) {
+        for (int i = 5; i < argc; i++)
+            printf("%u\n", cupidimage_pdf_tt_map(&font, (uint32_t)strtoul(argv[i], NULL, 0),
+                                                  atoi(argv[3]), atoi(argv[4])));
+        free(data);
+        return 0;
+    }
     if (!strcmp(argv[2], "map") && argc == 6) {
         printf("%u\n", cupidimage_pdf_tt_map(&font, (uint32_t)strtoul(argv[5], NULL, 0),
                                              atoi(argv[3]), atoi(argv[4])));
@@ -45,6 +52,11 @@ int main(int argc, char **argv) {
     }
     if (!strcmp(argv[2], "encoding") && argc == 4) {
         for (unsigned i = 0; i < 256; i++) puts(cupidimage_pdf_encoding_name(argv[3], i));
+        free(data);
+        return 0;
+    }
+    if (!strcmp(argv[2], "post-list") && argc >= 4) {
+        for (int i = 3; i < argc; i++) printf("%u\n", cupidimage_pdf_tt_name(&font, argv[i]));
         free(data);
         return 0;
     }

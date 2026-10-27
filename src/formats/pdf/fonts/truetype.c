@@ -1,5 +1,4 @@
 #include "truetype.h"
-#include "encoding.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,100 +67,6 @@ unsigned cupidimage_pdf_tt_advance(const pdf_tt_font *f, unsigned glyph) {
     if (glyph >= f->hmetrics)
         glyph = f->hmetrics - 1;
     return tt_u16(f->hmtx.data + glyph * 4);
-}
-static unsigned tt_cmap(const unsigned char *p, size_t length, uint32_t code) {
-    if (length < 4)
-        return 0;
-    unsigned format = tt_u16(p);
-    size_t size;
-    if (format == 12 || format == 13) {
-        if (length < 16)
-            return 0;
-        size = tt_u32(p + 4);
-    } else
-        size = tt_u16(p + 2);
-    if (size > length)
-        return 0;
-    if (format == 0)
-        return size >= 262 && code < 256 ? p[6 + code] : 0;
-    if (format == 6) {
-        if (size < 10)
-            return 0;
-        unsigned start = tt_u16(p + 6), count = tt_u16(p + 8);
-        return size >= 10 + (size_t)count * 2 && code >= start && code - start < count
-                   ? tt_u16(p + 10 + (code - start) * 2)
-                   : 0;
-    }
-    if (format == 4) {
-        if (size < 16 || code > 65535)
-            return 0;
-        unsigned segments = tt_u16(p + 6) / 2;
-        if (!segments || tt_u16(p + 6) % 2 || size < 16 + (size_t)segments * 8)
-            return 0;
-        const unsigned char *ends = p + 14, *starts = ends + 2 * segments + 2,
-                            *deltas = starts + 2 * segments, *offsets = deltas + 2 * segments;
-        unsigned lo = 0, hi = segments;
-        while (lo < hi) {
-            unsigned mid = lo + (hi - lo) / 2;
-            if (tt_u16(ends + mid * 2) < code)
-                lo = mid + 1;
-            else
-                hi = mid;
-        }
-        if (lo == segments || code < tt_u16(starts + lo * 2))
-            return 0;
-        unsigned delta = tt_u16(deltas + lo * 2), offset = tt_u16(offsets + lo * 2);
-        if (!offset)
-            return (code + delta) & 65535;
-        size_t at = (size_t)(offsets - p) + lo * 2 + offset + (code - tt_u16(starts + lo * 2)) * 2;
-        if (at > size || size - at < 2)
-            return 0;
-        unsigned glyph = tt_u16(p + at);
-        return glyph ? (glyph + delta) & 65535 : 0;
-    }
-    if (format == 12 || format == 13) {
-        unsigned count = tt_u32(p + 12);
-        if (size < 16 || count > (size - 16) / 12)
-            return 0;
-        unsigned lo = 0, hi = count;
-        while (lo < hi) {
-            unsigned mid = lo + (hi - lo) / 2;
-            if (tt_u32(p + 16 + mid * 12 + 4) < code)
-                lo = mid + 1;
-            else
-                hi = mid;
-        }
-        if (lo == count)
-            return 0;
-        const unsigned char *group = p + 16 + lo * 12;
-        uint32_t start = tt_u32(group), end = tt_u32(group + 4), glyph = tt_u32(group + 8);
-        if (code < start || code > end)
-            return 0;
-        uint64_t result = (uint64_t)glyph + (format == 12 ? code - start : 0);
-        return result <= 65535 ? (unsigned)result : 0;
-    }
-    return 0;
-}
-unsigned cupidimage_pdf_tt_map(const pdf_tt_font *f, uint32_t code, int platform, int encoding) {
-    const unsigned char *p = f->cmap.data;
-    size_t length = f->cmap.length;
-    if (length < 4)
-        return 0;
-    unsigned count = tt_u16(p + 2);
-    if (count > (length - 4) / 8)
-        return 0;
-    for (unsigned i = 0; i < count; i++) {
-        const unsigned char *entry = p + 4 + i * 8;
-        unsigned plat = tt_u16(entry), enc = tt_u16(entry + 2);
-        size_t at = tt_u32(entry + 4);
-        if ((platform < 0 || plat == (unsigned)platform) &&
-            (encoding < 0 || enc == (unsigned)encoding) && at < length) {
-            unsigned glyph = tt_cmap(p + at, length - at, code);
-            if (glyph && glyph < f->glyphs)
-                return glyph;
-        }
-    }
-    return 0;
 }
 void cupidimage_pdf_tt_outline_free(pdf_tt_outline *o) {
     free(o->points);
@@ -379,44 +284,4 @@ int cupidimage_pdf_tt_outline(const pdf_tt_font *font, unsigned glyph, pdf_tt_ou
         return 0;
     }
     return 1;
-}
-
-unsigned cupidimage_pdf_tt_name(const pdf_tt_font *f, const char *name) {
-    const unsigned char *p = f->post.data;
-    size_t length = f->post.length;
-    if (length < 32)
-        return 0;
-    uint32_t version = tt_u32(p);
-    if (version == 0x20000) {
-        if (length < 34)
-            return 0;
-        unsigned count = tt_u16(p + 32);
-        if (count > f->glyphs || count > (length - 34) / 2)
-            return 0;
-        unsigned wanted = 0;
-        size_t at = 34 + (size_t)count * 2;
-        unsigned index = 258;
-        while (at < length) {
-            unsigned size = p[at++];
-            if (size > length - at)
-                return 0;
-            if (strlen(name) == size && !memcmp(p + at, name, size)) {
-                wanted = index;
-                break;
-            }
-            at += size;
-            index++;
-            if (index > 65535)
-                return 0;
-        }
-        for (unsigned i = 0; i < count; i++) {
-            unsigned id = tt_u16(p + 34 + i * 2);
-            if (wanted && id == wanted)
-                return i;
-            if (id >= 3 && id <= 97 &&
-                !strcmp(name, cupidimage_pdf_encoding_name("MacRomanEncoding", id + 29)))
-                return i;
-        }
-    }
-    return 0;
 }

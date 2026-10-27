@@ -394,3 +394,15 @@ substitute rendering checks and optional independent path comparisons are
 described in [PDF fonts and text](pdf-fonts.md). Extended glyph coverage and
 hinting remain incomplete; substitute fonts are not identical to every host's
 font selection.
+
+## Additional TrueType glyph selection
+
+Font cmap formats 2, 8 and 10 now complement 0, 4, 6, 12 and 13. The post reader
+supports the complete standard Macintosh name order in versions 1 and 2, custom
+version-2 names and legacy version-2.5 signed offsets. This work adds 100 cmap
+checks, 801 name/bounds checks and six PDF rendering cases. Optional independent
+runs compare 39 mappings, 774 names and 25 embedded-font rasters overall.
+Unicode variation-sequence cmap format 14 and AAT post format 4 remain open.
+
+MMType1 dictionaries also accept embedded ordinary Type 1 snapshots. This adds
+one exact rendering comparison, not multiple-master interpolation support.

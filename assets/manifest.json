@@ -587,6 +587,14 @@
       "sha256": "e2c9018976dd3719ed3a7b2feaec89eb69d195284abab856ada26a2cac4d85fb"
     },
     {
+      "path": "assets/pdf/reference/embedded-truetype-cmap10.pdf",
+      "sha256": "11524fb7641379c5291ba55cc3eb00d183538914568a626d73b834f7a0471b92"
+    },
+    {
+      "path": "assets/pdf/reference/embedded-truetype-post-names.pdf",
+      "sha256": "5554b8754a0f8bbf57e8bb82200177b1f5dd870455ecd9290448c687fabdc086"
+    },
+    {
       "path": "assets/pdf/reference/embedded-type1-filtered.pdf",
       "sha256": "8a1d798b11e7507e248f0e0750e8cbb874063510c6317ef6c685836b30924fb5"
     },

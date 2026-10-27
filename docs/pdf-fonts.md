@@ -10,8 +10,9 @@ A simple TrueType font consumes one encoded byte per glyph. StandardEncoding,
 MacRomanEncoding and WinAnsiEncoding provide base glyph names; Differences can
 override them. Names are mapped through the pinned Adobe Glyph List and the
 font's Unicode or Macintosh cmap. Symbolic fonts use their symbol cmap code
-ranges, with the documented fallback when the expected cmap is absent. Custom
-version-2 post names and its standard ASCII names are also available.
+ranges, with the documented fallback when the expected cmap is absent. The full 258-name Macintosh post ordering, custom version-2 names and legacy
+version-2.5 signed offsets are also available. Version 1 requires the standard
+258-glyph ordering; version 3 has no glyph names.
 
 Identity-H/V fonts consume two-byte CIDs. Embedded encoding CMaps can consume
 one to four bytes and map those source codes to CIDs. CIDToGIDMap can be Identity or a filtered
@@ -88,7 +89,11 @@ font table's existing fallback policy rather than establishing faithful text.
 
 FontFile2 accepts TrueType programs. FontFile3 accepts OpenType programs with
 glyf outlines. The reader checks table ranges, short/long loca offsets, head,
-maxp and horizontal metrics. Supported cmap forms are 0, 4, 6, 12 and 13.
+maxp and horizontal metrics. Supported cmap forms are 0, 2, 4, 6, 8, 10, 12 and 13. Format 2 handles
+single-byte characters, lead-byte subheaders, shared glyph arrays and signed
+deltas without changing missing-glyph zero. Formats 8 and 10 accept full-width
+character codes. Declared lengths, offsets and glyph IDs remain bounded.
+These font cmaps do not replace the PDF encoding CMap that consumes text bytes.
 
 Simple glyphs decode contour ends, repeated flags and signed coordinate deltas.
 Composite glyphs support translation, affine component transforms, point
@@ -142,6 +147,10 @@ with every font in the broader corpus.
 
 ## Type 1 programs
 
+MMType1 font dictionaries accept embedded ordinary Type 1 snapshots, as required
+by ISO 32000-1 section 9.6.2.3. The renderer does not generate instances from a
+multiple-master design space.
+
 FontFile streams use Length1/Length2/Length3 after PDF stream filters have been
 removed. The reader decrypts the binary eexec portion and the individual
 charstrings, preserving their declared byte boundaries. In particular, a line
@@ -188,8 +197,8 @@ rather than quietly dropping that glyph.
 ## What remains
 
 - TrueType instruction execution, grid fitting and antialiased font coverage.
-- CFF2, synthetic/multiple-master fonts, custom Type 1 procedures and variable-font data.
-- Complete post-table name variants and the remaining cmap forms.
+- CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
+- Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
 - Extended glyph coverage in the standard-font substitutes and general substitution for other nonembedded fonts.
 
@@ -248,8 +257,8 @@ An optional independent outline/advance comparison requires FontTools:
 This checks the actual Type 2 paths before rasterization. It does not treat
 unhinted raster output as identical to a hinted font rasterizer.
 
-`make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 29
-rendering checks. Nineteen selected raster comparisons run with:
+`make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 30
+rendering checks. Twenty selected raster comparisons run with:
 
     python3 scripts/test_pdf_type1_render.py bin/test_pdf_pages --reference
 
@@ -263,21 +272,32 @@ the fractions of different color channels fell from 7.865% to 3.337% and from
 7.847% to 3.370%. Both pages still differ. The full 1,007-document manual review
 remains deferred.
 
-`make test-pdf-truetype` runs binary-table/glyph-name checks and 45 PDF rendering
+`make test-pdf-truetype` runs binary-table/glyph-name checks and 51 PDF rendering
 checks. The 4,360 lower-level checks include the full pinned glyph-name dataset;
 they are not thousands of independent font-rendering features. The authored
 geometric font covers holes, quadratic curves, off-curve contour starts, affine
 components and point attachment. Regular tests need only Python's standard
 library. FontTools is needed only to regenerate that original test fixture.
 
-For 19 optional independent raster comparisons, run:
+The mapping suite adds 100 cmap cases and 801 post-table name/bounds checks.
+Most of the post checks enumerate the standard name table, not separate rendering
+features. Optional independent checks need FreeType and FontTools:
+
+    python3 scripts/test_pdf_truetype_cmaps.py bin/test_pdf_truetype --reference
+    python3 scripts/test_pdf_truetype_names.py bin/test_pdf_truetype --reference
+
+These compare 39 cmap results and 774 name lookups. The legacy post comparison
+uses FreeType because the other font parser does not accept version 2.5.
+
+For 25 optional independent raster comparisons, run:
 
     python3 scripts/test_pdf_embedded_fonts.py bin/test_pdf_pages --reference
 
 The selected comparison fixtures separate outline behavior from fractional-pixel
 hinting differences. Curve fills also have analytic pixel expectations. One
 clipping comparison uses a second rasterizer because the first uses a different
-boundary rule. No whole-page visual-parity claim follows from these checks.
+boundary rule. The format-8/10 and post-only fixtures also use that renderer
+because the first does not select glyphs from those authored tables. No whole-page visual-parity claim follows from these checks.
 
 The Adobe Glyph List is pinned under `third_party/adobe-glyph-list`, with its
 copyright and BSD-3-Clause notice retained. [Third-party notices](../THIRD_PARTY_NOTICES.md)
@@ -302,6 +322,9 @@ that recovery path now has regression coverage. Neither page is an exact match.
 
 - [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),
   sections 9.3 through 9.7 and Annex D, defines PDF text state, fonts and encodings.
+- The OpenType [post](https://learn.microsoft.com/en-us/typography/opentype/spec/post)
+  specification and Apple's [post table](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6post.html)
+  define the standard name order and legacy offset representation.
 - The OpenType [glyf](https://learn.microsoft.com/en-us/typography/opentype/spec/glyf),
   [loca](https://learn.microsoft.com/en-us/typography/opentype/spec/loca),
   [head](https://learn.microsoft.com/en-us/typography/opentype/spec/head) and
