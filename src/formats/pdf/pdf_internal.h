@@ -37,6 +37,12 @@ typedef struct {
 } pdf_tounicode_entry;
 
 typedef struct {
+    double matrix[6], bounds[4], widths[256];
+    int glyphs[256];
+    pdf_object_view dictionary;
+} pdf_type3_font;
+
+typedef struct {
     char name[32];
     pdf_tounicode_entry *entries;
     int count;
@@ -44,6 +50,7 @@ typedef struct {
     int max_src_len;
     int has_widths, has_missing_width, first_char, last_char;
     double widths[256], missing_width;
+    pdf_type3_font *type3;
 } pdf_font_map;
 
 typedef struct {
@@ -119,5 +126,11 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
 
 int cupidimage_pdf_dictionary_view(const pdf_object_view *parent, size_t start,
                                    pdf_object_view *view, size_t *end);
+
+int cupidimage_pdf_parse_type3_font(const unsigned char *data, size_t size,
+                                   const pdf_object_view *view, pdf_font_map *font);
+int cupidimage_pdf_collect_resource_fonts(const unsigned char *data, size_t size,
+                                         const pdf_object_view *owner, pdf_font_table *table,
+                                         char *error, size_t capacity);
 
 #endif

@@ -29,28 +29,7 @@ int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object
 }
 
 static int pdf_image_object(const pdf_render_state *st, const char *name, int *object) {
-    int page = st->page_object;
-    for (int depth = 0; page > 0 && depth < 64; depth++) {
-        pdf_object_view node = {0}, resources = {0}, xobjects = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, page, &node)) return 0;
-        size_t pos;
-        int parent = 0, found = 0;
-        if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
-            found = cupidimage_pdf_image_dictionary(st, &node, "Resources", &resources) &&
-                    cupidimage_pdf_image_dictionary(st, &resources, "XObject", &xobjects) &&
-                    cupidimage_pdf_page_value(&xobjects, name, &pos) &&
-                    cupidimage_pdf_page_reference(&xobjects, pos, object);
-            /* The closest Resources entry replaces the entire ancestor entry. */
-            cupidimage_pdf_object_view_release(&xobjects);
-            cupidimage_pdf_object_view_release(&resources);
-            cupidimage_pdf_object_view_release(&node);
-            return found;
-        }
-        if (cupidimage_pdf_page_value(&node, "Parent", &pos)) cupidimage_pdf_page_reference(&node, pos, &parent);
-        cupidimage_pdf_object_view_release(&node);
-        page = parent;
-    }
-    return 0;
+    return cupidimage_pdf_find_resource(st,"XObject",name,NULL,object) && *object>0;
 }
 
 int cupidimage_pdf_image_integer(const pdf_render_state *st, const pdf_object_view *view,
@@ -348,6 +327,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         else if (!(n >= 5 && memcmp(image.data + pos, "false", 5) == 0 &&
             (n == 5 || cupidimage_pdf_is_ws(image.data[pos+5]) || cupidimage_pdf_is_delim(image.data[pos+5])))) goto done;
     }
+    if (st->glyph_uncolored && !stencil) goto done;
     if (!stencil && (!cupidimage_pdf_page_value(&image, "ColorSpace", &pos) ||
         !cupidimage_pdf_image_color_space(st, &image, &pos, 0, &colors))) goto done;
     components = stencil || colors.indexed ? 1 : colors.components;

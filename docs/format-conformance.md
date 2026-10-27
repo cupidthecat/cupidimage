@@ -252,3 +252,22 @@ operators, clipping union/intersection, font widths, source-code word spacing,
 and malformed operators. The 97-case PDF allocation-failure suite includes stroked and clipped
 glyphs. Existing font-map, form, graphics, transparency and asset tests remain
 required; passing them does not establish real-font or full-document parity.
+
+## Type 3 font programs and resource scope
+
+Type 3 glyph execution follows ISO 32000-1 section 9.6.5 and Tables 112–113.
+The authored suite has 48 checks for glyph programs, matrices, widths, Encoding,
+local resources, nested calls, image masks, graphics-state/path isolation,
+escaped names, malformed metrics and recursion bounds. The 111-case PDF
+allocation-failure suite includes Type 3 metadata, streams and image resources.
+Optional independent comparisons cover 28 cases: 27 exact raster comparisons
+and one secondary-renderer comparison allowing a one-pixel glyph-cache boundary
+shift. All analytic vector comparisons remain exact. The shared-stream test is
+accepted under distinct resource contexts; one comparison implementation
+instead rejects that re-entry.
+
+The targeted seven-document corpus check is separate from those fixtures.
+Four pages decode with remaining pixel differences; three fail because of
+unsupported content or invalid glyph programs. The no-cycle nested-font sample
+still depends on pattern painting, which is not implemented. Successful loading
+is not a visual pass, and the full 1,007-document user review remains deferred.

@@ -12,7 +12,8 @@ for the exact boundaries. HEIC/HEIF is deferred.
 
 PDF previews include packed, indexed and fax-compressed images, inline images,
 image masks, filter chains,
-constant opacity, RGB blend modes, and text matrices, spacing and clipping.
+constant opacity, RGB blend modes, text matrices, spacing and clipping, and
+Type 3 glyph programs.
 Embedded fonts, transparency groups, patterns, and
 annotations still need substantial work; successful decoding alone does not mean
 that a page is drawn correctly.

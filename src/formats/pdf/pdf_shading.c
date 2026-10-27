@@ -114,21 +114,8 @@ static int pdf_paint_shading(pdf_render_state *st,const pdf_object_view *view) {
 int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name) {
     if (!st->form_budget->calls_left) return 0;
     st->form_budget->calls_left--;
-    int object=st->page_object;
-    for(unsigned depth=0;object>0 && depth<64;depth++) {
-        pdf_object_view node={0},resources={0},shadings={0},shading={0};
-        if(!cupidimage_pdf_get_object_content(st->document,st->document_size,object,&node))return 0;
-        size_t pos;int parent=0;
-        if(cupidimage_pdf_page_value(&node,"Resources",&pos)) {
-            int ok=cupidimage_pdf_image_dictionary(st,&node,"Resources",&resources) &&
-                   cupidimage_pdf_image_dictionary(st,&resources,"Shading",&shadings) &&
-                   cupidimage_pdf_image_dictionary(st,&shadings,name,&shading) && pdf_paint_shading(st,&shading);
-            cupidimage_pdf_object_view_release(&shading);cupidimage_pdf_object_view_release(&shadings);
-            cupidimage_pdf_object_view_release(&resources);cupidimage_pdf_object_view_release(&node);
-            return ok;
-        }
-        if(cupidimage_pdf_page_value(&node,"Parent",&pos))cupidimage_pdf_page_reference(&node,pos,&parent);
-        cupidimage_pdf_object_view_release(&node);object=parent;
-    }
-    return 0;
+    pdf_object_view shading={0};
+    int ok=cupidimage_pdf_find_resource(st,"Shading",name,&shading,NULL) && pdf_paint_shading(st,&shading);
+    cupidimage_pdf_object_view_release(&shading);
+    return ok;
 }

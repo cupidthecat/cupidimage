@@ -7,9 +7,11 @@
 #include "../src/compression/ccitt.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_document.c"
+#include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
+#include "../src/formats/pdf/pdf_resources.c"
 #include "../src/formats/pdf/pdf_inline.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "../src/formats/pdf/pdf_calculator.c"
@@ -105,7 +107,7 @@ int main(void) {
             "/Function << /FunctionType 2 /Domain [0 1] /N 1 >> >> endobj\n";
         uint8_t pixels[16]; memset(pixels, 255, sizeof(pixels));
         cupidimage_image image = {0}; image.width=2; image.height=2; image.rgba=pixels;
-        pdf_form_budget budget = {0,3,3};
+        pdf_form_budget budget = {0,3,3,0};
         pdf_render_state state = {0}; state.img=&image; state.document=(const unsigned char *)shading_doc;
         state.document_size=strlen(shading_doc); state.page_object=3; state.page_top_pts=1.5f;
         state.gs.ctm[0]=state.gs.ctm[3]=1; state.gs.fill_alpha=1; state.form_budget=&budget;
@@ -133,6 +135,36 @@ int main(void) {
                 (failure && ok) || (!ok && (decoded || size))) failures++;
             fault_free(decoded);
             if (live_count) { failures++; while(live_count) fault_free(live[0]); }
+        }
+    }
+    {
+        const char *glyph="100 0 0 0 100 100 d1 100 0 0 100 0 0 cm /Im Do";
+        char type3_document[2048];
+        int length=snprintf(type3_document,sizeof(type3_document),
+            "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n"
+            "5 0 obj << /Type /Font /Subtype /Type3 /FontBBox [0 0 100 100] /FontMatrix [.01 0 0 .01 0 0] "
+            "/CharProcs << /A 6 0 R >> /Encoding << /Differences [65 /A] >> /FirstChar 65 /LastChar 65 "
+            "/Widths [100] /Resources << /XObject << /Im 8 0 R >> >> >> endobj\n"
+            "6 0 obj << /Length %zu >> stream\n%s\nendstream endobj\n"
+            "8 0 obj << /Subtype /Image /Width 1 /Height 1 /ImageMask true /Filter /ASCIIHexDecode /Length 3 >> stream\n00>\nendstream endobj\n",
+            strlen(glyph),glyph);
+        if(length<0 || (size_t)length>=sizeof(type3_document))return 1;
+        size_t total=0;
+        for(size_t failure=0;failure<=total;failure++) {
+            unsigned char pixels[24*16*4];cupidimage_image image={0};
+            image.width=24;image.height=16;image.rgba=pixels;
+            pdf_page_geometry geometry={0,0,18,12,0,24,16};char error[128]={0};
+            pdf_font_table fonts;cupidimage_pdf_font_table_init(&fonts);
+            allocation_count=0;fail_at=failure;
+            const char *content="BT /F 10 Tf (AA) Tj ET";
+            int ok=cupidimage_pdf_collect_page_fonts((unsigned char *)type3_document,(size_t)length,3,&fonts,error,sizeof(error)) &&
+                cupidimage_pdf_render_content_stream((unsigned char *)content,strlen(content),(unsigned char *)type3_document,(size_t)length,
+                    3,&fonts,&image,&geometry,error,sizeof(error));
+            cupidimage_pdf_font_table_free(&fonts);
+            if(!failure)total=allocation_count;
+            checks++;
+            if(live_count || (!failure && !ok))failures++;
+            while(live_count)fault_free(live[0]);
         }
     }
     printf("PDF clip allocation failures: %zu checks, %zu failures\n", checks, failures);

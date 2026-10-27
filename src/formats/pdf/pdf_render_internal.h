@@ -69,6 +69,7 @@ typedef struct {
     size_t bytes_left;
     unsigned calls_left;
     size_t shade_evaluations_left;
+    unsigned glyph_calls_left;
 } pdf_form_budget;
 
 typedef struct {
@@ -76,6 +77,7 @@ typedef struct {
     const unsigned char *document;
     size_t document_size;
     int page_object;
+    const pdf_object_view *resource_override;
     int image_failed;
     char *error;
     size_t error_capacity;
@@ -96,6 +98,9 @@ typedef struct {
     int form_objects[16];
     pdf_form_clip form_clips[16];
     int form_depth;
+    int glyph_depth;
+    int glyph_active, glyph_seen_metrics, glyph_uncolored;
+    double glyph_expected_width;
     pdf_form_budget *form_budget;
 } pdf_render_state;
 
@@ -138,5 +143,10 @@ void cupidimage_pdf_text_begin(pdf_render_state *st);
 void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y);
 void cupidimage_pdf_text_advance(pdf_render_state *st, double distance);
 void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length);
+
+int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category,
+                                const char *name, pdf_object_view *value, int *reference);
+
+int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *font, unsigned code);
 
 #endif

@@ -67,32 +67,23 @@ static int pdf_apply_graphics_dictionary(pdf_render_state *st, const pdf_object_
         if (mode < 0) return 0;
         next.blend_mode = mode;
     }
+    if (st->glyph_uncolored) {
+        next.fill_alpha=st->gs.fill_alpha;next.stroke_alpha=st->gs.stroke_alpha;
+        next.blend_mode=st->gs.blend_mode;
+    }
     st->gs = next;
     return 1;
 }
 
 int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name) {
-    int object = st->page_object;
-    for (unsigned depth = 0; object > 0 && depth < 64; depth++) {
-        pdf_object_view node = {0}, resources = {0}, states = {0}, state = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &node)) return 0;
-        size_t pos;
-        int parent = 0;
-        if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
-            int ok = cupidimage_pdf_image_dictionary(st, &node, "Resources", &resources) &&
-                     cupidimage_pdf_image_dictionary(st, &resources, "ExtGState", &states) &&
-                     cupidimage_pdf_image_dictionary(st, &states, name, &state) &&
-                     pdf_apply_graphics_dictionary(st, &state);
-            cupidimage_pdf_object_view_release(&state);
-            cupidimage_pdf_object_view_release(&states);
-            cupidimage_pdf_object_view_release(&resources);
-            cupidimage_pdf_object_view_release(&node);
-            return ok;
-        }
-        if (cupidimage_pdf_page_value(&node, "Parent", &pos)) cupidimage_pdf_page_reference(&node, pos, &parent);
-        cupidimage_pdf_object_view_release(&node); object = parent;
-    }
-    return 0;
+    pdf_object_view state={0};
+    int ok=cupidimage_pdf_find_resource(st,"ExtGState",name,&state,NULL);
+    size_t pos=0;
+    cupidimage_pdf_skip_ws_and_comments(state.data,state.len,&pos);
+    ok=ok && state.len-pos>=2 && state.data[pos]=='<' && state.data[pos+1]=='<' &&
+       pdf_apply_graphics_dictionary(st,&state);
+    cupidimage_pdf_object_view_release(&state);
+    return ok;
 }
 
 static double pdf_luminance(const double c[3]) { return .3*c[0] + .59*c[1] + .11*c[2]; }

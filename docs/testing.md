@@ -203,3 +203,13 @@ explicit glyph positions. It checks the text operators, all rendering modes,
 clipping, simple-font widths and word-spacing rules without depending on the
 shape of an external font. These checks deliberately separate positioning from
 the still-incomplete font-outline renderer.
+
+## Type 3 glyph programs
+
+`make test-pdf-type3` compares glyph programs with explicit vector equivalents
+and checks malformed/recursive programs. For optional independent comparisons,
+run `python3 scripts/test_pdf_type3.py bin/test_pdf_pages --reference` with the
+reference command-line tools and PyMuPDF installed. One shared-stream case uses
+an explicit one-pixel boundary tolerance; the corresponding analytic comparison
+still requires exact pixels. Type 3 tests do not imply that patterns or embedded
+font-file outlines are implemented.

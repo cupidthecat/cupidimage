@@ -172,26 +172,9 @@ int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, uns
     int components = !strcmp(name, "DeviceGray") ? 1 : !strcmp(name, "DeviceRGB") ? 3 : !strcmp(name, "DeviceCMYK") ? 4 : 0;
     if (components) { colors->components = components; return 1; }
     if (depth >= 16) return 0;
-    int object = st->page_object;
-    for (unsigned i = 0; object > 0 && i < 64; i++) {
-        pdf_object_view node = {0}, resources = {0}, spaces = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &node)) return 0;
-        size_t pos;
-        int parent = 0, space = 0;
-        if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
-            if (cupidimage_pdf_image_dictionary(st, &node, "Resources", &resources) &&
-                cupidimage_pdf_image_dictionary(st, &resources, "ColorSpace", &spaces) &&
-                cupidimage_pdf_page_value(&spaces, name, &pos)) {
-                space = pdf_color_space_value(st, &spaces, pos, depth + 1, colors);
-            }
-            cupidimage_pdf_object_view_release(&spaces);
-            cupidimage_pdf_object_view_release(&resources);
-            cupidimage_pdf_object_view_release(&node);
-            return space;
-        }
-        if (cupidimage_pdf_page_value(&node, "Parent", &pos)) cupidimage_pdf_page_reference(&node, pos, &parent);
-        cupidimage_pdf_object_view_release(&node);
-        object = parent;
-    }
-    return 0;
+    pdf_object_view value={0};
+    int ok=cupidimage_pdf_find_resource(st,"ColorSpace",name,&value,NULL) &&
+           pdf_color_space_value(st,&value,0,depth+1,colors);
+    cupidimage_pdf_object_view_release(&value);
+    return ok;
 }

@@ -844,6 +844,26 @@ int cupidimage_pdf_parse_pdf_number(const unsigned char *data, size_t end, size_
 }
 
 /* Only inspect entries in the outer dictionary, not names in nested values. */
+static int pdf_dictionary_name_matches(const unsigned char *data,size_t size,const char *key) {
+    size_t i=0,k=0;
+    while(i<size) {
+        unsigned char c=data[i++];
+        if(c=='#') {
+            if(size-i<2)return 0;
+            unsigned value=0;
+            for(int n=0;n<2;n++) {
+                unsigned char h=data[i++];
+                int digit=h>='0' && h<='9'?h-'0':h>='a' && h<='f'?h-'a'+10:h>='A' && h<='F'?h-'A'+10:-1;
+                if(digit<0)return 0;
+                value=value*16+(unsigned)digit;
+            }
+            c=(unsigned char)value;
+        }
+        if(!key[k] || c!=(unsigned char)key[k++])return 0;
+    }
+    return key[k]==0;
+}
+
 int cupidimage_pdf_page_value(const pdf_object_view *view, const char *key, size_t *value_pos) {
     size_t pos = 0;
     int depth = 0, arrays = 0, expect_key = 1;
@@ -883,8 +903,7 @@ int cupidimage_pdf_page_value(const pdf_object_view *view, const char *key, size
                    !isspace((unsigned char)view->data[pos])) pos++;
             size_t len = pos - start;
             if (depth == 1 && arrays == 0) {
-                if (expect_key && len == strlen(key) &&
-                    memcmp(view->data + start, key, len) == 0) {
+                if (expect_key && pdf_dictionary_name_matches(view->data+start,len,key)) {
                     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
                     *value_pos = pos;
                     return 1;

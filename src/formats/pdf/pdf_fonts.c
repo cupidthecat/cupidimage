@@ -21,6 +21,10 @@ void cupidimage_pdf_font_table_init(pdf_font_table *table) {
 void cupidimage_pdf_font_table_free(pdf_font_table *table) {
     if (!table) return;
     for (int i = 0; i < table->count; i++) {
+        if (table->fonts[i].type3) {
+            cupidimage_pdf_object_view_release(&table->fonts[i].type3->dictionary);
+            free(table->fonts[i].type3);table->fonts[i].type3=NULL;
+        }
         free(table->fonts[i].entries);
         table->fonts[i].entries = NULL;
         table->fonts[i].count = 0;
@@ -39,6 +43,11 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name)
     }
     for (int i = 0; i < table->count; i++) {
         if (strcmp(table->fonts[i].name, name) == 0) {
+            if (table->fonts[i].type3) {
+                cupidimage_pdf_object_view_release(&table->fonts[i].type3->dictionary);
+                free(table->fonts[i].type3);
+                table->fonts[i].type3=NULL;
+            }
             free(table->fonts[i].entries);
             table->fonts[i].entries = NULL;
             table->fonts[i].count = table->fonts[i].cap = 0;
@@ -448,9 +457,9 @@ static int pdf_parse_font_widths(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, pdf_font_map *font) {
     size_t pos;
     if (cupidimage_pdf_page_value(view,"Subtype",&pos) && view->len-pos>=6 &&
-        (!memcmp(view->data+pos,"/Type0",6) || !memcmp(view->data+pos,"/Type3",6)) &&
+        !memcmp(view->data+pos,"/Type0",6) &&
         (view->len-pos==6 || cupidimage_pdf_is_ws(view->data[pos+6]) || cupidimage_pdf_is_delim(view->data[pos+6]))) return 1;
-    if (cupidimage_pdf_page_value(view,"FontDescriptor",&pos)) {
+    if (!font->type3 && cupidimage_pdf_page_value(view,"FontDescriptor",&pos)) {
         pdf_object_view descriptor={0};
         if (!pdf_font_dictionary(data,size,view,"FontDescriptor",&descriptor)) return 0;
         if (cupidimage_pdf_page_value(&descriptor,"MissingWidth",&pos)) {
@@ -464,7 +473,7 @@ static int pdf_parse_font_widths(const unsigned char *data, size_t size,
         }
         cupidimage_pdf_object_view_release(&descriptor);
     }
-    if (!cupidimage_pdf_page_value(view,"Widths",&pos)) return 1;
+    if (!cupidimage_pdf_page_value(view,"Widths",&pos)) return font->type3==NULL;
     int first,last;
     if (!cupidimage_pdf_dictionary_integer(data,size,view,"FirstChar",&first) ||
         !cupidimage_pdf_dictionary_integer(data,size,view,"LastChar",&last) ||
@@ -482,7 +491,10 @@ static int pdf_parse_font_widths(const unsigned char *data, size_t size,
         cupidimage_pdf_skip_ws_and_comments(array.data,array.len,&pos);
         valid=cupidimage_pdf_parse_pdf_number(array.data,array.len,&pos,&width) &&
               isfinite(width) && fabs(width)<=1e6;
-        if (valid) font->widths[code]=width/1000.0;
+        if (valid) {
+            font->widths[code]=font->type3?width*font->type3->matrix[0]:width/1000.0;
+            if (font->type3)font->type3->widths[code]=width;
+        }
     }
     cupidimage_pdf_skip_ws_and_comments(array.data,array.len,&pos);
     valid=valid && pos<array.len && array.data[pos]==']';
@@ -528,12 +540,25 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             pos += font_view.len;
         }
         pdf_font_map *font = pdf_font_table_add(table, name);
-        int ok = font && pdf_parse_font_widths(data, size, &font_view, font) &&
+        int ok = font && cupidimage_pdf_parse_type3_font(data,size,&font_view,font) && pdf_parse_font_widths(data, size, &font_view, font) &&
                  pdf_parse_font_tounicode(data, size, &font_view, font, err, errcap);
         cupidimage_pdf_object_view_release(&font_view);
         if (!ok) return 0;
     }
     return 1;
+}
+
+int cupidimage_pdf_collect_resource_fonts(const unsigned char *data,size_t size,
+                                         const pdf_object_view *owner,pdf_font_table *table,
+                                         char *err,size_t errcap) {
+    pdf_object_view resources={0},fonts={0};
+    int ok=pdf_font_dictionary(data,size,owner,"Resources",&resources);
+    size_t pos;
+    if(ok && cupidimage_pdf_page_value(&resources,"Font",&pos))
+        ok=pdf_font_dictionary(data,size,&resources,"Font",&fonts) &&
+           pdf_collect_fonts_from_dict(data,size,fonts.data,2,fonts.len-2,table,err,errcap);
+    cupidimage_pdf_object_view_release(&fonts);cupidimage_pdf_object_view_release(&resources);
+    return ok;
 }
 
 int cupidimage_pdf_collect_page_fonts(const unsigned char *data, size_t size, int page_obj,

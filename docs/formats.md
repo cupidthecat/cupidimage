@@ -71,7 +71,8 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 ## PDF
 
 basic text, raw, FlateDecode, ASCIIHexDecode, ASCII85Decode, RunLengthDecode, and LZWDecode page streams, gray/RGB/CMYK paint, line and cubic Bezier paths,
-nonzero/even-odd fills, and path clipping. Text uses built-in bitmap glyphs. Image XObjects
+nonzero/even-odd fills, and path clipping. Type 3 text executes PDF glyph programs; other fonts still use bitmap fallback
+glyphs. Image XObjects
 support 1/2/4/8/16-bit DeviceRGB, DeviceGray, and DeviceCMYK samples in raw or
 FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
@@ -382,11 +383,40 @@ regardless of its Unicode mapping.
 Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Type 0 CID metrics, vertical writing metrics,
-Type 3 font matrices/programs, complete standard-font metrics and embedded
-font outlines remain separate work. Malformed font metadata still uses the
+complete standard-font metrics and embedded
+Type 1/TrueType font outlines remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes and the existing stroke
 approximation are not equivalent to actual font outlines.
 
 Text clipping uses the page's bounded clipping allocations and work budget.
 Transforms must remain finite. Zero font size and zero horizontal scale do not
 paint; negative values reflect the fallback glyph geometry.
+
+## PDF Type 3 glyph programs
+
+Type 3 fonts with an Encoding Differences dictionary execute their CharProcs
+streams. FontMatrix maps glyph space into the full text transform. Widths are
+interpreted in glyph space; only the horizontal component of the transformed
+advance is used. Missing glyph names paint nothing and still use the declared
+advance. ToUnicode does not replace the Encoding-to-CharProcs mapping.
+
+The first operator must be `d0` or `d1`, with a zero vertical width and a width
+consistent with the font dictionary. `d0` permits coloured graphics. `d1`
+inherits the caller's colour, ignores colour-setting operators, and permits
+image masks but rejects ordinary colour images. Only text rendering mode 3
+suppresses a Type 3 program; the other text rendering modes do not replace its
+paint operations.
+
+Each invocation has an isolated graphics state and path. Font-local Resources
+replace the caller's resource dictionary; absent Resources retain the caller's
+scope. Nested fonts, forms, images, graphics states and supported shadings use
+the shared resource resolver. Direct and indirect font dictionaries are accepted,
+as are hexadecimal escapes in dictionary and glyph names.
+
+Glyph execution is limited to 16 nested calls, 65,536 invocations per page and
+the shared 64 MiB decoded-content budget. Reusing a stream under another font's
+resources is not itself rejected as a cycle; depth and work limits bound actual
+recursion. Type 3 dictionaries are limited to 64 KiB and Differences arrays to
+1,024 entries. Predefined name-only encodings, patterns and other unimplemented
+content operations remain unsupported; malformed font metadata follows the
+existing fallback policy.

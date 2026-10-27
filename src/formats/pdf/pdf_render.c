@@ -932,9 +932,28 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space,
 static void pdf_execute_operator(pdf_render_state *st, const char *op,
                                  pdf_operand *ops, int *count) {
     int n = *count;
+    if (st->glyph_active && !st->glyph_seen_metrics && strcmp(op,"d0") && strcmp(op,"d1")) {
+        st->image_failed=1;
+        cupidimage_set_err(st->error,st->error_capacity,"pdf: Type 3 glyph must begin with d0 or d1");
+        pdf_clear_operands(ops,count);return;
+    }
+    if (!strcmp(op,"d0") || !strcmp(op,"d1")) {
+        int box=op[1]=='1',valid=st->glyph_active && !st->glyph_seen_metrics && n==(box?6:2);
+        for(int i=0;valid && i<n;i++) valid=pdf_expect_num(&ops[i]) && isfinite(ops[i].num) && fabs(ops[i].num)<=1e30;
+        valid=valid && ops[1].num==0 && fabs(ops[0].num-st->glyph_expected_width)<=1e-6;
+        if(box && valid)valid=ops[2].num<=ops[4].num && ops[3].num<=ops[5].num;
+        if(valid) {st->glyph_seen_metrics=1;st->glyph_uncolored|=box;}
+        else {st->image_failed=1;cupidimage_set_err(st->error,st->error_capacity,"pdf: invalid Type 3 glyph metrics");}
+        pdf_clear_operands(ops,count);return;
+    }
+    if(st->glyph_uncolored && (!strcmp(op,"g") || !strcmp(op,"G") || !strcmp(op,"rg") || !strcmp(op,"RG") ||
+        !strcmp(op,"k") || !strcmp(op,"K") || !strcmp(op,"cs") || !strcmp(op,"CS") ||
+        !strcmp(op,"sc") || !strcmp(op,"SC") || !strcmp(op,"scn") || !strcmp(op,"SCN"))) {
+        pdf_clear_operands(ops,count);return;
+    }
 
     if (strcmp(op, "sh") == 0) {
-        if (n != 1 || ops[0].type != PDF_OPERAND_NAME || !cupidimage_pdf_draw_shading(st, ops[0].str)) {
+        if (st->glyph_uncolored || n != 1 || ops[0].type != PDF_OPERAND_NAME || !cupidimage_pdf_draw_shading(st, ops[0].str)) {
             st->image_failed = 1;
             cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid or unsupported shading");
         }
@@ -1299,7 +1318,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
             memcpy(opbuf, &stream[start], tok_len);
             opbuf[tok_len] = '\0';
             if (!strcmp(opbuf, "BI")) {
-                int ok = op_count == 0 && cupidimage_pdf_draw_inline_image(st, stream, stream_len, &pos);
+                int ok = op_count == 0 && (!st->glyph_active || st->glyph_seen_metrics) && cupidimage_pdf_draw_inline_image(st, stream, stream_len, &pos);
                 pdf_clear_operands(ops, &op_count);
                 if (!ok) {
                     cupidimage_set_err(err, errcap, "pdf: invalid or unsupported inline image");
@@ -1322,6 +1341,54 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
 
     pdf_clear_operands(ops, &op_count);
     return 1;
+}
+
+static void pdf_double_concat(double m[6],const double n[6]) {
+    double r[6]={m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],
+                 m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],
+                 m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]};
+    memcpy(m,r,sizeof(r));
+}
+
+int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st,const pdf_font_map *font,unsigned code) {
+    const pdf_type3_font *type=font->type3;
+    int object=type->glyphs[code],ok=0;
+    if(!object || st->gs.text_mode==3 || st->gs.font_size_pts==0 || st->gs.horizontal_scale==0)return 1;
+    if(st->glyph_depth==16 || !st->form_budget->glyph_calls_left)return 0;
+    st->form_budget->glyph_calls_left--;
+    pdf_object_view program={0};unsigned char *decoded=NULL;
+    pdf_render_state *child=NULL;
+    pdf_font_table fonts;cupidimage_pdf_font_table_init(&fonts);
+    const unsigned char *stream;size_t length,pos;
+    if(!cupidimage_pdf_get_object_content(st->document,st->document_size,object,&program) ||
+       !cupidimage_pdf_object_stream(st->document,st->document_size,&program,&stream,&length) ||
+       !cupidimage_pdf_decode_stream(&program,stream,length,&decoded,&length) ||
+       length>st->form_budget->bytes_left)goto done;
+    st->form_budget->bytes_left-=length;
+    child=malloc(sizeof(*child));if(!child)goto done;
+    *child=*st;pdf_clip_retain(child->gs.clip);
+    child->gs_stack_len=0;child->pending_clip=0;child->image_failed=0;
+    child->text_clip=NULL;child->text_winding=NULL;child->text_winding_bytes=0;
+    child->in_text=0;child->glyph_active=1;child->glyph_seen_metrics=0;child->glyph_uncolored=st->glyph_uncolored;
+    child->glyph_expected_width=type->widths[code];
+    child->glyph_depth++;
+    pdf_path_clear(&child->path);
+    double m[6];for(int i=0;i<6;i++)m[i]=st->gs.ctm[i];
+    double scale[6]={st->gs.font_size_pts*st->gs.horizontal_scale,0,0,st->gs.font_size_pts,0,st->gs.text_rise};
+    pdf_double_concat(m,st->text_matrix);pdf_double_concat(m,scale);pdf_double_concat(m,type->matrix);
+    for(int i=0;i<6;i++) {if(!isfinite(m[i]) || fabs(m[i])>1e30)goto done;child->gs.ctm[i]=(float)m[i];}
+    if(cupidimage_pdf_page_value(&type->dictionary,"Resources",&pos)) {
+        child->resource_override=&type->dictionary;
+        if(!cupidimage_pdf_collect_resource_fonts(st->document,st->document_size,&type->dictionary,&fonts,st->error,st->error_capacity))goto done;
+        child->font_table=&fonts;
+    }
+    ok=pdf_render_stream(child,decoded,length) && child->glyph_seen_metrics;
+done:
+    if(child)pdf_render_state_release(child);
+    free(child);free(decoded);cupidimage_pdf_object_view_release(&program);
+    cupidimage_pdf_font_table_free(&fonts);
+    if(!ok && st->error && st->error_capacity && !st->error[0])cupidimage_set_err(st->error,st->error_capacity,"pdf: invalid, recursive, or unsupported Type 3 glyph");
+    return ok;
 }
 
 int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form) {
@@ -1350,6 +1417,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     child->text_winding_bytes = 0;
     child->pending_clip = 0;
     child->image_failed = 0;
+    child->glyph_active = 0;
     pdf_path_clear(&child->path);
     pdf_form_clip *clip = &child->form_clips[st->form_depth];
     if (!cupidimage_pdf_page_value(form, "BBox", &pos) ||
@@ -1395,6 +1463,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
         cupidimage_pdf_object_view_release(&resources);
         if (!valid) goto done;
         child->page_object = object;
+        child->resource_override = form;
         if (!cupidimage_pdf_collect_page_fonts(st->document, st->document_size, object, &fonts, st->error, st->error_capacity)) {
             cupidimage_pdf_font_table_free(&fonts);
             cupidimage_pdf_font_table_init(&fonts);
@@ -1424,7 +1493,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     pdf_render_state st = {0};
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
-    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u};
+    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536};
     st.form_budget = &form_budget;
     st.img = img;
     st.document = document;

@@ -299,12 +299,13 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
     size_t pos = 0;
     while (pos < length && !st->image_failed) {
         size_t before = pos;
-        uint32_t cp = pdf_decode_next_codepoint(st, bytes, length, &pos);
-        unsigned char draw = pdf_codepoint_to_ascii(cp);
-        if (cp >= 32)
-            pdf_draw_glyph(st, draw);
-        double width = cp < 32 ? .5 : draw == '?' && cp >= 128 ? .5 : pdf_char_advance_em(draw);
         const pdf_font_map *font = st->gs.current_font;
+        uint32_t cp = font && font->type3 ? bytes[pos++] : pdf_decode_next_codepoint(st, bytes, length, &pos);
+        unsigned char draw = pdf_codepoint_to_ascii(cp);
+        if (font && font->type3) {
+            if (!cupidimage_pdf_draw_type3_glyph(st,font,bytes[before])) st->image_failed=1;
+        } else if (cp >= 32) pdf_draw_glyph(st, draw);
+        double width = cp < 32 ? .5 : draw == '?' && cp >= 128 ? .5 : pdf_char_advance_em(draw);
         if (font && pos - before == 1) {
             unsigned code = bytes[before];
             if (font->has_widths)
