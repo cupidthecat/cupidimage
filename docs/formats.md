@@ -77,8 +77,7 @@ FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, text
-clipping modes, transparency groups, patterns, and annotations are unsupported.
+nonzero page origins, and clockwise rotation in multiples of 90 degrees. Embedded font outlines, transparency groups, patterns, and annotations remain unsupported.
 
 ## PDF details and limits
 
@@ -111,8 +110,8 @@ Type 1 Form XObjects accept raw streams and the same byte filters as page conten
 the content, and BBox clips text, paths, and images, including nested forms.
 Forms use their own Resources dictionary when present, or the caller's resources
 otherwise. Drawing a form preserves the caller's graphics state and current path.
-Built-in text glyphs follow the current transformation matrix. General text
-matrices and complex font rendering remain unsupported.
+Built-in text glyphs follow the text matrix and current transformation matrix.
+Embedded font outlines and complex font rendering remain unsupported.
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive forms, transparency
@@ -249,8 +248,9 @@ Nested dictionaries, comments, and strings do not override outer Resources,
 Font, ToUnicode, or Filter entries.
 
 These maps choose characters for the existing bitmap fallback. They do not load
-embedded font outlines, implement complete CMap semantics, or reproduce a font's
-metrics. Invalid font metadata retains that fallback rather than a partially
+embedded font outlines or implement complete CMap semantics. Simple-font Widths
+and MissingWidth entries now control advances; fonts without supported metrics
+retain the approximate fallback advances. Invalid font metadata retains that fallback rather than a partially
 parsed character map. `make test-pdf-font-maps` checks those boundaries.
 
 Character maps are limited to 65,536 entries per font and 256 fonts per resource
@@ -361,3 +361,32 @@ supported, as are Indexed palettes and Decode arrays. Dictionary parsing is
 limited to 64 KiB, 128 entries and 16 nested containers; image data is bounded
 at 64 MiB. Unknown inline keys are ignored as required by ISO 32000-1 section
 8.9.7. This does not add image interpolation or the remaining colour spaces.
+
+## PDF text state and positioning
+
+Text uses the complete six-component text and line matrices. `Tm`, `Td`, `TD`,
+`T*`, `Tj`, `TJ`, and both quote operators apply text-space positioning before
+the current transformation matrix. `Tc`, `Tw`, `Tz`, `TL`, `Tf`, and `Ts` control
+spacing, scaling, leading, font selection and rise. Text state is saved by
+`q`/`Q` and retained across text objects; `BT` resets the two text matrices.
+Text matrices themselves are not saved by `q`/`Q`.
+
+All eight `Tr` modes apply to the current fallback glyph shapes: fill, stroke,
+fill/stroke, invisible, and their clipping variants. Clipping accumulates the
+nonzero winding of nonempty bitmap glyph outlines and intersects the graphics clip at `ET`.
+Showing only spaces leaves the existing clip unchanged. Invisible
+text still advances. Newline bytes inside strings are character codes, not line
+positioning commands. Word spacing applies only to a single-byte code 32,
+regardless of its Unicode mapping.
+
+Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
+supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
+fallback outside that range. Type 0 CID metrics, vertical writing metrics,
+Type 3 font matrices/programs, complete standard-font metrics and embedded
+font outlines remain separate work. Malformed font metadata still uses the
+existing fallback policy. Bitmap glyph shapes and the existing stroke
+approximation are not equivalent to actual font outlines.
+
+Text clipping uses the page's bounded clipping allocations and work budget.
+Transforms must remain finite. Zero font size and zero horizontal scale do not
+paint; negative values reflect the fallback glyph geometry.

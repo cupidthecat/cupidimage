@@ -26,6 +26,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
 
 - PDF: public page APIs, document/object parsing and streams, font maps and the
   bitmap fallback, image samples and masks, and graphics/content rendering.
+  Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
+  text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
   axial/radial shading lives in `pdf_shading.c`. Bounded color-function trees

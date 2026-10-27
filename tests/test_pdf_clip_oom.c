@@ -15,6 +15,7 @@
 #include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_functions.c"
 #include "../src/formats/pdf/pdf_shading.c"
+#include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #undef malloc
@@ -39,6 +40,9 @@ int main(void) {
         { "18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G ID x EI", 1},
         { "18 0 0 12 0 0 cm BI /W 1 /H 1 /BPC 8 /CS /G /F /AHx ID ff> EI", 1},
         { "BI /W 1 /H 1 /BPC 8 /CS /G ID x EIx", 0},
+        { "BT /F1 12 Tf 1 Tr (AB) Tj ET", 1},
+        { "BT /F1 12 Tf 6 Tr (AB) Tj ET 0 0 18 12 re f", 1},
+        { "BT /F1 12 Tf 7 Tr (AB) Tj ET 0 0 18 12 re f", 1},
         {"/BadCalculator sh", 0}
     };
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";

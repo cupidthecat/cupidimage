@@ -195,3 +195,11 @@ For the ten optional independent raster checks, run
 `python3 scripts/test_pdf_inline.py bin/test_pdf_pages --reference` with PyMuPDF
 installed. The whole-stream DEFLATE tests remain strict about trailing data;
 separate prefix tests check the byte count returned for inline Flate streams.
+
+## PDF text state
+
+`make test-pdf-text-state` compares equivalent text/graphics transforms and
+explicit glyph positions. It checks the text operators, all rendering modes,
+clipping, simple-font widths and word-spacing rules without depending on the
+shape of an external font. These checks deliberately separate positioning from
+the still-incomplete font-outline renderer.

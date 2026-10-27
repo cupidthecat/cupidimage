@@ -237,3 +237,18 @@ content after `EI`. Ten selected cases also pass an optional independent
 raster comparison within one channel value. The DEFLATE suite adds 60 prefix
 and trailer checks to its 307 existing cases. Direct LZW and fax inline images
 still need encoding-aware boundary readers.
+
+## Text positioning and simple-font advances
+
+Text handling now follows the matrix and spacing rules in ISO 32000-1 sections
+9.3 and 9.4. The implementation separates glyph geometry from text positioning,
+uses declared simple-font widths before Unicode mapping, and implements all
+eight text painting/clipping modes for the bitmap fallback. The embedded font
+outline and CID/vertical metric work remains open.
+
+The 76-case text-state suite checks matrix composition, reflections, skew, line movement,
+spacing, scaling, rise, graphics-state restoration, invisible advances, quote
+operators, clipping union/intersection, font widths, source-code word spacing,
+and malformed operators. The 97-case PDF allocation-failure suite includes stroked and clipped
+glyphs. Existing font-map, form, graphics, transparency and asset tests remain
+required; passing them does not establish real-font or full-document parity.

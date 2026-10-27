@@ -42,6 +42,8 @@ typedef struct {
     int count;
     int cap;
     int max_src_len;
+    int has_widths, has_missing_width, first_char, last_char;
+    double widths[256], missing_width;
 } pdf_font_map;
 
 typedef struct {

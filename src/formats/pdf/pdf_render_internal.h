@@ -43,6 +43,9 @@ typedef struct {
 
 typedef struct {
     float ctm[6];
+    double font_size_pts, leading_pts, char_space, word_space, horizontal_scale, text_rise;
+    int text_mode;
+    const pdf_font_map *current_font;
     uint8_t fill_r;
     uint8_t fill_g;
     uint8_t fill_b;
@@ -78,12 +81,7 @@ typedef struct {
     size_t error_capacity;
     float page_x0_pts;
     float page_top_pts;
-    float line_x_pts;
-    float line_y_pts;
-    float text_x_pts;
-    float text_y_pts;
-    float font_size_pts;
-    float leading_pts;
+    double text_matrix[6], text_line_matrix[6];
     pdf_graphics_state gs;
     pdf_graphics_state gs_stack[32];
     int gs_stack_len;
@@ -91,8 +89,10 @@ typedef struct {
     int pending_clip;
     pdf_clip_budget *clip_budget;
     int in_text;
+    pdf_clip_mask *text_clip;
+    int32_t *text_winding;
+    size_t text_winding_bytes;
     const pdf_font_table *font_table;
-    const pdf_font_map *current_font;
     int form_objects[16];
     pdf_form_clip form_clips[16];
     int form_depth;
@@ -130,5 +130,13 @@ int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name);
 int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view);
 int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *data,
                                      size_t length, size_t *position);
+
+int cupidimage_pdf_text_clip_prepare(pdf_render_state *st);
+void cupidimage_pdf_text_end(pdf_render_state *st);
+void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path, unsigned char *target);
+void cupidimage_pdf_text_begin(pdf_render_state *st);
+void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y);
+void cupidimage_pdf_text_advance(pdf_render_state *st, double distance);
+void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length);
 
 #endif
