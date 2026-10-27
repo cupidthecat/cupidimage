@@ -65,7 +65,7 @@ def main():
         check('nested-alpha',fixture('/A gs /Inner Do','/A gs /G Do',attrs='/Resources << /XObject << /Inner 6 0 R >> '+STATES+' >>',extra={6:inner}),lambda x,y:(255,191,191),tolerance=1)
         check('inherited-colour-space',fixture(group='<< /S /Transparency /I true >>'),lambda x,y:red)
         check('indirect-attributes',fixture(group='6 0 R',extra={6:b'<< /S 7 0 R /I 8 0 R /K 9 0 R /CS 10 0 R >>',7:b'/Transparency',8:b'true',9:b'false',10:b'/DeviceRGB'}),lambda x,y:red)
-        check('named-colour-space',fixture(group='<< /S /Transparency /I true /CS /Rgb >>',attrs='/Resources << /ColorSpace << /Rgb /DeviceRGB >> >>'),lambda x,y:red)
+        check('named-colour-space',fixture(group='<< /S /Transparency /I true /CS /Rgb >>',attrs='/Resources << /ColorSpace << /Rgb /DeviceRGB >> >>'),reject=True)
         check('null-optional-fields',fixture(group='<< /S /Transparency /I true /K null /CS null >>'),lambda x,y:red)
         # Null Group is an ordinary form; its two overlapping members composite independently.
         check('null-group',fixture(overlap,'/A gs /G Do',group='null'),lambda x,y:(255,127,127) if x<8 else (127,63,191) if x<16 else (127,127,255),tolerance=1)

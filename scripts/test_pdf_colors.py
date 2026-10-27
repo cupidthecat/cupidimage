@@ -69,7 +69,7 @@ def main():
         resources = '/Resources << /ColorSpace << /C1 /DeviceRGB >> >>'
         check('page-alias', '/C1 cs 1 0 0 sc ' + FILL, (255, 0, 0), attrs=resources)
         check('inherited-alias', '/C1 cs 1 0 0 sc ' + FILL, (255, 0, 0), parent=resources)
-        check('alias-chain', '/C1 cs 1 0 0 sc ' + FILL, (255, 0, 0),
+        check('alias-chain', '/C1 cs 1 0 0 sc ' + FILL, reject=True,
               attrs='/Resources << /ColorSpace << /C1 /C2 /C2 /DeviceRGB >> >>')
         check('indirect-alias', '/C1 cs 1 0 0 sc ' + FILL, (255, 0, 0), attrs='/Resources 5 0 R',
               extra={5: '<< /ColorSpace 6 0 R >>', 6: '<< /C1 7 0 R >>', 7: '/DeviceRGB'})
@@ -118,10 +118,12 @@ def main():
                         '/DeviceGray cs 1 0 0 sc', '/DeviceCMYK cs 1 0 0 scn', '/DeviceRGB cs /name scn',
                         '/DeviceRGB cs [1 0 0] sc', '1 0 rg', '1 0 0 0 1 k'):
             check('invalid-operands', content + ' ' + FILL, reject=True)
+        for space,values,color in (('DeviceGray','1',(255,255,255)),('DeviceRGB','1 0 0',(255,0,0)),('DeviceCMYK','0 1 1 0',(255,0,0))):
+            check('device-array-'+space,'/C1 cs '+values+' sc '+FILL,color,attrs='/Resources << /ColorSpace << /C1 [/'+space+'] >> >>')
         for aliases, extra in (
             ('/C1 /C1', {}), ('/C1 /C2 /C2 /C1', {}),
             ('/C1 5 0 R', {5: '6 0 R', 6: '5 0 R'}),
-            ('/C1 [/DeviceRGB]', {}), ('/C1 /CalRGB', {}),
+            ('/C1 [/DeviceRGB 0]', {}), ('/C1 /CalRGB', {}),
         ):
             check('invalid-alias', '/C1 cs ' + FILL, reject=True,
                   attrs='/Resources << /ColorSpace << ' + aliases + ' >> >>', extra=extra)

@@ -16,7 +16,8 @@ spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard-font substitutes, and unhinted embedded TrueType, CFF and Type 1
 outlines. Tiling/shading patterns, styled dashed strokes, RGB/gray transparency
 groups and graphics-state soft masks are also supported. Full font fidelity,
-general transparency groups, mesh shadings and annotations still need work. See the [font guide](docs/pdf-fonts.md)
+general transparency, patch meshes, color management and annotations still need
+work. See the [shading guide](docs/pdf-shading.md) and [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.
 
 ## GIF rendering preview

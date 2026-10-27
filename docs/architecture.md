@@ -60,7 +60,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   element types and text-object context.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
-  axial/radial shading lives in `pdf_shading.c`. Bounded color-function trees
+  function-based/axial/radial shading lives in `pdf_shading.c`. `pdf_mesh.c`
+  decodes byte-aligned triangle streams, interpolates samples and composites each
+  complete mesh once. Bounded color-function trees
   are parsed and evaluated in `pdf_functions.c`.
   Inline image syntax and encoded-data boundaries live in `pdf_inline.c`.
   Inline images and XObjects share the borrowed image-view renderer.

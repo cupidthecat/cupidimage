@@ -123,10 +123,8 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
         int ok = cupidimage_pdf_dictionary_value(st->document, st->document_size, attributes, "CS", &space);
         if (ok && group_keyword(&space, "null")) ok = !required;
         else if (ok) {
-            pdf_image_colors colors = {0}; char name[128]; pos = 0;
-            if (cupidimage_pdf_read_name(&space, &pos, name))
-                ok = cupidimage_pdf_color_space(st, name, 0, &colors);
-            else { pos = 0; ok = cupidimage_pdf_image_color_space(st, &space, &pos, 0, &colors); }
+            pdf_image_colors colors = {0}; pos = 0;
+            ok = cupidimage_pdf_image_color_space(st, &space, &pos, 0, &colors);
             ok = ok && (colors.components == 1 || colors.components == 3) && !colors.pattern && !colors.indexed;
             if (ok) *gray = colors.components == 1;
         }

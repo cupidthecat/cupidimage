@@ -78,7 +78,7 @@ FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType, CFF/Type 2 and Type 1 outlines are supported; complete font fidelity, transparency groups, mesh shadings and annotations remain incomplete.
+nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType, CFF/Type 2 and Type 1 outlines are supported; complete font fidelity, general transparency, patch meshes and annotations remain incomplete.
 
 ## PDF details and limits
 
@@ -147,8 +147,9 @@ Selecting a color space resets its color to black.
 Named ColorSpace resources support device spaces and Indexed palettes for
 vector fills and strokes, including inherited and
 indirect dictionaries and indirect name values. Forms use their own resources
-when present and otherwise inherit the caller's resources. Alias resolution is
-bounded to reject cycles. Pattern spaces are described below. Unsupported spaces,
+when present and otherwise inherit the caller's resources. Indirect object resolution is
+bounded to reject cycles. Resource entries define complete color-space objects; chained resource aliases
+are rejected. Device families also accept single-element arrays. Pattern spaces are described below. Unsupported spaces,
 including calibrated colors and ICC profiles, return a load error. Invalid color
 operands also return an error. CMYK uses the built-in RGB conversion without
 color profiles.
@@ -473,7 +474,8 @@ coverage. Cap, join and dash handling is described below.
 ## PDF shading patterns
 
 Type 2 patterns support function-based, axial and radial shadings (ShadingType
-1, 2 and 3). Their Matrix is relative to the parent content's initial transform.
+1, 2 and 3), plus free-form and lattice triangle meshes (types 4 and 5).
+Their Matrix is relative to the parent content's initial transform.
 The shading's Background fills areas outside its domain, subject to its BBox;
 the direct `sh` operator ignores Background and the current fill/stroke pattern.
 
@@ -482,8 +484,9 @@ of an indirect pattern resource reuse that raster when the viewport and initial
 transform match. These rasters share the 64 MiB pattern-cache budget, while the
 tiling-only cell dimension limits do not apply. The caller's alpha and blend
 mode apply when the pattern paints. Nondefault transparency in a shading
-pattern's own ExtGState is rejected, rather than silently ignored. Mesh shadings
-and general transparency groups remain unsupported.
+pattern's own ExtGState is rejected, rather than silently ignored. Coons and
+tensor-product patch meshes remain unsupported. See [PDF shading](pdf-shading.md)
+for mesh formats, interpolation, memory bounds and comparison limits.
 
 ## PDF stroke styling
 

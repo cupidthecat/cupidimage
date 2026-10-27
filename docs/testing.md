@@ -360,3 +360,9 @@ both complete and unterminated text streams.
 rendering fixtures. It checks escaped font/resource names, literal CR/CRLF,
 embedded NUL, odd hex nibbles, malformed TJ arrays and text-object context.
 The content guide records exact size/depth bounds and independent comparisons.
+
+`make test-pdf-mesh` checks free-form and lattice triangle streams, packed bit
+widths, Decode, flag/row connectivity, optional functions and Indexed base-space
+interpolation. The shading guide distinguishes analytic gradient checks from
+independent comparisons and records the original corpus fixture's stream-length
+failure. Synthetic asset expectations remain exact.

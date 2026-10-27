@@ -2,6 +2,16 @@
 #include <math.h>
 #include <string.h>
 
+int cupidimage_pdf_shading_colors(const pdf_render_state *st, const pdf_object_view *view,
+                                  pdf_image_colors *colors) {
+    pdf_object_view value = {0};
+    size_t pos = 0;
+    int ok = cupidimage_pdf_dictionary_value(st->document, st->document_size, view, "ColorSpace", &value);
+    if (ok) ok = cupidimage_pdf_image_color_space(st, &value, &pos, 0, colors);
+    cupidimage_pdf_object_view_release(&value);
+    return ok;
+}
+
 static int pdf_shading_extend(const pdf_object_view *view, int extend[2]) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, "Extend", &pos)) return 1;
@@ -50,8 +60,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
     double coords[6]={0}, domain[4]={0,1,0,1}, box[4], matrix[6]={1,0,0,1,0,0};
     int extend[2]={0}, has_box=cupidimage_pdf_page_value(view,"BBox",&pos);
     if (!cupidimage_pdf_image_integer(st, view, "ShadingType", &type) || type < 1 || type > 3 ||
-        !cupidimage_pdf_page_value(view, "ColorSpace", &pos) ||
-        !cupidimage_pdf_image_color_space(st, view, &pos, 0, &colors) || colors.indexed ||
+        !cupidimage_pdf_shading_colors(st, view, &colors) || colors.indexed ||
         colors.pattern)
         return 0;
     int inputs=type==1?2:1;
@@ -140,6 +149,9 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
 
 int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_view *view,
                                       int background) {
+    int type;
+    if (!cupidimage_pdf_image_integer(st, view, "ShadingType", &type)) return 0;
+    if (type == 4 || type == 5) return cupidimage_pdf_paint_mesh(st, view, type, background);
     pdf_function_tree function={0};
     int ok = pdf_paint_shading_loaded(st, view, &function, background);
     cupidimage_pdf_free_function(&function);

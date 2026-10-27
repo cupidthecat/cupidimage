@@ -34,6 +34,7 @@
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_inline.c"
+#include "../src/formats/pdf/pdf_mesh.c"
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
@@ -157,6 +158,71 @@ int main(void) {
         checks++;
         if (cupidimage_pdf_draw_shading(&state,"Sh")) failures++;
         if (live_count) { failures++; while(live_count) fault_free(live[0]); }
+    }
+    /* Triangle shading buffers, lattice rows and optional functions unwind together. */
+    for (unsigned variant = 0; variant < 9; variant++) {
+        int lattice = variant == 1 || variant == 4;
+        int function = variant == 2 || variant == 5 || variant == 7;
+        const char *hex = lattice ? (variant == 4 ? "0000ff0000ff00ff000000ffff0000>" :
+                                    "0000ff0000ff00ff000000ffff0000ffffff0000>") :
+                          function ? "0000000000ff00ff0000ff00>" :
+                          variant == 3 ? "000000ff000000ff0000ff000000ff0000>" :
+                                         "000000ff000000ff0000ff000000ff0000ff>";
+        const char *content = variant == 6 ? "/Pattern cs /P scn 0 0 18 12 re f" :
+                              variant == 8 ? "/M gs 0 0 18 12 re f" : "/Sh sh";
+        const char *function_body = variant == 7 ? "<< /FunctionType 99 /Domain [0 1] >>" :
+                                    variant == 5 ? "<< /FunctionType 4 /Domain [0 1] /Range [0 1] /Length 11 >> stream\n{ dup mul }\nendstream" :
+                                                   "<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0] /C1 [1 0 0] /N 2 >>";
+        char mesh_document[2048];
+        int length = snprintf(mesh_document, sizeof(mesh_document),
+            "3 0 obj << /Resources << /Shading << /Sh 5 0 R >> /Pattern << /P 7 0 R >> /ExtGState << /M << /SMask << /S /Alpha /G 9 0 R >> >> >> >> >> endobj\n"
+            "5 0 obj << /ShadingType %d /ColorSpace /%s /BitsPerCoordinate 8 /BitsPerComponent 8 %s /Decode [0 18 0 12 %s] %s /Filter /ASCIIHexDecode /Length %zu >> stream\n%s\nendstream endobj\n"
+            "7 0 obj << /PatternType 2 /Shading 5 0 R >> endobj\n"
+            "8 0 obj %s endobj\n"
+            "9 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceRGB >> /Length 6 >> stream\n/Sh sh\nendstream endobj\n",
+            lattice ? 5 : 4, variant == 5 ? "DeviceGray" : "DeviceRGB",
+            lattice ? "/VerticesPerRow 2" : "/BitsPerFlag 8", function ? "0 1" : "0 1 0 1 0 1",
+            function ? "/Function 8 0 R" : "", strlen(hex), hex, function_body);
+        if (length < 0 || (size_t)length >= sizeof(mesh_document)) return 1;
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            uint8_t pixels[24 * 16 * 4]; memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0}; image.width = 24; image.height = 16; image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16}; char error[128] = {0};
+            allocation_count = 0; fail_at = failure;
+            int ok = cupidimage_pdf_render_content_stream((const unsigned char *)content, strlen(content),
+                (const unsigned char *)mesh_document, (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure) total = allocation_count;
+            checks++;
+            if ((!failure && ok != (variant != 3 && variant != 4 && variant != 7)) || live_count) {
+                fprintf(stderr,"FAIL mesh %u allocation %zu: %zu live, result %d\n",variant,failure,live_count,ok);
+                failures++;
+            }
+            if (!ok) for (size_t i = 0; i < sizeof(pixels); i++) if (pixels[i] != 255) { failures++; break; }
+            while (live_count) fault_free(live[0]);
+        }
+        fail_at = 0;
+    }
+    {
+        const char *data = "3 0 obj << >> endobj\n"
+            "5 0 obj << /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 8 /BitsPerComponent 8 /BitsPerFlag 8 /Decode [0 18 0 12 0 1 0 1 0 1] /Filter /ASCIIHexDecode /Length 37 >> stream\n000000ff000000ff0000ff000000ff0000ff>\nendstream endobj\n";
+        for (unsigned limit = 0; limit < 3; limit++) {
+            uint8_t pixels[24 * 16 * 4]; memset(pixels,255,sizeof(pixels));
+            cupidimage_image image={0};image.width=24;image.height=16;image.rgba=pixels;
+            pdf_form_budget budget={0};budget.bytes_left=1024;budget.shade_evaluations_left=limit ? 1000000 : 0;
+            budget.transparency_bytes_live=limit==1 ? PDF_TRANSPARENCY_MEMORY_LIMIT : 0;
+            size_t initial=budget.transparency_bytes_live;
+            pdf_clip_budget clips={0};clips.tests_left=limit==2 ? 0 : 1024;
+            pdf_render_state state={0};state.img=&image;state.form_budget=&budget;state.clip_budget=&clips;
+            state.document=(const unsigned char *)data;state.document_size=strlen(data);state.page_object=3;
+            state.page_top_pts=12;state.gs.ctm[0]=state.gs.ctm[3]=1;state.gs.fill_alpha=1;
+            pdf_object_view mesh={0};allocation_count=0;fail_at=0;checks++;
+            int got=cupidimage_pdf_get_object_content(state.document,state.document_size,5,&mesh);
+            if(!got || cupidimage_pdf_paint_mesh(&state,&mesh,4,0) || budget.transparency_bytes_live!=initial)failures++;
+            cupidimage_pdf_object_view_release(&mesh);
+            if(live_count){failures++;while(live_count)fault_free(live[0]);}
+            for(size_t i=0;i<sizeof(pixels);i++)if(pixels[i]!=255){failures++;break;}
+        }
     }
     /* Page isolation preserves the caller's pixels until a complete render succeeds. */
     for (unsigned variant = 0; variant < 4; variant++) {

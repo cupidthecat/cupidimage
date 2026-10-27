@@ -133,6 +133,15 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
         char family[128];
         if (!pdf_color_name(view, pos, family))
             return 0;
+        int device_components = !strcmp(family, "DeviceGray") ? 1 :
+                                !strcmp(family, "DeviceRGB") ? 3 :
+                                !strcmp(family, "DeviceCMYK") ? 4 : 0;
+        if (device_components) {
+            cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+            if (*pos == view->len || view->data[(*pos)++] != ']') return 0;
+            colors->components = device_components;
+            return 1;
+        }
         if (!strcmp(family, "Pattern")) {
             if (!cupidimage_pdf_image_color_space(st, view, pos, depth + 1, colors) ||
                 colors->pattern)
@@ -169,25 +178,6 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
     return 0;
 }
 
-static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
-                                 size_t pos, unsigned depth, pdf_image_colors *colors) {
-    if (depth >= 16) return 0;
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    int object;
-    if (cupidimage_pdf_page_reference(view, pos, &object)) {
-        pdf_object_view indirect = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect)) return 0;
-        int space = pdf_color_space_value(st, &indirect, 0, depth + 1, colors);
-        cupidimage_pdf_object_view_release(&indirect);
-        return space;
-    }
-    if (pos < view->len && view->data[pos] == '[')
-        return cupidimage_pdf_image_color_space(st, view, &pos, depth, colors);
-    char name[128];
-    if (!pdf_color_name(view, &pos, name)) return 0;
-    return cupidimage_pdf_color_space(st, name, depth + 1, colors);
-}
-
 int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth, pdf_image_colors *colors) {
     if (!strcmp(name, "Pattern")) {
         colors->pattern = 1;
@@ -198,8 +188,9 @@ int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, uns
     if (components) { colors->components = components; return 1; }
     if (depth >= 16) return 0;
     pdf_object_view value={0};
+    size_t pos=0;
     int ok=cupidimage_pdf_find_resource(st,"ColorSpace",name,&value,NULL) &&
-           pdf_color_space_value(st,&value,0,depth+1,colors);
+           cupidimage_pdf_image_color_space(st,&value,&pos,depth+1,colors);
     cupidimage_pdf_object_view_release(&value);
     return ok;
 }

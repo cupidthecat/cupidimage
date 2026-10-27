@@ -336,6 +336,34 @@
       "height": 16,
       "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-freeform.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzCEI2EYAAMCaQGXlIDow+bLEByojR3xg8mWJD5WRhfdhMnIQ/1S+LLx+qIwcxKwnzl7334f/P9EzEBiZmFlYiWzsHCROLm4yhUrj4aX75adnIDAyMbOwEtnYOUicXNxkCpXGw0v300/PQGBkYmZhJbKxc5A4ubjJFCqNh5fuh5+egcDIxMzCSmRj5yBxcnGTKVQaDy/dv356BgIjEzMLK5GNnYPEycVNplBpPLx0//jpGQiMTMwsrEQ2dg4SJxc3mUKl8fDSfffTMxAYmZhZWIls7BwkTi5uMoVK4+Gl++anZyAwMjGzsBLZ2DlInFzcZAqVxsNL99VPz0BgZGJmYSWysXOQOLm4yRQqjYeX7m8/PQOBkYmZhZXIxs5B4uTiJlOoNB5eur/89AwERiZmFlYiGzsHiZOLm0yh0nh46b746RkIjEzMLKxENnYOEicXN5lCpfHw0n320zMQGJmYWViJbOwcJE4ubjKFSuPhpfvTT89AYGRiZmElsrFzkDi5uMkUKo2Hl+4PPz0DgZGJmYWVyMbOQeLk4iZTqDQeXrqPfnoGAiMTMwsrkY2dg8TJxU2mUGk8vPwGhvb9Hw==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-lattice.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzCEI2EYAAMCaQGXlIDow+bLEByojR3xg8mWJD5WRhfdhMnIQ/1S+LLx+qIwcxKwnzl7334f/P9EzEBiZmFlYiWzsHCROLm4yhUrj4aX75adnIDAyMbOwEtnYOUicXNxkCpXGw0v300/PQGBkYmZhJbKxc5A4ubjJFCqNh5fuh5+egcDIxMzCSmRj5yBxcnGTKVQaDy/dv356BgIjEzMLK5GNnYPEycVNplBpPLx0//jpGQiMTMwsrEQ2dg4SJxc3mUKl8fDSfffTMxAYmZhZWIls7BwkTi5uMoVK4+Gl++anZyAwMjGzsBLZ2DlInFzcZAqVxsNL99VPz0BgZGJmYSWysXOQOLm4yRQqjYeX7m8/PQOBkYmZhZXIxs5B4uTiJlOoNB5eur/89AwERiZmFlYiGzsHiZOLm0yh0nh46b746RkIjEzMLKxENnYOEicXN5lCpfHw0n320zMQGJmYWViJbOwcJE4ubjKFSuPhpfvTT89AYGRiZmElsrFzkDi5uMkUKo2Hl+4PPz0DgZGJmYWVyMbOQeLk4iZTqDQeXrqPfnoGAiMTMwsrkY2dg8TJxU2mUGk8vPwGhvb9Hw==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-function.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzKEVQGAYAMDf8wRBkjRRlWUDGMACNrCBEYxgBjvYwRA6N4bwhauXUnozcgpKKmoaWjp6BkYmZhZWNnYOTi5uHlL88ccff/y//D/wI/4Q",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-indexed.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
     }
   ]
 }

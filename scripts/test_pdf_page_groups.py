@@ -49,7 +49,7 @@ def main():
         gray='<< /S /Transparency /I false /CS /DeviceGray >>'
         check('gray-native',fixture('.5 g 0 0 18 12 re f',gray),lambda x,y:(128,128,128))
         check('gray-converts-source',fixture('1 0 0 rg 0 0 18 12 re f',gray),lambda x,y:(77,77,77),reference=False)
-        check('gray-space-alias',fixture('1 0 0 rg 0 0 18 12 re f','<< /S /Transparency /CS /G >>','/ColorSpace << /G /DeviceGray >>'),lambda x,y:(77,77,77),reference=False)
+        check('gray-space-alias',fixture('1 0 0 rg 0 0 18 12 re f','<< /S /Transparency /CS /G >>','/ColorSpace << /G /DeviceGray >>'),reject=True)
         check('gray-space-indirect',fixture('1 0 0 rg 0 0 18 12 re f','5 0 R',extra={5:b'<< /S /Transparency /I 6 0 R /CS 7 0 R >>',6:b'false',7:b'/DeviceGray'}),lambda x,y:(77,77,77),reference=False)
         check('not-inherited',fixture('1 0 0 rg 0 0 18 12 re f',parent='/Group '+gray),red)
         check('final-clip-does-not-reclip',fixture('1 0 0 rg 0 0 18 12 re f 0 0 9 12 re W n'),red)

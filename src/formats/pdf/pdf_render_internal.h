@@ -201,6 +201,8 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
 
 int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view,
                               size_t pos, unsigned depth, double *value);
+int cupidimage_pdf_shading_colors(const pdf_render_state *st, const pdf_object_view *view, pdf_image_colors *colors);
+int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view, int type, int background);
 int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name);
 
 

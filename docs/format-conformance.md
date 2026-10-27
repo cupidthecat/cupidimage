@@ -441,9 +441,9 @@ alpha allows that initial contribution to be removed before the group is painted
 into its parent. Both group types retain floating-point color and alpha through
 nesting. Pattern/shading cache construction is kept outside that tracking.
 
-The group suite has 81 cases and 66 optional independent comparisons, including
+The group suite has 81 cases and 65 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 2,044 checks.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 2,117 checks.
 CMYK/CIE/ICC blending remains open.
 
 
@@ -452,8 +452,8 @@ CMYK/CIE/ICC blending remains open.
 Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
 q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
 as a group blending space alongside DeviceRGB. The focused suites have 56 mask
-checks and 81 group checks, with 44 and 66 optional independent comparisons.
-The allocation-failure suite has 2,044 checks. Three new analytic assets cover
+checks and 81 group checks, with 44 and 65 optional independent comparisons.
+The allocation-failure suite has 2,117 checks. Three new analytic assets cover
 alpha masks, luminosity masks and a gray mask with an inverse transfer function.
 
 [PDF transparency](pdf-transparency.md) records the analytic-only differences,
@@ -466,7 +466,7 @@ transparency are still open. These changes do not establish complete PDF support
 Pages now render on a transparent group surface before compositing onto white.
 This fixes initial non-Normal blending, which previously used white as the
 object backdrop. The page's Group dictionary supports DeviceRGB/DeviceGray,
-indirect attributes and named spaces; its I flag cannot disable display isolation.
+indirect attributes and complete color-space objects; its I flag cannot disable display isolation.
 The final composite does not reuse the last object's mask, clip or opacity.
 Empty pages also validate their group attributes.
 
@@ -504,7 +504,7 @@ There are 36 focused checks and 14 optional independent comparisons. The
 transparency guide explains where the tested independent renderers disagree.
 Two new analytic assets bring the manifest to 350 files, with 182 reference
 passes, 160 decoded-but-unverified files and 1,026 terminal round trips.
-The allocation-failure suite has 2,044 checks. Full font fidelity, color management
+The allocation-failure suite has 2,117 checks. Full font fidelity, color management
 and the remaining PDF features are not established by these tests.
 
 
@@ -521,3 +521,26 @@ independent comparisons. Four newline comparisons use the secondary renderer;
 see [PDF content syntax](pdf-content.md). The 352-asset manifest has 184 reference
 passes and 160 decoded-but-unverified entries. Existing assets retain their
 expectations. Two new assets cover font-name escaping and literal CRLF handling.
+
+
+## Gouraud triangle meshes
+
+Shading types 4 and 5 now decode their prescribed coordinate, component and flag
+widths, byte padding, connectivity and Decode ranges. Vertex parameters are
+interpolated before an optional function is evaluated; Indexed vertices convert
+to their base space before interpolation. A complete shading paints once, rather
+than repeatedly applying opacity at triangle overlaps.
+
+The focused suite has 157 analytic checks and 110 optional independent comparisons.
+Four new mesh assets bring the manifest to 356 files, with 188 reference passes
+and 160 decoded-but-unverified entries. The allocation-failure suite has 2,117
+checks, including mesh memory/work bounds. Gradient sampling still differs from
+the tested independent renderers; the [shading guide](pdf-shading.md) records those
+limits and the pinned corpus fixture that fails its declared stream length.
+
+The same specification review corrected color-space handling: single-element
+device-space arrays are valid, but arbitrary ColorSpace resource names are not
+valid color-space objects in shading/group dictionaries or resource values.
+Three former positive alias cases now reject those invalid definitions. Content
+operators can still select a resource that directly defines a supported space.
+Coons/tensor patches, color management and other unfinished PDF features remain open.

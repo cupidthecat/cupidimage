@@ -271,7 +271,7 @@ OpenType wrapping. Twenty-five optional independent comparisons use:
 The clip-only comparison uses a second rasterizer because the first applies a
 different boundary rule. The cubic arch also has an analytic per-pixel test.
 The optional font-fixture regeneration script uses FontTools; ordinary tests do
-not require it. The PDF allocation-failure suite has 2,044 checks, including
+not require it. The PDF allocation-failure suite has 2,117 checks, including
 CFF font dictionaries, outlines and composite cleanup.
 
 `make test-pdf-standard-fonts` verifies all 14 metric/encoding resources

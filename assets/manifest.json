@@ -627,6 +627,22 @@
       "sha256": "c3b4c82626474ff0ad1d8ac568cf699a2644a4fbf7e72b00b7aa3bc86f65d225"
     },
     {
+      "path": "assets/pdf/reference/gouraud-freeform.pdf",
+      "sha256": "5ff78684e73440c248bfdca4b90b925f843b62824b66bc4f5cb68e35c8e86b42"
+    },
+    {
+      "path": "assets/pdf/reference/gouraud-function.pdf",
+      "sha256": "715664044b38405f0c79d2d89c32f164153f6911d42f5e63a155459e3c45dddf"
+    },
+    {
+      "path": "assets/pdf/reference/gouraud-indexed.pdf",
+      "sha256": "18344793b90e3e77a0ce7af4e1f09feddb472fd44afa46450ddde96953a38004"
+    },
+    {
+      "path": "assets/pdf/reference/gouraud-lattice.pdf",
+      "sha256": "c6abbde50b466a29ae1cac35b02ac561835fd726acef4372337424171cd0841f"
+    },
+    {
       "path": "assets/pdf/reference/graphics-alpha-mask.pdf",
       "sha256": "9f4d50d2c3ae1d2850d2a1faf3c0769a0919c26cf3ff03575941b1867bcb6b18"
     },
