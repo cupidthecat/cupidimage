@@ -29,10 +29,10 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   Type 3 font metadata lives in `pdf_font_type3.c`, and shared resource-scope
   lookup lives in `pdf_resources.c`. Pattern validation and the bounded
   per-page cell/gradient cache live in `pdf_patterns.c`. Stroke geometry, dash
-  expansion and bounded union coverage live in `pdf_stroke.c`. Identity CID
+  expansion and bounded union coverage live in `pdf_stroke.c`. CID
   horizontal/vertical metrics are parsed in `pdf_font_cid.c`, separately from
   Unicode maps and glyph rasterization. `fonts/` holds binary font tables,
-  encoding data and the bitmap fallback. `pdf_font_truetype.c` connects embedded
+  encoding data, the bounded PDF encoding CMap parser and the bitmap fallback. `pdf_font_truetype.c` connects embedded
   programs to PDF resources; `pdf_text_outline.c` handles quadratic glyph
   coverage and text clipping.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;

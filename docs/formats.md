@@ -383,7 +383,7 @@ regardless of its Unicode mapping.
 Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
-described below. Other CID encodings, complete standard-font metrics and embedded
+described below. Predefined collection CMaps, complete standard-font metrics and embedded
 Type 1/CFF outlines and complete TrueType fidelity remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes are not equivalent to actual
 font outlines.
@@ -494,10 +494,11 @@ budget. Invalid arrays and exhausted budgets fail explicitly. Curve flattening
 and pixel-centre coverage remain approximations; this is not antialiased outline
 parity. Automatic stroke adjustment is not implemented.
 
-## Identity CID metrics and vertical text
+## CID metrics and vertical text
 
 Type 0 fonts with Identity-H or Identity-V encodings consume big-endian,
-two-byte character codes. DW/W supply horizontal advances; DW2/W2 supply vertical
+two-byte character codes. Embedded encoding CMaps also map variable-length source
+codes to CIDs. DW/W supply horizontal advances; DW2/W2 supply vertical
 advances and origin offsets. Both consecutive-width arrays and CID ranges are
 supported, with indirect arrays and numeric values. Without overrides, horizontal
 width is 1000, vertical advance is -1000, vertical origin Y is 880, and origin X
@@ -511,10 +512,12 @@ painting/clipping modes and saved graphics state use the same placement rules.
 
 ToUnicode chooses a fallback glyph but does not choose the CID's metrics. An
 unmapped CID shows the existing placeholder, rather than treating its number as
-Unicode. A truncated two-byte string fails. Malformed font metadata retains the
+Unicode. Invalid and truncated codes use CID zero with codespace-based byte
+recovery. Malformed font metadata retains the
 existing font-table fallback policy. Supported embedded TrueType programs instead
-select outlines through CIDToGIDMap. Custom/predefined collection CMaps other
-than Identity-H/V and complete CJK text rendering remain open.
+select outlines through CIDToGIDMap. Embedded maps support CID ranges, notdef
+recovery and UseCMap inheritance. Predefined collection CMaps other than
+Identity-H/V and complete CJK text rendering remain open.
 
 Metric tables are bounded to the 65,536-CID space, with at most 65,536 assignments
 per W/W2 array, 16 levels of indirect-value resolution and 64 MiB of CID metadata

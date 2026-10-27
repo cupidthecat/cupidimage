@@ -46,7 +46,9 @@ typedef struct {
     double width, advance_y, origin_x, origin_y;
     unsigned flags;
 } pdf_cid_metric;
+typedef struct pdf_cmap pdf_cmap;
 typedef struct {
+    pdf_cmap *encoding;
     int vertical;
     double default_width, default_advance_y, default_origin_y;
     pdf_cid_metric *metrics;
@@ -154,6 +156,7 @@ int cupidimage_pdf_font_dictionary_at(const unsigned char *data, size_t size,
 int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
                                   const pdf_object_view *view, pdf_font_map *font, size_t *budget);
 void cupidimage_pdf_cid_font_free(pdf_cid_font *font);
+size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font);
 void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *width,
                                 double *advance_y, double *origin_x, double *origin_y);
 
@@ -162,6 +165,7 @@ int cupidimage_pdf_parse_truetype_font(const unsigned char *data, size_t size,
                                        size_t *budget);
 size_t cupidimage_pdf_truetype_bytes(const pdf_tt_program *program);
 void cupidimage_pdf_truetype_free(pdf_tt_program *program);
+int cupidimage_pdf_truetype_has_glyph(const pdf_tt_program *program, unsigned code);
 unsigned cupidimage_pdf_truetype_glyph(const pdf_tt_program *program, unsigned code);
 double cupidimage_pdf_truetype_advance(const pdf_tt_program *program, unsigned glyph);
 

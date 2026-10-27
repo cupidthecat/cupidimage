@@ -88,6 +88,7 @@ typedef struct {
     unsigned calls_left;
     size_t shade_evaluations_left;
     unsigned glyph_calls_left;
+    size_t cmap_steps_left;
 } pdf_form_budget;
 
 typedef struct {

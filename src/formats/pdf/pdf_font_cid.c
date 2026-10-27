@@ -1,3 +1,4 @@
+#include "fonts/cmap.h"
 #include "pdf_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -6,9 +7,15 @@
 /* CID metrics are separate from Unicode mappings and glyph outlines. */
 void cupidimage_pdf_cid_font_free(pdf_cid_font *font) {
     if (font) {
+        cupidimage_pdf_cmap_free(font->encoding);
         free(font->metrics);
         free(font);
     }
+}
+size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font) {
+    return font ? sizeof(*font) + (font->metrics ? 65536 * sizeof(pdf_cid_metric) : 0) +
+                      cupidimage_pdf_cmap_bytes(font->encoding)
+                : 0;
 }
 static int cid_skip_reference(const pdf_object_view *v, size_t *p) {
     double n;
@@ -176,11 +183,16 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
         return 0;
     int vertical = cid_value_name(&encoding, 0, "Identity-V");
     int identity = vertical || cid_value_name(&encoding, 0, "Identity-H");
-    cupidimage_pdf_object_view_release(&encoding);
-    if (!identity)
+    size_t encoding_pos = 0;
+    cupidimage_pdf_skip_ws_and_comments(encoding.data, encoding.len, &encoding_pos);
+    if (!identity && encoding_pos < encoding.len && encoding.data[encoding_pos] == '/') {
+        cupidimage_pdf_object_view_release(&encoding);
         return 1;
-    if (!cupidimage_pdf_page_value(view, "DescendantFonts", &pos))
+    }
+    if (!cupidimage_pdf_page_value(view, "DescendantFonts", &pos)) {
+        cupidimage_pdf_object_view_release(&encoding);
         return 0;
+    }
     pdf_object_view array = {0}, descendant = {0};
     pdf_cid_font *cid = NULL;
     int ok = cid_resolve(data, size, view, &pos, &array, 0);
@@ -206,7 +218,15 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
     cid = calloc(1, sizeof(*cid));
     if (!cid)
         goto done;
+    if (!identity) {
+        if (!cupidimage_pdf_cmap_load(data, size, &encoding, &cid->encoding))
+            goto done;
+        vertical = cupidimage_pdf_cmap_vertical(cid->encoding);
+    }
     cid->vertical = vertical;
+    size_t metadata_cost = cupidimage_pdf_cid_font_bytes(cid);
+    if (metadata_cost > 64u * 1024u * 1024u - *budget)
+        goto done;
     cid->default_width = 1;
     cid->default_origin_y = .88;
     cid->default_advance_y = -1;
@@ -239,7 +259,8 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
     int w = cupidimage_pdf_page_value(&descendant, "W", &wp),
         w2 = cupidimage_pdf_page_value(&descendant, "W2", &w2p);
     if (w || w2) {
-        if (*budget > 64u * 1024u * 1024u - sizeof(*cid) - 65536 * sizeof(pdf_cid_metric))
+        if (metadata_cost > 64u * 1024u * 1024u - 65536 * sizeof(pdf_cid_metric) ||
+            *budget > 64u * 1024u * 1024u - metadata_cost - 65536 * sizeof(pdf_cid_metric))
             goto done;
         cid->metrics = calloc(65536, sizeof(pdf_cid_metric));
         if (!cid->metrics)
@@ -250,9 +271,10 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
             goto done;
     }
     font->cid = cid;
-    *budget += sizeof(*cid) + (cid->metrics ? 65536 * sizeof(pdf_cid_metric) : 0);
+    *budget += cupidimage_pdf_cid_font_bytes(cid);
     cid = NULL;
 done:
+    cupidimage_pdf_object_view_release(&encoding);
     cupidimage_pdf_cid_font_free(cid);
     cupidimage_pdf_object_view_release(&descendant);
     cupidimage_pdf_object_view_release(&array);

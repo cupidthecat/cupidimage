@@ -253,3 +253,14 @@ fixtures. The optional independent pass is:
 See [PDF fonts and text](pdf-fonts.md) for counts, fixture regeneration, data
 licenses and the distinction between unhinted outlines and full font fidelity.
 The regular suite does not require FontTools or a reference renderer.
+
+## PDF encoding CMaps
+
+`make test-pdf-cmaps` checks variable-length codespaces, CID ranges, missing-glyph
+recovery, inheritance, writing modes and source-code word spacing. The 66 checks
+include malformed maps, cycles and mapping-work exhaustion. Seven optional exact
+raster comparisons run with:
+
+    python3 scripts/test_pdf_cmaps.py bin/test_pdf_pages bin/test_pdf_cmap --reference
+
+These are focused fixtures, not the full manual PDF rating pass.

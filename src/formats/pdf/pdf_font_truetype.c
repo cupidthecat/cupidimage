@@ -200,6 +200,19 @@ unsigned cupidimage_pdf_truetype_glyph(const pdf_tt_program *program, unsigned c
                     : 0;
     return glyph < program->font.glyphs ? glyph : 0;
 }
+int cupidimage_pdf_truetype_has_glyph(const pdf_tt_program *program, unsigned code) {
+    if (!program->cid)
+        return code < 256 && program->glyphs[code] < program->font.glyphs;
+    if (!code)
+        return 1;
+    unsigned glyph = code;
+    if (program->gid_map) {
+        if ((size_t)code * 2 + 1 >= program->gid_length)
+            return 0;
+        glyph = (unsigned)program->gid_map[code * 2] * 256 + program->gid_map[code * 2 + 1];
+    }
+    return glyph > 0 && glyph < program->font.glyphs;
+}
 double cupidimage_pdf_truetype_advance(const pdf_tt_program *program, unsigned glyph) {
     return (double)cupidimage_pdf_tt_advance(&program->font, glyph) / program->font.units;
 }

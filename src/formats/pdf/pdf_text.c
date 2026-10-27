@@ -1,3 +1,4 @@
+#include "fonts/cmap.h"
 #include "pdf_render_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -311,16 +312,27 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         uint32_t cp;
         unsigned encoded = bytes[before], glyph = 0;
         if (font && font->cid) {
-            if (length - pos < 2) {
+            size_t used;
+            uint32_t source;
+            unsigned cid, notdef;
+            int valid;
+            if (!cupidimage_pdf_cmap_next(font->cid->encoding, bytes + pos, length - pos, &used,
+                                          &source, &cid, &notdef, &valid,
+                                          &st->form_budget->cmap_steps_left)) {
                 st->image_failed = 1;
-                cupidimage_set_err(st->error, st->error_capacity, "pdf: incomplete two-byte CID");
+                cupidimage_set_err(st->error, st->error_capacity, "pdf: CMap work limit exceeded");
                 break;
             }
-            unsigned cid = (unsigned)bytes[pos] * 256 + bytes[pos + 1];
+            if (font->program && !cupidimage_pdf_truetype_has_glyph(font->program, cid)) {
+                cid = notdef;
+                if (!cupidimage_pdf_truetype_has_glyph(font->program, cid))
+                    cid = 0;
+            }
             encoded = cid;
-            pos += 2;
+            pos += used;
             cp = '?';
-            pdf_font_lookup_codepoint(font, cid, 2, &cp);
+            if (valid)
+                pdf_font_lookup_codepoint(font, source, (uint8_t)used, &cp);
             cupidimage_pdf_cid_metrics(font->cid, cid, &width, &advance_y, &origin_x, &origin_y);
         } else {
             if (font && font->program) {

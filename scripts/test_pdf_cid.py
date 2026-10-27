@@ -82,7 +82,7 @@ def main():
             same('vertical-paint-mode',f'BT /CID 12 Tf {mode} Tr 60 70 Td <00010002> Tj ET {fill}',
                  f'BT /Simple 12 Tf {mode} Tr 54 59.44 Td (A) Tj 1 0 0 1 54 47.44 Tm (B) Tj ET {fill}',vertical=True)
         for vertical in (False,True):
-            bad=render('BT /CID 12 Tf 60 70 Td <000100> Tj ET',vertical=vertical)
-            assert bad.returncode==3,bad.stderr;count+=1
+            same('incomplete-code-substitution','BT /CID 12 Tf 60 70 Td <000100> Tj ET',
+                 'BT /CID 12 Tf 60 70 Td <00010000> Tj ET',vertical=vertical)
     print(f'PDF CID metrics: {count} checks passed')
 if __name__=='__main__':main()

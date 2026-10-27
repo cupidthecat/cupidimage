@@ -1700,7 +1700,8 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     pdf_render_state st = {0};
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
-    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536};
+    pdf_form_budget form_budget = {64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536,
+                                   256u * 1024u * 1024u};
     st.form_budget = &form_budget;
     pdf_pattern_store patterns = {0};
     st.patterns = &patterns;

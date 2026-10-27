@@ -60,9 +60,7 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name)
                 table->fonts[i].program = NULL;
             }
             if (table->fonts[i].cid) {
-                table->cid_bytes -=
-                    sizeof(pdf_cid_font) +
-                    (table->fonts[i].cid->metrics ? 65536 * sizeof(pdf_cid_metric) : 0);
+                table->cid_bytes -= cupidimage_pdf_cid_font_bytes(table->fonts[i].cid);
                 cupidimage_pdf_cid_font_free(table->fonts[i].cid);
                 table->fonts[i].cid = NULL;
             }

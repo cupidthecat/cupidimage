@@ -7,6 +7,7 @@
 #include "../src/compression/ccitt.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #include "../src/formats/pdf/fonts/bitmap.c"
+#include "../src/formats/pdf/fonts/cmap.c"
 #include "../src/formats/pdf/fonts/encoding.c"
 #include "../src/formats/pdf/fonts/truetype.c"
 #include "../src/formats/pdf/pdf_calculator.c"
@@ -118,7 +119,7 @@ int main(void) {
             "/Function << /FunctionType 2 /Domain [0 1] /N 1 >> >> endobj\n";
         uint8_t pixels[16]; memset(pixels, 255, sizeof(pixels));
         cupidimage_image image = {0}; image.width=2; image.height=2; image.rgba=pixels;
-        pdf_form_budget budget = {0,3,3,0};
+        pdf_form_budget budget = {0, 3, 3, 0, 0};
         pdf_render_state state = {0}; state.img=&image; state.document=(const unsigned char *)shading_doc;
         state.document_size=strlen(shading_doc); state.page_object=3; state.page_top_pts=1.5f;
         state.gs.ctm[0]=state.gs.ctm[3]=1; state.gs.fill_alpha=1; state.form_budget=&budget;
@@ -371,6 +372,53 @@ int main(void) {
                     failures++;
                     fprintf(stderr, "FAIL embedded font allocation %zu: %zu live\n", failure,
                             live_count);
+                    while (live_count)
+                        fault_free(live[0]);
+                }
+            }
+        }
+        fail_at = 0;
+    }
+    {
+        const char *programs[] = {
+            "1 begincodespacerange <00> <FF> endcodespacerange 2 begincidchar <41> 1 <42> 2 "
+            "endcidchar",
+            "/Base usecmap 1 begincidchar <41> 2 endcidchar",
+            "1 begincodespacerange <00> <FF> endcodespacerange 1 begincidrange <40> <43> 1 "
+            "endcidrange 1 begincidchar <41> 5 endcidchar",
+            "1 begincodespacerange <00> <FF> endcodespacerange 1 begincidchar <41> 65536 "
+            "endcidchar"};
+        for (unsigned sample = 0; sample < 4; sample++) {
+            const char *base = "1 begincodespacerange <00> <FF> endcodespacerange 1 begincidchar "
+                               "<41> 1 endcidchar";
+            char document[4096];
+            int size = snprintf(
+                document, sizeof(document),
+                "10 0 obj << /CMapName /Child %s /Length %zu >> stream\n%s\nendstream endobj\n11 0 "
+                "obj << /CMapName /Base /Length %zu >> stream\n%s\nendstream endobj\n",
+                sample == 1 ? "/UseCMap 11 0 R" : "", strlen(programs[sample]), programs[sample],
+                strlen(base), base);
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                pdf_object_view view = {0};
+                pdf_cmap *map = NULL;
+                allocation_count = 0;
+                fail_at = failure;
+                int ok =
+                    cupidimage_pdf_get_object_content((unsigned char *)document, (size_t)size, 10,
+                                                      &view) &&
+                    cupidimage_pdf_cmap_load((unsigned char *)document, (size_t)size, &view, &map);
+                if (!failure)
+                    total = allocation_count;
+                checks++;
+                if (!failure && ok != (sample < 3)) {
+                    fprintf(stderr, "FAIL CMap sample %u\n", sample);
+                    failures++;
+                }
+                cupidimage_pdf_cmap_free(map);
+                cupidimage_pdf_object_view_release(&view);
+                if (live_count) {
+                    failures++;
                     while (live_count)
                         fault_free(live[0]);
                 }

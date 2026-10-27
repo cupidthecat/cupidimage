@@ -13,7 +13,8 @@ font's Unicode or Macintosh cmap. Symbolic fonts use their symbol cmap code
 ranges, with the documented fallback when the expected cmap is absent. Custom
 version-2 post names and its standard ASCII names are also available.
 
-Identity-H/V fonts consume two-byte CIDs. CIDToGIDMap can be Identity or a filtered
+Identity-H/V fonts consume two-byte CIDs. Embedded encoding CMaps can consume
+one to four bytes and map those source codes to CIDs. CIDToGIDMap can be Identity or a filtered
 stream of big-endian glyph indices. Unmapped indices select glyph zero. ToUnicode
 does not replace this glyph selection or determine glyph advances. Its maps
 still supply characters for the bitmap fallback when no supported outline is
@@ -22,6 +23,35 @@ available.
 The distinction matters: changing a ToUnicode entry must not silently replace a
 TrueType glyph with a different outline. The tests cover that case, including a
 malformed multibyte ToUnicode entry attached to a single-byte font.
+
+## Embedded encoding CMaps
+
+Encoding CMaps and ToUnicode maps serve different purposes. The encoding map
+selects a CID; ToUnicode still looks up the original source code and its byte
+length. Word spacing applies only to a one-byte source code 32, including in
+vertical writing. A two-byte code 0020 does not receive word spacing.
+
+Embedded maps support codespace ranges, cidchar/cidrange, notdefchar/notdefrange,
+and UseCMap inheritance from another stream or Identity-H/V. Codespace matching
+checks each byte against its corresponding bounds. Later local mappings override
+earlier mappings and inherited entries. A notdef range maps every code to the
+same CID, unlike an ordinary range. Missing glyphs consult the notdef map, then
+CID zero. Invalid or truncated codes consume bytes using the longest partial
+codespace match, with shorter ranges winning ties.
+
+The stream dictionary's writing mode must agree with an explicit mode in its
+program. Without an explicit mode, it defaults to horizontal; inheriting a
+vertical base map does not set the derived map's writing mode.
+
+Maps allow 256 non-overlapping codespaces, 65,536 mapping ranges per stream,
+five levels including the root, and 4 MiB of decoded program data per inheritance
+chain. Retained maps count against the CID metadata budget. Disjoint ranges use
+binary search; overlapping definitions preserve last-definition precedence and
+use a bounded scan. All text on a page shares a mapping-work budget.
+
+Unknown predefined collections remain unsupported. This parser reads the CMap
+data format; it is not a general PostScript interpreter. Invalid maps retain the
+font table's existing fallback policy rather than establishing faithful text.
 
 ## Programs and geometry
 
@@ -66,13 +96,21 @@ rather than quietly dropping that glyph.
 - TrueType instruction execution, grid fitting and antialiased font coverage.
 - CFF/Type 1 charstrings, other OpenType outline formats and variable-font data.
 - Complete post-table name variants and the remaining cmap forms.
-- Non-Identity PDF encoding CMaps and complete predefined collection support.
+- Predefined collection CMaps other than Identity-H/V and complete CJK support.
 - Complete standard-font metrics and faithful outlines when fonts are not embedded.
 
 These gaps can still change glyph shape, pixel phase or text coverage. Successful
 loading is not enough to mark a font or document correct.
 
 ## Tests and provenance
+
+`make test-pdf-cmaps` runs 66 encoding, recovery, inheritance and rendering checks.
+Seven selected cases also compare exact pixels with an independent renderer:
+
+    python3 scripts/test_pdf_cmaps.py bin/test_pdf_pages bin/test_pdf_cmap --reference
+
+The allocation-failure suite exercises inherited encoding maps and their cleanup.
+
 
 `make test-pdf-truetype` runs binary-table/glyph-name checks and 45 PDF rendering
 checks. The 4,356 lower-level checks include the full pinned glyph-name dataset;
