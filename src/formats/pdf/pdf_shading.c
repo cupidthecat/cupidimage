@@ -42,14 +42,18 @@ static int pdf_radial_parameter(const double coords[6], const int extend[2], dou
     return found;
 }
 
-static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view *view, pdf_function_tree *function) {
+static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view *view,
+                                    pdf_function_tree *function, int background) {
     int type;
     size_t pos;
     pdf_image_colors colors = {0};
     double coords[6]={0}, domain[4]={0,1,0,1}, box[4], matrix[6]={1,0,0,1,0,0};
     int extend[2]={0}, has_box=cupidimage_pdf_page_value(view,"BBox",&pos);
-    if (!cupidimage_pdf_image_integer(st,view,"ShadingType",&type) || type<1 || type>3 ||
-        !cupidimage_pdf_page_value(view,"ColorSpace",&pos) || !cupidimage_pdf_image_color_space(st,view,&pos,0,&colors) || colors.indexed) return 0;
+    if (!cupidimage_pdf_image_integer(st, view, "ShadingType", &type) || type < 1 || type > 3 ||
+        !cupidimage_pdf_page_value(view, "ColorSpace", &pos) ||
+        !cupidimage_pdf_image_color_space(st, view, &pos, 0, &colors) || colors.indexed ||
+        colors.pattern)
+        return 0;
     int inputs=type==1?2:1;
     if (!cupidimage_pdf_load_function(st,view,"Function",inputs,colors.components,function)) return 0;
     if (type!=1 && (!cupidimage_pdf_function_array(st,view,"Coords",coords,type==2?4:6) || !pdf_shading_extend(view,extend))) return 0;
@@ -64,21 +68,50 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
     if (type==1 && cupidimage_pdf_page_value(view,"Matrix",&pos) && !cupidimage_pdf_function_array(st,view,"Matrix",matrix,6)) return 0;
     double shading_det=matrix[0]*matrix[3]-matrix[1]*matrix[2];
     if(!isfinite(shading_det))return 0;
-    if(type==1 && (shading_det==0 || domain[0]==domain[1] || domain[2]==domain[3]))return 1;
+    int empty = type == 1 && (shading_det == 0 || domain[0] == domain[1] || domain[2] == domain[3]);
     const float *m=st->gs.ctm;
     double det=(double)m[0]*m[3]-(double)m[1]*m[2];
     if (!isfinite(det)) return 0;
     if (det==0) return 1;
     double dx=coords[2]-coords[0],dy=coords[3]-coords[1],length=dx*dx+dy*dy;
-    if (type==2 && (!isfinite(length) || length==0)) return length==0;
-    if (type==3 && coords[2]==0 && coords[5]==0) return 1;
+    if (type == 2 && !isfinite(length))
+        return 0;
+    if (type == 2 && length == 0)
+        empty = 1;
+    if (type == 3 && coords[2] == 0 && coords[5] == 0)
+        empty = 1;
+    double background_values[4] = {0};
+    uint8_t background_rgb[3] = {0};
+    background = background && cupidimage_pdf_page_value(view, "Background", &pos);
+    if (background) {
+        if (!cupidimage_pdf_function_array(st, view, "Background", background_values,
+                                           colors.components))
+            return 0;
+        if (colors.components == 4) {
+            double black = fmin(1, fmax(0, background_values[3]));
+            for (int c = 0; c < 3; c++)
+                background_rgb[c] =
+                    cupidimage_pdf_clamp_u8(1 - fmin(1, fmax(0, background_values[c]) + black));
+        } else
+            for (int c = 0; c < 3; c++)
+                background_rgb[c] =
+                    cupidimage_pdf_clamp_u8(background_values[colors.components == 1 ? 0 : c]);
+    }
+    if (empty && !background)
+        return 1;
     size_t pixels=(size_t)st->img->width*st->img->height;
-    if (pixels>st->form_budget->shade_evaluations_left) return 0;
+    if (!empty && pixels > st->form_budget->shade_evaluations_left)
+        return 0;
     for (uint32_t y=0;y<st->img->height;y++) for (uint32_t x=0;x<st->img->width;x++) {
         double tx=st->page_x0_pts+(x+.5)*(72.0/96.0)-m[4];
         double ty=st->page_top_pts-(y+.5)*(72.0/96.0)-m[5];
         double ux=(m[3]*tx-m[2]*ty)/det,uy=(m[0]*ty-m[1]*tx)/det;
         if (has_box && (ux<box[0] || ux>=box[2] || uy<box[1] || uy>=box[3])) continue;
+        if (background)
+            cupidimage_pdf_composite_pixel(st, (int)x, (int)y, background_rgb[0], background_rgb[1],
+                                           background_rgb[2], 1);
+        if (empty)
+            continue;
         double input[2]={0}, values[4];
         if(type==1) {
             double mx=ux-matrix[4],my=uy-matrix[5];
@@ -99,14 +132,16 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
             double black=fmin(1,fmax(0,values[3]));
             for(int c=0;c<3;c++) rgb[c]=cupidimage_pdf_clamp_u8(1-fmin(1,fmax(0,values[c])+black));
         } else for(int c=0;c<3;c++) rgb[c]=cupidimage_pdf_clamp_u8(values[colors.components==1?0:c]);
-        cupidimage_pdf_set_pixel(st,(int)x,(int)y,rgb[0],rgb[1],rgb[2]);
+        cupidimage_pdf_composite_pixel(st, (int)x, (int)y, rgb[0], rgb[1], rgb[2],
+                                       st->gs.fill_alpha);
     }
     return 1;
 }
 
-static int pdf_paint_shading(pdf_render_state *st,const pdf_object_view *view) {
+int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_view *view,
+                                      int background) {
     pdf_function_tree function={0};
-    int ok=pdf_paint_shading_loaded(st,view,&function);
+    int ok = pdf_paint_shading_loaded(st, view, &function, background);
     cupidimage_pdf_free_function(&function);
     return ok;
 }
@@ -115,7 +150,8 @@ int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name) {
     if (!st->form_budget->calls_left) return 0;
     st->form_budget->calls_left--;
     pdf_object_view shading={0};
-    int ok=cupidimage_pdf_find_resource(st,"Shading",name,&shading,NULL) && pdf_paint_shading(st,&shading);
+    int ok = cupidimage_pdf_find_resource(st, "Shading", name, &shading, NULL) &&
+             cupidimage_pdf_paint_shading_view(st, &shading, 0);
     cupidimage_pdf_object_view_release(&shading);
     return ok;
 }

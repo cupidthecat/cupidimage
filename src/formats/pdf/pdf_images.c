@@ -327,9 +327,12 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         else if (!(n >= 5 && memcmp(image.data + pos, "false", 5) == 0 &&
             (n == 5 || cupidimage_pdf_is_ws(image.data[pos+5]) || cupidimage_pdf_is_delim(image.data[pos+5])))) goto done;
     }
-    if (st->glyph_uncolored && !stencil) goto done;
+    if ((st->glyph_uncolored || st->pattern_uncolored) && !stencil)
+        goto done;
     if (!stencil && (!cupidimage_pdf_page_value(&image, "ColorSpace", &pos) ||
         !cupidimage_pdf_image_color_space(st, &image, &pos, 0, &colors))) goto done;
+    if (colors.pattern)
+        goto done;
     components = stencil || colors.indexed ? 1 : colors.components;
     bits = stencil ? 1 : 8;
     if (!components || !cupidimage_pdf_image_integer(st, &image, "Width", &width) ||
@@ -433,7 +436,11 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             } else {
                 for (int c = 0; c < 3; c++) rgb[c] = cupidimage_pdf_clamp_u8(values[paint_components == 1 ? 0 : c]);
             }
-            cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2], alpha*st->gs.fill_alpha);
+            if (stencil)
+                cupidimage_pdf_paint_pixel(st, x, y, 0, alpha);
+            else
+                cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2],
+                                               alpha * st->gs.fill_alpha);
         }
     }
     ok = 1;

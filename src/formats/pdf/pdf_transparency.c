@@ -34,7 +34,7 @@ int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view
            (pos == view->len || cupidimage_pdf_is_ws(view->data[pos]) || cupidimage_pdf_is_delim(view->data[pos]));
 }
 
-static int pdf_apply_graphics_dictionary(pdf_render_state *st, const pdf_object_view *view) {
+int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view) {
     pdf_graphics_state next = st->gs;
     size_t pos;
     double value;
@@ -71,6 +71,9 @@ static int pdf_apply_graphics_dictionary(pdf_render_state *st, const pdf_object_
         next.fill_alpha=st->gs.fill_alpha;next.stroke_alpha=st->gs.stroke_alpha;
         next.blend_mode=st->gs.blend_mode;
     }
+    /* Cached cells are backdrop-independent only with Normal blending. */
+    if (st->pattern_depth && next.blend_mode != 0)
+        return 0;
     st->gs = next;
     return 1;
 }
@@ -80,8 +83,8 @@ int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name) {
     int ok=cupidimage_pdf_find_resource(st,"ExtGState",name,&state,NULL);
     size_t pos=0;
     cupidimage_pdf_skip_ws_and_comments(state.data,state.len,&pos);
-    ok=ok && state.len-pos>=2 && state.data[pos]=='<' && state.data[pos+1]=='<' &&
-       pdf_apply_graphics_dictionary(st,&state);
+    ok = ok && state.len - pos >= 2 && state.data[pos] == '<' && state.data[pos + 1] == '<' &&
+         cupidimage_pdf_apply_graphics_view(st, &state);
     cupidimage_pdf_object_view_release(&state);
     return ok;
 }

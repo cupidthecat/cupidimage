@@ -78,7 +78,7 @@ FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Embedded font outlines, transparency groups, patterns, and annotations remain unsupported.
+nonzero page origins, and clockwise rotation in multiples of 90 degrees. Embedded font outlines, transparency groups, mesh shadings, and annotations remain unsupported.
 
 ## PDF details and limits
 
@@ -146,8 +146,8 @@ Named ColorSpace resources support device spaces and Indexed palettes for
 vector fills and strokes, including inherited and
 indirect dictionaries and indirect name values. Forms use their own resources
 when present and otherwise inherit the caller's resources. Alias resolution is
-bounded to reject cycles. Unsupported spaces, including patterns, calibrated
-colors, indexed colors, and ICC profiles, return a load error. Invalid color
+bounded to reject cycles. Pattern spaces are described below. Unsupported spaces,
+including calibrated colors and ICC profiles, return a load error. Invalid color
 operands also return an error. CMYK uses the built-in RGB conversion without
 color profiles.
 
@@ -287,7 +287,7 @@ Each page has a shared budget of 128 million color-function evaluations, includi
 nested forms and stitched/component functions. Function trees are limited to
 64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
 silently leaving a blank area. Cubic sampled interpolation, mesh shadings,
-shading patterns, and color-managed shading spaces
+and color-managed shading spaces
 remain unsupported.
 
 Small fixtures require exact analytic pixels. Optional independent comparisons
@@ -417,6 +417,57 @@ Glyph execution is limited to 16 nested calls, 65,536 invocations per page and
 the shared 64 MiB decoded-content budget. Reusing a stream under another font's
 resources is not itself rejected as a cycle; depth and work limits bound actual
 recursion. Type 3 dictionaries are limited to 64 KiB and Differences arrays to
-1,024 entries. Predefined name-only encodings, patterns and other unimplemented
+1,024 entries. Predefined name-only encodings and other unimplemented
 content operations remain unsupported; malformed font metadata follows the
 existing fallback policy.
+
+## PDF tiling patterns
+
+Coloured and uncoloured Type 1 tiling patterns can paint fills, strokes, text and
+image masks. `/Pattern` selects a coloured pattern space; a named resource such
+as `[/Pattern /DeviceRGB]` supplies the base colour for an uncoloured pattern.
+Gray, RGB, CMYK and Indexed base spaces are supported. `scn`/`SCN` choose the
+pattern and its optional base-colour operands. Ordinary colour operators clear
+the pattern selection, and `q`/`Q` preserve it.
+
+Cells are clipped to BBox and repeated using XStep and YStep, including negative
+steps, gaps and overlap. Matrix controls phase and affine placement. The pattern
+is anchored to its parent content stream's initial coordinates, so later `cm`
+operators do not move it. Form and glyph resource scopes retain their own initial
+transforms. Tiling types 1 and 3 use rounded device-grid step vectors; type 2 keeps
+the requested geometry. Singular original or rounded grids are rejected.
+
+The cell cache preserves RGBA transparency. Cell alpha constants and blend mode
+start at their defaults; the caller's transparency applies when the resulting
+pattern paints an object. Normal-blend transparency and nested patterns are
+supported. A cell that requests a non-Normal blend mode is rejected because its
+result depends on the backdrop and cannot use this cache. Soft-mask groups and
+general transparency groups remain separate work. Eight-bit
+cached alpha can differ by one channel value from a higher-precision pipeline.
+
+Uncoloured cells reject colour-setting operators and ordinary colour images;
+image masks and transparency parameters are allowed. Resources are local to the
+pattern dictionary. Limits are eight nested patterns, 65,536 cached instances per
+page, 64 MiB of cached cells and descriptors, 4,096 pixels per cell axis, four
+million pixels per cell, and 4,096 overlapping copies per period. The existing
+shared content and invocation budgets also apply. Empty bounding boxes produce
+transparent cells without entering a large replication loop.
+
+Stroke coverage now measures width through the current affine transform,
+including nonuniform scale and shear; zero-width hairlines use device-pixel
+coverage. Line cap/join and dash fidelity still need further work.
+
+## PDF shading patterns
+
+Type 2 patterns support function-based, axial and radial shadings (ShadingType
+1, 2 and 3). Their Matrix is relative to the parent content's initial transform.
+The shading's Background fills areas outside its domain, subject to its BBox;
+the direct `sh` operator ignores Background and the current fill/stroke pattern.
+
+Each gradient is cached as a transparent viewport-sized raster. Repeated uses
+of an indirect pattern resource reuse that raster when the viewport and initial
+transform match. These rasters share the 64 MiB pattern-cache budget, while the
+tiling-only cell dimension limits do not apply. The caller's alpha and blend
+mode apply when the pattern paints. Nondefault transparency in a shading
+pattern's own ExtGState is rejected, rather than silently ignored. Mesh shadings
+and general transparency groups remain unsupported.

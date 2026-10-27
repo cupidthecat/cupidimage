@@ -5,21 +5,22 @@
 #define realloc fault_realloc
 #define free fault_free
 #include "../src/compression/ccitt.c"
-#include "../src/formats/pdf/pdf_filters.c"
+#include "../src/formats/pdf/cupidimage_pdf.c"
+#include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_document.c"
+#include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
+#include "../src/formats/pdf/pdf_functions.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
-#include "../src/formats/pdf/pdf_resources.c"
 #include "../src/formats/pdf/pdf_inline.c"
-#include "../src/formats/pdf/pdf_transparency.c"
-#include "../src/formats/pdf/pdf_calculator.c"
-#include "../src/formats/pdf/pdf_functions.c"
+#include "../src/formats/pdf/pdf_patterns.c"
+#include "../src/formats/pdf/pdf_render.c"
+#include "../src/formats/pdf/pdf_resources.c"
 #include "../src/formats/pdf/pdf_shading.c"
 #include "../src/formats/pdf/pdf_text.c"
-#include "../src/formats/pdf/pdf_render.c"
-#include "../src/formats/pdf/cupidimage_pdf.c"
+#include "../src/formats/pdf/pdf_transparency.c"
 #undef malloc
 #undef calloc
 #undef realloc
@@ -166,6 +167,108 @@ int main(void) {
             if(live_count || (!failure && !ok))failures++;
             while(live_count)fault_free(live[0]);
         }
+    }
+    for (int uncolored = 0; uncolored < 2; uncolored++) {
+        const char *program =
+            uncolored ? "1.5 0 0 1.5 0 0 cm /Mask Do" : "1 0 0 rg 1.5 0 0 1.5 0 0 cm /Mask Do";
+        char pattern_document[2048];
+        int length =
+            snprintf(pattern_document, sizeof(pattern_document),
+                     "3 0 obj << /Resources << /Pattern << /P 5 0 R >> /ColorSpace << /PC "
+                     "[/Pattern /DeviceRGB] >> >> >> endobj\n"
+                     "5 0 obj << /Type /Pattern /PatternType 1 /PaintType %d /TilingType 1 /BBox "
+                     "[0 0 1.5 1.5] /XStep 3 /YStep 3 "
+                     "/Resources << /XObject << /Mask 6 0 R >> >> /Length %zu >> "
+                     "stream\n%s\nendstream endobj\n"
+                     "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ImageMask true /Filter "
+                     "/ASCIIHexDecode /Length 3 >> stream\n00>\nendstream endobj\n",
+                     uncolored ? 2 : 1, strlen(program), program);
+        if (length < 0 || (size_t)length >= sizeof(pattern_document))
+            return 1;
+        const char *content =
+            uncolored ? "/PC cs 1 0 0 /P scn 0 0 18 12 re f 0 1 0 /P scn 0 0 9 6 re f"
+                      : "/Pattern cs /P scn q 1 g 0 0 18 12 re f Q /P scn 0 0 18 12 re f";
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            unsigned char pixels[24 * 16 * 4];
+            memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0};
+            image.width = 24;
+            image.height = 16;
+            image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            char error[128] = {0};
+            allocation_count = 0;
+            fail_at = failure;
+            int ok = cupidimage_pdf_render_content_stream(
+                (unsigned char *)content, strlen(content), (unsigned char *)pattern_document,
+                (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure)
+                total = allocation_count;
+            checks++;
+            if (live_count || (!failure && !ok))
+                failures++;
+            while (live_count)
+                fault_free(live[0]);
+        }
+    }
+    {
+        pdf_render_state state = {0};
+        pdf_pattern_store full = {0};
+        full.count = 65536;
+        state.patterns = &full;
+        checks++;
+        if (cupidimage_pdf_select_pattern(&state, "P", 0))
+            failures++;
+        full.count = 0;
+        state.pattern_depth = 8;
+        checks++;
+        if (cupidimage_pdf_select_pattern(&state, "P", 0))
+            failures++;
+    }
+    {
+        const char *pattern_document =
+            "3 0 obj << /Resources << /Pattern << /P 5 0 R >> >> >> endobj\n"
+            "5 0 obj << /PatternType 2 /Shading 6 0 R >> endobj\n"
+            "6 0 obj << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 18 0] /Function 7 0 R "
+            ">> endobj\n"
+            "7 0 obj << /FunctionType 4 /Domain [0 1] /Range [0 1] /Length 2 >> "
+            "stream\n{}\nendstream endobj\n";
+        const char *content = "/Pattern cs /P scn q /P scn Q 0 0 18 12 re f";
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            unsigned char pixels[24 * 16 * 4];
+            memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0};
+            image.width = 24;
+            image.height = 16;
+            image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            char error[128] = {0};
+            allocation_count = 0;
+            fail_at = failure;
+            int ok = cupidimage_pdf_render_content_stream(
+                (unsigned char *)content, strlen(content), (unsigned char *)pattern_document,
+                strlen(pattern_document), 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure)
+                total = allocation_count;
+            checks++;
+            if (live_count || (!failure && !ok))
+                failures++;
+            while (live_count)
+                fault_free(live[0]);
+        }
+        pdf_render_state state = {0};
+        pdf_pattern_store full = {0};
+        cupidimage_image image = {0};
+        image.width = image.height = 1;
+        state.img = &image;
+        state.patterns = &full;
+        full.bytes_used = PATTERN_BYTES - 1;
+        pdf_object_view view = {(const unsigned char *)"<< >>", 5, NULL};
+        checks++;
+        if (pattern_select_shading(&state, &view, 0, 0))
+            failures++;
     }
     printf("PDF clip allocation failures: %zu checks, %zu failures\n", checks, failures);
     return failures != 0;

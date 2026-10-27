@@ -211,5 +211,16 @@ and checks malformed/recursive programs. For optional independent comparisons,
 run `python3 scripts/test_pdf_type3.py bin/test_pdf_pages --reference` with the
 reference command-line tools and PyMuPDF installed. One shared-stream case uses
 an explicit one-pixel boundary tolerance; the corresponding analytic comparison
-still requires exact pixels. Type 3 tests do not imply that patterns or embedded
-font-file outlines are implemented.
+still requires exact pixels. Type 3 tests do not establish complete font support; embedded font-file
+outlines remain separate work.
+
+## PDF patterns
+
+`make test-pdf-patterns` runs 76 checks covering tiling, colour/opacity rules,
+pattern resource scopes, clipping, transformed strokes, function-based/axial/
+radial shading patterns, gradient cache reuse and bounded failure paths. Add
+`--reference` when running `scripts/test_pdf_patterns.py bin/test_pdf_pages`
+to check selected rasters independently. That optional pass needs the reference
+command-line tools and PyMuPDF; the regular suite needs neither. The 39 optional
+comparisons include explicit one- or two-channel-unit tolerances for gradient
+approximation. Small analytic raster expectations remain exact.

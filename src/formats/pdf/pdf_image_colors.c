@@ -131,8 +131,23 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
     if (*pos < view->len && view->data[*pos] == '[') {
         (*pos)++;
         char family[128];
-        if (!pdf_color_name(view, pos, family) || strcmp(family, "Indexed")) return 0;
-        if (!cupidimage_pdf_image_color_space(st, view, pos, depth+1, colors) || colors->indexed) return 0;
+        if (!pdf_color_name(view, pos, family))
+            return 0;
+        if (!strcmp(family, "Pattern")) {
+            if (!cupidimage_pdf_image_color_space(st, view, pos, depth + 1, colors) ||
+                colors->pattern)
+                return 0;
+            cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+            if (*pos == view->len || view->data[(*pos)++] != ']')
+                return 0;
+            colors->pattern = 1;
+            return 1;
+        }
+        if (strcmp(family, "Indexed"))
+            return 0;
+        if (!cupidimage_pdf_image_color_space(st, view, pos, depth + 1, colors) ||
+            colors->indexed || colors->pattern)
+            return 0;
         double high;
         cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
         if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &high) || high < 0 || high > 255 || floor(high) != high) return 0;
@@ -144,6 +159,11 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
     }
     char name[128];
     if (!pdf_color_name(view, pos, name)) return 0;
+    if (!strcmp(name, "Pattern")) {
+        colors->pattern = 1;
+        colors->components = 0;
+        return 1;
+    }
     colors->components = !strcmp(name, "DeviceGray") ? 1 : !strcmp(name, "DeviceRGB") ? 3 : !strcmp(name, "DeviceCMYK") ? 4 : 0;
     if (colors->components) return 1;
     return 0;
@@ -169,6 +189,11 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
 }
 
 int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth, pdf_image_colors *colors) {
+    if (!strcmp(name, "Pattern")) {
+        colors->pattern = 1;
+        colors->components = 0;
+        return 1;
+    }
     int components = !strcmp(name, "DeviceGray") ? 1 : !strcmp(name, "DeviceRGB") ? 3 : !strcmp(name, "DeviceCMYK") ? 4 : 0;
     if (components) { colors->components = components; return 1; }
     if (depth >= 16) return 0;

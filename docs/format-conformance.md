@@ -56,7 +56,7 @@ Synthetic cases cover misleading nested keys and a missing real root.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects and masks, opacity and RGB blending | Font rendering, transparency groups, patterns, annotations, filters, object structures, real-document corpus |
+| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects and masks, opacity and RGB blending | Font rendering, transparency groups, mesh shadings, annotations, filters, object structures, real-document corpus |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -267,7 +267,33 @@ accepted under distinct resource contexts; one comparison implementation
 instead rejects that re-entry.
 
 The targeted seven-document corpus check is separate from those fixtures.
-Four pages decode with remaining pixel differences; three fail because of
-unsupported content or invalid glyph programs. The no-cycle nested-font sample
-still depends on pattern painting, which is not implemented. Successful loading
+At the Type 3 checkpoint, four pages decoded with remaining pixel differences
+and three failed on unsupported content or invalid glyph programs. The later
+tiling-pattern work also renders the no-cycle nested-font sample, while the
+cyclic example still fails safely. Successful loading
 is not a visual pass, and the full 1,007-document user review remains deferred.
+
+## Tiling/shading patterns and affine strokes
+
+The pattern implementation follows ISO 32000-1 sections 8.7.2–8.7.4 and
+11.6.7. It uses the permitted isolated-cell optimization only for Normal blending
+inside the cell; backdrop-dependent cell blends are explicitly rejected.
+Per-page cache ownership keeps saved graphics states valid and releases cells on
+both success and error paths.
+
+The pattern suite has 76 checks and 39 optional independent comparisons.
+Gradient comparisons allow one or two channel units for reference approximation;
+small analytic fixtures still require exact pixels.
+One nested-pattern comparison uses a second renderer because the first shifts
+that cached cell's phase by a pixel. Analytic expectations remain exact. Tests
+cover coloured/uncoloured cells, spacing, matrices, parent-coordinate anchoring,
+BBox clipping, masks, nested forms/fonts/patterns, opacity initialization,
+recursion and cache limits. Shading tests cover function-based, axial and radial
+patterns, Background/BBox interaction, and repeated resource-cache reuse.
+The 155-case PDF allocation-failure suite includes
+pattern descriptors, rasters, child states and resources.
+
+The targeted three-document nested-Type-3 check now renders two pages and
+rejects the cyclic example; both rendered pages still have reference pixel
+differences. This is not a full-corpus or visual-parity result. Full user ratings
+remain deferred while feature coverage grows.

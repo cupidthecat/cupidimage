@@ -139,7 +139,9 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
             return;
         }
         cupidimage_pdf_stroke_segments(st, &contour, stroke);
-        double margin = fmax(.5, st->gs.line_width_pts * ratio * .5) + 2;
+        double scale =
+            fmax(hypot(st->gs.ctm[0], st->gs.ctm[2]), hypot(st->gs.ctm[1], st->gs.ctm[3]));
+        double margin = fmax(.5, st->gs.line_width_pts * ratio * .5 * scale) + 2;
         min_x -= margin;
         min_y -= margin;
         max_x += margin;
@@ -181,8 +183,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
                     st->text_clip->bits[pixel / 8] &= (unsigned char)~bit;
             }
             if (stroke && (stroke[pixel / 8] & bit))
-                cupidimage_pdf_composite_pixel(st, x, y, st->gs.stroke_r, st->gs.stroke_g,
-                                               st->gs.stroke_b, st->gs.stroke_alpha);
+                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
             else if (filled && (mode == 0 || mode == 2))
                 cupidimage_pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
         }
