@@ -406,3 +406,13 @@ Unicode variation-sequence cmap format 14 and AAT post format 4 remain open.
 
 MMType1 dictionaries also accept embedded ordinary Type 1 snapshots. This adds
 one exact rendering comparison, not multiple-master interpolation support.
+
+## Graphics-state fonts
+
+ExtGState Font arrays now select the referenced font program and text-space size.
+They use the same scope and lifetime as other collected fonts, with separate
+object-reference cache keys. The 31-case suite covers state restoration, nested
+resources, indirect and compressed values, malformed arrays and escaped names;
+19 optional comparisons match independently rendered pixels. The PDF
+allocation-failure suite now has 1,330 checks with no leaks in its tracked
+allocations. Other ExtGState and transparency-group features remain incomplete.

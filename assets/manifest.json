@@ -623,6 +623,10 @@
       "sha256": "c3b4c82626474ff0ad1d8ac568cf699a2644a4fbf7e72b00b7aa3bc86f65d225"
     },
     {
+      "path": "assets/pdf/reference/graphics-state-font-object-stream.pdf",
+      "sha256": "4aa8eb358201a1e3ead3d41ba11c38e9602655dca4fae537a7ca9a9a47f8ddb1"
+    },
+    {
       "path": "assets/pdf/reference/gray-16bit-tiff-predictor.pdf",
       "sha256": "61b55241f59c1a234421bbc777abbac34de9e2453f023c39b0f009f9ea821648"
     },

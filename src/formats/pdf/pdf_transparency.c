@@ -38,6 +38,16 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
     pdf_graphics_state next = st->gs;
     size_t pos;
     double value;
+    if (cupidimage_pdf_page_value(view, "Font", &pos)) {
+        int object;
+        double font_size;
+        if (!cupidimage_pdf_graphics_font(st->document, st->document_size, view, &object, &font_size)) return 0;
+        if (object) {
+            next.current_font = cupidimage_pdf_font_table_object(st->font_table, object);
+            if (!next.current_font) return 0;
+            next.font_size_pts = font_size;
+        }
+    }
     if (cupidimage_pdf_page_value(view, "ca", &pos)) {
         if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1) return 0;
         next.fill_alpha = value;

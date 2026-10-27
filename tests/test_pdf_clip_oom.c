@@ -337,27 +337,33 @@ int main(void) {
         }
         fail_at = 0;
     }
-    for (unsigned kind = 0; kind < 5; kind++) {
+    for (unsigned kind = 0; kind < 7; kind++) {
         const unsigned char *font_data = kind == 2 ? test_type1_font : kind ? test_cff_font : test_truetype_font;
         size_t font_size = kind == 2 ? sizeof(test_type1_font) : kind ? sizeof(test_cff_font) : sizeof(test_truetype_font);
         char attributes[128] = "";
         if (kind == 2)
             snprintf(attributes,sizeof(attributes),"/Length1 %u /Length2 %u /Length3 0",test_type1_font_clear,test_type1_font_encrypted);
         else if (kind) strcpy(attributes,"/Subtype /Type1C");
+        const char *resources = kind == 5 ? "/ExtGState << /Use << /Font [5 0 R 18] >> >>" :
+                                kind == 6 ? "/ExtGState << /Use << /Font 8 0 R >> >>" :
+                                            "/Font << /F 5 0 R >>";
         char document[16384];
         int length = snprintf(document, sizeof(document),
-                              "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n5 0 obj "
+                              "3 0 obj << /Resources << %s >> >> endobj\n5 0 obj "
                               "<< /Subtype /%s /Encoding /WinAnsiEncoding /FontDescriptor 6 "
                               "0 R >> endobj\n6 0 obj << /Flags 32 /%s 7 0 R >> endobj\n7 0 "
                               "obj << %s /Filter /ASCIIHexDecode /Length %zu >> stream\n",
-                              kind ? "Type1" : "TrueType", kind == 2 ? "FontFile" : kind ? "FontFile3" : "FontFile2",
+                              resources, kind ? "Type1" : "TrueType", kind == 2 ? "FontFile" : kind ? "FontFile3" : "FontFile2",
                               attributes, font_size * 2 + 1);
         for (size_t i = 0; i < font_size; i++)
             length += snprintf(document + length, sizeof(document) - (size_t)length, "%02x",
                                font_data[i]);
         length +=
             snprintf(document + length, sizeof(document) - (size_t)length, ">\nendstream endobj\n");
-        if (kind >= 3)
+        if (kind == 6)
+            length += snprintf(document + length, sizeof(document) - (size_t)length,
+                               "8 0 obj [5 0 R 9 0 R] endobj\n9 0 obj 18 endobj\n");
+        if (kind == 3 || kind == 4)
             length = snprintf(document, sizeof(document),
                 "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n"
                 "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /%s >> endobj\n",
@@ -379,7 +385,8 @@ int main(void) {
                 pdf_page_geometry geometry = {0, 0, 36, 30, 0, 48, 40};
                 char content[128], error[128] = {0};
                 int content_length = snprintf(content, sizeof(content),
-                                              "BT /F 18 Tf %d Tr 2 4 Td (ABC) Tj ET", mode);
+                                              "BT %s %d Tr 2 4 Td (ABC) Tj ET",
+                                              kind >= 5 ? "/Use gs" : "/F 18 Tf", mode);
                 if (ok)
                     ok = cupidimage_pdf_render_content_stream(
                         (unsigned char *)content, (size_t)content_length, (unsigned char *)document,

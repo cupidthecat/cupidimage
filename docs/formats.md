@@ -222,7 +222,8 @@ the library's unmanaged conversion.
 
 ## PDF opacity and blending
 
-ExtGState dictionaries support nonstroking opacity (`ca`), stroking opacity (`CA`),
+ExtGState dictionaries support font/size selection (`Font`), nonstroking opacity
+(`ca`), stroking opacity (`CA`),
 line width (`LW`), and all 16 standard RGB blend modes. Blend-mode arrays select
 the first recognized mode, falling back to Normal if none is recognized. State
 is preserved by `q`/`Q` and inherited by forms without leaking changes back to

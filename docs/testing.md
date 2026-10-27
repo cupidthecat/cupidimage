@@ -313,3 +313,11 @@ asset PDFs have analytic rectangle oracles, not just successful decode checks.
 
 See [PDF fonts and text](pdf-fonts.md) for independent table and raster comparisons
 and the distinction between font cmaps and PDF encoding CMaps.
+
+## Graphics-state font selection
+
+`make test-pdf-graphics-fonts` tests font selection through ExtGState, including
+indirect arrays/sizes, compressed objects, q/Q restoration, escaped resource
+names and nested form/Type 3 scopes. The checked-in compressed-object asset has
+an analytic rectangle oracle. Optional exact comparisons are listed in
+[PDF fonts and text](pdf-fonts.md).

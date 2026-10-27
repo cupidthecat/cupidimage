@@ -29,6 +29,29 @@ valid outline program, Type 3 font or CID metrics. Partial Unicode mappings
 are cleared on failure. Named encodings cannot read Differences from unrelated
 dictionaries later in the font object.
 
+## Font selection through graphics state
+
+An ExtGState Font entry can select a font and size without Tf. It contains a
+font-dictionary reference and a text-space size, rather than a resource name.
+The collector loads these referenced fonts in the same resource scope as named
+fonts, including forms, tiling cells and Type 3 glyphs. Their cache keys are
+object references, kept separate from resource names. Reusing one font with a
+different size does not duplicate its program.
+
+Font arrays and sizes may be indirect, including in compressed object streams.
+A null Font entry leaves the current font and size unchanged.
+The resulting font and size persist across BT/ET and are saved by q/Q like Tf
+state. Invalid arrays, missing font dictionaries and cyclic size references are
+rejected. Escaped names in Font and ExtGState resources are decoded consistently.
+
+`make test-pdf-graphics-fonts` runs 31 scope, state and malformed-input tests.
+Nineteen optional exact comparisons use:
+
+    python3 scripts/test_pdf_graphics_fonts.py bin/test_pdf_pages --reference
+
+The tiling-cell check compares ExtGState selection with Tf within the same
+pattern renderer; it does not establish fractional-cell raster fidelity.
+
 ## Standard 14 fonts
 
 Nonembedded Type 1 fonts with one of the 14 canonical PDF font names use the
@@ -190,7 +213,7 @@ levels. Stroked outlines share the path's 4,096-segment bound. Pixel intersectio
 work and text clipping use the page's shared budgets.
 
 Programs, maps, component points, curve edges and stroke masks are released on
-both success and failure. Invalid metadata retains the existing font-table
+both success and failure. Invalid glyph metadata retains the existing font-table
 fallback policy; an invalid glyph encountered in a loaded program fails the page
 rather than quietly dropping that glyph.
 
@@ -234,7 +257,7 @@ OpenType wrapping. Twenty-four optional independent comparisons use:
 The clip-only comparison uses a second rasterizer because the first applies a
 different boundary rule. The cubic arch also has an analytic per-pixel test.
 The optional font-fixture regeneration script uses FontTools; ordinary tests do
-not require it. The PDF allocation-failure suite has 1,050 checks, including
+not require it. The PDF allocation-failure suite has 1,330 checks, including
 CFF font dictionaries, outlines and composite cleanup.
 
 `make test-pdf-standard-fonts` verifies all 14 metric/encoding resources

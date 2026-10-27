@@ -58,6 +58,7 @@ typedef struct pdf_font_program pdf_font_program;
 
 typedef struct {
     char name[32];
+    int graphics_object;
     pdf_tounicode_entry *entries;
     int count;
     int cap;
@@ -168,6 +169,9 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
                                    const pdf_object_view *view, unsigned glyphs[256],
                                    const void *context,
                                    unsigned (*lookup)(const void *, const char *));
+int cupidimage_pdf_graphics_font(const unsigned char *data, size_t size,
+                                const pdf_object_view *state, int *object, double *font_size);
+const pdf_font_map *cupidimage_pdf_font_table_object(const pdf_font_table *table, int object);
 int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
                                       const pdf_object_view *view, pdf_font_map *font, size_t *budget);
 int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,

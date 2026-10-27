@@ -132,3 +132,49 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
     cupidimage_pdf_object_view_release(&encoding);
     return ok;
 }
+
+static int pdf_font_reference_end(const pdf_object_view *view, size_t *pos) {
+    double ignored;
+    if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &ignored)) return 0;
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+    if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &ignored)) return 0;
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+    return *pos < view->len && view->data[(*pos)++] == 'R';
+}
+int cupidimage_pdf_graphics_font(const unsigned char *data, size_t size,
+                                const pdf_object_view *state, int *object, double *font_size) {
+    pdf_object_view array = {0}, scalar = {0};
+    size_t pos = 0, at = 0;
+    int ok = cupidimage_pdf_font_value(data, size, state, "Font", &array);
+    cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+    if (ok && array.len - pos >= 4 && !memcmp(array.data + pos, "null", 4) &&
+        (array.len - pos == 4 || cupidimage_pdf_is_ws(array.data[pos + 4]) ||
+         cupidimage_pdf_is_delim(array.data[pos + 4]))) {
+        *object = 0;
+        *font_size = 0;
+        cupidimage_pdf_object_view_release(&array);
+        return 1;
+    }
+    ok = ok && pos < array.len && array.data[pos++] == '[';
+    cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+    ok = ok && cupidimage_pdf_page_reference(&array, pos, object) && *object > 0 &&
+         pdf_font_reference_end(&array, &pos);
+    cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+    if (ok) ok = pdf_font_resolve(data, size, &array, pos, &scalar, 0);
+    cupidimage_pdf_skip_ws_and_comments(scalar.data, scalar.len, &at);
+    ok = ok && cupidimage_pdf_parse_pdf_number(scalar.data, scalar.len, &at, font_size) &&
+         isfinite(*font_size) && fabs(*font_size) <= 1e30 &&
+         (at == scalar.len || cupidimage_pdf_is_ws(scalar.data[at]) || cupidimage_pdf_is_delim(scalar.data[at]));
+    if (ok) {
+        int reference;
+        double ignored;
+        if (cupidimage_pdf_page_reference(&array, pos, &reference))
+            ok = pdf_font_reference_end(&array, &pos);
+        else ok = cupidimage_pdf_parse_pdf_number(array.data, array.len, &pos, &ignored);
+        cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+        ok = ok && pos < array.len && array.data[pos] == ']';
+    }
+    cupidimage_pdf_object_view_release(&scalar);
+    cupidimage_pdf_object_view_release(&array);
+    return ok;
+}

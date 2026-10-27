@@ -42,7 +42,10 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   standard-font metrics from `fonts/standard.c` and CFF substitutes from
   `fonts/standard_outlines.c`. TrueType binary geometry remains in
   `fonts/truetype.c`; cmap lookup and post names live in
-  `fonts/truetype_cmap.c` and `fonts/truetype_names.c`.
+  `fonts/truetype_cmap.c` and `fonts/truetype_names.c`. Font tables collect both
+  named fonts and ExtGState font references before drawing. Graphics-state font
+  references use a separate object-keyed lookup so they cannot collide with
+  resource names.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
