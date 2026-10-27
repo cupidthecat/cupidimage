@@ -339,3 +339,8 @@ patterns and combined fill/stroke coverage. Allocation-failure tests also walk
 mask construction and nested cleanup. The transparency guide records analytic-only
 cases where independent renderers disagree. Three generated mask assets have
 exact-pixel corpus expectations.
+
+`make test-pdf-page-groups` checks initial blend modes against a transparent page
+backdrop, explicit RGB/gray selection, indirect attributes, noninheritance,
+empty-page validation and final-state separation. All assets retain their existing
+expectations; two new analytic assets exercise page isolation and gray blending.

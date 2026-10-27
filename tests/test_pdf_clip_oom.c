@@ -147,6 +147,31 @@ int main(void) {
         if (cupidimage_pdf_draw_shading(&state,"Sh")) failures++;
         if (live_count) { failures++; while(live_count) fault_free(live[0]); }
     }
+    /* Page isolation preserves the caller's pixels until a complete render succeeds. */
+    for (unsigned variant = 0; variant < 4; variant++) {
+        const char *attribute = variant == 0 ? "" : variant == 3 ?
+            "/Group << /S /Transparency /CS /DeviceCMYK >>" :
+            "/Group << /S /Transparency /CS /DeviceGray /I false >>";
+        const char *body = variant == 2 ? "0 0 18 12 re f (unterminated" :
+                                         "1 0 0 rg 0 0 18 12 re f";
+        char page_document[256];
+        int length = snprintf(page_document, sizeof(page_document), "3 0 obj << %s >> endobj", attribute);
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            uint8_t pixels[24 * 16 * 4]; memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0}; image.width = 24; image.height = 16; image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16}; char error[128] = {0};
+            allocation_count = 0; fail_at = failure;
+            int ok = cupidimage_pdf_render_content_stream((const unsigned char *)body, strlen(body),
+                (const unsigned char *)page_document, (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure) total = allocation_count;
+            checks++;
+            if ((!failure && ok != (variant < 2)) || live_count) failures++;
+            if (!ok) for (size_t i = 0; i < sizeof(pixels); i++) if (pixels[i] != 255) { failures++; break; }
+            while (live_count) fault_free(live[0]);
+        }
+        fail_at = 0;
+    }
     /* Group buffers are atomic with respect to the parent and unwind at every allocation. */
     for (unsigned variant = 0; variant < 6; variant++) {
         const char *body = variant % 3 == 2 ? "/Inner Do" :

@@ -144,7 +144,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (stream_data && stream_len > 0) {
+    {
         const unsigned char *render_data = stream_data;
         size_t render_len = stream_len;
         unsigned char *inflated = NULL;

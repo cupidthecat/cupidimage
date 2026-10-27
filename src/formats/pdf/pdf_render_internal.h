@@ -161,6 +161,7 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
 
 int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
                                const pdf_object_view *form, pdf_transparency_group *group);
+int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group *group);
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group);
 void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group);
 

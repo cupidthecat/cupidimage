@@ -238,8 +238,9 @@ coverage. This avoids dark seams caused by repeatedly blending the same object.
 The tests compare analytic pixels and independent raster output, including blend
 endpoint cases, state restoration, and mask/opacity combinations.
 
-Page blending uses the output device RGB space; group blending also supports
-DeviceGray. Non-knockout groups and graphics-state Alpha/Luminosity masks are
+Pages render as isolated transparency groups and composite onto white only
+after their content finishes. Their Group dictionary selects DeviceRGB or
+DeviceGray; RGB is the default. Form groups also support these spaces. Non-knockout groups and graphics-state Alpha/Luminosity masks are
 supported. CMYK/CIE/ICC group spaces, knockout groups, overprinting and full
 text-transparency semantics remain incomplete. See [PDF transparency](pdf-transparency.md)
 for mask precedence and group limits. Stroke styling is described below.

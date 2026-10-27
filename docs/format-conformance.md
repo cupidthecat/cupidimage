@@ -443,7 +443,7 @@ nesting. Pattern/shading cache construction is kept outside that tracking.
 
 The group suite has 82 cases and 66 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,513 checks.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,716 checks.
 Knockout and CMYK/CIE/ICC blending remain open.
 
 
@@ -453,10 +453,26 @@ Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
 q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
 as a group blending space alongside DeviceRGB. The focused suites have 56 mask
 checks and 82 group checks, with 44 and 66 optional independent comparisons.
-The allocation-failure suite has 1,513 checks. Three new analytic assets cover
+The allocation-failure suite has 1,716 checks. Three new analytic assets cover
 alpha masks, luminosity masks and a gray mask with an inverse transfer function.
 
 [PDF transparency](pdf-transparency.md) records the analytic-only differences,
-shared 256 MiB memory bound and remaining limitations. Knockout, page-group
-selection, CMYK/CIE/ICC blending, default-space remapping and full shape/text
+shared 256 MiB memory bound and remaining limitations. Knockout, CMYK/CIE/ICC blending, default-space remapping and full shape/text
 transparency are still open. These changes do not establish complete PDF support.
+
+
+## Isolated page compositing
+
+Pages now render on a transparent group surface before compositing onto white.
+This fixes initial non-Normal blending, which previously used white as the
+object backdrop. The page's Group dictionary supports DeviceRGB/DeviceGray,
+indirect attributes and named spaces; its I flag cannot disable display isolation.
+The final composite does not reuse the last object's mask, clip or opacity.
+Empty pages also validate their group attributes.
+
+The page suite has 94 cases and 84 independent comparisons. Gray conversion
+checks use analytic expectations, as explained in the transparency guide.
+Existing assets still pass unchanged. Two new page assets bring the manifest to
+346 files, with 178 reference passes and 160 decoded-but-unverified entries.
+Floating-point byte conversion corrects a one-ULP underflow at half-byte ties
+without changing the analytic shading expectations.

@@ -44,7 +44,8 @@ static void pdf_render_state_release(pdf_render_state *st) {
 unsigned char cupidimage_pdf_clamp_u8(double v) {
     if (v < 0.0) v = 0.0;
     if (v > 1.0) v = 1.0;
-    return (unsigned char)(v * 255.0 + 0.5);
+    /* Do not round an exact half-byte down after normalized arithmetic loses one ULP. */
+    return (unsigned char)nextafter(v * 255.0 + 0.5, INFINITY);
 }
 
 static int pdf_parse_number_token(const unsigned char *data, size_t size, size_t *pos, double *out) {
@@ -1801,8 +1802,18 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     st.initial_gs = st.gs;
     st.initial_gs.soft_mask = NULL;
     st.initial_gs.clip = NULL;
-    int ok = pdf_render_stream(&st, stream, stream_len);
+    pdf_transparency_group page_group = {0};
+    int ok = cupidimage_pdf_page_group_begin(&st, &page_group);
+    if (ok) ok = pdf_render_stream(&st, stream, stream_len);
     pdf_render_state_release(&st);
+    /* Page paint state must not mask, clip or blend the final medium composite. */
+    st.gs = st.initial_gs;
+    st.img = img;
+    st.group = NULL;
+    if (ok) ok = cupidimage_pdf_group_finish(&st, &page_group);
+    cupidimage_pdf_group_free(&st, &page_group);
     cupidimage_pdf_patterns_free(&patterns);
+    if (!ok && err && errcap && !err[0])
+        cupidimage_set_err(err, errcap, "pdf: unsupported page group or transparency limit exceeded");
     return ok;
 }

@@ -156,6 +156,34 @@ done:
     cupidimage_pdf_object_view_release(&attributes);
     return ok;
 }
+/* A displayed page is an isolated group, even when I is false or omitted. */
+int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group *group) {
+    pdf_object_view page = {0}, attributes = {0};
+    size_t pos;
+    int ok = 0, gray = 0, ignored_isolation = 0, knockout = 0;
+    if (!cupidimage_pdf_get_object_content(st->document, st->document_size, st->page_object, &page))
+        goto done;
+    if (cupidimage_pdf_page_value(&page, "Group", &pos)) {
+        if (!cupidimage_pdf_dictionary_value(st->document, st->document_size, &page, "Group", &attributes))
+            goto done;
+        if (!group_keyword(&attributes, "null")) {
+            if (!cupidimage_pdf_entry_is_name(st->document, st->document_size, &attributes, "S", "Transparency") ||
+                !group_boolean(st, &attributes, "I", &ignored_isolation) ||
+                !group_boolean(st, &attributes, "K", &knockout) || knockout ||
+                !cupidimage_pdf_group_space(st, &attributes, 0, &gray)) goto done;
+        }
+    }
+    if (!cupidimage_pdf_group_surface(st, group, 1, NULL)) goto done;
+    group->gray = gray;
+    st->img = &group->image;
+    st->group = group;
+    ok = 1;
+done:
+    cupidimage_pdf_object_view_release(&attributes);
+    cupidimage_pdf_object_view_release(&page);
+    return ok;
+}
+
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group) {
     if (!group->image.rgba) return 1;
     size_t pixels = (size_t)group->image.width * group->image.height;

@@ -47,7 +47,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   references use a separate object-keyed lookup so they cannot collide with
   resource names. `pdf_object_values.c` resolves bounded indirect values and
   names independently of fonts. `pdf_groups.c` manages floating-point RGB/gray group buffers,
-  state initialization and compositing. `pdf_soft_masks.c` renders group-derived
+  state initialization and compositing, including the isolated page buffer and
+  final white-medium composite. `pdf_soft_masks.c` renders group-derived
   masks, evaluates their transfer functions and owns their reference-counted
   lifetime. Groups and retained masks share a transparency-memory budget.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;

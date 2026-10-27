@@ -280,6 +280,20 @@
       "height": 16,
       "rgba_zlib": "eJz739Dw/z8pmFQwav6o+aPmj5o/av6gNB8AMlw7zA==",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/isolated-page-screen.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gray-page-group.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzz9fX97zuKR/EoHsWjeMRhAGIl2R8=",
+      "tolerance": 0
     }
   ]
 }
