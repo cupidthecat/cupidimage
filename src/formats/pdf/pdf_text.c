@@ -309,6 +309,7 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         const pdf_font_map *font = st->gs.current_font;
         double width, advance_y = 0, origin_x = 0, origin_y = 0;
         uint32_t cp;
+        unsigned encoded = bytes[before], glyph = 0;
         if (font && font->cid) {
             if (length - pos < 2) {
                 st->image_failed = 1;
@@ -316,13 +317,18 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                 break;
             }
             unsigned cid = (unsigned)bytes[pos] * 256 + bytes[pos + 1];
+            encoded = cid;
             pos += 2;
             cp = '?';
             pdf_font_lookup_codepoint(font, cid, 2, &cp);
             cupidimage_pdf_cid_metrics(font->cid, cid, &width, &advance_y, &origin_x, &origin_y);
         } else {
-            cp = font && font->type3 ? bytes[pos++]
-                                     : pdf_decode_next_codepoint(st, bytes, length, &pos);
+            if (font && font->program) {
+                cp = bytes[pos++];
+                pdf_font_lookup_codepoint(font, encoded, 1, &cp);
+            } else
+                cp = font && font->type3 ? bytes[pos++]
+                                         : pdf_decode_next_codepoint(st, bytes, length, &pos);
             unsigned char draw = pdf_codepoint_to_ascii(cp);
             width = cp < 32 ? .5 : draw == '?' && cp >= 128 ? .5 : pdf_char_advance_em(draw);
             if (font && pos - before == 1) {
@@ -335,11 +341,16 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                     width = font->missing_width;
             }
         }
+        if (font && font->program) {
+            glyph = cupidimage_pdf_truetype_glyph(font->program, encoded);
+            if (!font->cid && !font->has_widths && !font->has_missing_width)
+                width = cupidimage_pdf_truetype_advance(font->program, glyph);
+        }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
             if (!cupidimage_pdf_draw_type3_glyph(st, font, bytes[before]))
                 st->image_failed = 1;
-        } else if (cp >= 32) {
+        } else if ((font && font->program) || cp >= 32) {
             if (font && font->cid && font->cid->vertical) {
                 double saved[6];
                 memcpy(saved, st->text_matrix, sizeof(saved));
@@ -347,8 +358,15 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                        dy = -origin_y * st->gs.font_size_pts;
                 st->text_matrix[4] += dx * saved[0] + dy * saved[2];
                 st->text_matrix[5] += dx * saved[1] + dy * saved[3];
-                pdf_draw_glyph(st, draw);
+                if (font->program) {
+                    if (!cupidimage_pdf_draw_truetype_glyph(st, font->program, glyph))
+                        st->image_failed = 1;
+                } else
+                    pdf_draw_glyph(st, draw);
                 memcpy(st->text_matrix, saved, sizeof(saved));
+            } else if (font && font->program) {
+                if (!cupidimage_pdf_draw_truetype_glyph(st, font->program, glyph))
+                    st->image_failed = 1;
             } else
                 pdf_draw_glyph(st, draw);
         }

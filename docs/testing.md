@@ -211,8 +211,8 @@ and checks malformed/recursive programs. For optional independent comparisons,
 run `python3 scripts/test_pdf_type3.py bin/test_pdf_pages --reference` with the
 reference command-line tools and PyMuPDF installed. One shared-stream case uses
 an explicit one-pixel boundary tolerance; the corresponding analytic comparison
-still requires exact pixels. Type 3 tests do not establish complete font support; embedded font-file
-outlines remain separate work.
+still requires exact pixels. Type 3 tests do not establish complete font support;
+embedded-program coverage has its own suite below.
 
 ## PDF patterns
 
@@ -242,3 +242,14 @@ external font dependencies. It compares identical fallback glyphs at explicit
 origins, so font-outline differences cannot hide positioning failures. The PDF
 allocation-failure target also exercises CID tables, malformed ranges and
 recursive indirect values. These checks do not establish embedded-font fidelity.
+
+## Embedded font programs
+
+`make test-pdf-truetype` checks binary tables, glyph names and authored PDF font
+fixtures. The optional independent pass is:
+
+    python3 scripts/test_pdf_embedded_fonts.py bin/test_pdf_pages --reference
+
+See [PDF fonts and text](pdf-fonts.md) for counts, fixture regeneration, data
+licenses and the distinction between unhinted outlines and full font fidelity.
+The regular suite does not require FontTools or a reference renderer.

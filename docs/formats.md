@@ -78,7 +78,7 @@ FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Embedded font outlines, transparency groups, mesh shadings, and annotations remain unsupported.
+nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType outlines are supported; CFF/Type 1 outlines, transparency groups, mesh shadings and annotations remain incomplete.
 
 ## PDF details and limits
 
@@ -112,7 +112,7 @@ the content, and BBox clips text, paths, and images, including nested forms.
 Forms use their own Resources dictionary when present, or the caller's resources
 otherwise. Drawing a form preserves the caller's graphics state and current path.
 Built-in text glyphs follow the text matrix and current transformation matrix.
-Embedded font outlines and complex font rendering remain unsupported.
+Supported embedded TrueType programs use their outlines. See [PDF fonts and text](pdf-fonts.md) for glyph selection and remaining font limitations.
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive forms, transparency
@@ -247,8 +247,9 @@ inline font dictionaries and indirect resource/font dictionaries are supported.
 Nested dictionaries, comments, and strings do not override outer Resources,
 Font, ToUnicode, or Filter entries.
 
-These maps choose characters for the existing bitmap fallback. They do not load
-embedded font outlines or implement complete CMap semantics. Simple-font Widths
+These maps choose characters for the existing bitmap fallback. Embedded TrueType
+glyph selection follows the font encoding instead; complete PDF CMap semantics
+remain open. Simple-font Widths
 and MissingWidth entries now control advances; fonts without supported metrics
 retain the approximate fallback advances. Invalid font metadata retains that fallback rather than a partially
 parsed character map. `make test-pdf-font-maps` checks those boundaries.
@@ -383,7 +384,7 @@ Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
 described below. Other CID encodings, complete standard-font metrics and embedded
-Type 1/TrueType font outlines remain separate work. Malformed font metadata still uses the
+Type 1/CFF outlines and complete TrueType fidelity remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes are not equivalent to actual
 font outlines.
 
@@ -511,11 +512,13 @@ painting/clipping modes and saved graphics state use the same placement rules.
 ToUnicode chooses a fallback glyph but does not choose the CID's metrics. An
 unmapped CID shows the existing placeholder, rather than treating its number as
 Unicode. A truncated two-byte string fails. Malformed font metadata retains the
-existing font-table fallback policy. These changes do not implement embedded
-font outlines, CIDToGIDMap glyph selection, custom/predefined collection CMaps
-other than Identity-H/V, or full CJK text rendering.
+existing font-table fallback policy. Supported embedded TrueType programs instead
+select outlines through CIDToGIDMap. Custom/predefined collection CMaps other
+than Identity-H/V and complete CJK text rendering remain open.
 
 Metric tables are bounded to the 65,536-CID space, with at most 65,536 assignments
 per W/W2 array, 16 levels of indirect-value resolution and 64 MiB of CID metadata
 per collected font table. Allocations are released on metadata failure and after
 rendering.
+
+Embedded program details, limits and tests are in [PDF fonts and text](pdf-fonts.md).

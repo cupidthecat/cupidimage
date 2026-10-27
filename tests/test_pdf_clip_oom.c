@@ -6,10 +6,14 @@
 #define free fault_free
 #include "../src/compression/ccitt.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
+#include "../src/formats/pdf/fonts/bitmap.c"
+#include "../src/formats/pdf/fonts/encoding.c"
+#include "../src/formats/pdf/fonts/truetype.c"
 #include "../src/formats/pdf/pdf_calculator.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_cid.c"
+#include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
@@ -22,7 +26,9 @@
 #include "../src/formats/pdf/pdf_shading.c"
 #include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
+#include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/pdf_transparency.c"
+#include "fixtures/pdf-truetype.inc"
 #undef malloc
 #undef calloc
 #undef realloc
@@ -311,6 +317,60 @@ int main(void) {
                 cupidimage_pdf_cid_font_free(font.cid);
                 if (live_count) {
                     failures++;
+                    while (live_count)
+                        fault_free(live[0]);
+                }
+            }
+        }
+        fail_at = 0;
+    }
+    {
+        char document[16384];
+        int length = snprintf(document, sizeof(document),
+                              "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n5 0 obj "
+                              "<< /Subtype /TrueType /Encoding /WinAnsiEncoding /FontDescriptor 6 "
+                              "0 R >> endobj\n6 0 obj << /Flags 32 /FontFile2 7 0 R >> endobj\n7 0 "
+                              "obj << /Filter /ASCIIHexDecode /Length %zu >> stream\n",
+                              sizeof(test_truetype_font) * 2 + 1);
+        for (size_t i = 0; i < sizeof(test_truetype_font); i++)
+            length += snprintf(document + length, sizeof(document) - (size_t)length, "%02x",
+                               test_truetype_font[i]);
+        length +=
+            snprintf(document + length, sizeof(document) - (size_t)length, ">\nendstream endobj\n");
+        for (int mode = 0; mode < 8; mode++) {
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                pdf_font_table fonts;
+                cupidimage_pdf_font_table_init(&fonts);
+                allocation_count = 0;
+                fail_at = failure;
+                int ok = cupidimage_pdf_collect_page_fonts((unsigned char *)document,
+                                                           (size_t)length, 3, &fonts, NULL, 0);
+                uint8_t pixels[48 * 40 * 4];
+                cupidimage_image image = {0};
+                image.width = 48;
+                image.height = 40;
+                image.rgba = pixels;
+                pdf_page_geometry geometry = {0, 0, 36, 30, 0, 48, 40};
+                char content[128], error[128] = {0};
+                int content_length = snprintf(content, sizeof(content),
+                                              "BT /F 18 Tf %d Tr 2 4 Td (ABC) Tj ET", mode);
+                if (ok)
+                    ok = cupidimage_pdf_render_content_stream(
+                        (unsigned char *)content, (size_t)content_length, (unsigned char *)document,
+                        (size_t)length, 3, &fonts, &image, &geometry, error, sizeof(error));
+                if (!failure)
+                    total = allocation_count;
+                checks++;
+                if (!failure && !ok) {
+                    fprintf(stderr, "FAIL embedded font mode %d: %s\n", mode, error);
+                    failures++;
+                }
+                cupidimage_pdf_font_table_free(&fonts);
+                if (live_count) {
+                    failures++;
+                    fprintf(stderr, "FAIL embedded font allocation %zu: %zu live\n", failure,
+                            live_count);
                     while (live_count)
                         fault_free(live[0]);
                 }

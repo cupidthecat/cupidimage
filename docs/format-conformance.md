@@ -243,8 +243,8 @@ still need encoding-aware boundary readers.
 Text handling now follows the matrix and spacing rules in ISO 32000-1 sections
 9.3 and 9.4. The implementation separates glyph geometry from text positioning,
 uses declared simple-font widths before Unicode mapping, and implements all
-eight text painting/clipping modes for the bitmap fallback. The embedded font
-outline and CID/vertical metric work remains open.
+eight text painting/clipping modes. Later sections cover Identity CID metrics
+and embedded TrueType outlines; complete font fidelity remains open.
 
 The 76-case text-state suite checks matrix composition, reflections, skew, line movement,
 spacing, scaling, rise, graphics-state restoration, invisible advances, quote
@@ -323,3 +323,21 @@ matrices, negative font sizes, horizontal scaling, spacing, TJ adjustments and
 all text painting/clipping modes. It does not compare embedded font outlines or
 claim complete CID font rendering. The allocation-failure suite now has 198
 checks, including malformed metrics, recursive references and partial tables.
+
+## Embedded TrueType outlines
+
+The font subsystem now separates binary tables, base encodings, glyph-name data,
+PDF font resources and outline coverage. Supported programs use their glyphs,
+not bitmap substitutes. The authored suite has 4,356 table/name checks, including
+the pinned glyph-name dataset, and 45 rendered-page checks. Nineteen selected
+raster comparisons are exact; analytic quadratic expectations are separate.
+The PDF allocation-failure suite has 356 checks.
+
+A focused two-document cached CID check renders both pages. Different-channel
+fractions fell from 0.186% to 0.046% for one page and from 2.054% to 0.560% for the
+other. Both still differ from the independent output. An obsolete composite flag
+found during that check now has an authored regression. This was not the full
+1,007-document review, which remains deferred.
+
+[The font guide](pdf-fonts.md) records the missing hinting, charstring and encoding
+work, authoritative specifications, and the limited role of RFC 7995.

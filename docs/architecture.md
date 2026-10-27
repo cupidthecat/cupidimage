@@ -31,7 +31,10 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   per-page cell/gradient cache live in `pdf_patterns.c`. Stroke geometry, dash
   expansion and bounded union coverage live in `pdf_stroke.c`. Identity CID
   horizontal/vertical metrics are parsed in `pdf_font_cid.c`, separately from
-  Unicode maps and the fallback glyph rasterizer.
+  Unicode maps and glyph rasterization. `fonts/` holds binary font tables,
+  encoding data and the bitmap fallback. `pdf_font_truetype.c` connects embedded
+  programs to PDF resources; `pdf_text_outline.c` handles quadratic glyph
+  coverage and text clipping.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
