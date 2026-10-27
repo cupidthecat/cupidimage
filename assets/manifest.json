@@ -607,6 +607,10 @@
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },
     {
+      "path": "assets/pdf/reference/escaped-content-font.pdf",
+      "sha256": "a719c10b31781b5b2ef4d566970d97a722265ad22d8bec942a2aa7dc9fd88d0f"
+    },
+    {
       "path": "assets/pdf/reference/explicit-image-mask.pdf",
       "sha256": "9894db4b391331e06afa1c30a1883da9a7016aac292d1d982cdc07e57ec8d0f0"
     },
@@ -673,6 +677,10 @@
     {
       "path": "assets/pdf/reference/knockout-shape.pdf",
       "sha256": "ca3f2c874be966a053810ad5e3b1f1128c8d09683bdbf40af0361073bb1af9a9"
+    },
+    {
+      "path": "assets/pdf/reference/literal-text-crlf.pdf",
+      "sha256": "cd3517b96b96ef10fa62243e83c3ebc957034871ea3d49ebf8d562e9dee0f4c5"
     },
     {
       "path": "assets/pdf/reference/lzw-object-stream.pdf",

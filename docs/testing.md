@@ -355,3 +355,8 @@ objects, Type 3 internal painting and shape-only opacity. The independent
 rasterizers differ from the specification on several overlapping-text cases;
 those tests keep exact analytic expectations. Allocation-failure cases cover
 both complete and unterminated text streams.
+
+`make test-pdf-content-syntax` combines byte-level decoder tests with generated
+rendering fixtures. It checks escaped font/resource names, literal CR/CRLF,
+embedded NUL, odd hex nibbles, malformed TJ arrays and text-object context.
+The content guide records exact size/depth bounds and independent comparisons.

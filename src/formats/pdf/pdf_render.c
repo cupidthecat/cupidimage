@@ -12,6 +12,7 @@
 #include "pdf_internal.h"
 
 #include "pdf_render_internal.h"
+#include "pdf_content_syntax.h"
 
 int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len);
@@ -47,371 +48,6 @@ unsigned char cupidimage_pdf_clamp_u8(double v) {
     if (v > 1.0) v = 1.0;
     /* Do not round an exact half-byte down after normalized arithmetic loses one ULP. */
     return (unsigned char)nextafter(v * 255.0 + 0.5, INFINITY);
-}
-
-static int pdf_parse_number_token(const unsigned char *data, size_t size, size_t *pos, double *out) {
-    size_t p = *pos;
-    int saw_digit = 0;
-    int saw_dot = 0;
-
-    if (p < size && (data[p] == '+' || data[p] == '-')) {
-        p++;
-    }
-    while (p < size) {
-        if (data[p] >= '0' && data[p] <= '9') {
-            saw_digit = 1;
-            p++;
-            continue;
-        }
-        if (data[p] == '.' && !saw_dot) {
-            saw_dot = 1;
-            p++;
-            continue;
-        }
-        break;
-    }
-
-    if (!saw_digit) {
-        return 0;
-    }
-
-    char tmp[64];
-    size_t n = p - *pos;
-    if (n >= sizeof(tmp)) {
-        n = sizeof(tmp) - 1;
-    }
-    memcpy(tmp, &data[*pos], n);
-    tmp[n] = '\0';
-    *out = strtod(tmp, NULL);
-    *pos = p;
-    return 1;
-}
-
-static int pdf_parse_name_token(const unsigned char *data, size_t size, size_t *pos,
-                                char **out_str, size_t *out_len) {
-    if (*pos >= size || data[*pos] != '/') {
-        return 0;
-    }
-    size_t start = *pos + 1;
-    size_t p = start;
-    while (p < size && !cupidimage_pdf_is_ws(data[p]) && !cupidimage_pdf_is_delim(data[p])) {
-        p++;
-    }
-
-    size_t len = p - start;
-    char *s = (char *)malloc(len + 1);
-    if (!s) {
-        return 0;
-    }
-    memcpy(s, &data[start], len);
-    s[len] = '\0';
-
-    *out_str = s;
-    *out_len = len;
-    *pos = p;
-    return 1;
-}
-
-static int pdf_parse_literal_string(const unsigned char *data, size_t size, size_t *pos,
-                                    char **out_str, size_t *out_len) {
-    if (*pos >= size || data[*pos] != '(') {
-        return 0;
-    }
-
-    size_t p = *pos + 1;
-    int depth = 1;
-    size_t cap = 64;
-    size_t len = 0;
-    char *buf = (char *)malloc(cap);
-    if (!buf) {
-        return 0;
-    }
-
-    while (p < size) {
-        unsigned char c = data[p++];
-
-        if (c == '\\') {
-            if (p >= size) break;
-            unsigned char e = data[p++];
-            unsigned char outc = e;
-            if (e == 'n') outc = '\n';
-            else if (e == 'r') outc = '\r';
-            else if (e == 't') outc = '\t';
-            else if (e == 'b') outc = '\b';
-            else if (e == 'f') outc = '\f';
-            else if (e == '\\' || e == '(' || e == ')') outc = e;
-            else if (e == '\n' || e == '\r') {
-                if (e == '\r' && p < size && data[p] == '\n') p++;
-                continue;
-            } else if (e >= '0' && e <= '7') {
-                int v = e - '0';
-                for (int i = 0; i < 2 && p < size && data[p] >= '0' && data[p] <= '7'; i++) {
-                    v = (v << 3) + (data[p] - '0');
-                    p++;
-                }
-                outc = (unsigned char)v;
-            }
-
-            if (len + 1 >= cap) {
-                size_t ncap = cap * 2;
-                char *n = (char *)realloc(buf, ncap);
-                if (!n) {
-                    free(buf);
-                    return 0;
-                }
-                buf = n;
-                cap = ncap;
-            }
-            buf[len++] = (char)outc;
-            continue;
-        }
-
-        if (c == '(') {
-            depth++;
-            if (len + 1 >= cap) {
-                size_t ncap = cap * 2;
-                char *n = (char *)realloc(buf, ncap);
-                if (!n) {
-                    free(buf);
-                    return 0;
-                }
-                buf = n;
-                cap = ncap;
-            }
-            buf[len++] = (char)c;
-            continue;
-        }
-
-        if (c == ')') {
-            depth--;
-            if (depth == 0) {
-                *pos = p;
-                buf[len] = '\0';
-                *out_str = buf;
-                *out_len = len;
-                return 1;
-            }
-            if (len + 1 >= cap) {
-                size_t ncap = cap * 2;
-                char *n = (char *)realloc(buf, ncap);
-                if (!n) {
-                    free(buf);
-                    return 0;
-                }
-                buf = n;
-                cap = ncap;
-            }
-            buf[len++] = (char)c;
-            continue;
-        }
-
-        if (len + 1 >= cap) {
-            size_t ncap = cap * 2;
-            char *n = (char *)realloc(buf, ncap);
-            if (!n) {
-                free(buf);
-                return 0;
-            }
-            buf = n;
-            cap = ncap;
-        }
-        buf[len++] = (char)c;
-    }
-
-    free(buf);
-    return 0;
-}
-
-static int pdf_parse_hex_string(const unsigned char *data, size_t size, size_t *pos,
-                                char **out_str, size_t *out_len) {
-    if (*pos >= size || data[*pos] != '<') {
-        return 0;
-    }
-    if (*pos + 1 < size && data[*pos + 1] == '<') {
-        return 0;
-    }
-
-    size_t p = *pos + 1;
-    size_t cap = 64;
-    size_t len = 0;
-    char *buf = (char *)malloc(cap);
-    if (!buf) {
-        return 0;
-    }
-
-    int have_hi = 0;
-    int hi = 0;
-    while (p < size) {
-        unsigned char c = data[p++];
-        if (c == '>') {
-            break;
-        }
-        if (isspace(c)) {
-            continue;
-        }
-
-        int v = -1;
-        if (c >= '0' && c <= '9') v = c - '0';
-        else if (c >= 'a' && c <= 'f') v = c - 'a' + 10;
-        else if (c >= 'A' && c <= 'F') v = c - 'A' + 10;
-        if (v < 0) {
-            free(buf);
-            return 0;
-        }
-
-        if (!have_hi) {
-            hi = v;
-            have_hi = 1;
-        } else {
-            unsigned char outc = (unsigned char)((hi << 4) | v);
-            if (len + 1 >= cap) {
-                size_t ncap = cap * 2;
-                char *n = (char *)realloc(buf, ncap);
-                if (!n) {
-                    free(buf);
-                    return 0;
-                }
-                buf = n;
-                cap = ncap;
-            }
-            buf[len++] = (char)outc;
-            have_hi = 0;
-        }
-    }
-
-    if (have_hi) {
-        unsigned char outc = (unsigned char)(hi << 4);
-        if (len + 1 >= cap) {
-            size_t ncap = cap * 2;
-            char *n = (char *)realloc(buf, ncap);
-            if (!n) {
-                free(buf);
-                return 0;
-            }
-            buf = n;
-            cap = ncap;
-        }
-        buf[len++] = (char)outc;
-    }
-
-    buf[len] = '\0';
-    *out_str = buf;
-    *out_len = len;
-    *pos = p;
-    return 1;
-}
-
-/* Content property dictionaries are operands, not hex strings or operators.
- * Scan nested dictionaries/arrays without executing their contents. */
-static int pdf_parse_dictionary_token(const unsigned char *data, size_t size, size_t *pos,
-                                      char **out, size_t *out_len) {
-    size_t start = *pos, p = start;
-    unsigned char stack[64];
-    unsigned depth = 0;
-    if (p > size || size - p < 2 || data[p] != '<' || data[p + 1] != '<') return 0;
-    stack[depth++] = '>'; p += 2;
-    while (p < size && depth) {
-        if (p - start > 1024u * 1024u) return 0;
-        unsigned char c = data[p++];
-        if (c == '%') {
-            while (p < size && data[p] != '\r' && data[p] != '\n') p++;
-        } else if (c == '(') {
-            unsigned nesting = 1;
-            while (p < size && nesting) {
-                c = data[p++];
-                if (c == '\\') { if (p >= size) return 0; p++; }
-                else if (c == '(') { if (++nesting > 64) return 0; }
-                else if (c == ')') nesting--;
-            }
-            if (nesting) return 0;
-        } else if (c == '<') {
-            if (p < size && data[p] == '<') {
-                if (depth == sizeof(stack)) return 0;
-                stack[depth++] = '>'; p++;
-            } else {
-                int closed = 0;
-                while (p < size) {
-                    c = data[p++];
-                    if (c == '>') { closed = 1; break; }
-                    if (!cupidimage_pdf_is_ws(c) && !((c >= '0' && c <= '9') ||
-                        (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) return 0;
-                }
-                if (!closed) return 0;
-            }
-        } else if (c == '[') {
-            if (depth == sizeof(stack)) return 0;
-            stack[depth++] = ']';
-        } else if (c == ']') {
-            if (stack[depth - 1] != ']') return 0;
-            depth--;
-        } else if (c == '>') {
-            if (stack[depth - 1] != '>' || p >= size || data[p++] != '>') return 0;
-            depth--;
-        } else if (c == ')') return 0;
-    }
-    if (depth || p - start > 1024u * 1024u) return 0;
-    size_t length = p - start;
-    char *copy = (char *)malloc(length + 1);
-    if (!copy) return 0;
-    memcpy(copy, data + start, length); copy[length] = '\0';
-    *out = copy; *out_len = length; *pos = p;
-    return 1;
-}
-
-static int pdf_parse_array_token(const unsigned char *data, size_t size, size_t *pos,
-                                 char **out_str, size_t *out_len) {
-    if (*pos >= size || data[*pos] != '[') {
-        return 0;
-    }
-
-    size_t start = *pos + 1;
-    size_t p = start;
-    int depth = 1;
-
-    while (p < size) {
-        unsigned char c = data[p];
-        if (c == '%') {
-            while (p < size && data[p] != '\n' && data[p] != '\r') p++;
-            continue;
-        }
-        if (c == '(') {
-            size_t tmp = p;
-            char *dummy = NULL;
-            size_t dlen = 0;
-            if (!pdf_parse_literal_string(data, size, &tmp, &dummy, &dlen)) {
-                return 0;
-            }
-            free(dummy);
-            p = tmp;
-            continue;
-        }
-        if (c == '[') {
-            depth++;
-            p++;
-            continue;
-        }
-        if (c == ']') {
-            depth--;
-            if (depth == 0) {
-                size_t len = p - start;
-                char *s = (char *)malloc(len + 1);
-                if (!s) {
-                    return 0;
-                }
-                memcpy(s, &data[start], len);
-                s[len] = '\0';
-                *out_str = s;
-                *out_len = len;
-                *pos = p + 1;
-                return 1;
-            }
-            p++;
-            continue;
-        }
-        p++;
-    }
-
-    return 0;
 }
 
 static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
@@ -885,52 +521,31 @@ static void pdf_path_end(pdf_render_state *st) {
     pdf_path_clear(&st->path);
 }
 
-static void pdf_render_tj_array(pdf_render_state *st, const char *arr, size_t len) {
+static int pdf_render_tj_array(pdf_render_state *st, const char *array, size_t length) {
+    const unsigned char *data = (const unsigned char *)array;
     size_t pos = 0;
-    const unsigned char *data = (const unsigned char *)arr;
-
-    while (pos < len) {
-        cupidimage_pdf_skip_ws_and_comments(data, len, &pos);
-        if (pos >= len) {
-            break;
+    while (pos < length) {
+        cupidimage_pdf_skip_ws_and_comments(data, length, &pos);
+        if (pos == length) break;
+        if (data[pos] == '(' || data[pos] == '<') {
+            char *text = NULL;
+            size_t bytes = 0;
+            int ok = data[pos] == '(' ? cupidimage_pdf_content_literal(data, length, &pos, &text, &bytes) :
+                                       cupidimage_pdf_content_hex(data, length, &pos, &text, &bytes);
+            if (!ok) return 0;
+            cupidimage_pdf_render_text_string(st, text, bytes);
+            free(text);
+        } else {
+            double adjustment;
+            if (!cupidimage_pdf_content_number(data, length, &pos, &adjustment)) return 0;
+            int vertical = st->gs.current_font && st->gs.current_font->cid &&
+                           st->gs.current_font->cid->vertical;
+            cupidimage_pdf_text_advance(st, -adjustment / 1000 * st->gs.font_size_pts *
+                                               (vertical ? 1 : st->gs.horizontal_scale));
         }
-
-        if (data[pos] == '(') {
-            char *txt = NULL;
-            size_t txt_len = 0;
-            if (pdf_parse_literal_string(data, len, &pos, &txt, &txt_len)) {
-                cupidimage_pdf_render_text_string(st, txt, txt_len);
-                free(txt);
-                continue;
-            }
-            break;
-        }
-
-        if (data[pos] == '<' && !(pos + 1 < len && data[pos + 1] == '<')) {
-            char *txt = NULL;
-            size_t txt_len = 0;
-            if (pdf_parse_hex_string(data, len, &pos, &txt, &txt_len)) {
-                cupidimage_pdf_render_text_string(st, txt, txt_len);
-                free(txt);
-                continue;
-            }
-            break;
-        }
-
-        if (data[pos] == '+' || data[pos] == '-' || data[pos] == '.' ||
-            (data[pos] >= '0' && data[pos] <= '9')) {
-            double num = 0.0;
-            if (pdf_parse_number_token(data, len, &pos, &num)) {
-                int vertical = st->gs.current_font && st->gs.current_font->cid &&
-                               st->gs.current_font->cid->vertical;
-                cupidimage_pdf_text_advance(st, -num / 1000.0 * st->gs.font_size_pts *
-                                                    (vertical ? 1 : st->gs.horizontal_scale));
-                continue;
-            }
-        }
-
-        pos++;
+        if (st->image_failed) return 0;
     }
+    return 1;
 }
 
 typedef enum {
@@ -1063,9 +678,11 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
                 cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid image draw operands");
         }
     } else if (strcmp(op, "BT") == 0) {
-        cupidimage_pdf_text_begin(st);
+        if (n == 0) cupidimage_pdf_text_begin(st);
+        else st->image_failed = 1;
     } else if (strcmp(op, "ET") == 0) {
-        cupidimage_pdf_text_end(st);
+        if (n == 0 && st->in_text) cupidimage_pdf_text_end(st);
+        else st->image_failed = 1;
     } else if (strcmp(op, "Tf") == 0) {
         if (n == 2 && ops[0].type == PDF_OPERAND_NAME && pdf_expect_num(&ops[1]) &&
             isfinite(ops[1].num) && fabs(ops[1].num) <= 1e30) {
@@ -1073,18 +690,19 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             st->gs.font_size_pts = ops[1].num;
         } else st->image_failed = 1;
     } else if (strcmp(op, "Td") == 0 || strcmp(op, "TD") == 0) {
-        if (n == 2 && pdf_expect_num(&ops[0]) && pdf_expect_num(&ops[1])) {
+        if (st->in_text && n == 2 && pdf_expect_num(&ops[0]) && pdf_expect_num(&ops[1])) {
             if (op[1] == 'D') st->gs.leading_pts = -ops[1].num;
             cupidimage_pdf_text_move(st, ops[0].num, ops[1].num);
         } else st->image_failed = 1;
     } else if (strcmp(op, "Tm") == 0) {
-        int valid = n == 6;
+        int valid = st->in_text && n == 6;
         for (int i=0; valid && i<6; i++)
             valid = pdf_expect_num(&ops[i]) && isfinite(ops[i].num) && fabs(ops[i].num)<=1e30;
         if (!valid) st->image_failed = 1;
         else for (int i=0;i<6;i++) st->text_matrix[i]=st->text_line_matrix[i]=ops[i].num;
     } else if (strcmp(op, "T*") == 0) {
-        cupidimage_pdf_text_move(st, 0, -st->gs.leading_pts);
+        if (st->in_text && n == 0) cupidimage_pdf_text_move(st, 0, -st->gs.leading_pts);
+        else st->image_failed = 1;
     } else if (strcmp(op, "TL") == 0 || strcmp(op, "Tc") == 0 ||
                strcmp(op, "Tw") == 0 || strcmp(op, "Tz") == 0 || strcmp(op, "Ts") == 0) {
         if (n != 1 || !pdf_expect_num(&ops[0]) || !isfinite(ops[0].num) || fabs(ops[0].num)>1e30)
@@ -1310,20 +928,19 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
     } else if (strcmp(op, "W") == 0 || strcmp(op, "W*") == 0) {
         st->pending_clip = op[1] == '*' ? 2 : 1;
     } else if (strcmp(op, "Tj") == 0) {
-        if (n >= 1 && ops[n - 1].type == PDF_OPERAND_STRING) {
-            cupidimage_pdf_render_text_string(st, ops[n - 1].str, ops[n - 1].len);
-        }
+        if (st->in_text && n == 1 && ops[0].type == PDF_OPERAND_STRING)
+            cupidimage_pdf_render_text_string(st, ops[0].str, ops[0].len);
+        else st->image_failed = 1;
     } else if (strcmp(op, "TJ") == 0) {
-        if (n >= 1 && ops[n - 1].type == PDF_OPERAND_ARRAY) {
-            pdf_render_tj_array(st, ops[n - 1].str, ops[n - 1].len);
-        }
+        if (!st->in_text || n != 1 || ops[0].type != PDF_OPERAND_ARRAY ||
+            !pdf_render_tj_array(st, ops[0].str, ops[0].len)) st->image_failed = 1;
     } else if (strcmp(op, "'") == 0) {
-        if (n == 1 && ops[0].type == PDF_OPERAND_STRING) {
+        if (st->in_text && n == 1 && ops[0].type == PDF_OPERAND_STRING) {
             cupidimage_pdf_text_move(st, 0, -st->gs.leading_pts);
             cupidimage_pdf_render_text_string(st, ops[0].str, ops[0].len);
         } else st->image_failed=1;
     } else if (strcmp(op, "\"") == 0) {
-        if (n == 3 && pdf_expect_num(&ops[0]) && pdf_expect_num(&ops[1]) &&
+        if (st->in_text && n == 3 && pdf_expect_num(&ops[0]) && pdf_expect_num(&ops[1]) &&
             isfinite(ops[0].num) && isfinite(ops[1].num) &&
             fabs(ops[0].num)<=1e30 && fabs(ops[1].num)<=1e30 && ops[2].type==PDF_OPERAND_STRING) {
             st->gs.word_space=ops[0].num;
@@ -1353,11 +970,17 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
         }
 
         unsigned char c = stream[pos];
+        if (op_count == 64 && (c == '(' || c == '<' || c == '[' || c == '/' ||
+            c == '+' || c == '-' || c == '.' || (c >= '0' && c <= '9'))) {
+            cupidimage_set_err(err, errcap, "pdf: content operand limit exceeded");
+            pdf_clear_operands(ops, &op_count);
+            return 0;
+        }
 
         if (c == '(') {
             char *txt = NULL;
             size_t txt_len = 0;
-            if (!pdf_parse_literal_string(stream, stream_len, &pos, &txt, &txt_len)) {
+            if (!cupidimage_pdf_content_literal(stream, stream_len, &pos, &txt, &txt_len)) {
                 cupidimage_set_err(err, errcap, "pdf: malformed content string");
                 pdf_clear_operands(ops, &op_count);
                 return 0;
@@ -1376,7 +999,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
         if (c == '<' && pos + 1 < stream_len && stream[pos + 1] == '<') {
             char *dictionary = NULL;
             size_t length = 0;
-            if (!pdf_parse_dictionary_token(stream, stream_len, &pos, &dictionary, &length)) {
+            if (!cupidimage_pdf_content_dictionary(stream, stream_len, &pos, &dictionary, &length)) {
                 cupidimage_set_err(err, errcap, "pdf: malformed content dictionary");
                 pdf_clear_operands(ops, &op_count);
                 return 0;
@@ -1393,7 +1016,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
         if (c == '<' && !(pos + 1 < stream_len && stream[pos + 1] == '<')) {
             char *txt = NULL;
             size_t txt_len = 0;
-            if (!pdf_parse_hex_string(stream, stream_len, &pos, &txt, &txt_len)) {
+            if (!cupidimage_pdf_content_hex(stream, stream_len, &pos, &txt, &txt_len)) {
                 cupidimage_set_err(err, errcap, "pdf: malformed hex string");
                 pdf_clear_operands(ops, &op_count);
                 return 0;
@@ -1412,7 +1035,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
         if (c == '[') {
             char *arr = NULL;
             size_t arr_len = 0;
-            if (!pdf_parse_array_token(stream, stream_len, &pos, &arr, &arr_len)) {
+            if (!cupidimage_pdf_content_array(stream, stream_len, &pos, &arr, &arr_len)) {
                 cupidimage_set_err(err, errcap, "pdf: malformed array token");
                 pdf_clear_operands(ops, &op_count);
                 return 0;
@@ -1431,7 +1054,7 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
         if (c == '/') {
             char *name = NULL;
             size_t name_len = 0;
-            if (!pdf_parse_name_token(stream, stream_len, &pos, &name, &name_len)) {
+            if (!cupidimage_pdf_content_name(stream, stream_len, &pos, &name, &name_len)) {
                 cupidimage_set_err(err, errcap, "pdf: malformed name token");
                 pdf_clear_operands(ops, &op_count);
                 return 0;
@@ -1449,7 +1072,11 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
 
         if (c == '+' || c == '-' || c == '.' || (c >= '0' && c <= '9')) {
             double num = 0.0;
-            if (pdf_parse_number_token(stream, stream_len, &pos, &num)) {
+            if (!cupidimage_pdf_content_number(stream, stream_len, &pos, &num)) {
+                cupidimage_set_err(err, errcap, "pdf: malformed or oversized number");
+                pdf_clear_operands(ops, &op_count);
+                return 0;
+            } else {
                 if (op_count < (int)(sizeof(ops) / sizeof(ops[0]))) {
                     ops[op_count].type = PDF_OPERAND_NUM;
                     ops[op_count].num = num;

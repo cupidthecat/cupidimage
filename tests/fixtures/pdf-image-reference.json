@@ -322,6 +322,20 @@
       "height": 16,
       "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/escaped-content-font.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/literal-text-crlf.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
     }
   ]
 }

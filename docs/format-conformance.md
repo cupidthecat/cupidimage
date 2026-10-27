@@ -443,7 +443,7 @@ nesting. Pattern/shading cache construction is kept outside that tracking.
 
 The group suite has 81 cases and 66 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 1,993 checks.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 2,044 checks.
 CMYK/CIE/ICC blending remains open.
 
 
@@ -453,7 +453,7 @@ Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
 q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
 as a group blending space alongside DeviceRGB. The focused suites have 56 mask
 checks and 81 group checks, with 44 and 66 optional independent comparisons.
-The allocation-failure suite has 1,993 checks. Three new analytic assets cover
+The allocation-failure suite has 2,044 checks. Three new analytic assets cover
 alpha masks, luminosity masks and a gray mask with an inverse transfer function.
 
 [PDF transparency](pdf-transparency.md) records the analytic-only differences,
@@ -504,5 +504,20 @@ There are 36 focused checks and 14 optional independent comparisons. The
 transparency guide explains where the tested independent renderers disagree.
 Two new analytic assets bring the manifest to 350 files, with 182 reference
 passes, 160 decoded-but-unverified files and 1,026 terminal round trips.
-The allocation-failure suite has 1,993 checks. Full font fidelity, color management
+The allocation-failure suite has 2,044 checks. Full font fidelity, color management
 and the remaining PDF features are not established by these tests.
+
+
+## Content text syntax and resource names
+
+Content token parsing now has its own module. Names decode hexadecimal escapes
+once, literal CR/CRLF normalizes to LF, and hex strings require a closing delimiter.
+TJ rejects invalid element types, text operators check their operands/context,
+and malformed or oversized numbers are not truncated into different values.
+Operand overflow also returns an error instead of discarding data.
+
+The parser suite has 821 checks, and 69 rendering checks include 36 exact
+independent comparisons. Four newline comparisons use the secondary renderer;
+see [PDF content syntax](pdf-content.md). The 352-asset manifest has 184 reference
+passes and 160 decoded-but-unverified entries. Existing assets retain their
+expectations. Two new assets cover font-name escaping and literal CRLF handling.

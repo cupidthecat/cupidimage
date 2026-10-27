@@ -271,7 +271,7 @@ OpenType wrapping. Twenty-five optional independent comparisons use:
 The clip-only comparison uses a second rasterizer because the first applies a
 different boundary rule. The cubic arch also has an analytic per-pixel test.
 The optional font-fixture regeneration script uses FontTools; ordinary tests do
-not require it. The PDF allocation-failure suite has 1,993 checks, including
+not require it. The PDF allocation-failure suite has 2,044 checks, including
 CFF font dictionaries, outlines and composite cleanup.
 
 `make test-pdf-standard-fonts` verifies all 14 metric/encoding resources
@@ -387,3 +387,9 @@ are rejected.
 overlap, indirect TK values, saved state, missing glyphs and mask application.
 See [PDF transparency](pdf-transparency.md) for memory bounds and the independent
 renderers' differing text-overlap behavior.
+
+
+Content font names decode `#XX` escapes before lookup. Literal-string line endings
+and escapes preserve the PDF character-code rules, and TJ validates each element
+rather than skipping malformed values. See [PDF content syntax](pdf-content.md)
+for the supported grammar, exact tests and parser bounds.

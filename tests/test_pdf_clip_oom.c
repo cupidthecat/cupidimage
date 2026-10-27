@@ -19,6 +19,7 @@
 #include "../src/formats/pdf/fonts/truetype_cmap.c"
 #include "../src/formats/pdf/fonts/truetype_names.c"
 #include "../src/formats/pdf/pdf_calculator.c"
+#include "../src/formats/pdf/pdf_content_syntax.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_cid.c"
@@ -77,7 +78,13 @@ int main(void) {
                     {"/BadCalculator sh", 0},
                     {"BT /F1 6 Tf (AA) Tj ET", 1},
                     {"BT /F1 6 Tf (AA) Tj", 0},
-                    {"BT /F1 6 Tf (AA) Tj (unterminated", 0}};
+                    {"BT /F1 6 Tf (AA) Tj (unterminated", 0},
+                    {"BT /F1 6 Tf [(A) (B)] TJ ET", 1},
+                    {"BT /F1 6 Tf [(A) true] TJ ET", 0},
+                    {"BT /F1 6 Tf <4141> Tj ET", 1},
+                    {"BT /F1 6 Tf <4141", 0},
+                    {"BT /F1 6 Tf (AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA) Tj ET", 1},
+                    {"BT /F#00 6 Tf (A) Tj ET", 0}};
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
     const char *font_content = "BT /F1 6 Tf 0 6 Td (Z) Tj ET";
     const char *cmap = "1 beginbfchar <5A> <0041> endbfchar";

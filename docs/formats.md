@@ -245,6 +245,10 @@ supported. CMYK/CIE/ICC group spaces and overprinting remain incomplete. Text ob
 honor TK, with true as the default. See [PDF transparency](pdf-transparency.md)
 for mask precedence and group limits. Stroke styling is described below.
 
+Content names, text strings and TJ arrays follow the rules and resource bounds
+in [PDF content syntax](pdf-content.md). Encoded resource names are decoded once;
+text operand errors return a failure rather than silently dropping text.
+
 ## PDF character maps
 
 ToUnicode streams use the shared byte-filter pipeline, including LZW and filter

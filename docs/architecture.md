@@ -55,6 +55,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state. `pdf_text_groups.c` owns
   implicit text/glyph surfaces, neutral final compositing and Type 3 stencil paint.
+  `pdf_content_syntax.c` decodes names and text strings and scans bounded aggregate
+  operands without executing their contents. The operator executor validates TJ
+  element types and text-object context.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
   axial/radial shading lives in `pdf_shading.c`. Bounded color-function trees
