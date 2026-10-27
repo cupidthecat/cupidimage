@@ -78,7 +78,7 @@ FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
 DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType outlines are supported; CFF/Type 1 outlines, transparency groups, mesh shadings and annotations remain incomplete.
+nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType and CFF/Type 2 outlines are supported; non-CFF Type 1 programs, transparency groups, mesh shadings and annotations remain incomplete.
 
 ## PDF details and limits
 
@@ -112,7 +112,7 @@ the content, and BBox clips text, paths, and images, including nested forms.
 Forms use their own Resources dictionary when present, or the caller's resources
 otherwise. Drawing a form preserves the caller's graphics state and current path.
 Built-in text glyphs follow the text matrix and current transformation matrix.
-Supported embedded TrueType programs use their outlines. See [PDF fonts and text](pdf-fonts.md) for glyph selection and remaining font limitations.
+Supported embedded TrueType and CFF programs use their outlines. See [PDF fonts and text](pdf-fonts.md) for glyph selection and remaining font limitations.
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive forms, transparency
@@ -247,7 +247,7 @@ inline font dictionaries and indirect resource/font dictionaries are supported.
 Nested dictionaries, comments, and strings do not override outer Resources,
 Font, ToUnicode, or Filter entries.
 
-These maps choose characters for the existing bitmap fallback. Embedded TrueType
+These maps choose characters for the existing bitmap fallback. Embedded font
 glyph selection follows the font encoding instead; complete PDF CMap semantics
 remain open. Simple-font Widths
 and MissingWidth entries now control advances; fonts without supported metrics
@@ -384,7 +384,7 @@ Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
 described below. Complete standard-font metrics and embedded
-Type 1/CFF outlines and complete TrueType fidelity remain separate work. Malformed font metadata still uses the
+Non-CFF Type 1 programs, hinting and complete font fidelity remain separate work. Malformed font metadata still uses the
 existing fallback policy. Bitmap glyph shapes are not equivalent to actual
 font outlines.
 
@@ -515,7 +515,8 @@ unmapped CID shows the existing placeholder, rather than treating its number as
 Unicode. Invalid and truncated codes use CID zero with codespace-based byte
 recovery. Malformed font metadata retains the
 existing font-table fallback policy. Supported embedded TrueType programs instead
-select outlines through CIDToGIDMap. Embedded maps support CID ranges, notdef
+select outlines through CIDToGIDMap; CFF CID programs use their charsets and
+font dictionaries. Embedded maps support CID ranges, notdef
 recovery and UseCMap inheritance. The 59 predefined CJK maps in ISO 32000-1 Table 118 are bundled along with
 Identity-H/V. Complete CJK text rendering still depends on the remaining font
 program and fallback work.

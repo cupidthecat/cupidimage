@@ -194,7 +194,7 @@ int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, s
 int cupidimage_pdf_apply_stroke_view(const pdf_render_state *st, const pdf_object_view *view,
                                      pdf_graphics_state *next);
 
-int cupidimage_pdf_draw_truetype_glyph(pdf_render_state *st, const pdf_tt_program *program,
+int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_program *program,
                                        unsigned glyph);
 
 #endif

@@ -270,3 +270,18 @@ pinned definitions, then renders six authored glyph-selection fixtures. Add
 `--reference` to scripts/test_pdf_predefined_cmaps.py for six independent exact
 pixel comparisons. Mapping counts measure resource correspondence, not visual
 coverage of that many distinct characters.
+
+## CFF fonts
+
+`make test-pdf-cff` checks compact font structures, Type 2 execution and PDF
+rendering. Fixtures are authored byte programs and geometric glyphs, not copies
+of commercial font programs. They include malformed offsets, truncated tables,
+subroutine recursion, stack limits, hint masks, encodings, CID font dictionaries,
+accent composition and exact cubic fill expectations. The PDF allocation-failure
+suite covers partially loaded programs and partially expanded outlines.
+
+For the optional independent raster comparisons:
+
+    python3 scripts/test_pdf_cff_render.py bin/test_pdf_pages --reference
+
+Unhinted comparisons do not establish hinted or antialiased font fidelity.

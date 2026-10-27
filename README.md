@@ -12,9 +12,9 @@ for the exact boundaries. HEIC/HEIF is deferred.
 
 PDF previews include packed, indexed and fax-compressed images, inline images,
 image masks, filter chains, opacity and RGB blending. Text supports matrices,
-spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID metrics and unhinted
-embedded TrueType outlines. Tiling/shading patterns and styled dashed strokes
-are also supported. CFF/Type 1 outlines, full font fidelity, transparency groups,
+spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
+metrics and unhinted embedded TrueType and CFF outlines. Tiling/shading patterns and styled dashed strokes
+are also supported. Non-CFF Type 1 programs, full font fidelity, transparency groups,
 mesh shadings and annotations still need work. See the [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.
 

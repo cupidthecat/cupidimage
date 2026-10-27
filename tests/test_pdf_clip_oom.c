@@ -7,6 +7,8 @@
 #include "../src/compression/ccitt.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #include "../src/formats/pdf/fonts/bitmap.c"
+#include "../src/formats/pdf/fonts/cff.c"
+#include "../src/formats/pdf/fonts/type2.c"
 #include "../src/formats/pdf/fonts/cmap.c"
 #include "../src/formats/pdf/fonts/encoding.c"
 #include "../src/formats/pdf/fonts/truetype.c"
@@ -14,7 +16,7 @@
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_cid.c"
-#include "../src/formats/pdf/pdf_font_truetype.c"
+#include "../src/formats/pdf/pdf_font_program.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
@@ -30,6 +32,7 @@
 #include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "fixtures/pdf-truetype.inc"
+#include "fixtures/pdf-cff.inc"
 #undef malloc
 #undef calloc
 #undef realloc
@@ -325,17 +328,20 @@ int main(void) {
         }
         fail_at = 0;
     }
-    {
+    for (unsigned kind = 0; kind < 2; kind++) {
+        const unsigned char *font_data = kind ? test_cff_font : test_truetype_font;
+        size_t font_size = kind ? sizeof(test_cff_font) : sizeof(test_truetype_font);
         char document[16384];
         int length = snprintf(document, sizeof(document),
                               "3 0 obj << /Resources << /Font << /F 5 0 R >> >> >> endobj\n5 0 obj "
-                              "<< /Subtype /TrueType /Encoding /WinAnsiEncoding /FontDescriptor 6 "
-                              "0 R >> endobj\n6 0 obj << /Flags 32 /FontFile2 7 0 R >> endobj\n7 0 "
-                              "obj << /Filter /ASCIIHexDecode /Length %zu >> stream\n",
-                              sizeof(test_truetype_font) * 2 + 1);
-        for (size_t i = 0; i < sizeof(test_truetype_font); i++)
+                              "<< /Subtype /%s /Encoding /WinAnsiEncoding /FontDescriptor 6 "
+                              "0 R >> endobj\n6 0 obj << /Flags 32 /%s 7 0 R >> endobj\n7 0 "
+                              "obj << %s /Filter /ASCIIHexDecode /Length %zu >> stream\n",
+                              kind ? "Type1" : "TrueType", kind ? "FontFile3" : "FontFile2",
+                              kind ? "/Subtype /Type1C" : "", font_size * 2 + 1);
+        for (size_t i = 0; i < font_size; i++)
             length += snprintf(document + length, sizeof(document) - (size_t)length, "%02x",
-                               test_truetype_font[i]);
+                               font_data[i]);
         length +=
             snprintf(document + length, sizeof(document) - (size_t)length, ">\nendstream endobj\n");
         for (int mode = 0; mode < 8; mode++) {
@@ -448,6 +454,38 @@ int main(void) {
                     failures++;
                     while (live_count)
                         fault_free(live[0]);
+                }
+            }
+        }
+        fail_at = 0;
+    }
+    {
+        const unsigned char *programs[] = {test_cff_cid_font, test_cff_composite_font};
+        const size_t lengths[] = {sizeof(test_cff_cid_font), sizeof(test_cff_composite_font)};
+        for (unsigned sample = 0; sample < 2; sample++) {
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                allocation_count = 0;
+                fail_at = failure;
+                pdf_cff_font font;
+                int ok = cupidimage_pdf_cff_init(&font, programs[sample], lengths[sample]);
+                if (ok) {
+                    for (unsigned glyph = 0; glyph < font.chars.count; glyph++) {
+                        pdf_cff_outline outline;
+                        if (!cupidimage_pdf_cff_glyph_outline(&font, glyph, &outline)) {
+                            ok = 0;
+                            break;
+                        }
+                        cupidimage_pdf_type2_free(&outline);
+                    }
+                }
+                cupidimage_pdf_cff_free(&font);
+                if (!failure) total = allocation_count;
+                checks++;
+                if (!failure && !ok) failures++;
+                if (live_count) {
+                    failures++;
+                    while (live_count) fault_free(live[0]);
                 }
             }
         }

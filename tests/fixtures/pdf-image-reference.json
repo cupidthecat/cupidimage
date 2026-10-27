@@ -182,6 +182,20 @@
       "height": 16,
       "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfNHzR81f9T8ATMfAIx5/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-cff-simple.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-cff-cid.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
     }
   ]
 }

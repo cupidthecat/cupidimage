@@ -579,6 +579,14 @@
       "sha256": "cd8453fb32ac354a9f8b2e62e449a802b268168292935c427386fbe3533e169f"
     },
     {
+      "path": "assets/pdf/reference/embedded-cff-cid.pdf",
+      "sha256": "6ba0d28ffd8ff81d799bf70afb611fc991f8bebeec906dd805353b20da0cebc9"
+    },
+    {
+      "path": "assets/pdf/reference/embedded-cff-simple.pdf",
+      "sha256": "e2c9018976dd3719ed3a7b2feaec89eb69d195284abab856ada26a2cac4d85fb"
+    },
+    {
       "path": "assets/pdf/reference/eof-without-newline.pdf",
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },
@@ -605,6 +613,10 @@
     {
       "path": "assets/pdf/reference/indexed-soft-mask.pdf",
       "sha256": "b4ef8642fe422e0d0d1271b4b90705de6e86eaa85bbfecddeecab143cae25199"
+    },
+    {
+      "path": "assets/pdf/reference/indexed-vector-fill.pdf",
+      "sha256": "d8f749c61214a81a6ce1f429451018b821e06237160ce6e25677ffee5f71eb3d"
     },
     {
       "path": "assets/pdf/reference/indirect-flate-length.pdf",
@@ -1330,10 +1342,6 @@
     {
       "path": "assets/webp/reference/solid-4x3-q90.webp",
       "sha256": "105231a0ae3e70af873e036f91bbd4a512329888b6a47c65e571a0b67dd66d02"
-    },
-    {
-      "path": "assets/pdf/reference/indexed-vector-fill.pdf",
-      "sha256": "d8f749c61214a81a6ce1f429451018b821e06237160ce6e25677ffee5f71eb3d"
     }
   ]
 }

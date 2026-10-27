@@ -323,9 +323,9 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                 cupidimage_set_err(st->error, st->error_capacity, "pdf: CMap work limit exceeded");
                 break;
             }
-            if (font->program && !cupidimage_pdf_truetype_has_glyph(font->program, cid)) {
+            if (font->program && !cupidimage_pdf_font_program_has_glyph(font->program, cid)) {
                 cid = notdef;
-                if (!cupidimage_pdf_truetype_has_glyph(font->program, cid))
+                if (!cupidimage_pdf_font_program_has_glyph(font->program, cid))
                     cid = 0;
             }
             encoded = cid;
@@ -354,9 +354,9 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
             }
         }
         if (font && font->program) {
-            glyph = cupidimage_pdf_truetype_glyph(font->program, encoded);
+            glyph = cupidimage_pdf_font_program_glyph(font->program, encoded);
             if (!font->cid && !font->has_widths && !font->has_missing_width)
-                width = cupidimage_pdf_truetype_advance(font->program, glyph);
+                width = cupidimage_pdf_font_program_advance(font->program, glyph);
         }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
@@ -371,13 +371,13 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                 st->text_matrix[4] += dx * saved[0] + dy * saved[2];
                 st->text_matrix[5] += dx * saved[1] + dy * saved[3];
                 if (font->program) {
-                    if (!cupidimage_pdf_draw_truetype_glyph(st, font->program, glyph))
+                    if (!cupidimage_pdf_draw_font_program_glyph(st, font->program, glyph))
                         st->image_failed = 1;
                 } else
                     pdf_draw_glyph(st, draw);
                 memcpy(st->text_matrix, saved, sizeof(saved));
             } else if (font && font->program) {
-                if (!cupidimage_pdf_draw_truetype_glyph(st, font->program, glyph))
+                if (!cupidimage_pdf_draw_font_program_glyph(st, font->program, glyph))
                     st->image_failed = 1;
             } else
                 pdf_draw_glyph(st, draw);

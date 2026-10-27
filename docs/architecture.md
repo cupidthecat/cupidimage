@@ -32,9 +32,10 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   expansion and bounded union coverage live in `pdf_stroke.c`. CID
   horizontal/vertical metrics are parsed in `pdf_font_cid.c`, separately from
   Unicode maps and glyph rasterization. `fonts/` holds binary font tables,
-  encoding data, the bounded PDF encoding CMap parser and the bitmap fallback. `pdf_font_truetype.c` connects embedded
-  programs to PDF resources; `pdf_text_outline.c` handles quadratic glyph
-  coverage and text clipping.
+  encoding data, the bounded PDF encoding CMap parser and the bitmap fallback. `pdf_font_program.c` connects embedded
+  programs to PDF resources; `pdf_text_outline.c` handles quadratic/cubic glyph
+  coverage and text clipping. `fonts/cff.c` reads compact font data, and
+  `fonts/type2.c` interprets its bounded charstrings.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state.
   Byte filters and their bounded pipeline live in `pdf_filters.c`;

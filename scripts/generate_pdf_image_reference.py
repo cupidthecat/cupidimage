@@ -132,5 +132,18 @@ save_document('indexed-vector-fill.pdf', document(
     '/MediaBox [0 0 18 12] /Resources << /ColorSpace << /Palette [/Indexed /DeviceRGB 2 <ff000000ff000000ff>] >> >>',
     stream='/Palette cs 0 0 6 12 re f 1 sc 6 0 6 12 re f 2 scn 12 0 6 12 re f'),
     lambda x,y:((255,0,0),(0,255,0),(0,0,255))[x//8])
+from test_pdf_cff import fixture as cff_program
+from test_pdf_cff_render import BOX as cff_box
+for cid, name in ((False, 'embedded-cff-simple.pdf'), (True, 'embedded-cff-cid.pdf')):
+    program = cff_program(cid=cid, programs=[b'\x0e', b'\x0e', cff_box, b'\x0e'])
+    descriptor = '<< /Type /FontDescriptor /FontName /CupidShapes /Flags 32 /FontBBox [0 0 400 600] /Ascent 600 /Descent 0 /CapHeight 600 /ItalicAngle 0 /StemV 80 /FontFile3 9 0 R >>'
+    font = '<< /Type /Font /Subtype /Type1 /BaseFont /CupidShapes /Encoding /WinAnsiEncoding /FontDescriptor 8 0 R /FirstChar 65 /LastChar 65 /Widths [600] >>'
+    extra = {5:font.encode(),8:descriptor.encode(),9:syntax_stream(program,'/Subtype /'+('CIDFontType0C' if cid else 'Type1C'))}
+    if cid:
+        extra[5] = b'<< /Type /Font /Subtype /Type0 /BaseFont /CupidShapes /Encoding /Identity-H /DescendantFonts [6 0 R] >>'
+        extra[6] = b'<< /Type /Font /Subtype /CIDFontType0 /BaseFont /CupidShapes /FontDescriptor 8 0 R /DW 600 /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> >>'
+    save_document(name,document('/MediaBox [0 0 18 12] /Resources << /Font << /F 5 0 R >> >>',
+        stream='BT /F 15 Tf 3 1.5 Td '+('<0022>' if cid else '(A)')+' Tj ET',extra=extra),
+        lambda x,y:(0,0,0) if 4<=x<12 and 2<=y<14 else (255,255,255))
 (ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

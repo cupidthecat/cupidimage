@@ -26,7 +26,7 @@ void cupidimage_pdf_font_table_free(pdf_font_table *table) {
             cupidimage_pdf_object_view_release(&table->fonts[i].type3->dictionary);
             free(table->fonts[i].type3);table->fonts[i].type3=NULL;
         }
-        cupidimage_pdf_truetype_free(table->fonts[i].program);
+        cupidimage_pdf_font_program_free(table->fonts[i].program);
         table->fonts[i].program = NULL;
         cupidimage_pdf_cid_font_free(table->fonts[i].cid);
         table->fonts[i].cid = NULL;
@@ -55,8 +55,8 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name)
                 table->fonts[i].type3=NULL;
             }
             if (table->fonts[i].program) {
-                table->program_bytes -= cupidimage_pdf_truetype_bytes(table->fonts[i].program);
-                cupidimage_pdf_truetype_free(table->fonts[i].program);
+                table->program_bytes -= cupidimage_pdf_font_program_bytes(table->fonts[i].program);
+                cupidimage_pdf_font_program_free(table->fonts[i].program);
                 table->fonts[i].program = NULL;
             }
             if (table->fonts[i].cid) {
@@ -566,7 +566,7 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
                  cupidimage_pdf_parse_cid_font(data, size, &font_view, font, &table->cid_bytes) &&
                  cupidimage_pdf_parse_type3_font(data, size, &font_view, font) &&
                  pdf_parse_font_widths(data, size, &font_view, font) &&
-                 cupidimage_pdf_parse_truetype_font(data, size, &font_view, font,
+                 cupidimage_pdf_parse_font_program(data, size, &font_view, font,
                                                     &table->program_bytes) &&
                  pdf_parse_font_tounicode(data, size, &font_view, font, err, errcap);
         cupidimage_pdf_object_view_release(&font_view);

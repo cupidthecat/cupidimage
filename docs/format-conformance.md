@@ -355,3 +355,17 @@ faithful substitutes. The PDF allocation-failure suite has 414 checks.
 
 The resources retain their BSD notices and pinned hashes. Full ordinary and
 sanitizer validation must accompany changes to the decoder or generated data.
+
+## CFF outline programs
+
+The shared font-program adapter now loads embedded CFF/Type 2 programs as well
+as TrueType. CFF structure tests cover name/CID charsets, encodings and private
+font dictionaries. Execution tests cover cubic paths, widths, subroutines,
+transient storage, arithmetic and accent composition. Rendering checks compare
+explicit geometry and selected independent rasters; the cubic arch has analytic
+pixel expectations. Hinting, CFF2 and non-CFF Type 1 programs remain open.
+
+A focused cached-font check found a zero-stem counter mask with no mask bytes.
+The reader now treats it as an empty mask, and the regression suite covers it.
+Two selected cached CFF programs decode all their glyphs after that repair.
+This is not a full-corpus rendering or visual review.

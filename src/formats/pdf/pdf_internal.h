@@ -54,7 +54,7 @@ typedef struct {
     pdf_cid_metric *metrics;
 } pdf_cid_font;
 
-typedef struct pdf_tt_program pdf_tt_program;
+typedef struct pdf_font_program pdf_font_program;
 
 typedef struct {
     char name[32];
@@ -66,7 +66,7 @@ typedef struct {
     double widths[256], missing_width;
     pdf_type3_font *type3;
     pdf_cid_font *cid;
-    pdf_tt_program *program;
+    pdf_font_program *program;
 } pdf_font_map;
 
 typedef struct {
@@ -160,13 +160,13 @@ size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font);
 void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *width,
                                 double *advance_y, double *origin_x, double *origin_y);
 
-int cupidimage_pdf_parse_truetype_font(const unsigned char *data, size_t size,
+int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                        const pdf_object_view *view, pdf_font_map *font,
                                        size_t *budget);
-size_t cupidimage_pdf_truetype_bytes(const pdf_tt_program *program);
-void cupidimage_pdf_truetype_free(pdf_tt_program *program);
-int cupidimage_pdf_truetype_has_glyph(const pdf_tt_program *program, unsigned code);
-unsigned cupidimage_pdf_truetype_glyph(const pdf_tt_program *program, unsigned code);
-double cupidimage_pdf_truetype_advance(const pdf_tt_program *program, unsigned glyph);
+size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program);
+void cupidimage_pdf_font_program_free(pdf_font_program *program);
+int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code);
+unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code);
+double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsigned glyph);
 
 #endif
