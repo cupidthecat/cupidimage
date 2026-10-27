@@ -56,7 +56,7 @@ Synthetic cases cover misleading nested keys and a missing real root.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects and masks | Font rendering, transparency groups and blend modes, patterns, annotations, filters, object structures, real-document corpus |
+| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects and masks, opacity and RGB blending | Font rendering, transparency groups, patterns, annotations, filters, object structures, real-document corpus |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -186,3 +186,14 @@ prediction. LZW tests cover both EarlyChange values, all code widths, table
 saturation, resets, and the next-code special case. Chained predictor tests cover
 1/2/4/8/16-bit gray, RGB, and CMYK samples. Specialized image filters and indirect
 parameter objects in general chains remain separate work.
+
+## Graphics-state opacity and blend modes
+
+ExtGState now applies `ca`, `CA`, `LW`, and `BM`, including all 16 standard RGB
+blend modes. Regression cases check blend endpoints, state restoration, forms,
+soft-mask multiplication, and stroke coverage. Combined fill/stroke operators
+composite one object rather than painting the stroke over an already blended
+fill, as required by ISO 32000-1 section 11.6.2. Blend functions follow section
+11.3.5. Independent comparisons use a second rasterizer for combined fill/stroke,
+where the installed primary rasterizer composites the two operations separately.
+This remains device-RGB compositing, not full transparency-group support.

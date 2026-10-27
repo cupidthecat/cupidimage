@@ -45,6 +45,8 @@ typedef struct {
     uint8_t stroke_g;
     uint8_t stroke_b;
     float line_width_pts;
+    double fill_alpha, stroke_alpha;
+    int blend_mode;
     int fill_space;
     int stroke_space;
     pdf_clip_mask *clip;
@@ -109,5 +111,9 @@ typedef struct {
 } pdf_image_colors;
 int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
                                      size_t *pos, unsigned depth, pdf_image_colors *colors);
+
+int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name);
+void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3], double result[3]);
+void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b, double alpha);
 
 #endif

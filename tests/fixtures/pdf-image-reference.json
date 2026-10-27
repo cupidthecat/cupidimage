@@ -1,5 +1,5 @@
 {
-  "provenance": "Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, and soft masks.",
+  "provenance": "Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.",
   "cases": [
     {
       "asset": "assets/pdf/reference/packed-gray-1bit.pdf",
@@ -76,6 +76,27 @@
       "width": 24,
       "height": 16,
       "rgba_zlib": "eJxraGj43zCKR/EIxQwM//FjApCQAaPmj5o/mM0HAGbFXe4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/blend-multiply.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxrcHD43zCKR/EoHsWjeMRhAG5E/p8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/blend-screen.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxrYPj/v2EUj+JRPIpH8YjDAK+5vS4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/fill-stroke-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraPj/v2EYYGobOGr+qPmj5o+aT6z5QxUDAH+3fT0=",
       "tolerance": 0
     }
   ]

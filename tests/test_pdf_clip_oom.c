@@ -9,6 +9,7 @@
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
+#include "../src/formats/pdf/pdf_transparency.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #undef malloc
@@ -23,12 +24,14 @@ int main(void) {
         "0 0 9 12 re W n q (unterminated",
         "0 0 9 12 re W n /F0 Do 0 0 1 rg 0 6 18 6 re f",
         "0 0 9 12 re W n 18 0 0 12 0 0 cm /Im0 Do",
-        "18 0 0 12 0 0 cm /Im1 Do"
+        "18 0 0 12 0 0 cm /Im1 Do",
+        "/G gs 3 w 0 6 m 18 6 l 0 6 m 18 6 l S",
+        "/G gs 0 0 18 12 re B"
     };
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
     char document[2048];
     int document_size = snprintf(document, sizeof(document),
-        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R >> >> >> endobj\n"
+        "3 0 obj << /Resources << /XObject << /F0 5 0 R /Im0 6 0 R /Im1 8 0 R >> /ExtGState << /G << /ca .5 /CA .5 /BM /Multiply >> >> >> >> endobj\n"
         "5 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] /Length %zu >>\n"
         "stream\n%s\nendstream\nendobj\n"
         "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB "

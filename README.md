@@ -10,6 +10,11 @@ implemented, and color-managed output is incomplete. See the
 [format guide](docs/formats.md) and [conformance tracker](docs/format-conformance.md)
 for the exact boundaries. HEIC/HEIF is deferred.
 
+PDF previews include packed and indexed images, image masks, filter chains,
+constant opacity, and RGB blend modes. Fonts, transparency groups, patterns, and
+annotations still need substantial work; successful decoding alone does not mean
+that a page is drawn correctly.
+
 ## GIF rendering preview
 
 ![cupidimage displaying a GIF in the terminal](img/gif-terminal-preview.gif)

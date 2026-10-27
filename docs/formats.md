@@ -78,7 +78,7 @@ DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
 nonzero page origins, and clockwise rotation in multiples of 90 degrees. Complex fonts, text
-clipping modes, transparency groups, blend modes, patterns, and annotations are unsupported.
+clipping modes, transparency groups, patterns, and annotations are unsupported.
 
 ## PDF details and limits
 
@@ -190,7 +190,7 @@ SMask takes precedence over Mask. A Matte array removes preblending in the paren
 color space before color conversion. Matte masks must have the same dimensions as
 the parent. Nested masks, malformed masks, and unsupported mask codecs return an
 error rather than drawing an opaque substitute. Graphics-state soft masks,
-transparency groups, and blend modes are not implemented.
+and transparency groups are not implemented.
 
 Run `make test-pdf-masks` for exact-pixel and malformed-input coverage. The optional
 `python3 scripts/test_pdf_masks.py bin/test_pdf_pages --reference` also compares
@@ -220,3 +220,23 @@ masks, and malformed or cyclic references. Full 16-bit indices and tolerated
 indirect-reference chains use analytic expectations because the installed
 comparison renderers do not preserve those inputs. DeviceCMYK expectations use
 the library's unmanaged conversion.
+
+## PDF opacity and blending
+
+ExtGState dictionaries support nonstroking opacity (`ca`), stroking opacity (`CA`),
+line width (`LW`), and all 16 standard RGB blend modes. Blend-mode arrays select
+the first recognized mode, falling back to Normal if none is recognized. State
+is preserved by `q`/`Q` and inherited by forms without leaking changes back to
+the caller. Image soft-mask values multiply the nonstroking opacity.
+
+Overlapping segments within one stroke are composited once. Combined fill/stroke
+operators also form one object, with stroke coverage taking precedence over fill
+coverage. This avoids dark seams caused by repeatedly blending the same object.
+The tests compare analytic pixels and independent raster output, including blend
+endpoint cases, state restoration, and mask/opacity combinations.
+
+Blending currently uses the output device RGB space. Transparency-group color
+spaces, isolated or knockout groups, graphics-state soft-mask dictionaries,
+overprinting, and full text-transparency semantics remain unsupported. `/SMask
+/None` is accepted; other graphics-state soft masks return an error. Stroke caps
+and joins still use the existing approximate geometry.

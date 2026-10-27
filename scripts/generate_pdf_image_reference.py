@@ -7,16 +7,22 @@ import zlib
 from test_pdf_images import fixture, image_stream
 from test_pdf_packed_images import encode, pack
 from test_pdf_lzw import literals
+from test_pdf_pages import document
 
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]
 
-def save(name,payload,attrs,expected,content='18 0 0 12 0 0 cm /Im0 Do', extra=None):
-    path=ROOT/'assets/pdf/reference'/name
-    path.write_bytes(fixture(payload,attrs,content=content,extra=extra).replace(b'%PDF-1.4',b'%PDF-1.7'))
-    pixels=bytes(c for y in range(16)for x in range(24)for c in (*expected(x,y),255))
-    rows.append({'asset':str(path.relative_to(ROOT)),'width':24,'height':16,
-                 'rgba_zlib':base64.b64encode(zlib.compress(pixels)).decode(),'tolerance':0})
+def save_document(name, data, expected):
+    path = ROOT / 'assets/pdf/reference' / name
+    path.write_bytes(data.replace(b'%PDF-1.4', b'%PDF-1.7'))
+    pixels = bytes(c for y in range(16) for x in range(24) for c in (*expected(x,y),255))
+    rows.append({'asset':str(path.relative_to(ROOT)), 'width':24, 'height':16,
+                 'rgba_zlib':base64.b64encode(zlib.compress(pixels)).decode(), 'tolerance':0})
+
+
+def save(name, payload, attrs, expected, content='18 0 0 12 0 0 cm /Im0 Do', extra=None):
+    save_document(name, fixture(payload, attrs, content=content, extra=extra), expected)
+
 
 values=[0,1,0,1,0,1]
 save('packed-gray-1bit.pdf',pack(values[:3],1)+pack(values[3:],1),
@@ -67,5 +73,16 @@ save('indexed-soft-mask.pdf', bytes((0, 1, 2, 2, 1, 0)),
      lambda x,y: (128,128,128) if y < 8 else ((0,0,255),(0,255,0),(255,0,0))[x//8],
      extra={8:'[/Indexed /DeviceRGB 2 <ff000000ff000000ff>]',
             9:image_stream(b'\x00\xff', '/Width 1 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray')})
-(ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, and soft masks.','cases':rows},indent=2)+'\n')
+page = '/MediaBox [0 0 18 12] /Resources << /ExtGState << /G 8 0 R >> >>'
+save_document('blend-multiply.pdf', document(page,
+    stream='0.5 g 0 0 18 12 re f /G gs 1 0 0 rg 0 0 18 12 re f',
+    extra={8:'<< /ca .5 /BM /Multiply >>'}), lambda x,y:(128,64,64))
+save_document('blend-screen.pdf', document(page,
+    stream='0 0 1 rg 0 0 18 12 re f /G gs 1 0 0 rg 0 0 18 12 re f',
+    extra={8:'<< /ca .5 /BM /Screen >>'}), lambda x,y:(128,0,255))
+save_document('fill-stroke-opacity.pdf', document(page,
+    stream='/G gs 1 0 0 rg 0 0 1 RG 3 w 0 0 18 12 re B',
+    extra={8:'<< /ca .5 /CA .5 >>'}),
+    lambda x,y:(128,128,255) if x<2 or x>=22 or y<2 or y>=14 else (255,128,128))
+(ROOT/'tests/fixtures/pdf-image-reference.json').write_text(json.dumps({'provenance':'Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.','cases':rows},indent=2)+'\n')
 print('Generated',len(rows),'PDF image reference assets')

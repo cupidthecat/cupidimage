@@ -459,11 +459,7 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
             } else {
                 for (int c = 0; c < 3; c++) rgb[c] = cupidimage_pdf_clamp_u8(values[paint_components == 1 ? 0 : c]);
             }
-            if (alpha < 1) {
-                const unsigned char *background = st->img->rgba + ((size_t)y * st->img->width + x) * 4;
-                for (int c = 0; c < 3; c++) rgb[c] = (uint8_t)floor(alpha * rgb[c] + (1-alpha) * background[c] + 0.5);
-            }
-            cupidimage_pdf_set_pixel(st, x, y, rgb[0], rgb[1], rgb[2]);
+            cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2], alpha*st->gs.fill_alpha);
         }
     }
     ok = 1;
