@@ -49,3 +49,15 @@ Corpus subprocess limits are documented in the [testing guide](testing.md).
 Reference rasterizers are separate programs and should receive the same isolation
 as the library under test. Keep reports and rendered artifacts private when using
 private input documents.
+
+## The PDF review prompt appears, but no picture is visible
+
+Retry with `--backend ansi`. A terminal can ignore an unsupported image protocol
+without reporting an error to the program. Generic `TERM=xterm` and
+`TERM=xterm-256color` alone now fall back to ANSI instead of implying Sixel support;
+`xterm-kitty` remains eligible for Kitty output. Explicit `--sixel` is still
+available when you know your terminal supports it.
+
+If Python cannot find `scripts/review_assets.py`, check the working directory.
+Run it inside the clone containing that script, not an older checkout or its
+parent directory.

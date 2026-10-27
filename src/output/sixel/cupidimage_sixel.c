@@ -559,10 +559,12 @@ int cupidimage_is_sixel_terminal(void) {
         return 1;
     }
 
+    /* Generic xterm names describe keyboard/colour compatibility, not Sixel.
+       In particular xterm-256color and xterm-kitty must not select Sixel. */
     const char *term = getenv("TERM");
     if (term) {
         if (strstr(term, "mlterm") || strstr(term, "yaft") ||
-            strstr(term, "foot") || strstr(term, "xterm") ||
+            strstr(term, "foot") || strstr(term, "xterm-sixel") ||
             strstr(term, "contour")) {
             return 1;
         }
