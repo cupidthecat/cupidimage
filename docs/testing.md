@@ -579,3 +579,8 @@ never adds those profiles to the repository.
 Run `python3 scripts/test_pdf_intents.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference`
 for the optional independent comparisons. The version 4 perceptual reference-medium
 mapping is distinct from the unfinished general black-point compensation path.
+
+`make test-pdf-icc-mab` checks version 4 forward curve/matrix/CLUT pipelines and
+PDF integration. Its optional `--reference` pass compares raw stage outputs and
+uncompensated rendered profile samples. Matrix overflow uses the specification's
+clipping rule, with the raw-engine difference documented in the color guide.

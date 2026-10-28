@@ -723,6 +723,18 @@
       "sha256": "3a8e483d4fabf693dfb6f69d6a3c258a0d30920827153a62b5291d37c31d7c0f"
     },
     {
+      "path": "assets/pdf/reference/icc-mab-b-curves.pdf",
+      "sha256": "df9d685ac4a0078f9a69fcf45ec89ec8b2964e08bdcef0d2b02beaeb371d7062"
+    },
+    {
+      "path": "assets/pdf/reference/icc-mab-cmyk-grid.pdf",
+      "sha256": "519f570b293b9105db6c4aa3543f49ff3043cc137bb6fd5ccf9565629b9472dc"
+    },
+    {
+      "path": "assets/pdf/reference/icc-mab-matrix.pdf",
+      "sha256": "8c68131e3f7cacc46ba3c074536480a2ca0ac2cebade9d821856c7b8f174eb81"
+    },
+    {
       "path": "assets/pdf/reference/indexed-lab-patch.pdf",
       "sha256": "43b444b666fb23d49dd9b1e3aca8914944f8fa6905509b85cf250db8557960ce"
     },

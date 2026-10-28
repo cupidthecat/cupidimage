@@ -92,7 +92,8 @@ instead of using their alternate device space. The current profile models are:
 - One-component gray input/display/output profiles with a gray tone curve.
   Their profile connection space may be XYZ or Lab.
 - Gray, RGB and CMYK forward lookup profiles using 8-bit Lab or 16-bit XYZ/Lab
-  tables. Other table and multiprocess models remain unsupported.
+  tables, and version 4 A-to-B curve/matrix/CLUT stages. Reverse tables and
+  multiprocess models remain unsupported.
 
 The parser reads big-endian tag directories and signed fixed-point values.
 Identity curves, u8Fixed8 gamma curves, sampled 16-bit curves with linear
@@ -344,7 +345,7 @@ profile produces gray 119 without compensation; the comparison renderer maps its
 nonzero source black point to black. A separate uncompensated color-engine check
 confirmed the native result. The compensated result is not used as an oracle for
 the current uncompensated relative-colorimetric path. Black-point compensation,
-output profiles, mAB/mBA, multiprocess tags and ICC blending spaces still require
+output profiles, reverse tables, multiprocess tags and ICC blending spaces still require
 work. The intent support below does not resolve those differences.
 
 
@@ -394,3 +395,39 @@ arbitrary source/destination profiles.
 [Issue #51](https://github.com/cupidthecat/cupidimage/issues/51) tracks the remaining
 color-management and ink-rendering requirements. The feature matrix keeps their
 status separate from these focused implementation checkpoints.
+
+
+## Version 4 A-to-B stages
+
+The `mAB ` transform model follows ICC.1:2022 section 10.12. Supported combinations
+are B curves alone; M curves, matrix and B curves; A curves, CLUT and B curves; or
+all five stages. They execute in A → CLUT → M → matrix → B order. Input channels
+may be gray, RGB or CMYK; the PCS has three output components. Different input
+and output channel counts require a CLUT.
+
+Curves use the shared sampled/gamma/parametric evaluator. The CLUT supports separate
+grid sizes for each dimension and 8-bit or 16-bit samples. Its channel order and
+interpolation match the older table path. Matrix offsets are applied after the
+three-by-three product; results are clipped before the B curves. Shared curve
+elements and reordered stage storage are supported. Reserved fields, stage
+combinations, alignment, padding and payload extents are checked. Matrix and CLUT
+storage cannot overlap another stage. Data remain borrowed from the immutable
+profile cache, with no per-pixel allocation.
+
+These profiles use the full-range version 4 PCS Lab encoding, not the older
+lut16 Lab scale. PCSXYZ values above 1 remain available to the output conversion.
+Version 2 profiles containing mAB tags are rejected. The existing per-intent source
+selection applies to the new stages; reverse mBA tables and multiprocess elements
+remain unfinished.
+
+`make test-pdf-icc-mab` checks stage order, each permitted combination, curve
+sharing, nonuniform grids, malformed offsets, clipping and PDF source integration.
+The optional `--reference` pass checks raw pipelines and rendered samples against
+an independent color engine. Matrix-overflow cases use the specification's explicit
+clipping rule as their oracle: the independent raw-pipeline API can return values
+above 1 for those cases, so they are not counted as independent matches. Three
+analytic assets cover B-only curves, a CMYK CLUT and matrix offsets.
+
+    python3 scripts/test_pdf_icc_mab.py bin/test_pdf_icc_mab bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+Regenerate these assets with `scripts/generate_pdf_icc_mab_fixtures.py`.

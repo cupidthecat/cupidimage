@@ -1,5 +1,7 @@
 #include "pdf_functions.h"
+#include "pdf_icc_curve.h"
 #include "pdf_icc_lut.h"
+#include "pdf_icc_mab.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,15 +10,9 @@
 #define ICC_STORE_LIMIT (32u * 1024u * 1024u)
 
 typedef struct {
-    const unsigned char *samples;
-    unsigned count, function;
-    int parametric;
-    double parameters[7];
-} pdf_icc_curve;
-
-typedef struct {
     pdf_icc_curve curves[3];
     pdf_icc_lut lut;
+    pdf_icc_mab mab;
     pdf_image_colors output;
     int valid, reference_black;
 } pdf_icc_transform;
@@ -29,10 +25,6 @@ struct pdf_icc_profile {
     int components, lab_pcs;
     pdf_icc_transform transforms[4];
 };
-
-static unsigned icc_u16(const unsigned char *p) {
-    return (unsigned)p[0] * 256 + p[1];
-}
 
 static uint32_t icc_u32(const unsigned char *p) {
     return (uint32_t)p[0] * 16777216u + (uint32_t)p[1] * 65536u + (unsigned)p[2] * 256u + p[3];
@@ -58,67 +50,6 @@ static int icc_tag(const pdf_icc_profile *profile, const char name[4], const uns
         }
     }
     return found;
-}
-
-static int icc_curve_value(const pdf_icc_curve *curve, double input, double *output) {
-    double x = fmax(0, fmin(1, input)), value;
-    if (curve->parametric) {
-        const double *p = curve->parameters;
-        if (!curve->function)
-            value = pow(x, p[0]);
-        else if (curve->function <= 2)
-            value = (x >= -p[2] / p[1] ? pow(p[1] * x + p[2], p[0]) : 0) +
-                    (curve->function == 2 ? p[3] : 0);
-        else if (x >= p[4])
-            value = pow(p[1] * x + p[2], p[0]) + (curve->function == 4 ? p[5] : 0);
-        else
-            value = p[3] * x + (curve->function == 4 ? p[6] : 0);
-    } else if (!curve->count)
-        value = x;
-    else if (curve->count == 1)
-        value = pow(x, curve->parameters[0]);
-    else {
-        double at = x * (curve->count - 1);
-        unsigned index = (unsigned)floor(at);
-        value = icc_u16(curve->samples + index * 2) / 65535.0;
-        if (index + 1 < curve->count)
-            value += (at - index) * (icc_u16(curve->samples + (index + 1) * 2) / 65535.0 - value);
-    }
-    if (!isfinite(value))
-        return 0;
-    *output = fmax(0, fmin(1, value));
-    return 1;
-}
-
-static int icc_curve(const unsigned char *data, size_t length, pdf_icc_curve *curve) {
-    if (length < 12 || icc_u32(data + 4))
-        return 0;
-    if (!memcmp(data, "curv", 4)) {
-        curve->count = icc_u32(data + 8);
-        if (curve->count > 65536 || curve->count > (length - 12) / 2)
-            return 0;
-        curve->samples = data + 12;
-        if (curve->count == 1) {
-            curve->parameters[0] = icc_u16(data + 12) / 256.0;
-            if (curve->parameters[0] <= 0)
-                return 0;
-        }
-        return 1;
-    }
-    if (memcmp(data, "para", 4) || icc_u16(data + 10))
-        return 0;
-    static const unsigned parameters[] = {1, 3, 4, 5, 7};
-    curve->parametric = 1;
-    curve->function = icc_u16(data + 8);
-    if (curve->function > 4 || length < 12 + parameters[curve->function] * 4)
-        return 0;
-    for (unsigned i = 0; i < parameters[curve->function]; i++)
-        curve->parameters[i] = icc_fixed(data + 12 + i * 4);
-    if (curve->parameters[0] <= 0 || (curve->function && curve->parameters[1] <= 0))
-        return 0;
-    double ignored;
-    return icc_curve_value(curve, 0, &ignored) && icc_curve_value(curve, 1, &ignored) &&
-           (curve->function < 3 || icc_curve_value(curve, curve->parameters[4], &ignored));
 }
 
 static int icc_model(pdf_icc_profile *, pdf_icc_transform *, const char[4]);
@@ -205,8 +136,12 @@ static int icc_model(pdf_icc_profile *profile, pdf_icc_transform *transform,
     if (selected < 0)
         return 0;
     if (selected) {
-        if (!cupidimage_pdf_icc_lut_parse(&transform->lut, table, table_length,
-                                          (unsigned)profile->components, profile->lab_pcs))
+        if (!memcmp(table, "mAB ", 4)) {
+            if (p[8] != 4 || !cupidimage_pdf_icc_mab_parse(&transform->mab, table, table_length,
+                                                           (unsigned)profile->components))
+                return 0;
+        } else if (!cupidimage_pdf_icc_lut_parse(&transform->lut, table, table_length,
+                                                 (unsigned)profile->components, profile->lab_pcs))
             return 0;
         out->components = 3;
         out->calibrated = profile->lab_pcs ? 3 : 2;
@@ -233,7 +168,7 @@ static int icc_model(pdf_icc_profile *profile, pdf_icc_transform *transform,
         const unsigned char *tag = NULL;
         size_t length = 0;
         if (icc_tag(profile, gray ? "kTRC" : curves[i], &tag, &length) != 1 ||
-            !icc_curve(tag, length, transform->curves + i))
+            !cupidimage_pdf_icc_curve_parse(tag, length, transform->curves + i, NULL))
             return 0;
         if (rgb) {
             if (icc_tag(profile, columns[i], &tag, &length) != 1 || length != 20 ||
@@ -308,9 +243,11 @@ int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values
         return 0;
     const pdf_icc_transform *transform = &profile->transforms[intent];
     double xyz[3];
-    if (transform->lut.inputs) {
+    if (transform->lut.inputs || transform->mab.inputs) {
         double pcs[4] = {0};
-        if (!cupidimage_pdf_icc_lut_value(&transform->lut, values, pcs))
+        int ok = transform->mab.inputs ? cupidimage_pdf_icc_mab_value(&transform->mab, values, pcs)
+                                       : cupidimage_pdf_icc_lut_value(&transform->lut, values, pcs);
+        if (!ok)
             return 0;
         if (profile->lab_pcs) {
             double factor = transform->lut.bytes == 2 ? 65535.0 / 65280.0 : 1;
@@ -325,7 +262,7 @@ int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values
     } else {
         double linear[4] = {0};
         for (int i = 0; i < profile->components; i++)
-            if (!icc_curve_value(transform->curves + i, values[i], linear + i))
+            if (!cupidimage_pdf_icc_curve_value(transform->curves + i, values[i], linear + i))
                 return 0;
         if (profile->lab_pcs)
             linear[0] *= 100;

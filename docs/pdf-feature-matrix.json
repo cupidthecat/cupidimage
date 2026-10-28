@@ -2103,10 +2103,13 @@
             "src/formats/pdf/pdf_icc_lut.c",
             "scripts/test_pdf_icc_lut.py",
             "scripts/compare_pdf_icc_profiles.py",
-            "scripts/test_pdf_intents.py"
+            "scripts/test_pdf_intents.py",
+            "src/formats/pdf/pdf_icc_curve.c",
+            "src/formats/pdf/pdf_icc_mab.c",
+            "scripts/test_pdf_icc_mab.py"
           ],
           "limitations": [
-            "Supported matrix/TRC and 8/16-bit forward table profiles cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. mAB/mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and ICC blending remain incomplete."
+            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Reverse mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and ICC blending remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -2117,7 +2120,8 @@
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.5.5",
             "ICC.1:2022 10.6, 10.18 and Annex F",
-            "ICC.1:2022 8.10, 10.10 and 10.11"
+            "ICC.1:2022 8.10, 10.10 and 10.11",
+            "ICC.1:2022 10.12"
           ]
         },
         {

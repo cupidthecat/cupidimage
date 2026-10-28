@@ -139,3 +139,8 @@ cleanup has one owner and no per-pixel allocation.
 `pdf_icc.c` keeps separate immutable per-intent transforms in each cached profile.
 The calibrated source-to-XYZ step is shared with ICC conversion before the final
 output transform, preserving PCS range and reference-medium adjustments.
+
+ICC tone curves live in `pdf_icc_curve.c`; `pdf_icc_mab.c` composes those curves,
+shared CLUT evaluation and matrix offsets for version 4 forward transforms.
+The old table and newer stage models share bounded parsing and immutable profile
+storage without duplicating the curve equations or interpolation code.

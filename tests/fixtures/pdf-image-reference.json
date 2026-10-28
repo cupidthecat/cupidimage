@@ -532,6 +532,27 @@
       "height": 16,
       "rgba_zlib": "eJzbsWPH/x0k4PLycpIwKWaPmj9q/qj5o+aPmk8/8wFjOCh9",
       "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-mab-b-curves.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-mab-cmyk-grid.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-mab-matrix.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbuXPn/52jeBSP4lE8ikccBgCdsb89",
+      "tolerance": 1
     }
   ]
 }

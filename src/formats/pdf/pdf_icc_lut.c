@@ -57,7 +57,8 @@ int cupidimage_pdf_icc_lut_parse(pdf_icc_lut *lut, const unsigned char *data, si
      * tables end here; trailing bytes are neither samples nor extra stages. */
     lut->inputs = inputs;
     lut->bytes = bytes;
-    lut->grid = data[10];
+    for (unsigned i = 0; i < inputs; i++)
+        lut->grids[i] = data[10];
     lut->input_entries = in;
     lut->output_entries = out;
     lut->input = data + header;
@@ -109,11 +110,15 @@ int cupidimage_pdf_icc_lut_value(const pdf_icc_lut *lut, const double *values, d
     for (unsigned i = 0; i < lut->inputs; i++) {
         if (!isfinite(values[i]))
             return 0;
-        const unsigned char *table = lut->input + (size_t)i * lut->input_entries * lut->bytes;
-        double at = lut_table(table, lut->input_entries, lut->bytes, values[i]) * (lut->grid - 1);
+        double value = fmax(0, fmin(1, values[i]));
+        if (lut->input) {
+            const unsigned char *table = lut->input + (size_t)i * lut->input_entries * lut->bytes;
+            value = lut_table(table, lut->input_entries, lut->bytes, value);
+        }
+        double at = value * (lut->grids[i] - 1);
         unsigned low = (unsigned)floor(at);
         base += low * lut->strides[i];
-        steps[i] = low + 1 < lut->grid ? lut->strides[i] : 0;
+        steps[i] = low + 1 < lut->grids[i] ? lut->strides[i] : 0;
         fraction[i] = at - low;
     }
     if (lut->inputs == 1) {
@@ -131,8 +136,32 @@ int cupidimage_pdf_icc_lut_value(const pdf_icc_lut *lut, const double *values, d
         for (unsigned i = 0; i < 3; i++)
             out[i] += (other[i] - out[i]) * fraction[0];
     }
-    for (unsigned i = 0; i < 3; i++)
+    for (unsigned i = 0; lut->output && i < 3; i++)
         out[i] = lut_table(lut->output + (size_t)i * lut->output_entries * lut->bytes,
                            lut->output_entries, lut->bytes, out[i]);
+    return 1;
+}
+
+int cupidimage_pdf_icc_clut_parse(pdf_icc_lut *lut, const unsigned char *data, size_t length,
+                                  unsigned inputs) {
+    memset(lut, 0, sizeof(*lut));
+    if (length < 20 || (inputs != 1 && inputs != 3 && inputs != 4) ||
+        (data[16] != 1 && data[16] != 2) || data[17] || data[18] || data[19])
+        return 0;
+    for (unsigned i = inputs; i < 16; i++)
+        if (data[i])
+            return 0;
+    size_t available = (length - 20) / (3 * data[16]), count = 1;
+    for (unsigned i = inputs; i > 0; i--) {
+        unsigned grid = data[i - 1];
+        if (grid < 2 || count > available / grid)
+            return 0;
+        lut->strides[i - 1] = count;
+        lut->grids[i - 1] = grid;
+        count *= grid;
+    }
+    lut->inputs = inputs;
+    lut->bytes = data[16];
+    lut->clut = data + 20;
     return 1;
 }
