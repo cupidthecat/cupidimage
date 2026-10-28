@@ -24,6 +24,7 @@
 #include "../src/formats/pdf/fonts/type1_charstring.c"
 #include "../src/formats/pdf/fonts/type2.c"
 #include "../src/formats/pdf/pdf_calculator.c"
+#include "../src/formats/pdf/pdf_calibrated.c"
 #include "../src/formats/pdf/pdf_content_syntax.c"
 #include "../src/formats/pdf/pdf_document.c"
 #include "../src/formats/pdf/pdf_filters.c"

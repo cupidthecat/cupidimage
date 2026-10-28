@@ -347,12 +347,10 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             double alpha = pdf_image_mask_alpha(&mask, u, v);
             if (alpha <= 0 && (!mask.soft || st->gs.alpha_is_shape))
                 continue;
-            int paint_components = components;
             if (colors.indexed) {
                 unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, values[0])) + 0.5);
-                paint_components = colors.components;
-                for (int c = 0; c < paint_components; c++)
-                    values[c] = colors.palette[index * paint_components + c] / 255.0;
+                for (int c = 0; c < colors.components; c++)
+                    values[c] = colors.palette[index * colors.components + c] / 255.0;
             }
             if (mask.has_matte && alpha > 0) {
                 for (int c = 0; c < components; c++)
@@ -361,9 +359,9 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             if (stencil)
                 cupidimage_pdf_paint_pixel(st, x, y, 0, alpha);
             else
-                cupidimage_pdf_composite_device(
-                    st, x, y, values, paint_components, alpha * st->gs.fill_alpha,
-                    st->gs.alpha_is_shape ? alpha * st->gs.fill_alpha : 1);
+                cupidimage_pdf_composite_space(st, x, y, values, &colors, alpha * st->gs.fill_alpha,
+                                               st->gs.alpha_is_shape ? alpha * st->gs.fill_alpha
+                                                                     : 1);
         }
     }
     ok = 1;

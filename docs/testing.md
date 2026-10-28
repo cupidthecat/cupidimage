@@ -492,3 +492,8 @@ single CR, LF or CRLF after the zlib checksum is accepted; garbage, repeated
 endings, another zlib stream, bad checksums and truncation are rejected. The
 same padded inputs still fail the strict shared inflater. Allocation-failure
 runs compare successful recovery with the unpadded rendering.
+
+`make test-pdf-calibrated` covers calibrated source colors across text, paths,
+images, patterns and shading meshes, including compressed object references
+and allocation-failure cleanup. See [PDF colors](pdf-colors.md) for the output
+profile assumptions and independent-comparison scope.

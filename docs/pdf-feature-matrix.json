@@ -2045,20 +2045,25 @@
         {
           "id": "11.2",
           "requirement": "CalGray, CalRGB, and Lab.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "src/formats/pdf/pdf_calibrated.c",
+            "scripts/test_pdf_calibrated.py",
+            "docs/pdf-colors.md"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "CalGray/CalRGB source colors target fixed sRGB with zero BlackPoint. Lab, ICC profiles, nonzero black-point mapping and calibrated group blending remain unfinished."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Selected calibrated source equations and pipeline interactions tested; complete color-management audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.2 and 8.6.5.3",
+            "ICC.1:2022 Annex E.3"
+          ]
         },
         {
           "id": "11.3",

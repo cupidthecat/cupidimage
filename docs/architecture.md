@@ -66,6 +66,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;
   text parameters are part of the saved graphics state. `pdf_text_groups.c` owns
   implicit text/glyph surfaces, neutral final compositing and Type 3 stencil paint.
+  `pdf_calibrated.c` validates CalGray/CalRGB parameters and converts calibrated
+  source samples through CIE XYZ to the fixed sRGB output.
   `pdf_content_syntax.c` decodes names and text strings and scans bounded aggregate
   operands without executing their contents. The operator executor validates TJ
   element types and text-object context.

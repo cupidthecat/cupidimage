@@ -1,3 +1,4 @@
+#include "pdf_content_syntax.h"
 #include "pdf_render_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -174,6 +175,24 @@ static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t 
     pdf_image_colors colors = {0};
     if (!cupidimage_pdf_color_space(st, name, 0, &colors))
         return 0;
+    if (colors.calibrated) {
+        pdf_object_view resource = {0};
+        if (!cupidimage_pdf_find_resource(st, "ColorSpace", name, &resource, NULL))
+            return 0;
+        pdf_object_view exact = {0};
+        int ok =
+            cupidimage_pdf_resolve_value(st->document, st->document_size, &resource, 0, &exact, 0);
+        char *array = NULL;
+        size_t at = 0, length = 0;
+        cupidimage_pdf_skip_ws_and_comments(exact.data, exact.len, &at);
+        ok = ok && cupidimage_pdf_content_array(exact.data, exact.len, &at, &array, &length);
+        p->used = start;
+        ok = ok && inline_text(p, "[") && inline_append(p, array, length) && inline_text(p, "] ");
+        free(array);
+        cupidimage_pdf_object_view_release(&exact);
+        cupidimage_pdf_object_view_release(&resource);
+        return ok;
+    }
     const char *base = colors.components == 1   ? "/DeviceGray "
                        : colors.components == 3 ? "/DeviceRGB "
                        : colors.components == 4 ? "/DeviceCMYK "
@@ -315,7 +334,7 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
     size_t dict_end = p.used;
     if (!inline_text(&p, ">>"))
         goto done;
-    pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL, NULL};
+    pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL, st->xref};
     size_t decoded_size;
     if (!inline_raw_size(st, &view, &decoded_size))
         goto done;

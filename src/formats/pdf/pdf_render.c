@@ -212,8 +212,19 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
     if (space->pattern && (!pattern->uncolored || pattern->deferred))
         cupidimage_pdf_composite_color(st, x, y, rgb, alpha, shape);
     else
-        cupidimage_pdf_composite_device(st, x, y, stroke ? st->gs.stroke_color : st->gs.fill_color,
-                                        space->components, alpha, shape);
+        cupidimage_pdf_composite_space(st, x, y, stroke ? st->gs.stroke_color : st->gs.fill_color,
+                                       space, alpha, shape);
+}
+
+void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const double values[4],
+                                    const pdf_image_colors *space, double alpha, double shape) {
+    if (!space->calibrated) {
+        cupidimage_pdf_composite_device(st, x, y, values, space->components, alpha, shape);
+        return;
+    }
+    double converted[3];
+    cupidimage_pdf_calibrated_color(space, values, st->group && st->group->gray, converted);
+    cupidimage_pdf_composite_color(st, x, y, converted, alpha, shape);
 }
 
 void cupidimage_pdf_composite_device(pdf_render_state *st, int x, int y, const double values[4],
@@ -768,6 +779,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         pdf_image_colors colors = stroke ? st->gs.stroke_space : st->gs.fill_space;
         int direct = op[0] != 's' && op[0] != 'S';
         if (direct) {
+            colors.calibrated = 0;
             colors.indexed = 0;
             colors.pattern = 0;
             colors.components = op[0] == 'g' || op[0] == 'G'   ? 1

@@ -151,9 +151,9 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
             if (has_box && (ux < box[0] || ux >= box[2] || uy < box[1] || uy >= box[3]))
                 continue;
             if (background)
-                cupidimage_pdf_composite_device(st, (int)x, (int)y, background_values,
-                                                colors.components, st->gs.fill_alpha,
-                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
+                cupidimage_pdf_composite_space(st, (int)x, (int)y, background_values, &colors,
+                                               st->gs.fill_alpha,
+                                               st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
             if (empty)
                 continue;
             double input[2] = {0}, values[4];
@@ -185,9 +185,8 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
             if (!cupidimage_pdf_evaluate_function(function, input, values,
                                                   &st->form_budget->shade_evaluations_left))
                 return 0;
-            cupidimage_pdf_composite_device(st, (int)x, (int)y, values, colors.components,
-                                            st->gs.fill_alpha,
-                                            st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
+            cupidimage_pdf_composite_space(st, (int)x, (int)y, values, &colors, st->gs.fill_alpha,
+                                           st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
         }
     return 1;
 }

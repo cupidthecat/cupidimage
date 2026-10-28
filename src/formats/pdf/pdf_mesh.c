@@ -298,13 +298,13 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         for (unsigned x = 0; x < st->img->width; x++) {
             const pdf_mesh_sample *p = mesh.pixels + (size_t)y * st->img->width + x;
             if (paint_background && cupidimage_pdf_mesh_inside_box(&mesh, x, y))
-                cupidimage_pdf_composite_device(st, (int)x, (int)y, background_sample.values,
-                                                mesh.colors.components, st->gs.fill_alpha,
-                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
+                cupidimage_pdf_composite_space(st, (int)x, (int)y, background_sample.values,
+                                               &mesh.colors, st->gs.fill_alpha,
+                                               st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
             if (p->painted)
-                cupidimage_pdf_composite_device(st, (int)x, (int)y, p->values,
-                                                mesh.colors.components, st->gs.fill_alpha,
-                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
+                cupidimage_pdf_composite_space(st, (int)x, (int)y, p->values, &mesh.colors,
+                                               st->gs.fill_alpha,
+                                               st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
         }
     ok = !st->image_failed;
 done:

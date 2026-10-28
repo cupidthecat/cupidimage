@@ -364,7 +364,8 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     reserved = bytes + sizeof(pdf_pattern);
     st->patterns->bytes_used += reserved;
     pattern->uncolored = paint == 2;
-    pattern->base_components = space->components;
+    pattern->base_space = *space;
+    pattern->base_space.pattern = pattern->base_space.indexed = 0;
     memcpy(pattern->base, stroke ? st->gs.stroke_color : st->gs.fill_color, sizeof(pattern->base));
     memcpy(pattern->matrix, m, sizeof(pattern->matrix));
     memcpy(pattern->bounds, bbox, sizeof(pattern->bounds));

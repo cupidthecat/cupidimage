@@ -232,8 +232,7 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
             if (pattern->uncolored) {
                 memcpy(child->gs.fill_color, pattern->base, sizeof(pattern->base));
                 memcpy(child->gs.stroke_color, pattern->base, sizeof(pattern->base));
-                memset(&child->gs.fill_space, 0, sizeof(child->gs.fill_space));
-                child->gs.fill_space.components = pattern->base_components;
+                child->gs.fill_space = pattern->base_space;
                 child->gs.stroke_space = child->gs.fill_space;
                 child->gs.fill_pattern = child->gs.stroke_pattern = NULL;
             }
