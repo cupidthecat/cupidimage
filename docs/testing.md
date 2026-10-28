@@ -584,3 +584,8 @@ mapping is distinct from the unfinished general black-point compensation path.
 PDF integration. Its optional `--reference` pass compares raw stage outputs and
 uncompensated rendered profile samples. Matrix overflow uses the specification's
 clipping rule, with the raw-engine difference documented in the color guide.
+
+`make test-pdf-font-descriptors` checks descriptor-selected Latin substitutes,
+subset-prefixed aliases, metadata types and references, PDF layout and allocation
+recovery. It compares the chosen programs with explicitly embedded copies; it does
+not establish fidelity to unavailable original font designs.

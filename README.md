@@ -13,7 +13,7 @@ for the exact boundaries. HEIC/HEIF is deferred.
 PDF previews include packed, indexed, fax- and JPEG-compressed images, inline
 images, image masks, filter chains, opacity and RGB blending. Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
-metrics, standard and selected Latin font substitutes, and unhinted embedded
+metrics, standard and Latin vector font substitutes, and unhinted embedded
 TrueType, CFF and Type 1 outlines. Tiling/shading patterns, styled dashed strokes, RGB/gray transparency
 groups and graphics-state soft masks are also supported. Full font fidelity,
 additional transparency spaces, color management and annotations still need work.

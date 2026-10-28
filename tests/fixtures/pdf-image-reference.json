@@ -553,6 +553,13 @@
       "height": 16,
       "rgba_zlib": "eJzbuXPn/52jeBSP4lE8ikccBgCdsb89",
       "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/descriptor-font-widths.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
     }
   ]
 }

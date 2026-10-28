@@ -490,6 +490,10 @@
       "sha256": "8fc562b2faafa02441894cdb82ca6cc1ca24f0fe8973dfc03e190d9a8ab21248"
     },
     {
+      "path": "assets/pdf/descriptor-latin-families.pdf",
+      "sha256": "d6a0add356d3f81961f277ac11586fc202e2e5cbcbba3fd1d93b9af9525c6bf7"
+    },
+    {
       "path": "assets/pdf/edge_case.pdf",
       "sha256": "65d9b29da57f5f41db142f61ef6ec6c47e2a3171458939bfc0cb6fdd33da17ba"
     },
@@ -589,6 +593,10 @@
     {
       "path": "assets/pdf/reference/coons-quadratic.pdf",
       "sha256": "581d85e5907ff296fc0f2d6a843974adf1ca1b369edfae70650d9b7d052d9bf5"
+    },
+    {
+      "path": "assets/pdf/reference/descriptor-font-widths.pdf",
+      "sha256": "a4f60bd39001c79cee3ae811ef07cfb7f066ab6e3dc07c8c3ab81e18ac86f009"
     },
     {
       "path": "assets/pdf/reference/devicen-32-indexed.pdf",

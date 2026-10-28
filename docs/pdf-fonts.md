@@ -297,7 +297,7 @@ text fidelity in the current PDF work. The main gaps are:
 - CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- The eight remaining standard-font face/glyph gaps and general substitution for other nonembedded fonts.
+- The eight remaining standard-font face/glyph gaps, symbolic/script/CJK substitutes and broader missing-font matching.
 
 The applicability of newer font formats and tables must be checked against the
 PDF version; this list is not a claim that every PDF version requires them.
@@ -612,9 +612,10 @@ without relying on installed fonts or a font configuration service.
 The resolver matches complete, case-sensitive names. Supported forms include
 ArialMT, Arial-BoldMT, TimesNewRomanPSMT, TimesNewRomanPS-ItalicMT and
 CourierNewPS-BoldItalicMT, along with the corresponding family/style forms using
-a hyphen or comma. Narrow variants, arbitrary family names and subset-prefixed
-names are not inferred from these aliases. CID fonts are not handled by this
-resolver. These limits leave general substitution and CJK fallback unfinished.
+a hyphen or comma. A valid six-uppercase-letter subset tag followed by `+` is
+removed before matching those aliases, as described in ISO 32000-1 section 9.6.4.
+Narrow variants are not inferred from the name. Unknown names can use the
+descriptor policy below. CID fonts are not handled by this resolver.
 
 Type 1 substitutes start with StandardEncoding and apply the font's Encoding and
 Differences. Simple TrueType substitutes use the existing PDF TrueType encoding
@@ -632,8 +633,9 @@ program, the substitute resolver fails rather than hiding it with another font.
 ISO 32000-1 section 9.8.1 permits selection of a similar font when a program is
 unavailable. This deterministic choice does not promise identical glyphs to the
 original proprietary font or to a different platform's substitution policy.
-Rendering remains unhinted. Unknown families still have the documented bitmap
-fallback and must not be counted as faithful font rendering.
+Rendering remains unhinted. Fonts outside the supported alias and descriptor
+policies still have the documented bitmap fallback and must not be counted as
+faithful font rendering.
 
 `make test-pdf-substitution` compares selected names and styles with the same
 programs explicitly embedded in PDFs. It tests both simple-font types, encodings,
@@ -658,3 +660,47 @@ non-ASCII bytes, prefix collisions, Forms, ExtGState selection, saved state, all
 text modes and allocation recovery. Two owned assets have analytic glyph-pixel
 references. The optional `--reference` pass checks the applicable cases against
 an independent rasterizer.
+
+
+## Descriptor-selected Latin substitutes
+
+When no embedded program or recognized alias is available, a nonsymbolic simple
+font can select a pinned vector substitute from its FontDescriptor. This uses the
+attributes described in ISO 32000-1 sections 9.8.1 and 9.8.2; it is a deterministic
+similar-font policy, not recovery of the missing original design.
+
+The resolver recognizes the Arial/Helvetica, Times New Roman/Times and Courier
+New/Courier family labels, plus the spaced and PostScript Liberation family names.
+A recognized FontFamily takes priority. Otherwise, FixedPitch selects mono,
+Serif selects serif, and the remaining eligible fonts select sans serif.
+FontFamily accepts literal or hexadecimal byte strings and indirect values.
+Unknown family strings leave the flag-based choice in place; embedded NUL bytes
+do not turn a longer string into a recognized prefix.
+
+FontWeight values from 100 through 900 select the nearest available regular or
+bold weight: 600 and above use bold. ItalicAngle or the Italic flag selects the
+italic face. Absent or null weights use 400. For damaged descriptors with a
+missing or null ItalicAngle, the reader currently uses zero; valid font descriptors
+are required to provide that angle.
+ForceBold does not select a bold face; it is a separate rasterization instruction
+whose full behavior depends on the unfinished hinting path.
+
+This descriptor fallback requires Nonsymbolic and excludes Symbolic, Script,
+AllCap and SmallCap designs. Missing or unsuitable descriptors leave the existing
+fallback in place. It does not synthesize stretch variants, script forms, small
+caps or CJK glyphs. Known aliases and embedded programs retain priority. A supplied
+but unsupported embedded program is not hidden by the selected substitute.
+
+The selected program uses the same glyph-name, encoding and outline paths as an
+embedded program. PDF Widths, MissingWidth, text spacing, transforms and text
+rendering modes still control layout and painting. Descriptor selection does not
+introduce shaping, ligatures, kerning or automatic line layout, and its metrics
+must not be described as identical to every unavailable original font.
+
+`make test-pdf-font-descriptors` compares each selected face with the same font
+explicitly embedded, including indirect metadata, malformed values, subset tags,
+all rendering modes and allocation-failure recovery. These are substitution-policy
+equivalence checks, not independent proof that the missing original font looks the
+same. The visible 12-face asset remains decoded-unverified; a separate invisible-text
+advance marker has an analytic pixel reference. Regenerate both with
+`scripts/generate_pdf_descriptor_fixtures.py`.
