@@ -336,47 +336,54 @@ static void pdf_path_line_user(pdf_render_state *st, float x, float y) {
     pdf_path_line_to(&st->path, px, py);
 }
 
-static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0, float x1,
-                                          float y1) {
-    float vx = x1 - x0;
-    float vy = y1 - y0;
-    float wx = px - x0;
-    float wy = py - y0;
-    float c1 = vx * wx + vy * wy;
+static double pdf_point_to_segment_dist_sq(double px, double py, double x0, double y0, double x1,
+                                           double y1) {
+    double vx = x1 - x0;
+    double vy = y1 - y0;
+    double wx = px - x0;
+    double wy = py - y0;
+    double c1 = vx * wx + vy * wy;
     if (c1 <= 0.0f) {
-        float dx = px - x0;
-        float dy = py - y0;
+        double dx = px - x0;
+        double dy = py - y0;
         return dx * dx + dy * dy;
     }
-    float c2 = vx * vx + vy * vy;
-    if (c2 <= 1e-8f) {
-        float dx = px - x0;
-        float dy = py - y0;
+    double c2 = vx * vx + vy * vy;
+    if (c2 == 0) {
+        double dx = px - x0;
+        double dy = py - y0;
         return dx * dx + dy * dy;
     }
     if (c1 >= c2) {
-        float dx = px - x1;
-        float dy = py - y1;
+        double dx = px - x1;
+        double dy = py - y1;
         return dx * dx + dy * dy;
     }
-    float t = c1 / c2;
-    float qx = x0 + t * vx;
-    float qy = y0 + t * vy;
-    float dx = px - qx;
-    float dy = py - qy;
+    double t = c1 / c2;
+    double qx = x0 + t * vx;
+    double qy = y0 + t * vy;
+    double dx = px - qx;
+    double dy = py - qy;
     return dx * dx + dy * dy;
 }
 
 static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1, float y1,
                               float x2, float y2, float x3, float y3, unsigned depth) {
+    if (st->path.overflow)
+        return;
     if (st->path.seg_count >= 4096) {
         st->path.overflow = 1;
         return;
     }
-    /* Subdivide until both control points are within a quarter pixel of the chord. */
-    if (depth >= 12 || (pdf_point_to_segment_dist_sq(x1, y1, x0, y0, x3, y3) <= 0.0625f &&
-                        pdf_point_to_segment_dist_sq(x2, y2, x0, y0, x3, y3) <= 0.0625f)) {
+    double tolerance = cupidimage_pdf_flatness(&st->gs, .25);
+    double squared = tolerance * tolerance;
+    if (pdf_point_to_segment_dist_sq(x1, y1, x0, y0, x3, y3) <= squared &&
+        pdf_point_to_segment_dist_sq(x2, y2, x0, y0, x3, y3) <= squared) {
         pdf_path_line_to(&st->path, x3, y3);
+        return;
+    }
+    if (depth == 16) {
+        st->path.overflow = 1;
         return;
     }
     float ax = x0 * 0.5f + x1 * 0.5f, ay = y0 * 0.5f + y1 * 0.5f;
@@ -425,6 +432,12 @@ static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
 }
 
 static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char *mask) {
+    if (st->path.overflow) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity,
+                           "pdf: path precision or segment limit exceeded");
+        return 0;
+    }
     if (st->path.seg_count <= 0)
         return 1;
 
@@ -925,6 +938,11 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             st->gs.stroke_space = colors;
         else
             st->gs.fill_space = colors;
+    } else if (!strcmp(op, "i")) {
+        if (n != 1 || !pdf_expect_num(ops) || !cupidimage_pdf_set_flatness(&st->gs, ops[0].num)) {
+            st->image_failed = 1;
+            cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid flatness tolerance");
+        }
     } else if (!strcmp(op, "w") || !strcmp(op, "J") || !strcmp(op, "j") || !strcmp(op, "M")) {
         int valid = n == 1 && pdf_expect_num(ops) && isfinite(ops[0].num);
         double value = valid ? ops[0].num : -1;
@@ -1530,6 +1548,7 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
     st.gs.ctm[0] = st.gs.ctm[3] = (float)geometry->user_unit;
     st.gs.line_width_pts = 1.0f;
     st.gs.miter_limit = 10;
+    st.gs.flatness = 1;
     st.gs.fill_alpha = st.gs.stroke_alpha = 1;
     st.gs.text_knockout = 1;
     st.gs.fill_space.components = st.gs.stroke_space.components = 1;

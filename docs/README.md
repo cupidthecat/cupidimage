@@ -13,6 +13,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [PDF patterns](pdf-patterns.md): tiling, backdrop-dependent evaluation and cache limits.
 - [PDF shading](pdf-shading.md): gradients, triangle streams, interpolation and validation limits.
 - [PDF transparency](pdf-transparency.md): compositing, RGB/gray groups, validation and remaining limits.
+- [PDF standards](pdf-standards.md): reference editions, extensions and applicability.
 - [PDF feature inventory](pdf-feature-matrix.md): checklist requirements, evidence and unassessed work.
 - [Conformance tracker](format-conformance.md): standards, evidence, and unfinished work.
 - [Interactive visual review](visual-review.md): render selections and save manual ratings.

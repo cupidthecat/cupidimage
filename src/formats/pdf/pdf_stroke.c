@@ -119,8 +119,23 @@ static int stroke_read_dash(const pdf_render_state *st, const pdf_object_view *v
     return 1;
 }
 
+int cupidimage_pdf_set_flatness(pdf_graphics_state *state, double value) {
+    if (!isfinite(value) || value < 0 || value > 100)
+        return 0;
+    state->flatness = value ? value : 1;
+    return 1;
+}
+
+double cupidimage_pdf_flatness(const pdf_graphics_state *state, double ceiling) {
+    return fmin(state->flatness > 0 ? state->flatness : 1, ceiling);
+}
+
 int cupidimage_pdf_apply_stroke_view(const pdf_render_state *st, const pdf_object_view *view,
                                      pdf_graphics_state *next) {
+    double flatness = next->flatness;
+    if (!cupidimage_pdf_graphics_number(st, view, "FL", 0, 100, &flatness) ||
+        !cupidimage_pdf_set_flatness(next, flatness))
+        return 0;
     const char *keys[] = {"LC", "LJ", "ML"};
     double numbers[3] = {next->line_cap, next->line_join, next->miter_limit};
     for (int i = 0; i < 3; i++) {
@@ -293,7 +308,13 @@ static int stroke_append(stroke_piece **pieces, unsigned *count, unsigned *capac
 
 void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path,
                                     unsigned char *target) {
-    if (!st || !st->img || !path->seg_count)
+    if (st && path && path->overflow) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity,
+                           "pdf: path precision or segment limit exceeded");
+        return;
+    }
+    if (!st || !st->img || !path || !path->seg_count)
         return;
     stroke_raster r = {0};
     r.state = st;

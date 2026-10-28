@@ -30,20 +30,20 @@ static int outline_line(pdf_path *path, outline_point a, outline_point b, int fi
 }
 
 static int outline_quad(pdf_path *path, outline_point a, outline_point control, outline_point b,
-                        int first, unsigned depth) {
+                        int first, unsigned depth, double flatness_squared) {
     double vx = b.x - a.x, vy = b.y - a.y, dx = control.x - a.x, dy = control.y - a.y;
     double length = vx * vx + vy * vy,
            t = length ? fmax(0, fmin(1, (dx * vx + dy * vy) / length)) : 0;
     dx -= t * vx;
     dy -= t * vy;
-    if (dx * dx + dy * dy <= .015625)
+    if (dx * dx + dy * dy <= flatness_squared)
         return outline_line(path, a, b, first);
     if (depth == 16)
         return 0;
     outline_point ac = outline_mid(a, control), cb = outline_mid(control, b),
                   mid = outline_mid(ac, cb);
-    return outline_quad(path, a, ac, mid, first, depth + 1) &&
-           outline_quad(path, mid, cb, b, 0, depth + 1);
+    return outline_quad(path, a, ac, mid, first, depth + 1, flatness_squared) &&
+           outline_quad(path, mid, cb, b, 0, depth + 1, flatness_squared);
 }
 
 static double outline_distance(outline_point a, outline_point b, outline_point p) {
@@ -55,20 +55,20 @@ static double outline_distance(outline_point a, outline_point b, outline_point p
 }
 
 static int outline_cubic(pdf_path *path, outline_point a, outline_point c1, outline_point c2,
-                         outline_point b, int first, unsigned depth) {
-    if (fmax(outline_distance(a, b, c1), outline_distance(a, b, c2)) <= .015625)
+                         outline_point b, int first, unsigned depth, double flatness_squared) {
+    if (fmax(outline_distance(a, b, c1), outline_distance(a, b, c2)) <= flatness_squared)
         return outline_line(path, a, b, first);
     if (depth == 16)
         return 0;
     outline_point ac = outline_mid(a, c1), cc = outline_mid(c1, c2), cb = outline_mid(c2, b),
                   left = outline_mid(ac, cc), right = outline_mid(cc, cb),
                   mid = outline_mid(left, right);
-    return outline_cubic(path, a, ac, left, mid, first, depth + 1) &&
-           outline_cubic(path, mid, right, cb, b, 0, depth + 1);
+    return outline_cubic(path, a, ac, left, mid, first, depth + 1, flatness_squared) &&
+           outline_cubic(path, mid, right, cb, b, 0, depth + 1, flatness_squared);
 }
 
 static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outline_edge *edges,
-                            unsigned *count, const double m[6]) {
+                            unsigned *count, const double m[6], double flatness_squared) {
     outline_point current = {0};
     int first = 1;
     for (unsigned i = 0; i < outline->count; i++) {
@@ -93,7 +93,7 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
         }
         if (segment->kind == PDF_CFF_CURVE) {
             edges[(*count)++] = (outline_edge){current, p[0], p[2], 2, p[1]};
-            if (path && !outline_cubic(path, current, p[0], p[1], p[2], first, 0))
+            if (path && !outline_cubic(path, current, p[0], p[1], p[2], first, 0, flatness_squared))
                 return 0;
             current = p[2];
         } else {
@@ -115,7 +115,7 @@ static outline_point outline_tt_transform(const pdf_tt_point *point, const doubl
 }
 
 static int outline_path(const pdf_tt_outline *outline, pdf_path *path, outline_edge *edges,
-                        unsigned *edge_count, const double m[6]) {
+                        unsigned *edge_count, const double m[6], double flatness_squared) {
     for (unsigned i = 0; i < outline->count; i++) {
         double x = outline->points[i].x, y = outline->points[i].y;
         double tx = m[0] * x + m[2] * y + m[4], ty = m[1] * x + m[3] * y + m[5];
@@ -154,7 +154,7 @@ static int outline_path(const pdf_tt_outline *outline, pdf_path *path, outline_e
                 int on = remaining == 1 || points[index + 1].on;
                 outline_point end = on ? next : outline_mid(p, next);
                 edges[(*edge_count)++] = (outline_edge){current, p, end, 1, {0, 0}};
-                if (path && !outline_quad(path, current, p, end, new_path, 0))
+                if (path && !outline_quad(path, current, p, end, new_path, 0, flatness_squared))
                     return 0;
                 current = end;
                 unsigned consumed = on && remaining > 1 ? 2 : 1;
@@ -340,6 +340,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                    (st->page_top_pts - c[1] * (t[4] + st->gs.text_rise * t[2]) -
                     c[3] * (t[5] + st->gs.text_rise * t[3]) - c[5]) *
                        ratio};
+    double flatness = cupidimage_pdf_flatness(&st->gs, .125);
+    double flatness_squared = flatness * flatness;
     if (program->is_cff || program->is_type1) {
         unsigned fd = program->cff.fdselect ? program->cff.fdselect[glyph] : 0;
         const double *f =
@@ -352,9 +354,9 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         m[3] = a[1] * f[2] + a[3] * f[3];
         m[4] = a[0] * f[4] + a[2] * f[5] + a[4];
         m[5] = a[1] * f[4] + a[3] * f[5] + a[5];
-        if (!outline_cff_path(&cff_outline, path, edges, &edge_count, m))
+        if (!outline_cff_path(&cff_outline, path, edges, &edge_count, m, flatness_squared))
             goto done;
-    } else if (!outline_path(&outline, path, edges, &edge_count, m))
+    } else if (!outline_path(&outline, path, edges, &edge_count, m, flatness_squared))
         goto done;
     if (clipping && !cupidimage_pdf_text_clip_prepare(st))
         goto done;

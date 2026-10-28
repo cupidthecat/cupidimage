@@ -787,7 +787,7 @@
     },
     {
       "id": 5,
-      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 — TEXT]",
+      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 \u2014 TEXT]",
       "items": [
         {
           "id": "5.1",
@@ -1014,7 +1014,7 @@
     },
     {
       "id": 6,
-      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 — TEXT]",
+      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 \u2014 TEXT]",
       "items": [
         {
           "id": "6.1",
@@ -1190,7 +1190,7 @@
     },
     {
       "id": 7,
-      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 — TEXT]",
+      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 \u2014 TEXT]",
       "items": [
         {
           "id": "7.1",
@@ -1463,7 +1463,7 @@
       "items": [
         {
           "id": "8.1",
-          "requirement": "m, l, c, v, y, h, re path construction and cubic Bézier geometry.",
+          "requirement": "m, l, c, v, y, h, re path construction and cubic B\u00e9zier geometry.",
           "status": "partial",
           "evidence": [
             "docs/formats.md",
@@ -2202,7 +2202,7 @@
     },
     {
       "id": 12,
-      "title": "PDF FUNCTION TYPES [P1 — PREREQUISITE FOR SHADING AND COLOR]",
+      "title": "PDF FUNCTION TYPES [P1 \u2014 PREREQUISITE FOR SHADING AND COLOR]",
       "items": [
         {
           "id": "12.1",
@@ -4378,15 +4378,26 @@
         {
           "id": "26.1",
           "requirement": "Audit EVERY applicable page-content operator against the complete version-specific ISO 32000 operator tables, including parameters, defaults, errors, graphics-state effects, and ordering constraints. Examples warranting explicit tests: Type 3 d0/d1, ri rendering intent, i flatness tolerance, and the full ExtGState parameter set.",
-          "status": null,
-          "evidence": [],
-          "limitations": [],
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_render.c",
+            "src/formats/pdf/pdf_stroke.c",
+            "tests/test_pdf_flatness.c",
+            "scripts/test_pdf_flatness.py",
+            "docs/pdf-content.md"
+          ],
+          "limitations": [
+            "Flatness is applied during ordinary path construction; later changes do not rebuild existing curves.",
+            "The remaining operator and ExtGState inventory needs a complete version-specific audit."
+          ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "pending",
-          "standard_clauses": []
+          "audit": "Flatness operands and selected state interactions tested; broader audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Tables 57 and 58; 10.6.2"
+          ]
         },
         {
           "id": "26.2",
@@ -4430,15 +4441,26 @@
         {
           "id": "26.5",
           "requirement": "Verify extended graphics state keys individually, including stroke adjustment, flatness, smoothness, alpha-is-shape, text knockout, halftone, rendering intent, blend modes, transfer functions, black generation, undercolor removal, overprint, opacity and soft masks.",
-          "status": null,
-          "evidence": [],
-          "limitations": [],
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_render.c",
+            "src/formats/pdf/pdf_stroke.c",
+            "tests/test_pdf_flatness.c",
+            "scripts/test_pdf_flatness.py",
+            "docs/pdf-content.md"
+          ],
+          "limitations": [
+            "Flatness is applied during ordinary path construction; later changes do not rebuild existing curves.",
+            "The remaining operator and ExtGState inventory needs a complete version-specific audit."
+          ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "pending",
-          "standard_clauses": []
+          "audit": "Flatness operands and selected state interactions tested; broader audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Tables 57 and 58; 10.6.2"
+          ]
         },
         {
           "id": "26.6",

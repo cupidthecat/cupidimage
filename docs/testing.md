@@ -470,3 +470,10 @@ programs, eviction, budget exhaustion and cleanup. The document allocation probe
 uses an uncached render as its pixel baseline before testing cached rendering and
 fault injection. This is an internal equivalence check, not an independent
 font-rasterization reference claim.
+
+`make test-pdf-flatness` samples 1,001 points on a cubic at seven tolerances
+and four transforms (identity, nonuniform scale, rotation and shear),
+checks graphics-state restoration and malformed operands, and exercises complete
+PDFs with fills, strokes, clipping, Forms, Type 3 glyphs and native curved glyph
+strokes. Very small tolerances must produce a bounded rejection when subdivision
+cannot satisfy them; successful decoding alone is not the expected outcome.

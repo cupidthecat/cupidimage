@@ -83,7 +83,7 @@ typedef struct pdf_graphics_state {
     double fill_color[4], stroke_color[4];
     float line_width_pts;
     int line_cap, line_join, dash_count;
-    double miter_limit, dash_phase, dash[32];
+    double miter_limit, flatness, dash_phase, dash[32];
     double fill_alpha, stroke_alpha;
     int blend_mode, alpha_is_shape, text_knockout;
     pdf_image_colors fill_space;
@@ -282,6 +282,8 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
 int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, size_t length,
                             double phase);
 
+int cupidimage_pdf_set_flatness(pdf_graphics_state *state, double value);
+double cupidimage_pdf_flatness(const pdf_graphics_state *state, double ceiling);
 int cupidimage_pdf_apply_stroke_view(const pdf_render_state *st, const pdf_object_view *view,
                                      pdf_graphics_state *next);
 

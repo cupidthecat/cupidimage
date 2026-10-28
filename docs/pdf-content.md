@@ -80,3 +80,29 @@ failure tests cover token growth, malformed TJ elements, and string/name cleanup
 These rules follow [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),
 sections 7.2, 7.3.3, 7.3.4, 7.3.5 and 9.4.3. Text arrays contain encoded character
 codes, not Unicode text; font encodings and CMaps determine their glyphs.
+
+## Curve precision
+
+The `i` operator and ExtGState `FL` entry accept flatness values from 0 through
+100. Zero selects the device default. Positive values bound curve subdivision
+in device pixels, after the page and graphics transforms. The renderer retains
+its finer defaults of one quarter pixel for ordinary paths and one eighth pixel
+for stroked native font outlines when the requested tolerance is larger.
+
+Flatness belongs to the saved graphics state. Forms and Type 3 glyphs inherit it,
+and their changes remain local. Indirect `FL` values are resolved; a null entry
+leaves the current setting unchanged. Invalid values are rejected. Subdivision
+has depth and segment limits: a path that exceeds them fails when painted or
+used for clipping, rather than drawing an incomplete approximation.
+
+Ordinary curves are currently flattened when their path operators execute.
+Changing flatness after constructing a curve does not rebuild that curve; deferred
+path construction remains necessary to cover that ordering. Native font fill and
+text-clip coverage use analytic curve intersections rather than flattened edges.
+These controls do not add font hinting or antialiasing.
+
+The implementation follows ISO 32000-1:2008, Tables 57 and 58 and section 10.6.2,
+and the corresponding flatness rules in ISO 32000-2:2020 section 10.7.2.
+`make test-pdf-flatness` checks sampled geometric error, state restoration,
+indirect/default values, Forms, Type 3 glyphs, native glyph strokes and bounded
+failure on excessive precision requests.
