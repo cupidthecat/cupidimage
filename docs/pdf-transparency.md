@@ -35,6 +35,16 @@ Built-in names, single-element arrays and indirect objects are supported. A non-
 group must use its parent's blending space. An isolated group may change it.
 DeviceRGB converts to gray using 0.30 R + 0.59 G + 0.11 B; gray converts to
 equal RGB components. These are device conversions, not color management.
+DeviceCMYK converts directly to gray as
+`1 - min(1, 0.30 C + 0.59 M + 0.11 Y + K)`, rather than passing through RGB.
+Clipping RGB channels before that conversion would lose part of the ink contribution.
+
+Solid fill/stroke colors, decoded image components, and all seven shading types
+retain floating-point device values until compositing. Indexed colors expand to
+their base components first. Uncolored tiling patterns cache coverage and alpha,
+then apply the caller's native color once. Colored pattern caches still store
+RGB bytes; native-color handling inside those caches remains incomplete.
+
 Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
 remapping remain unsupported and are rejected for these groups.

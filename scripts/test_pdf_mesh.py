@@ -71,7 +71,8 @@ def main():
         check('compressed',fixture(compressed=True),gradient,reference=False)
         check('clip',fixture(content='0 0 9 12 re W n /Sh sh'),lambda x,y:gradient(x,y) if x<12 else white,reference=False)
         check('bbox',fixture(attrs='/BBox [0 0 9 12]'),lambda x,y:gradient(x,y) if x<12 else white,reference=False)
-        check('opacity-once',fixture(content='/Half gs /Sh sh'),lambda x,y:tuple(math.floor(c*.5+128) for c in gradient(x,y)),reference=False)
+        # Opacity acts on the interpolated components, not their byte representation.
+        check('opacity-once',fixture(content='/Half gs /Sh sh'),lambda x,y:tuple(math.floor(c*.5+128) for c in (255*(x+.5)/24,255*(1-(y+.5)/16),0)),reference=False)
         alt=[VERTICES[0],VERTICES[1],VERTICES[3],(2,0,1,(0,1,0))]
         check('flag-two',fixture(vertices=alt),gradient,reference=False)
         ignored=[VERTICES[0],(3,*VERTICES[1][1:]),(3,*VERTICES[2][1:]),VERTICES[3]]

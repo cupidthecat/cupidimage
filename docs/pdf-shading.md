@@ -93,6 +93,11 @@ earlier samples where they overlap. The finished shading is painted once, so
 shared edges and overlaps do not repeatedly apply opacity or masks. Degenerate
 triangles contribute no area. A singular transformation paints nothing.
 
+Mesh samples retain up to four double-precision source components and a coverage
+flag until compositing. This preserves CMYK-to-gray conversion and avoids rounding
+interpolated colors before applying opacity. The allocation uses the actual sample
+structure size, including padding.
+
 Mesh sample buffers and lattice-row storage share the 256 MiB transparency-memory
 limit. Decoded mesh bytes consume the shared 64 MiB content budget. Vertex decoding,
 triangle bounding-box tests and function evaluation consume the shading-work

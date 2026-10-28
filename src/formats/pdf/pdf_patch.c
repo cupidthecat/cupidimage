@@ -246,8 +246,7 @@ static int patch_sample(patch_target *target, unsigned x, unsigned y, double u, 
                                               &mesh->state->form_budget->shade_evaluations_left))
             return 0;
     }
-    cupidimage_pdf_mesh_rgb(&mesh->colors, values, mesh->pixels + pixel * 4, 0);
-    mesh->pixels[pixel * 4 + 3] = 255;
+    cupidimage_pdf_mesh_color(&mesh->colors, values, mesh->pixels + pixel, 0);
     target->parameters[pixel * 2] = u;
     target->parameters[pixel * 2 + 1] = v;
     target->stamp[pixel] = target->serial;

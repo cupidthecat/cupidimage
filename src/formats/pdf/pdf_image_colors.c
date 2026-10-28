@@ -265,3 +265,21 @@ int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, uns
     cupidimage_pdf_object_view_release(&value);
     return ok;
 }
+
+/* ISO 32000-1 10.3: convert directly to the destination device space. */
+void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]) {
+    double c[4] = {0};
+    for (int i = 0; i < components; i++)
+        c[i] = fmin(1, fmax(0, values[i]));
+    if (components == 1) {
+        out[0] = out[1] = out[2] = c[0];
+    } else if (gray) {
+        double value = .3 * c[0] + .59 * c[1] + .11 * c[2];
+        if (components == 4)
+            value = 1 - fmin(1, value + c[3]);
+        out[0] = out[1] = out[2] = value;
+    } else {
+        for (int i = 0; i < 3; i++)
+            out[i] = components == 4 ? 1 - fmin(1, c[i] + c[3]) : c[i];
+    }
+}

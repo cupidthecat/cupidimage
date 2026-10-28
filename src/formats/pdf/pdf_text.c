@@ -197,7 +197,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
             if (stroke && (stroke[pixel / 8] & bit))
                 cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
             else if (filled && (mode == 0 || mode == 2))
-                cupidimage_pdf_set_pixel(st, x, y, st->gs.fill_r, st->gs.fill_g, st->gs.fill_b);
+                cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
         }
     free(stroke);
 }

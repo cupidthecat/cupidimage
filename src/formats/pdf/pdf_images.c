@@ -550,24 +550,11 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
                 for (int c = 0; c < components; c++)
                     values[c] = mask.matte[c] + (values[c] - mask.matte[c]) / alpha;
             }
-            uint8_t rgb[3];
-            if (stencil) {
-                rgb[0] = st->gs.fill_r;
-                rgb[1] = st->gs.fill_g;
-                rgb[2] = st->gs.fill_b;
-            } else if (paint_components == 4) {
-                double black = fmin(1, fmax(0, values[3]));
-                for (int c = 0; c < 3; c++)
-                    rgb[c] = cupidimage_pdf_clamp_u8(1 - fmin(1, fmax(0, values[c]) + black));
-            } else {
-                for (int c = 0; c < 3; c++)
-                    rgb[c] = cupidimage_pdf_clamp_u8(values[paint_components == 1 ? 0 : c]);
-            }
             if (stencil)
                 cupidimage_pdf_paint_pixel(st, x, y, 0, alpha);
             else
-                cupidimage_pdf_composite_pixel(
-                    st, x, y, rgb[0], rgb[1], rgb[2], alpha * st->gs.fill_alpha,
+                cupidimage_pdf_composite_device(
+                    st, x, y, values, paint_components, alpha * st->gs.fill_alpha,
                     st->gs.alpha_is_shape ? alpha * st->gs.fill_alpha : 1);
         }
     }

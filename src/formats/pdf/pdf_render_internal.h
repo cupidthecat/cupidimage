@@ -47,7 +47,7 @@ typedef struct pdf_pattern {
     cupidimage_image tile;
     double *shape, *alpha;
     double inverse[6], xstep, ystep;
-    int shading, resource_object;
+    int shading, resource_object, uncolored;
     float initial_ctm[6];
     double page_x0, page_top;
 } pdf_pattern;
@@ -71,12 +71,7 @@ typedef struct {
     int text_mode;
     pdf_soft_mask *soft_mask;
     const pdf_font_map *current_font;
-    uint8_t fill_r;
-    uint8_t fill_g;
-    uint8_t fill_b;
-    uint8_t stroke_r;
-    uint8_t stroke_g;
-    uint8_t stroke_b;
+    double fill_color[4], stroke_color[4];
     float line_width_pts;
     int line_cap, line_join, dash_count;
     double miter_limit, dash_phase, dash[32];
@@ -190,7 +185,9 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name);
 uint8_t cupidimage_pdf_clamp_u8(double v);
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
                                   float *py);
-void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b);
+void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
+void cupidimage_pdf_composite_device(pdf_render_state *st, int x, int y, const double values[4],
+                                     int components, double alpha, double shape);
 
 int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
                                      size_t *pos, unsigned depth, pdf_image_colors *colors);
@@ -242,8 +239,7 @@ int cupidimage_pdf_pattern_sample(const pdf_pattern *pattern, double x, double y
 int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
                                        const unsigned char *stream, size_t length,
                                        cupidimage_image *image, double *shape, double sx, double sy,
-                                       double ox, double oy, const double bbox[4], int uncolored,
-                                       const uint8_t color[3]);
+                                       double ox, double oy, const double bbox[4], int uncolored);
 void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage);
 
 int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_view *view,

@@ -63,7 +63,8 @@ def main():
             shade=short.replace('/Function',f'/Extend [{str(left).lower()} {str(right).lower()}] /Function')
             check('extend-'+str(count),shade,function,
                   lambda x,y,w,h:rgb(max(0,min(1,(x+.5-8)/8)))if(8<=x<16 or(x<8 and left)or(x>=16 and right))else(128,)*3)
-        check('opacity',axial,function,lambda x,y,w,h:tuple(int(c*.5+64+.5)for c in expected(x,y,w,h)),content='/Half gs /Sh sh')
+        # Blend unrounded source and .5 background, then quantize the result once.
+        check('opacity',axial,function,lambda x,y,w,h:tuple(int(c*.5+63.75+.5)for c in (255*(1-(x+.5)/w),0,255*(x+.5)/w)),content='/Half gs /Sh sh')
         gray='<< /FunctionType 2 /Domain [0 1] /N 1 >>'
         check('gray-defaults',axial.replace('DeviceRGB','DeviceGray'),gray,lambda x,y,w,h:(int((x+.5)/w*255+.5),)*3)
         check('function-range',axial,function.replace('/N 1','/Range [.25 .75 0 0 .25 .75] /N 1'),

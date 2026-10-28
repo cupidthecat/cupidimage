@@ -54,22 +54,17 @@ int cupidimage_pdf_mesh_inside_box(const pdf_mesh_context *mesh, unsigned x, uns
     return u >= mesh->box[0] && u < mesh->box[2] && v >= mesh->box[1] && v < mesh->box[3];
 }
 
-void cupidimage_pdf_mesh_rgb(const pdf_image_colors *colors, const double values[4],
-                             unsigned char rgb[3], int lookup) {
-    double palette[4];
+void cupidimage_pdf_mesh_color(const pdf_image_colors *colors, const double values[4],
+                               pdf_mesh_sample *sample, int lookup) {
     if (colors->indexed && lookup) {
         unsigned index = (unsigned)floor(fmin(colors->high, fmax(0, values[0])) + .5);
         for (int c = 0; c < colors->components; c++)
-            palette[c] = colors->palette[index * colors->components + c] / 255.0;
-        values = palette;
+            sample->values[c] = colors->palette[index * colors->components + c] / 255.0;
+    } else {
+        for (int c = 0; c < colors->components; c++)
+            sample->values[c] = values[c];
     }
-    if (colors->components == 4) {
-        double black = fmin(1, fmax(0, values[3]));
-        for (int c = 0; c < 3; c++)
-            rgb[c] = cupidimage_pdf_clamp_u8(1 - fmin(1, fmax(0, values[c]) + black));
-    } else
-        for (int c = 0; c < 3; c++)
-            rgb[c] = cupidimage_pdf_clamp_u8(values[colors->components == 1 ? 0 : c]);
+    sample->painted = 1;
 }
 
 static double mesh_edge(const mesh_vertex *a, const mesh_vertex *b, double x, double y) {
@@ -113,9 +108,8 @@ static int mesh_triangle(pdf_mesh_context *mesh, const mesh_vertex *a, const mes
                         &mesh->state->form_budget->shade_evaluations_left))
                     return 0;
             }
-            unsigned char *pixel = mesh->pixels + ((size_t)y * width + x) * 4;
-            cupidimage_pdf_mesh_rgb(&mesh->colors, values, pixel, 0);
-            pixel[3] = 255;
+            pdf_mesh_sample *pixel = mesh->pixels + (size_t)y * width + x;
+            cupidimage_pdf_mesh_color(&mesh->colors, values, pixel, 0);
         }
     return 1;
 }
@@ -218,9 +212,9 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         st->form_budget->transparency_bytes_live <= PDF_TRANSPARENCY_MEMORY_LIMIT
             ? PDF_TRANSPARENCY_MEMORY_LIMIT - st->form_budget->transparency_bytes_live
             : 0;
-    if (pixels > available / 4)
+    if (pixels > available / sizeof(*mesh.pixels))
         goto done;
-    reserved = pixels * 4;
+    reserved = pixels * sizeof(*mesh.pixels);
     if (type == 5 && vertices >= (size_t)columns) {
         if ((size_t)columns > (available - reserved) / (2 * sizeof(*rows))) {
             reserved = 0;
@@ -229,7 +223,7 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         reserved += (size_t)columns * 2 * sizeof(*rows);
     }
     st->form_budget->transparency_bytes_live += reserved;
-    mesh.pixels = calloc(pixels, 4);
+    mesh.pixels = calloc(pixels, sizeof(*mesh.pixels));
     if (!mesh.pixels)
         goto done;
     if (type == 5 && vertices >= (size_t)columns) {
@@ -242,19 +236,17 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         goto done;
     if (has_background && det) {
         double values[4];
-        unsigned char rgb[3];
+        pdf_mesh_sample sample = {0};
         if (!cupidimage_pdf_function_array(st, view, "Background", values,
                                            mesh.colors.indexed ? 1 : mesh.colors.components) ||
             pixels > st->form_budget->shade_evaluations_left)
             goto done;
         st->form_budget->shade_evaluations_left -= pixels;
-        cupidimage_pdf_mesh_rgb(&mesh.colors, values, rgb, 1);
+        cupidimage_pdf_mesh_color(&mesh.colors, values, &sample, 1);
         for (unsigned y = 0; y < st->img->height; y++)
             for (unsigned x = 0; x < st->img->width; x++)
                 if (cupidimage_pdf_mesh_inside_box(&mesh, x, y)) {
-                    unsigned char *p = mesh.pixels + ((size_t)y * st->img->width + x) * 4;
-                    memcpy(p, rgb, 3);
-                    p[3] = 255;
+                    mesh.pixels[(size_t)y * st->img->width + x] = sample;
                 }
     }
     if (type == 4) {
@@ -306,11 +298,11 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
     st->clip_budget->tests_left -= pixels;
     for (unsigned y = 0; y < st->img->height; y++)
         for (unsigned x = 0; x < st->img->width; x++) {
-            const unsigned char *p = mesh.pixels + ((size_t)y * st->img->width + x) * 4;
-            if (p[3])
-                cupidimage_pdf_composite_pixel(st, (int)x, (int)y, p[0], p[1], p[2],
-                                               st->gs.fill_alpha,
-                                               st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
+            const pdf_mesh_sample *p = mesh.pixels + (size_t)y * st->img->width + x;
+            if (p->painted)
+                cupidimage_pdf_composite_device(st, (int)x, (int)y, p->values,
+                                                mesh.colors.components, st->gs.fill_alpha,
+                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
         }
     ok = !st->image_failed;
 done:

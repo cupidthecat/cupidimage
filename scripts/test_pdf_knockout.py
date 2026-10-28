@@ -56,8 +56,8 @@ def main():
         for ais in (False,True):
             mask=form('.5 g '+rect,'/BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceGray >>')
             attrs='/Resources << /ExtGState << /B << /AIS '+str(ais).lower()+' /SMask << /S /Luminosity /G 6 0 R >> >> >> >>'
-            # Device gray paint is currently quantized to byte 128 before compositing.
-            expected=(127,0,128) if ais else (127,127,255)
+            # Preserve the exact .5 mask value until the final output quantization.
+            expected=(128,0,128) if ais else (128,128,255)
             check('soft-mask-'+str(ais),fixture(program=red+'/B gs '+blue,group=group,attrs=attrs,extra={6:mask}),lambda x,y:expected,reference=False)
         for soft in (False,True):
             mask=stream(bytes([0]),'/Subtype /Image /Width 1 /Height 1 '+('/BitsPerComponent 8 /ColorSpace /DeviceGray' if soft else '/ImageMask true /Decode [1 0]'))

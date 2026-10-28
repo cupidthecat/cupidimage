@@ -245,6 +245,7 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
         goto done;
     reserved = bytes + sizeof(pdf_pattern);
     st->patterns->bytes_used += reserved;
+    pattern->uncolored = paint == 2;
     pattern->xstep = step_x;
     pattern->ystep = step_y;
     double *inv = pattern->inverse;
@@ -270,9 +271,6 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     double copies_x = fmax(0, last_x - first_x + 1), copies_y = fmax(0, last_y - first_y + 1);
     if (copies_x * copies_y > 4096)
         goto done;
-    uint8_t color[3] = {stroke ? st->gs.stroke_r : st->gs.fill_r,
-                        stroke ? st->gs.stroke_g : st->gs.fill_g,
-                        stroke ? st->gs.stroke_b : st->gs.fill_b};
     double sx = width / (step_x * ratio), sy = height / (step_y * ratio);
     if (!isfinite(sx) || !isfinite(sy) || sx <= 0 || sy <= 0 || sx > 1e30 || sy > 1e30 ||
         (float)sx == 0 || (float)sy == 0)
@@ -283,7 +281,7 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
             if (fabs(ox * sx) > 1e30 || fabs(oy * sy) > 1e30 ||
                 !cupidimage_pdf_render_pattern_cell(st, &view, decoded, length, &pattern->tile,
                                                     pattern->shape, sx, sy, ox, oy, bbox,
-                                                    paint == 2, color))
+                                                    paint == 2))
                 goto done;
         }
 ready:

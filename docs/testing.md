@@ -372,3 +372,10 @@ fold parameter priority, shared-edge records and field widths. It includes a
 separate bisection oracle for 40 separable mappings. Allocation-failure tests cover
 priority buffers, functions, pattern caches, masks and late work-budget failure.
 Real corpus and diagnostic-wrapper results remain separate in the shading guide.
+
+`make test-pdf-device-color` runs 74 analytic checks for direct CMYK-to-gray
+conversion in fills, strokes, Type 3 text, images, all seven shading types and
+uncolored patterns. It also checks saved color state, input clipping, 16-bit
+image samples and repeated translucent paint without premature byte rounding.
+The fixtures are generated in temporary directories; no downloaded corpus is
+needed. Device-conversion formulas come from ISO 32000-1 section 10.3.
