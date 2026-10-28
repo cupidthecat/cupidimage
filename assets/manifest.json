@@ -579,6 +579,14 @@
       "sha256": "cd8453fb32ac354a9f8b2e62e449a802b268168292935c427386fbe3533e169f"
     },
     {
+      "path": "assets/pdf/reference/coons-fold-priority.pdf",
+      "sha256": "a6403c86747ecae5c66c1c0b46f3a9fe12af92ad18db741e23d855087e6d9f35"
+    },
+    {
+      "path": "assets/pdf/reference/coons-quadratic.pdf",
+      "sha256": "581d85e5907ff296fc0f2d6a843974adf1ca1b369edfae70650d9b7d052d9bf5"
+    },
+    {
       "path": "assets/pdf/reference/embedded-cff-cid.pdf",
       "sha256": "6ba0d28ffd8ff81d799bf70afb611fc991f8bebeec906dd805353b20da0cebc9"
     },
@@ -753,6 +761,14 @@
     {
       "path": "assets/pdf/reference/stitching-function.pdf",
       "sha256": "1dfb12fcaf2e030f5107e5108a2fb48a4e7f52cea9eff268497baf75834d56ff"
+    },
+    {
+      "path": "assets/pdf/reference/tensor-interior.pdf",
+      "sha256": "279910bc9ac827b6a90e7ec7c3b5db2fa00ac910bfaa000e121fda018b1dde74"
+    },
+    {
+      "path": "assets/pdf/reference/tensor-shared-edge.pdf",
+      "sha256": "226865d40424d0ba68ab18340cae8a08e4e32e11651fccbfcb9a1a6a0b7febb0"
     },
     {
       "path": "assets/pdf/reference/text-object-knockout.pdf",

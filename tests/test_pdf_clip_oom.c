@@ -35,6 +35,7 @@
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_inline.c"
 #include "../src/formats/pdf/pdf_mesh.c"
+#include "../src/formats/pdf/pdf_patch.c"
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
@@ -222,6 +223,68 @@ int main(void) {
             cupidimage_pdf_object_view_release(&mesh);
             if(live_count){failures++;while(live_count)fault_free(live[0]);}
             for(size_t i=0;i<sizeof(pixels);i++)if(pixels[i]!=255){failures++;break;}
+        }
+    }
+    /* Patch inverse maps add parameter-priority buffers to the mesh transaction. */
+    for(unsigned variant=0;variant<9;variant++) {
+        static const unsigned char order[16][2]={{0,0},{0,1},{0,2},{0,3},{1,3},{2,3},{3,3},{3,2},{3,1},{3,0},{2,0},{1,0},{1,1},{1,2},{2,2},{2,1}};
+        int type=variant%2 ? 7 : 6,function=variant==2||variant==3;
+        unsigned points=type==6?12:16;unsigned char raw[64];size_t used=0;
+        raw[used++]=variant==5?1:0;
+        for(unsigned point=0;point<points;point++) {
+            raw[used++]=order[point][0]*85;
+            raw[used++]=variant==7 ? (order[point][1]==0||order[point][1]==3?0:255) : order[point][1]*85;
+        }
+        for(unsigned corner=0;corner<4;corner++) {
+            if(function)raw[used++]=corner>=2?255:0;
+            else {raw[used++]=255;raw[used++]=0;raw[used++]=0;}
+        }
+        if(variant==4)used--;
+        char hex[129];for(size_t j=0;j<used;j++)snprintf(hex+j*2,3,"%02x",raw[j]);
+        hex[used*2]='>';hex[used*2+1]=0;
+        const char *content=variant==6?"/PS cs /P scn 0 0 18 12 re f":variant==8?"/M gs 0 0 18 12 re f":"/Sh sh";
+        char patch_document[2048];
+        int length=snprintf(patch_document,sizeof(patch_document),
+            "3 0 obj << /Resources << /Shading << /Sh 5 0 R >> /Pattern << /P 7 0 R >> /ColorSpace << /PS [/Pattern] >> /ExtGState << /M << /SMask << /S /Alpha /G 9 0 R >> >> >> >> >> endobj\n"
+            "5 0 obj << /ShadingType %d /ColorSpace /DeviceRGB /BitsPerCoordinate 8 /BitsPerComponent 8 /BitsPerFlag 8 /Decode [0 18 0 12 %s] %s /Filter /ASCIIHexDecode /Length %zu >> stream\n%s\nendstream endobj\n"
+            "7 0 obj << /PatternType 2 /Shading 5 0 R >> endobj\n"
+            "8 0 obj << /FunctionType 2 /Domain [0 1] /C0 [0 0 0] /C1 [1 0 0] /N 2 >> endobj\n"
+            "9 0 obj << /Subtype /Form /BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceRGB >> /Length 6 >> stream\n/Sh sh\nendstream endobj\n",
+            type,function?"0 1":"0 1 0 1 0 1",function?"/Function 8 0 R":"",strlen(hex),hex);
+        if(length<0||(size_t)length>=sizeof(patch_document))return 1;
+        size_t total=0;
+        for(size_t failure=0;failure<=total;failure++) {
+            uint8_t pixels[24*16*4];memset(pixels,255,sizeof(pixels));
+            cupidimage_image image={0};image.width=24;image.height=16;image.rgba=pixels;
+            pdf_page_geometry geometry={0,0,18,12,0,24,16};char error[128]={0};
+            allocation_count=0;fail_at=failure;
+            int ok=cupidimage_pdf_render_content_stream((const unsigned char *)content,strlen(content),
+                (const unsigned char *)patch_document,(size_t)length,3,NULL,&image,&geometry,error,sizeof(error));
+            if(!failure)total=allocation_count;
+            checks++;
+            if((!failure&&ok!=(variant!=4&&variant!=5))||live_count) {
+                fprintf(stderr,"FAIL patch %u allocation %zu: %zu live, result %d\n",variant,failure,live_count,ok);failures++;
+            }
+            if(!ok)for(size_t j=0;j<sizeof(pixels);j++)if(pixels[j]!=255){failures++;break;}
+            while(live_count)fault_free(live[0]);
+        }
+        fail_at=0;
+        if(variant==0)for(unsigned limit=0;limit<3;limit++) {
+            uint8_t pixels[24*16*4];memset(pixels,255,sizeof(pixels));
+            cupidimage_image image={0};image.width=24;image.height=16;image.rgba=pixels;
+            pdf_form_budget budget={0};budget.bytes_left=1024;budget.shade_evaluations_left=limit?1000000:100;
+            budget.transparency_bytes_live=limit==1?PDF_TRANSPARENCY_MEMORY_LIMIT-sizeof(pixels):0;
+            size_t initial=budget.transparency_bytes_live;
+            pdf_clip_budget clips={0};clips.tests_left=limit==2?0:1024;
+            pdf_render_state state={0};state.img=&image;state.form_budget=&budget;state.clip_budget=&clips;
+            state.document=(const unsigned char *)patch_document;state.document_size=(size_t)length;state.page_object=3;
+            state.page_top_pts=12;state.gs.ctm[0]=state.gs.ctm[3]=1;state.gs.fill_alpha=1;
+            pdf_object_view patch={0};allocation_count=0;checks++;
+            int got=cupidimage_pdf_get_object_content(state.document,state.document_size,5,&patch);
+            if(!got||cupidimage_pdf_paint_mesh(&state,&patch,6,0)||budget.transparency_bytes_live!=initial)failures++;
+            cupidimage_pdf_object_view_release(&patch);
+            if(live_count){failures++;while(live_count)fault_free(live[0]);}
+            for(size_t j=0;j<sizeof(pixels);j++)if(pixels[j]!=255){failures++;break;}
         }
     }
     /* Page isolation preserves the caller's pixels until a complete render succeeds. */

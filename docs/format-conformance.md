@@ -443,7 +443,7 @@ nesting. Pattern/shading cache construction is kept outside that tracking.
 
 The group suite has 81 cases and 65 optional independent comparisons, including
 all 16 blend modes at two member opacities and subnormal nested alpha. The shared
-transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 2,117 checks.
+transparency-memory cap is 256 MiB; the PDF allocation-failure suite has 2,208 checks.
 CMYK/CIE/ICC blending remains open.
 
 
@@ -453,7 +453,7 @@ Alpha/Luminosity masks now support captured transforms, BC, transfer functions,
 q/Q lifetime, nesting and image-local mask precedence. DeviceGray is supported
 as a group blending space alongside DeviceRGB. The focused suites have 56 mask
 checks and 81 group checks, with 44 and 65 optional independent comparisons.
-The allocation-failure suite has 2,117 checks. Three new analytic assets cover
+The allocation-failure suite has 2,208 checks. Three new analytic assets cover
 alpha masks, luminosity masks and a gray mask with an inverse transfer function.
 
 [PDF transparency](pdf-transparency.md) records the analytic-only differences,
@@ -504,7 +504,7 @@ There are 36 focused checks and 14 optional independent comparisons. The
 transparency guide explains where the tested independent renderers disagree.
 Two new analytic assets bring the manifest to 350 files, with 182 reference
 passes, 160 decoded-but-unverified files and 1,026 terminal round trips.
-The allocation-failure suite has 2,117 checks. Full font fidelity, color management
+The allocation-failure suite has 2,208 checks. Full font fidelity, color management
 and the remaining PDF features are not established by these tests.
 
 
@@ -533,7 +533,7 @@ than repeatedly applying opacity at triangle overlaps.
 
 The focused suite has 157 analytic checks and 110 optional independent comparisons.
 Four new mesh assets bring the manifest to 356 files, with 188 reference passes
-and 160 decoded-but-unverified entries. The allocation-failure suite has 2,117
+and 160 decoded-but-unverified entries. The allocation-failure suite has 2,208
 checks, including mesh memory/work bounds. Gradient sampling still differs from
 the tested independent renderers; the [shading guide](pdf-shading.md) records those
 limits and the pinned corpus fixture that fails its declared stream length.
@@ -543,4 +543,26 @@ device-space arrays are valid, but arbitrary ColorSpace resource names are not
 valid color-space objects in shading/group dictionaries or resource values.
 Three former positive alias cases now reject those invalid definitions. Content
 operators can still select a resource that directly defines a supported space.
-Coons/tensor patches, color management and other unfinished PDF features remain open.
+Color management and other unfinished PDF features remain open.
+
+
+## Coons and tensor-product patch meshes
+
+Types 6 and 7 now decode full/shared-edge patch records. Coons boundaries convert
+to bicubic control nets; tensor interior controls remain independent. Adaptive
+subdivision bounds numerical inverse solves at pixel centers. Per-pixel parameter
+priority selects the specified result when a patch folds over itself, and later
+patches replace earlier ones. Corner colors and optional function inputs are
+interpolated in parameter space.
+
+The patch suite has 219 checks and 124 optional independent comparisons, including
+40 analytic bisection comparisons. Four new assets bring the manifest to 360 files,
+with 192 reference passes, 160 decoded-but-unverified entries and 1,056 terminal
+round trips. The allocation-failure suite has 2,208 checks. The shading guide
+records subdivision/work bounds and the remaining pixel differences.
+
+The pinned Coons/function corpus document now renders without modification after
+adding the valid single-element Pattern color-space form. The focused tensor
+source page still needs CMYK page groups and DeviceN support; its isolated tensor
+objects rendering does not establish whole-page support. All seven shading
+geometries are represented, but full PDF coverage and visual parity remain open.

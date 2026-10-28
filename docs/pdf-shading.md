@@ -1,8 +1,9 @@
 # PDF shading
 
 The renderer supports function-based, axial and radial shadings (types 1, 2 and 3),
-plus free-form and lattice Gouraud triangle meshes (types 4 and 5). Coons and
-tensor-product patch meshes (types 6 and 7) remain unsupported.
+free-form and lattice Gouraud triangle meshes (types 4 and 5), and Coons and
+tensor-product patch meshes (types 6 and 7). Supported geometry does not imply
+complete color-space support or pixel parity.
 
 Shadings can be painted directly with `sh` or selected through a type 2 shading
 pattern. Direct `sh` ignores Background. A shading pattern uses Background where
@@ -29,9 +30,44 @@ unused low bits in its last byte are ignored. Decode maps the unsigned samples t
 coordinate and component ranges. The normal bounded stream-filter pipeline runs
 before vertex decoding.
 
+## Curved patches
+
+Type 6 reads twelve boundary control points and four corner colors. Its Coons
+surface is converted to an equivalent bicubic control net. Type 7 reads sixteen
+control points, including four independent interior controls. Those interior
+points affect the mapping even when the patch boundary stays unchanged.
+
+Flag 0 supplies a complete new patch. Flags 1, 2 and 3 reuse the corresponding
+edge's four control points and two colors from the preceding patch. Only the low
+two flag bits matter. Coordinates precede corner colors, and each patch record
+ends on a byte boundary. A missing first patch, an incomplete record or an empty
+patch stream returns an error.
+
+The renderer subdivides control nets with de Casteljau's construction. Convex
+bounds discard cells containing no output samples; derivative directions identify
+regions that need further subdivision around folds. Within a suitable cell,
+bounded Newton iteration finds the parameters of the actual bicubic surface at
+the pixel center. The renderer then evaluates the bilinear corner color, or
+interpolated function input, at those parameters rather than substituting a flat
+quad's color.
+
+Each sample retains its patch number and parameter pair. Later patches replace
+earlier ones. Within one folded patch, the largest v wins, then the largest u;
+parameter ties within floating-point roundoff use u. Degenerate surfaces with no
+area paint nothing. Unresolved inverse mappings return an error instead of
+silently choosing an arbitrary sample.
+
+Subdivision is limited to 20 levels and each inverse solve to 24 iterations.
+Geometry evaluation consumes the shared shading-work budget. Parameter-priority
+storage uses another 20 bytes per output pixel in addition to the four-byte mesh
+sample surface; both share the transparency-memory bound. These are bounded
+numerical calculations, not a guarantee for every extreme or ill-conditioned PDF
+control net.
+
 ## Colors and interpolation
 
 Triangle colors are sampled at output-pixel centers using barycentric coordinates.
+Patch colors use bilinear interpolation in their recovered parameter space.
 DeviceGray, DeviceRGB, DeviceCMYK and Indexed spaces are supported. Indexed
 vertices are converted to their base-space colors before interpolation; palette
 indices are never interpolated as continuous colors.
@@ -64,8 +100,8 @@ budget; the final composite consumes pixel work. Failed decoding or evaluation
 releases temporary buffers before any shading pixels reach the parent surface.
 
 This is device-color rendering, not complete color management. Calibrated spaces,
-ICC profiles, Separation/DeviceN shading, default-space remapping and patch meshes
-still need work. Mesh AntiAlias requests do not enable a separate filtered sampler.
+ICC profiles, Separation/DeviceN shading and default-space remapping still need
+work. Mesh AntiAlias requests do not enable a separate filtered sampler.
 The renderer's pixel-center interpolation is not pixel-identical to the tested
 independent rasterizers.
 
@@ -73,8 +109,9 @@ independent rasterizers.
 
 Run:
 
-    make test-pdf-mesh
+    make test-pdf-mesh test-pdf-patch
     python3 scripts/test_pdf_mesh.py bin/test_pdf_pages --reference
+    python3 scripts/test_pdf_patch.py bin/test_pdf_pages --reference
 
 The mesh suite has 157 analytic checks and 110 optional independent comparisons.
 It covers every prescribed bit width, flag reuse, padding, lattice rows, indexed
@@ -88,6 +125,28 @@ RGB units from the primary rasterizer and eight from the secondary one, reflecti
 different mesh sampling/interpolation. High unused flag bits, empty/degenerate
 geometry and several precision-sensitive cases also remain analytic-only. The
 tolerance was not widened to make those cases pass.
+
+The patch suite has 219 checks and 124 optional independent comparisons. It covers
+both patch types, all field widths, shared edges, curved boundaries, tensor
+interior controls, folded surfaces, transforms, patterns and malformed records.
+Forty cases compare separable cubic inverse mappings with independent analytic
+bisection. Nonlinear/folded gradient cases retain exact analytic expectations.
+The 18 shared-edge reference comparisons use an explicit clip to isolate
+connectivity from boundary rasterization; six unclipped analytic cases still test
+the whole shape. Comparison tolerances are not widened for boundary differences.
+
+Four patch assets generated by `scripts/generate_pdf_patch_fixtures.py` cover
+quadratic Coons mapping, tensor interior controls, fold priority and a shared edge.
+The pinned
+[`coons-allflags-withfunction.pdf`](https://github.com/mozilla/pdf.js/blob/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/coons-allflags-withfunction.pdf)
+now renders unmodified. It still differs from the primary rasterizer in 7.664% of
+color channels, with mean absolute error 0.26949. Its valid single-element Pattern
+color-space array is also covered by the generated tests.
+
+The original `bug1703683_page2_reduced.pdf` remains blocked by its unsupported
+CMYK page group; it also contains unsupported DeviceN colors. Diagnostic wrappers
+around its two DeviceCMYK tensor objects render, with differing-channel fractions
+of 5.29% and 0.212%. Those isolated checks are not passes for the original page.
 
 Four assets generated by `scripts/generate_pdf_mesh_fixtures.py` cover free-form,
 lattice, nonlinear-function and Indexed meshes. Allocation-failure tests cover
@@ -105,5 +164,5 @@ corpus document. The full manual corpus review remains deferred.
 ## Specification
 
 The implementation follows [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),
-sections 8.6.3, 8.7.4.2 through 8.7.4.5.6 and 11.6.4.2. The interpolation rules
+sections 8.6.3, 8.7.4.2 through 8.7.4.5.8 and 11.6.4.2. The interpolation rules
 for Indexed spaces and optional functions are distinct from device-color conversion.

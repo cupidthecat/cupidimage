@@ -366,3 +366,9 @@ widths, Decode, flag/row connectivity, optional functions and Indexed base-space
 interpolation. The shading guide distinguishes analytic gradient checks from
 independent comparisons and records the original corpus fixture's stream-length
 failure. Synthetic asset expectations remain exact.
+
+`make test-pdf-patch` checks Coons and tensor-product meshes, inverse mappings,
+fold parameter priority, shared-edge records and field widths. It includes a
+separate bisection oracle for 40 separable mappings. Allocation-failure tests cover
+priority buffers, functions, pattern caches, masks and late work-budget failure.
+Real corpus and diagnostic-wrapper results remain separate in the shading guide.

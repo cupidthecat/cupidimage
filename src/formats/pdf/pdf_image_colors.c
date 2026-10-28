@@ -143,6 +143,10 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
             return 1;
         }
         if (!strcmp(family, "Pattern")) {
+            cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+            if (*pos < view->len && view->data[*pos] == ']') {
+                (*pos)++; colors->pattern = 1; colors->components = 0; return 1;
+            }
             if (!cupidimage_pdf_image_color_space(st, view, pos, depth + 1, colors) ||
                 colors->pattern)
                 return 0;

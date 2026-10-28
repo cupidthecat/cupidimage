@@ -62,7 +62,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
   function-based/axial/radial shading lives in `pdf_shading.c`. `pdf_mesh.c`
   decodes byte-aligned triangle streams, interpolates samples and composites each
-  complete mesh once. Bounded color-function trees
+  complete mesh once. `pdf_mesh_internal.h` shares the bounded sample context with
+  `pdf_patch.c`, which decodes patch edges, subdivides control nets, solves inverse
+  mappings and retains per-pixel parameter priority. Bounded color-function trees
   are parsed and evaluated in `pdf_functions.c`.
   Inline image syntax and encoded-data boundaries live in `pdf_inline.c`.
   Inline images and XObjects share the borrowed image-view renderer.

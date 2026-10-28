@@ -151,7 +151,7 @@ int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_vie
                                       int background) {
     int type;
     if (!cupidimage_pdf_image_integer(st, view, "ShadingType", &type)) return 0;
-    if (type == 4 || type == 5) return cupidimage_pdf_paint_mesh(st, view, type, background);
+    if (type >= 4 && type <= 7) return cupidimage_pdf_paint_mesh(st, view, type, background);
     pdf_function_tree function={0};
     int ok = pdf_paint_shading_loaded(st, view, &function, background);
     cupidimage_pdf_free_function(&function);

@@ -364,6 +364,34 @@
       "height": 16,
       "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/coons-quadratic.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzKEOmDgAANCT+4T7AZJ9wuTkNGoWN1W94JtJ5CFxCxK1OhxTKMQSVFXPYKpqSO6eePZ17a//PtMzEBiJTMwsrGwkdg5OLm4yhYdK46X710/PQGAkMjGzsLKR2Dk4ubjJFB4qjZfuj5+egcBIZGJmYWUjsXNwcnGTKTxUGi/dbz89A4GRyMTMwspGYufg5OImU3ioNF66X356BgIjkYmZhZWNxM7BycVNpvBQabx0P/30DARGIhMzCysbiZ2Dk4ubTOGh0njp/vHTMxAYiUzMLKxsJHYOTi5uMoWHSuOl++GnZyAwEpmYWVjZSOwcnFzcZAoPlcZL991Pz0BgJDIxs7Cykdg5OLm4yRQeKo2X7pufnoHASGRiZmFlI7FzcHJxkyk8VBov3Vc/PQOBkcjEzMLKRmLn4OTiJlN4qDReui9+egYCI5GJmYWVjcTOwcnFTabwUGm8dJ/89AwERiITMwsrG4mdg5OLm0zhodJ46T766RkIjEQmZhZWNhI7BycXN5nCQ6Xx0v3tp2cgMBKZmFlY2UjsHJxc3GQKD5XGS/fBT89AYCQyMbOwspHYOTi5uMkUHiqNl/8BTqM9Hg==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/tensor-interior.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwN1D1IFAAAhmGHO2jpZzq15YwaLiNCI8yfiEitCA0J/CGEVALJEAm0I4gUEUEtQTAlCLLCgvREhDpRhFArIiJFEYesRAi6yrG7FnuGZ3237wv+TdvZx34OcYx8iimnhgaaidLJfYZ5Sow483xinS22+UfwR9rOXjI5yFHyOMNFKrnKdVq5Sw+DPOYlr3jDR9bY5A8pgmtpO3vI4ABHOMFpLnCZWhq5yR26GeARL5hijg+s8p3fpAi+0yedLLI5zinOUcEVrtHCbbro5yGjTDLLe1b4xi9SBF6n7ewmRBaHyaWIUi5RQwPNROnkHsM8Y4IZ3rLMVxIkCTzXJ0SYCLkUUkI51dRzg1t00McQT4gxzSJLbJAgSWBInxBhIuRQQDFlVFFHE22008sDRhgnzgJLbJAgSaBbnxBhIuRQwFnKqKKOJlppp4dBRhgjzgKf+cJPkgSi+oQIEyGHAs5SRhV1NNFKOz0MMsIYcRb4zBd+kiTQqE+IMBFyKKCYMqqoo4k22unlASOME2eBJTZIkCRQrU+IMBFyKaSEcqqp5wa36KCPIZ4QY5pFltggQZLAeX1CZHGYXIoo5RI1NNBMlE7uMcwzJpjhLct8JUGS4En7Ip0ssjnOKc5RwRWu0cJtuujnIaNMMst7VvjGL1IEI/pkcIAjnOA0F7hMLY3c5A7dDPCIF0wxxwdW+c5vUgQz/BuZHOQoeZzhIpVc5Tqt3KWHQR7zkle84SNrbPKHFMFd/pn9HOIY+RRTTg0NNBOlk/sM85QYceb5xDpbbPOP//LO8pk=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/coons-fold-priority.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/38UDCRgmMVAW7yWxngXjfERGuNzNMbXaIzv0hg/oTF+TWP8kcb4O43xH9piAEnZjOY=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/tensor-shared-edge.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/38UjIIRDBgYRvEoHrEYAG89e70=",
+      "tolerance": 0
     }
   ]
 }
