@@ -600,3 +600,43 @@ against FontTools, including contour endpoints and on/off-curve flags:
 an analytic advance-marker asset. The visible sample is decoded-unverified until
 its raster is independently qualified; only the advance marker has an analytic
 pixel reference.
+
+## Selected nonembedded Latin families
+
+Nonembedded Type 1 and simple TrueType fonts with recognized Arial, Times New
+Roman or Courier New names use pinned Liberation vector programs instead of the
+bitmap fallback. The same resolver accepts the Liberation Sans, Serif and Mono
+PostScript family names. It selects regular, bold, italic or bold-italic faces
+without relying on installed fonts or a font configuration service.
+
+The resolver matches complete, case-sensitive names. Supported forms include
+ArialMT, Arial-BoldMT, TimesNewRomanPSMT, TimesNewRomanPS-ItalicMT and
+CourierNewPS-BoldItalicMT, along with the corresponding family/style forms using
+a hyphen or comma. Narrow variants, arbitrary family names and subset-prefixed
+names are not inferred from these aliases. CID fonts are not handled by this
+resolver. These limits leave general substitution and CJK fallback unfinished.
+
+Type 1 substitutes start with StandardEncoding and apply the font's Encoding and
+Differences. Simple TrueType substitutes use the existing PDF TrueType encoding
+rules, including the descriptor's Symbolic flag. Named glyph selection consults
+the substitute's post/cmap data, never ToUnicode extraction text. A nonsymbolic
+TrueType Encoding must be a recognized name or dictionary; numbers, strings and
+arrays are rejected instead of silently behaving like StandardEncoding.
+
+PDF Widths and MissingWidth still control advances. The substitute program's
+metrics are used only by the existing damaged-input fallback for omitted PDF
+metrics. No automatic kerning, ligatures or layout are introduced. Embedded
+programs retain priority. If a recognized alias supplies an unsupported embedded
+program, the substitute resolver fails rather than hiding it with another font.
+
+ISO 32000-1 section 9.8.1 permits selection of a similar font when a program is
+unavailable. This deterministic choice does not promise identical glyphs to the
+original proprietary font or to a different platform's substitution policy.
+Rendering remains unhinted. Unknown families still have the documented bitmap
+fallback and must not be counted as faithful font rendering.
+
+`make test-pdf-substitution` compares selected names and styles with the same
+programs explicitly embedded in PDFs. It tests both simple-font types, encodings,
+PDF width overrides, all text modes, transformed text, embedded-program priority,
+invalid metadata and allocation recovery. The owned width-marker asset has an
+analytic reference; the visible family sample remains decoded-unverified.

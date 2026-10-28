@@ -978,17 +978,21 @@
             "scripts/test_pdf_embedded_fonts.py",
             "scripts/test_pdf_extended_fonts.py",
             "scripts/compare_pdf_extended_outlines.py",
-            "third_party/extended-standard-fonts/manifest.json"
+            "third_party/extended-standard-fonts/manifest.json",
+            "src/formats/pdf/pdf_font_substitution.c",
+            "scripts/test_pdf_substitution.py"
           ],
           "limitations": [
-            "Standard substitutes retain PDF/AFM advances and include 1,016 additional face/glyph combinations. Eight standalone commaaccent gaps, general nonembedded-font substitution, hinting and antialiasing remain incomplete."
+            "Standard substitutes include 1,016 additional face/glyph combinations; recognized nonembedded Latin families use pinned vector programs with PDF widths preserved. Eight standalone commaaccent gaps, arbitrary-family/CJK substitution, hinting and antialiasing remain incomplete."
           ],
           "dependencies": [
             "1",
             "2"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 9.8.1"
+          ]
         },
         {
           "id": "5.11",

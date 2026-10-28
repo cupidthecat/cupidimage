@@ -515,6 +515,10 @@
       "negative_reason": "Legacy fixture declares a 44-byte content stream containing only 38 bytes and has stale object offsets."
     },
     {
+      "path": "assets/pdf/nonembedded-latin-families.pdf",
+      "sha256": "7c7392e7f2e1268d0e4f34aa6b95364b5057d87e3f9036d9ce376c72c1905e0e"
+    },
+    {
       "path": "assets/pdf/pdfjs/LICENSE-APACHE-2.0.txt",
       "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
     },
@@ -797,6 +801,10 @@
     {
       "path": "assets/pdf/reference/stitching-function.pdf",
       "sha256": "1dfb12fcaf2e030f5107e5108a2fb48a4e7f52cea9eff268497baf75834d56ff"
+    },
+    {
+      "path": "assets/pdf/reference/substitute-font-widths.pdf",
+      "sha256": "552c44482e93f168ef0eef9c3ca614e1fdd5b3cfe670046fe8c4a3de5e6eb921"
     },
     {
       "path": "assets/pdf/reference/tensor-interior.pdf",

@@ -66,6 +66,8 @@ int cupidimage_pdf_truetype_encoding(const unsigned char *data, size_t size,
     if (ok && !symbolic && has_encoding) {
         if (pos < encoding.len && encoding.data[pos] == '/')
             ok = cupidimage_pdf_read_name(&encoding, &pos, base);
+        else if (!encoding_dictionary)
+            ok = 0;
         else if (cupidimage_pdf_page_value(&encoding, "BaseEncoding", &pos)) {
             pdf_object_view value = {0};
             size_t at = 0;

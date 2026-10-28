@@ -422,9 +422,10 @@ Simple-font `FirstChar`, `LastChar`, and direct or indirect `Widths` arrays
 supply horizontal advances in thousandths of an em. `MissingWidth` supplies the
 fallback outside that range. Identity CID metrics and vertical positioning are
 described below. The standard 14 Type 1 fonts use pinned Adobe metrics when
-PDF widths are absent, with bundled CFF substitute outlines. Extended substitute
-glyph coverage, hinting, custom Type 1 procedures and complete font fidelity
-remain separate work. Invalid required glyph metadata fails the page; invalid
+PDF widths are absent, with bundled CFF outlines and selected extended TrueType
+glyphs. Recognized nonembedded Arial, Times New Roman and Courier New family names
+use pinned vector substitutes. Remaining glyph gaps, general font substitution,
+hinting, custom Type 1 procedures and complete font fidelity remain separate work. Invalid required glyph metadata fails the page; invalid
 ToUnicode metadata is isolated from valid glyph data. Bitmap fallback shapes
 are not equivalent to actual font outlines.
 

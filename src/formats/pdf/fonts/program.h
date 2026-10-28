@@ -29,6 +29,7 @@ struct pdf_font_program {
 };
 
 struct pdf_font_program *cupidimage_pdf_font_program_select(struct pdf_font_program *, unsigned *);
+struct pdf_font_program *cupidimage_pdf_load_substitute_program(const char *);
 
 void cupidimage_pdf_font_outline_cache_clear(struct pdf_font_program *program);
 int cupidimage_pdf_font_outline(struct pdf_font_program *program, unsigned glyph,

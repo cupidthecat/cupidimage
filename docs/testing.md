@@ -548,3 +548,9 @@ all 1,016 added face/glyph combinations with explicit embedded programs. It cove
 all eight text modes, transforms and allocation recovery. These equivalence tests
 preserve the original compact outlines and PDF advances; they do not establish
 cross-renderer parity or complete font coverage.
+
+`make test-pdf-substitution` checks the recognized nonembedded Latin family names,
+encoding rules, PDF width precedence, clipping, transforms and allocation failures.
+Regenerate its two owned assets with `scripts/generate_pdf_substitution_fixtures.py`.
+The width-marker reference is analytic; the visible font-family page is not a
+cross-renderer reference pass.

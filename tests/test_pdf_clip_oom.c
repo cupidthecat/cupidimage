@@ -42,6 +42,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_font_program.c"
 #undef cupidimage_pdf_font_outline
+#include "../src/formats/pdf/pdf_font_substitution.c"
 #include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"

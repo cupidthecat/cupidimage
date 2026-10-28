@@ -669,14 +669,16 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             cupidimage_pdf_object_view_release(&font_object);
         }
         pdf_font_map *font = pdf_font_table_add(table, graphics ? NULL : name, graphics_object);
-        int ok =
-            font &&
-            cupidimage_pdf_parse_cid_font(data, size, &font_view, font, &table->cid_bytes) &&
-            cupidimage_pdf_parse_type3_font(data, size, &font_view, font) &&
-            pdf_parse_font_widths(data, size, &font_view, font) &&
-            cupidimage_pdf_parse_font_program(data, size, &font_view, font,
-                                              &table->program_bytes) &&
-            cupidimage_pdf_parse_standard_font(data, size, &font_view, font, &table->program_bytes);
+        int ok = font &&
+                 cupidimage_pdf_parse_cid_font(data, size, &font_view, font, &table->cid_bytes) &&
+                 cupidimage_pdf_parse_type3_font(data, size, &font_view, font) &&
+                 pdf_parse_font_widths(data, size, &font_view, font) &&
+                 cupidimage_pdf_parse_font_program(data, size, &font_view, font,
+                                                   &table->program_bytes) &&
+                 cupidimage_pdf_parse_standard_font(data, size, &font_view, font,
+                                                    &table->program_bytes) &&
+                 cupidimage_pdf_parse_substitute_font(data, size, &font_view, font,
+                                                      &table->program_bytes);
         if (ok) {
             /* Extraction metadata must not discard a valid glyph program or CID metrics. */
             ok = pdf_parse_font_tounicode(data, size, &font_view, font, NULL, 0);
