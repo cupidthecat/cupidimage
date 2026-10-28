@@ -124,6 +124,23 @@ static unsigned tt_cmap(const unsigned char *p, size_t length, uint32_t code) {
     return 0;
 }
 
+int cupidimage_pdf_tt_has_cmap(const pdf_tt_font *font, unsigned platform, unsigned encoding) {
+    const unsigned char *data = font->cmap.data;
+    size_t length = font->cmap.length;
+    if (length < 4 || cmap_u16(data))
+        return 0;
+    unsigned count = cmap_u16(data + 2);
+    if (count > (length - 4) / 8)
+        return 0;
+    for (unsigned i = 0; i < count; i++) {
+        const unsigned char *entry = data + 4 + i * 8;
+        size_t offset = cmap_u32(entry + 4);
+        if (cmap_u16(entry) == platform && cmap_u16(entry + 2) == encoding && offset < length)
+            return 1;
+    }
+    return 0;
+}
+
 unsigned cupidimage_pdf_tt_map(const pdf_tt_font *f, uint32_t code, int platform, int encoding) {
     const unsigned char *p = f->cmap.data;
     size_t length = f->cmap.length;

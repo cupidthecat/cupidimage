@@ -70,10 +70,10 @@ unsigned cupidimage_pdf_mac_roman_code(uint32_t scalar) {
     static const struct {
         uint32_t scalar;
         unsigned code;
-    } extra[] = {{0x2260, 173}, {0x221e, 176}, {0x2264, 178}, {0x2265, 179},
-                 {0x2202, 182}, {0x2211, 183}, {0x220f, 184}, {0x03c0, 185},
-                 {0x222b, 186}, {0x03a9, 189}, {0x221a, 195}, {0x2248, 197},
-                 {0x2206, 198}, {0x25ca, 215}, {0x20ac, 219}, {0xf8ff, 240}};
+    } extra[] = {{0x2260, 173}, {0x221e, 176}, {0x2264, 178}, {0x2265, 179}, {0x2202, 182},
+                 {0x2211, 183}, {0x220f, 184}, {0x03c0, 185}, {0x222b, 186}, {0x03a9, 189},
+                 {0x2126, 189}, {0x221a, 195}, {0x2248, 197}, {0x2206, 198}, {0x25ca, 215},
+                 {0x20ac, 219}, {0xf8ff, 240}};
 
     for (size_t i = 0; i < sizeof(extra) / sizeof(extra[0]); i++)
         if (extra[i].scalar == scalar)

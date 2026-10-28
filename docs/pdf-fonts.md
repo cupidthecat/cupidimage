@@ -438,3 +438,28 @@ The optional reference pass covers generation changes and identity/quarter-turn
 matrices. Sheared edge coverage and translated reflections retain exact analytic
 vector checks, but currently differ from the reference raster; they are not
 counted as reference passes.
+
+## TrueType subtable selection
+
+For name-based simple-font encoding, the Microsoft Unicode `(3, 1)` subtable has
+priority. If it is absent, the Macintosh Roman `(1, 0)` subtable is used. When
+that selected table cannot map a glyph name, the font's `post` names are checked
+before trying other character maps. This prevents an unrelated secondary map
+from overriding the named glyph. Full-repertoire and Unicode-platform maps remain
+available when the specified paths cannot supply a mapping.
+
+Mac OS Roman lookup includes the extra names in ISO 32000-1 Table 115. In
+particular, Adobe's `Omega` glyph name maps through U+2126 to code 189; the Greek
+capital omega scalar U+03A9 retains the same compatibility mapping.
+
+`make test-pdf-truetype-selection` uses conflicting tables to make the selection
+order observable, including explicit missing-glyph entries, named glyph fallback
+and all Table 115 additions. Direct and indirect Differences arrays can contain
+indirect character codes and glyph names. The shared Differences parser also
+serves Type 1, compact and Type 3 fonts; required array members cannot be null,
+cyclic references, fractional codes or malformed numeric tokens.
+
+The optional reference pass checks 90 of the 106 current cases exactly. Mac OS
+Roman Euro follows Table 115 but differs from the reference result; those cases
+remain analytic checks. Extension-table cases and malformed-input rejections
+also remain separate from reference passes.

@@ -414,3 +414,11 @@ a successful call must retain the baseline pixels, not silently replace fonts.
 undefined procedures, indirect font geometry, null resource inheritance and
 horizontal width advances under rotated/sheared font matrices. Its complete
 documents also run through allocation-failure injection.
+
+`make test-pdf-truetype-selection` tests Unicode/Roman subtable precedence,
+`post`-name fallback, extension maps and the Mac OS Roman additional glyph names.
+Conflicting-table fixtures have exact vector equivalents and run through
+complete-page allocation-failure injection. Direct/indirect Differences members
+also have equivalent-document cases for Type 1, compact and Type 3 fonts;
+malformed or cyclic required members are rejected. Use `--reference` with the script for
+the selected exact independent comparisons described in the font guide.

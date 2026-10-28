@@ -25,6 +25,7 @@
 #include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_program.c"
+#include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
