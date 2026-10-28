@@ -70,13 +70,17 @@ def encoded(sampling, width, height, progressive, restart, separate=False,
         return output + flush(pending)
 
     if separate:
-        for component in range(len(sampling)):
+        groups = [(component,) for component in range(len(sampling))] if separate is True else separate
+        for group in groups:
             if quantizers:
-                slot = component if distinct_tables else 0
-                data += segment(0xdb, bytes([slot]) + bytes([quantizers[component]]) * 64)
-            data += encode_scan((component,))
+                assert distinct_tables or len(group) == 1
+                for component in group:
+                    slot = component if distinct_tables else 0
+                    data += segment(0xdb, bytes([slot]) + bytes([quantizers[component]]) * 64)
+            data += encode_scan(group)
             if progressive:
-                data += encode_scan((component,), ac=True)
+                for component in group:
+                    data += encode_scan((component,), ac=True)
     else:
         data += encode_scan(tuple(range(len(sampling))))
         if progressive:
@@ -104,7 +108,13 @@ def sample_cases():
             for restart in (0, 2):
                 for quantizers, distinct in ((None, False), (tuple(8 * (i + 1) for i in range(len(sampling))), False),
                                              (tuple(8 * (i + 1) for i in range(len(sampling))), True)):
-                    yield sampling, width, height, True, restart, True, quantizers, distinct
+                    for progressive in (False, True):
+                        yield sampling, width, height, progressive, restart, True, quantizers, distinct
+    for groups in (((0, 1), (2,)), ((0,), (1, 2)), ((2,), (0, 1))):
+        for width, height in ((33, 17), (129, 9)):
+            for restart in (0, 2):
+                for progressive in (False, True):
+                    yield (0x41, 0x11, 0x11), width, height, progressive, restart, groups, None, False
 
 
 def main():
@@ -158,6 +168,12 @@ def main():
                 result = subprocess.run([native, str(path), '8', '8', '3', '0'], capture_output=True, timeout=30)
                 assert result.returncode == 3, (sampling, progressive, result.stderr)
                 checks += 1
+        for groups in (((0,), (1,)), ((0,), (1,), (0,), (2,))):
+            data, _ = encoded((0x41, 0x11, 0x11), 33, 17, False, 0, groups)
+            path.write_bytes(data)
+            result = subprocess.run([native, str(path), '33', '17', '3', '0'], capture_output=True, timeout=30)
+            assert result.returncode == 3, (groups, result.stderr)
+            checks += 1
     print(f'JPEG sampling layouts: {checks} native and {pdf_checks} PDF checks; {references} independent matches; {allocations} allocation checks')
 
 

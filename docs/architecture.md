@@ -24,6 +24,10 @@ symbols.
 Each codec lives under `src/formats/<format>/`. Smaller codecs remain one focused
 translation unit. Larger ones have private contracts and separate responsibilities:
 
+- JPEG: `cupidimage_jpeg.c` handles markers, frame/scan lifecycle and the public
+  wrappers. `jpeg_entropy.c` owns Huffman tables and shared sequential/progressive
+  coefficient decoding. `jpeg_output.c` reconstructs samples and provides native
+  component or RGBA output. `jpeg_internal.h` defines their private contracts.
 - PDF: public page APIs, document/object parsing and streams, font maps and the
   bitmap fallback, image samples and masks, and graphics/content rendering.
   `pdf_xref.c` builds revision-aware indices; `pdf_objects.c` resolves indexed

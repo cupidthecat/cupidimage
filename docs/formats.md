@@ -104,8 +104,8 @@ CMYK channels. Frame dimensions, bit depth and component count must match the
 image dictionary. Flate/LZW stages accept indirect predictor dictionaries and
 packed/16-bit prediction; each filter reads only its own parameters. The current
 DCT subset uses Huffman-coded 8-bit baseline/progressive frames, with sampling
-factors from one through four. Noninterleaved sequential color scans, other applicable DCT
-modes and JPX remain unfinished. See [PDF images](pdf-images.md) for the pipeline,
+factors from one through four and separate or mixed sequential component scans.
+Other applicable DCT modes and JPX remain unfinished. See [PDF images](pdf-images.md) for the pipeline,
 checks and limits.
 Drawing an invalid or unsupported XObject returns a load error.
 

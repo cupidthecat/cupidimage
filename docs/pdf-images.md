@@ -53,8 +53,8 @@ not replace the PDF image's Decode array.
 
 The decoded sample buffer is limited to 64 MiB. Image dimensions, component count
 and bit depth are checked against the JPEG frame before decoding its samples.
-Progressive coefficients need additional working memory; allocation failures
-release partial coefficient and output buffers. Every filter stage retains its
+Progressive and multi-scan sequential images buffer coefficients before producing
+samples. Allocation failures release partial coefficient and output buffers. Every filter stage retains its
 own decoded-size bounds. Each component retains the quantization table selected
 by its first scan. Table definitions may arrive before the component that needs
 them, and a selector may be reused after that component's scans finish. A
@@ -70,7 +70,9 @@ The current DCT path supports 8-bit, Huffman-coded baseline and progressive
 frames. Horizontal and vertical sampling factors from one through four are
 supported, including 4:1:1 and fractional component ratios. Interleaved scans are
 limited to ten data units per MCU; a one-component scan always uses one block per
-MCU. Noninterleaved sequential color scans are not yet supported. Other DCT coding modes need an applicability and implementation
+MCU. Sequential color images may use separate component scans or a mixture of
+interleaved and separate scans. Every component must be supplied exactly once in
+a sequential frame. Other DCT coding modes need an applicability and implementation
 audit. JPXDecode and JBIG2Decode remain unsupported. These limits are distinct from
 image placement, interpolation and color-management work.
 

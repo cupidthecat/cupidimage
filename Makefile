@@ -158,7 +158,7 @@ $(BINDIR)/test_%: tests/test_%.c $(LIB) $(SRCDIR)/cupidimage.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_deflate_containers $(BINDIR)/test_pdf_graphics: tests/pdf_fixture.h
 $(BINDIR)/test_svg_css_oom: $(filter $(SRCDIR)/formats/svg/%,$(LIBSRC)) $(SRCDIR)/formats/svg/svg_internal.h tests/fault_alloc.h
-$(BINDIR)/test_pdf_clip_oom: $(filter $(SRCDIR)/formats/pdf/%,$(LIBSRC)) $(shell find $(SRCDIR)/formats/pdf -name '*.h') tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(shell find $(SRCDIR)/formats/pdf -name '*.inc') $(SRCDIR)/compression/ccitt.c $(SRCDIR)/compression/ccitt_tables.h $(SRCDIR)/formats/jpeg/cupidimage_jpeg.c tests/fault_alloc.h
+$(BINDIR)/test_pdf_clip_oom: $(filter $(SRCDIR)/formats/pdf/%,$(LIBSRC)) $(shell find $(SRCDIR)/formats/pdf -name '*.h') tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(shell find $(SRCDIR)/formats/pdf -name '*.inc') $(SRCDIR)/compression/ccitt.c $(SRCDIR)/compression/ccitt_tables.h $(filter $(SRCDIR)/formats/jpeg/%,$(LIBSRC)) $(wildcard $(SRCDIR)/formats/jpeg/*.h) tests/fault_alloc.h
 $(BINDIR)/test_jpeg_decoder: scripts/test_jpeg_decoder.c $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 $(BINDIR)/test_pdf_pages: scripts/test_pdf_pages.c $(LIB) | $(BINDIR)
@@ -333,7 +333,7 @@ test-pdf-dct: $(BINDIR)/test_jpeg_samples $(BINDIR)/test_pdf_pages $(BINDIR)/tes
 test-jpeg-math: $(BINDIR)/test_jpeg_math
 	$<
 
-$(BINDIR)/test_jpeg_math: tests/test_jpeg_math.c $(SRCDIR)/formats/jpeg/cupidimage_jpeg.c $(LIB) | $(BINDIR)
+$(BINDIR)/test_jpeg_math: tests/test_jpeg_math.c $(filter $(SRCDIR)/formats/jpeg/%,$(LIBSRC)) $(wildcard $(SRCDIR)/formats/jpeg/*.h) $(LIB) | $(BINDIR)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
 test-pdf-jpeg-sampling: $(BINDIR)/test_jpeg_samples $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
