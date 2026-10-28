@@ -421,3 +421,20 @@ numeric equivalents using standard, TrueType and compact font programs. Complete
 page loads also run under allocation-failure injection, with successful recovery
 required to preserve every output pixel. The resource-budget and malformed-font
 reference tests now require an error instead of accepting changed fallback text.
+
+Type 3 character procedures retain full object-number/generation identities through
+encoding lookup. Reused object numbers therefore select the active generation
+rather than losing its generation during glyph selection. Null or undefined
+character-procedure entries act as missing entries; they do not resurrect an older
+procedure. FontMatrix and FontBBox arrays accept indirect numeric elements, and
+null Type 3 Resources inherit the invoking scope. Width advances retain only the
+FontMatrix-transformed horizontal component, even for rotated or sheared glyphs,
+as required by ISO 32000-1 Table 112.
+
+`make test-pdf-type3-objects` covers these rules with complete generated documents,
+exact vector equivalents and allocation-failure checks.
+
+The optional reference pass covers generation changes and identity/quarter-turn
+matrices. Sheared edge coverage and translated reflections retain exact analytic
+vector checks, but currently differ from the reference raster; they are not
+counted as reference passes.

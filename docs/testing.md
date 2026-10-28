@@ -409,3 +409,8 @@ widths, CID horizontal/vertical defaults, encoding CMap defaults,
 embedded-program selection and inherited page/form resources against
 exact equivalent documents. Allocation failures run through complete page loads;
 a successful call must retain the baseline pixels, not silently replace fonts.
+
+`make test-pdf-type3-objects` checks nonzero character-procedure generations,
+undefined procedures, indirect font geometry, null resource inheritance and
+horizontal width advances under rotated/sheared font matrices. Its complete
+documents also run through allocation-failure injection.

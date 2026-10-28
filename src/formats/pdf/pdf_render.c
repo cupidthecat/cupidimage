@@ -1283,7 +1283,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     pdf_font_table fonts;
     cupidimage_pdf_font_table_init(&fonts);
     const unsigned char *stream;
-    size_t length, pos;
+    size_t length;
     if (!cupidimage_pdf_state_object(st, object, &program) ||
         !cupidimage_pdf_object_stream(st->document, st->document_size, &program, &stream,
                                       &length) ||
@@ -1328,7 +1328,13 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
             goto done;
         child->gs.ctm[i] = (float)m[i];
     }
-    if (cupidimage_pdf_page_value(&type->dictionary, "Resources", &pos)) {
+    pdf_object_view glyph_resources = {0};
+    int local_resources = cupidimage_pdf_optional_dictionary(
+        st->document, st->document_size, &type->dictionary, "Resources", &glyph_resources);
+    cupidimage_pdf_object_view_release(&glyph_resources);
+    if (local_resources < 0)
+        goto done;
+    if (local_resources > 0) {
         child->resource_override = &type->dictionary;
         if (!cupidimage_pdf_collect_resource_fonts(st->document, st->document_size,
                                                    &type->dictionary, &fonts, st->error,
