@@ -277,11 +277,12 @@ is not a visual pass, and the full 1,007-document user review remains deferred.
 
 The pattern implementation follows ISO 32000-1 sections 8.7.2–8.7.4 and
 11.6.7. It uses the permitted isolated-cell optimization only for Normal blending
-inside the cell; backdrop-dependent cell blends are explicitly rejected.
+inside the cell. Backdrop-dependent tiling cells now use per-object non-isolated
+evaluation, as described in [PDF patterns](pdf-patterns.md).
 Per-page cache ownership keeps saved graphics states valid and releases cells on
 both success and error paths.
 
-The pattern suite has 76 checks and 39 optional independent comparisons.
+The pattern suite has 76 checks and 40 optional independent comparisons.
 Gradient comparisons allow one or two channel units for reference approximation;
 small analytic fixtures still require exact pixels.
 One nested-pattern comparison uses a second renderer because the first shifts
@@ -566,3 +567,24 @@ adding the valid single-element Pattern color-space form. The focused tensor
 source page still needs CMYK page groups and DeviceN support; its isolated tensor
 objects rendering does not establish whole-page support. All seven shading
 geometries are represented, but full PDF coverage and visual parity remain open.
+
+
+## Native colors and backdrop-dependent tiling
+
+Source device components now remain in double precision through fills, strokes,
+text, images and all seven shading geometries. DeviceCMYK converts directly to
+gray under section 10.3; it no longer loses ink contributions through an
+intermediate clipped RGB value. The device-color suite has 74 analytic cases.
+
+Non-Normal tiling cells retain their definition and render all visible tiles in
+one non-isolated group for each painted object. Caller opacity, masks and clipping
+apply once to the extracted source. The new pattern-backdrop suite has 43 analytic
+cases, and the allocation-failure suite has 2,476 checks. The 360-asset manifest
+and its 192 reference passes, 160 decoded-unverified entries and 1,056 terminal
+round trips are unchanged.
+
+The independent renderers tested for the new Multiply cases disagree with the
+specification's non-isolated result. Those cases remain analytic checks, not
+reference passes. Ordinary colored-cell caches, additional color spaces, CMYK
+blending groups and shading-pattern ExtGState transparency still need work.
+The full manual document-rating pass remains deferred.

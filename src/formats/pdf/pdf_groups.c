@@ -253,6 +253,20 @@ done:
     return ok;
 }
 
+void cupidimage_pdf_group_source(const pdf_transparency_group *group, size_t pixel, double color[3],
+                                 double *alpha, double *shape) {
+    *alpha = group->alpha[pixel];
+    *shape = group->shape[pixel];
+    double backdrop[3], a0 = group_initial_alpha(group, pixel);
+    group_initial_color(group, pixel, backdrop);
+    for (unsigned i = 0; i < 3; i++) {
+        double cn = group->color[pixel * 3 + i];
+        /* Remove the initial backdrop once, retaining precision through recomposition. */
+        color[i] =
+            *alpha > 0 ? fmax(0, fmin(1, cn + (cn - backdrop[i]) * a0 * (1 - *alpha) / *alpha)) : 0;
+    }
+}
+
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group) {
     if (!group->image.rgba)
         return 1;
@@ -263,18 +277,10 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
     for (unsigned y = 0; y < group->image.height; y++)
         for (unsigned x = 0; x < group->image.width; x++) {
             size_t pixel = (size_t)y * group->image.width + x;
-            double alpha = group->alpha[pixel], shape = group->shape[pixel];
+            double color[3], alpha, shape;
+            cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
             if (shape <= 0)
                 continue;
-            double color[3], backdrop[3], a0 = group_initial_alpha(group, pixel);
-            group_initial_color(group, pixel, backdrop);
-            for (unsigned i = 0; i < 3; i++) {
-                double cn = group->color[pixel * 3 + i];
-                /* Remove the initial backdrop once, retaining precision through recomposition. */
-                color[i] =
-                    alpha > 0 ? fmax(0, fmin(1, cn + (cn - backdrop[i]) * a0 * (1 - alpha) / alpha))
-                              : 0;
-            }
             cupidimage_pdf_composite_color(
                 parent, (int)x, (int)y, color, alpha * parent->gs.fill_alpha,
                 shape * (parent->gs.alpha_is_shape ? parent->gs.fill_alpha : 1));

@@ -15,7 +15,8 @@
 #include "pdf_render_internal.h"
 
 int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
-static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len);
+int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream,
+                                 size_t stream_len);
 
 static void pdf_clip_retain(pdf_clip_mask *clip) {
     if (clip)
@@ -29,7 +30,7 @@ static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
     }
 }
 
-static void pdf_render_state_release(pdf_render_state *st) {
+void cupidimage_pdf_render_state_release(pdf_render_state *st) {
     cupidimage_pdf_text_group_discard(st);
     pdf_clip_release(st, st->gs.clip);
     cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
@@ -188,7 +189,7 @@ void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const do
 void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage) {
     pdf_pattern *pattern = stroke ? st->gs.stroke_pattern : st->gs.fill_pattern;
     const pdf_image_colors *space = stroke ? &st->gs.stroke_space : &st->gs.fill_space;
-    uint8_t rgb[4] = {0, 0, 0, 255};
+    double rgb[3] = {0};
     double shape = coverage, intrinsic_alpha = 1;
     if (space->pattern) {
         if (!pattern) {
@@ -197,7 +198,7 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
         }
         double px = st->page_x0_pts + (x + .5) * (72.0 / 96.0),
                py = st->page_top_pts - (y + .5) * (72.0 / 96.0);
-        if (!cupidimage_pdf_pattern_sample(pattern, px, py, rgb, &shape, &intrinsic_alpha)) {
+        if (!cupidimage_pdf_pattern_sample(st, pattern, px, py, rgb, &shape, &intrinsic_alpha)) {
             st->image_failed = 1;
             return;
         }
@@ -207,8 +208,8 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
     if (st->gs.alpha_is_shape)
         shape *= stroke ? st->gs.stroke_alpha : st->gs.fill_alpha;
     double alpha = coverage * (stroke ? st->gs.stroke_alpha : st->gs.fill_alpha) * intrinsic_alpha;
-    if (space->pattern && !pattern->uncolored)
-        cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2], alpha, shape);
+    if (space->pattern && (!pattern->uncolored || pattern->deferred))
+        cupidimage_pdf_composite_color(st, x, y, rgb, alpha, shape);
     else
         cupidimage_pdf_composite_device(st, x, y, stroke ? st->gs.stroke_color : st->gs.fill_color,
                                         space->components, alpha, shape);
@@ -254,7 +255,7 @@ void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy
     *py = (st->page_top_pts - ty) * s;
 }
 
-static void pdf_path_clear(pdf_path *p) {
+void cupidimage_pdf_path_clear(pdf_path *p) {
     if (!p)
         return;
     p->seg_count = 0;
@@ -599,7 +600,7 @@ static void pdf_path_end(pdf_render_state *st) {
         st->image_failed = 1;
     }
     st->pending_clip = 0;
-    pdf_path_clear(&st->path);
+    cupidimage_pdf_path_clear(&st->path);
 }
 
 static int pdf_render_tj_array(pdf_render_state *st, const char *array, size_t length) {
@@ -693,6 +694,7 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, con
 static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops,
                                  int *count) {
     int n = *count;
+    st->paint_serial = ++st->form_budget->paint_serial;
     if (st->glyph_active && !st->glyph_seen_metrics && strcmp(op, "d0") && strcmp(op, "d1")) {
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity,
@@ -1068,13 +1070,15 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             st->image_failed = 1;
     }
 
+    cupidimage_pdf_patterns_end_paint(st);
     if (st->image_failed && st->error && st->error_capacity && !st->error[0])
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: invalid or unsupported content operator");
     pdf_clear_operands(ops, count);
 }
 
-static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len) {
+int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream,
+                                 size_t stream_len) {
     char *err = st->error;
     size_t errcap = st->error_capacity;
     pdf_operand ops[64];
@@ -1254,149 +1258,11 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
     return 1;
 }
 
-int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
-                                       const unsigned char *stream, size_t length,
-                                       cupidimage_image *image, double *shape, double sx, double sy,
-                                       double ox, double oy, const double bbox[4], int uncolored) {
-    if (!parent->form_budget->calls_left || length > parent->form_budget->bytes_left)
-        return 0;
-    parent->form_budget->calls_left--;
-    parent->form_budget->bytes_left -= length;
-    pdf_render_state *child = malloc(sizeof(*child));
-    if (!child)
-        return 0;
-    pdf_font_table fonts;
-    cupidimage_pdf_font_table_init(&fonts);
-    pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
-    *child = *parent;
-    child->text_group = NULL;
-    child->in_text = 0;
-    child->gs = parent->initial_gs;
-    child->gs.clip = NULL;
-    child->gs.soft_mask = NULL;
-    child->gs_stack_len = 0;
-    child->text_clip = NULL;
-    child->text_winding = NULL;
-    child->text_winding_bytes = 0;
-    child->clip_budget = &clip_budget;
-    child->pending_clip = 0;
-    child->image_failed = 0;
-    child->img = image;
-    child->shape_plane = shape;
-    child->alpha_plane = shape + (size_t)image->width * image->height;
-    child->group = NULL;
-    child->mask_rendering = 0;
-    child->page_x0_pts = 0;
-    child->page_top_pts = image->height * (72.0f / 96.0f);
-    child->in_text = 0;
-    child->glyph_active = 0;
-    child->glyph_uncolored = 0;
-    child->pattern_uncolored = uncolored;
-    child->gs.fill_alpha = child->gs.stroke_alpha = 1;
-    child->gs.blend_mode = 0;
-    child->pattern_depth = parent->pattern_depth + 1;
-    child->resource_override = pattern;
-    child->gs.ctm[0] = (float)sx;
-    child->gs.ctm[1] = child->gs.ctm[2] = 0;
-    child->gs.ctm[3] = (float)sy;
-    child->gs.ctm[4] = (float)(ox * sx);
-    child->gs.ctm[5] = (float)(oy * sy);
-    if (uncolored) {
-        memset(child->gs.fill_color, 0, sizeof(child->gs.fill_color));
-        memset(child->gs.stroke_color, 0, sizeof(child->gs.stroke_color));
-        memset(&child->gs.fill_space, 0, sizeof(child->gs.fill_space));
-        child->gs.fill_space.components = 3;
-        child->gs.stroke_space = child->gs.fill_space;
-        child->gs.fill_pattern = child->gs.stroke_pattern = NULL;
-    }
-    child->form_depth = 1;
-    child->form_objects[0] = 0;
-    memcpy(child->form_clips[0].box, bbox, sizeof(child->form_clips[0].box));
-    double *inv = child->form_clips[0].inverse;
-    inv[0] = 1 / sx;
-    inv[1] = inv[2] = 0;
-    inv[3] = 1 / sy;
-    inv[4] = -ox;
-    inv[5] = -oy;
-    pdf_path_clear(&child->path);
-    int ok = cupidimage_pdf_collect_resource_fonts(parent->document, parent->document_size, pattern,
-                                                   &fonts, parent->error, parent->error_capacity);
-    child->font_table = &fonts;
-    child->initial_gs = child->gs;
-    child->initial_gs.soft_mask = NULL;
-    if (ok)
-        ok = pdf_render_stream(child, stream, length);
-    pdf_render_state_release(child);
-    free(child);
-    cupidimage_pdf_font_table_free(&fonts);
-    return ok;
-}
-
-static void pdf_double_concat(double m[6], const double n[6]) {
+void cupidimage_pdf_matrix_concat_double(double m[6], const double n[6]) {
     double r[6] = {m[0] * n[0] + m[2] * n[1],        m[1] * n[0] + m[3] * n[1],
                    m[0] * n[2] + m[2] * n[3],        m[1] * n[2] + m[3] * n[3],
                    m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]};
     memcpy(m, r, sizeof(r));
-}
-
-int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], cupidimage_image *image,
-                                          double *shape) {
-    if (!parent->form_budget->calls_left)
-        return 0;
-    parent->form_budget->calls_left--;
-    pdf_object_view shading = {0}, state = {0};
-    size_t pos;
-    pdf_render_state *child = malloc(sizeof(*child));
-    if (!child)
-        return 0;
-    *child = *parent;
-    child->text_group = NULL;
-    child->in_text = 0;
-    child->gs = parent->initial_gs;
-    child->gs.clip = NULL;
-    child->gs.soft_mask = NULL;
-    child->gs.fill_alpha = child->gs.stroke_alpha = 1;
-    child->gs.blend_mode = 0;
-    child->img = image;
-    child->shape_plane = shape;
-    child->alpha_plane = shape + (size_t)image->width * image->height;
-    child->group = NULL;
-    child->mask_rendering = 0;
-    child->form_depth = 0;
-    child->gs_stack_len = 0;
-    child->text_clip = NULL;
-    child->text_winding = NULL;
-    child->text_winding_bytes = 0;
-    child->glyph_active = child->glyph_uncolored = child->pattern_uncolored = 0;
-    child->pattern_depth = parent->pattern_depth + 1;
-    child->image_failed = 0;
-    double m[6];
-    for (int i = 0; i < 6; i++)
-        m[i] = child->gs.ctm[i];
-    pdf_double_concat(m, matrix);
-    int ok = 1;
-    for (int i = 0; i < 6; i++) {
-        if (!isfinite(m[i]) || fabs(m[i]) > 1e30)
-            ok = 0;
-        else
-            child->gs.ctm[i] = (float)m[i];
-    }
-    double det = m[0] * m[3] - m[1] * m[2];
-    if (!isfinite(det) || det == 0)
-        ok = 0;
-    if (ok && cupidimage_pdf_page_value(pattern, "ExtGState", &pos))
-        ok = cupidimage_pdf_image_dictionary(parent, pattern, "ExtGState", &state) &&
-             cupidimage_pdf_apply_graphics_view(child, &state) && child->gs.fill_alpha == 1 &&
-             child->gs.stroke_alpha == 1 && child->gs.blend_mode == 0;
-    if (ok)
-        ok = cupidimage_pdf_image_dictionary(parent, pattern, "Shading", &shading) &&
-             cupidimage_pdf_paint_shading_view(child, &shading, 1);
-    cupidimage_pdf_object_view_release(&state);
-    cupidimage_pdf_object_view_release(&shading);
-    pdf_render_state_release(child);
-    free(child);
-    return ok;
 }
 
 int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *font, unsigned code) {
@@ -1442,7 +1308,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     child->glyph_uncolored = st->glyph_uncolored;
     child->glyph_expected_width = type->widths[code];
     child->glyph_depth++;
-    pdf_path_clear(&child->path);
+    cupidimage_pdf_path_clear(&child->path);
     double m[6];
     for (int i = 0; i < 6; i++)
         m[i] = st->gs.ctm[i];
@@ -1452,9 +1318,9 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
                        st->gs.font_size_pts,
                        0,
                        st->gs.text_rise};
-    pdf_double_concat(m, st->text_matrix);
-    pdf_double_concat(m, scale);
-    pdf_double_concat(m, type->matrix);
+    cupidimage_pdf_matrix_concat_double(m, st->text_matrix);
+    cupidimage_pdf_matrix_concat_double(m, scale);
+    cupidimage_pdf_matrix_concat_double(m, type->matrix);
     for (int i = 0; i < 6; i++) {
         if (!isfinite(m[i]) || fabs(m[i]) > 1e30)
             goto done;
@@ -1475,13 +1341,13 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
         goto done;
     child->group = &glyph_group;
     child->img = &glyph_group.image;
-    ok = pdf_render_stream(child, decoded, length) && child->glyph_seen_metrics;
+    ok = cupidimage_pdf_render_stream(child, decoded, length) && child->glyph_seen_metrics;
     if (ok)
         ok = child->glyph_uncolored ? cupidimage_pdf_type3_stencil_finish(st, &glyph_group)
                                     : cupidimage_pdf_composite_implicit_group(st, &glyph_group);
 done:
     if (child)
-        pdf_render_state_release(child);
+        cupidimage_pdf_render_state_release(child);
     cupidimage_pdf_group_free(st, &glyph_group);
     free(child);
     free(decoded);
@@ -1528,7 +1394,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     child->pending_clip = 0;
     child->image_failed = 0;
     child->glyph_active = 0;
-    pdf_path_clear(&child->path);
+    cupidimage_pdf_path_clear(&child->path);
     pdf_form_clip *clip = &child->form_clips[st->form_depth];
     if (!cupidimage_pdf_page_value(form, "BBox", &pos) ||
         !cupidimage_pdf_page_rectangle(st->document, st->document_size, form, pos, clip->box))
@@ -1607,14 +1473,14 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     child->initial_gs = child->gs;
     child->initial_gs.soft_mask = NULL;
     child->initial_gs.clip = NULL;
-    ok = pdf_render_stream(child, stream, length);
+    ok = cupidimage_pdf_render_stream(child, stream, length);
     if (ok)
         ok = cupidimage_pdf_group_finish(st, &group);
 done:
     cupidimage_pdf_font_table_free(&fonts);
     free(inflated);
     if (child)
-        pdf_render_state_release(child);
+        cupidimage_pdf_render_state_release(child);
     free(child);
     cupidimage_pdf_group_free(st, &group);
     if (!ok)
@@ -1631,8 +1497,8 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     pdf_render_state st = {0};
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
-    pdf_form_budget form_budget = {64u * 1024u * 1024u,  4096, 128u * 1024u * 1024u, 65536,
-                                   256u * 1024u * 1024u, 0};
+    pdf_form_budget form_budget = {
+        64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536, 256u * 1024u * 1024u, 0, 0};
     st.form_budget = &form_budget;
     pdf_pattern_store patterns = {0};
     st.patterns = &patterns;
@@ -1655,7 +1521,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     st.gs.text_knockout = 1;
     st.gs.fill_space.components = st.gs.stroke_space.components = 1;
     st.gs_stack_len = 0;
-    pdf_path_clear(&st.path);
+    cupidimage_pdf_path_clear(&st.path);
     st.in_text = 0;
     st.font_table = font_table;
     st.gs.current_font = NULL;
@@ -1666,8 +1532,8 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
     pdf_transparency_group page_group = {0};
     int ok = cupidimage_pdf_page_group_begin(&st, &page_group);
     if (ok)
-        ok = pdf_render_stream(&st, stream, stream_len);
-    pdf_render_state_release(&st);
+        ok = cupidimage_pdf_render_stream(&st, stream, stream_len);
+    cupidimage_pdf_render_state_release(&st);
     /* Page paint state must not mask, clip or blend the final medium composite. */
     st.gs = st.initial_gs;
     st.img = img;

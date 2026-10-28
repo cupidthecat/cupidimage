@@ -32,52 +32,105 @@ static int pattern_array(const pdf_render_state *st, const pdf_object_view *view
     return ok;
 }
 
+static void pattern_free(pdf_pattern *pattern) {
+    if (!pattern)
+        return;
+    free(pattern->tile.rgba);
+    free(pattern->shape);
+    free(pattern->program);
+    free(pattern->initial);
+    cupidimage_pdf_object_view_release(&pattern->definition);
+    if (pattern->surface) {
+        free(pattern->surface->image.rgba);
+        free(pattern->surface->alpha);
+        free(pattern->surface);
+    }
+    free(pattern);
+}
+
 void cupidimage_pdf_patterns_free(pdf_pattern_store *store) {
     while (store->head) {
         pdf_pattern *next = store->head->next;
-        free(store->head->tile.rgba);
-        free(store->head->shape);
-        free(store->head);
+        pattern_free(store->head);
         store->head = next;
     }
     store->bytes_used = 0;
     store->count = 0;
 }
 
-int cupidimage_pdf_pattern_sample(const pdf_pattern *pattern, double x, double y, uint8_t rgba[4],
-                                  double *shape, double *alpha) {
+void cupidimage_pdf_pattern_surface_release(pdf_render_state *st, pdf_pattern *pattern) {
+    if (!pattern || !pattern->surface)
+        return;
+    st->patterns->bytes_used -= pattern->surface_bytes;
+    free(pattern->surface->image.rgba);
+    free(pattern->surface->alpha);
+    free(pattern->surface);
+    pattern->surface = NULL;
+    pattern->surface_bytes = 0;
+}
+
+void cupidimage_pdf_patterns_end_paint(pdf_render_state *st) {
+    pdf_pattern *patterns[2] = {st->gs.fill_pattern, st->gs.stroke_pattern};
+    for (unsigned i = 0; i < 2; i++)
+        if (patterns[i] && patterns[i]->serial == st->paint_serial)
+            cupidimage_pdf_pattern_surface_release(st, patterns[i]);
+}
+
+int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, double x, double y,
+                                  double rgb[3], double *shape, double *alpha) {
+    size_t pixel;
+    if (pattern->deferred) {
+        if (st->pattern_depth && !st->pattern_deferred) {
+            if (st->pattern_needs_backdrop)
+                *st->pattern_needs_backdrop = 1;
+            return 0;
+        }
+        if (pattern->serial != st->paint_serial || !pattern->surface) {
+            if (!cupidimage_pdf_render_pattern_page(st, pattern))
+                return 0;
+            pattern->serial = st->paint_serial;
+        }
+        double sx = floor((x - st->page_x0_pts) * (96.0 / 72.0));
+        double sy = floor((st->page_top_pts - y) * (96.0 / 72.0));
+        if (!isfinite(sx) || !isfinite(sy) || sx < 0 || sy < 0 || sx >= st->img->width ||
+            sy >= st->img->height)
+            return 0;
+        pixel = (size_t)sy * st->img->width + (size_t)sx;
+        memcpy(rgb, pattern->surface->color + pixel * 3, 3 * sizeof(double));
+        *shape = pattern->surface->shape[pixel];
+        *alpha = pattern->surface->alpha[pixel];
+        return 1;
+    }
     if (pattern->shading) {
         double sx = floor((x - pattern->page_x0) * (96.0 / 72.0));
         double sy = floor((pattern->page_top - y) * (96.0 / 72.0));
         if (!isfinite(sx) || !isfinite(sy))
             return 0;
         if (sx < 0 || sy < 0 || sx >= pattern->tile.width || sy >= pattern->tile.height) {
-            memset(rgba, 0, 4);
+            memset(rgb, 0, 3 * sizeof(double));
             *shape = *alpha = 0;
             return 1;
         }
-        size_t pixel = (size_t)sy * pattern->tile.width + (size_t)sx;
-        memcpy(rgba, pattern->tile.rgba + pixel * 4, 4);
-        *shape = pattern->shape[pixel];
-        *alpha = pattern->alpha[pixel];
-        return 1;
+        pixel = (size_t)sy * pattern->tile.width + (size_t)sx;
+    } else {
+        const double *m = pattern->inverse;
+        double u = m[0] * x + m[2] * y + m[4], v = m[1] * x + m[3] * y + m[5];
+        if (!isfinite(u) || !isfinite(v))
+            return 0;
+        u = fmod(u, pattern->xstep);
+        v = fmod(v, pattern->ystep);
+        if (u < 0)
+            u += pattern->xstep;
+        if (v < 0)
+            v += pattern->ystep;
+        unsigned sx = (unsigned)fmin(pattern->tile.width - 1,
+                                     floor(u / pattern->xstep * pattern->tile.width));
+        unsigned sy = (unsigned)fmin(pattern->tile.height - 1,
+                                     floor((1 - v / pattern->ystep) * pattern->tile.height));
+        pixel = (size_t)sy * pattern->tile.width + sx;
     }
-    const double *m = pattern->inverse;
-    double u = m[0] * x + m[2] * y + m[4], v = m[1] * x + m[3] * y + m[5];
-    if (!isfinite(u) || !isfinite(v))
-        return 0;
-    u = fmod(u, pattern->xstep);
-    v = fmod(v, pattern->ystep);
-    if (u < 0)
-        u += pattern->xstep;
-    if (v < 0)
-        v += pattern->ystep;
-    unsigned sx =
-        (unsigned)fmin(pattern->tile.width - 1, floor(u / pattern->xstep * pattern->tile.width));
-    unsigned sy = (unsigned)fmin(pattern->tile.height - 1,
-                                 floor((1 - v / pattern->ystep) * pattern->tile.height));
-    size_t pixel = (size_t)sy * pattern->tile.width + sx;
-    memcpy(rgba, pattern->tile.rgba + pixel * 4, 4);
+    for (unsigned i = 0; i < 3; i++)
+        rgb[i] = pattern->tile.rgba[pixel * 4 + i] / 255.0;
     *shape = pattern->shape[pixel];
     *alpha = pattern->alpha[pixel];
     return 1;
@@ -161,7 +214,8 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     unsigned char *decoded = NULL;
     pdf_pattern *pattern = NULL;
     size_t reserved = 0;
-    int type, paint, tiling, ok = 0;
+    int type, paint, tiling, ok = 0, needs_backdrop = 0;
+    int *previous_backdrop = st->pattern_needs_backdrop;
     double bbox[4], matrix[6] = {1, 0, 0, 1, 0, 0}, step_x, step_y;
     size_t pos, length;
     const unsigned char *stream;
@@ -246,6 +300,10 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     reserved = bytes + sizeof(pdf_pattern);
     st->patterns->bytes_used += reserved;
     pattern->uncolored = paint == 2;
+    pattern->base_components = space->components;
+    memcpy(pattern->base, stroke ? st->gs.stroke_color : st->gs.fill_color, sizeof(pattern->base));
+    memcpy(pattern->matrix, m, sizeof(pattern->matrix));
+    memcpy(pattern->bounds, bbox, sizeof(pattern->bounds));
     pattern->xstep = step_x;
     pattern->ystep = step_y;
     double *inv = pattern->inverse;
@@ -275,16 +333,51 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     if (!isfinite(sx) || !isfinite(sy) || sx <= 0 || sy <= 0 || sx > 1e30 || sy > 1e30 ||
         (float)sx == 0 || (float)sy == 0)
         goto done;
+    st->pattern_needs_backdrop = &needs_backdrop;
     for (int y = (int)first_y; copies_x > 0 && y <= (int)last_y; y++)
         for (int x = (int)first_x; x <= (int)last_x; x++) {
             double ox = x * step_x, oy = y * step_y;
             if (fabs(ox * sx) > 1e30 || fabs(oy * sy) > 1e30 ||
                 !cupidimage_pdf_render_pattern_cell(st, &view, decoded, length, &pattern->tile,
                                                     pattern->shape, sx, sy, ox, oy, bbox,
-                                                    paint == 2))
+                                                    paint == 2)) {
+                if (needs_backdrop)
+                    goto ready;
                 goto done;
+            }
         }
 ready:
+    if (needs_backdrop) {
+        size_t cell_bytes =
+            (size_t)pattern->tile.width * pattern->tile.height * (4 + 2 * sizeof(double));
+        free(pattern->tile.rgba);
+        free(pattern->shape);
+        pattern->tile.rgba = NULL;
+        pattern->shape = pattern->alpha = NULL;
+        st->patterns->bytes_used -= cell_bytes;
+        reserved -= cell_bytes;
+        size_t available = PATTERN_BYTES - st->patterns->bytes_used;
+        size_t owned = view.owned ? view.len : 0;
+        if (length > available || owned > available - length ||
+            sizeof(pdf_graphics_state) > available - length - owned)
+            goto done;
+        size_t definition_bytes = length + owned + sizeof(pdf_graphics_state);
+        pattern->initial = malloc(sizeof(*pattern->initial));
+        if (!pattern->initial)
+            goto done;
+        *pattern->initial = st->initial_gs;
+        pattern->initial->clip = NULL;
+        pattern->initial->soft_mask = NULL;
+        pattern->definition = view;
+        memset(&view, 0, sizeof(view));
+        pattern->program = decoded;
+        decoded = NULL;
+        pattern->program_length = length;
+        pattern->definition_bytes = definition_bytes;
+        pattern->deferred = 1;
+        st->patterns->bytes_used += definition_bytes;
+        reserved += definition_bytes;
+    }
     if (st->patterns->count >= 65536)
         goto done;
     st->patterns->count++;
@@ -298,14 +391,11 @@ ready:
     reserved = 0;
     ok = 1;
 done:
+    st->pattern_needs_backdrop = previous_backdrop;
     free(decoded);
     cupidimage_pdf_object_view_release(&resources);
     cupidimage_pdf_object_view_release(&view);
-    if (pattern) {
-        free(pattern->tile.rgba);
-        free(pattern->shape);
-        free(pattern);
-    }
+    pattern_free(pattern);
     st->patterns->bytes_used -= reserved;
     return ok;
 }

@@ -114,8 +114,11 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
         next.alpha_is_shape = st->gs.alpha_is_shape;
     }
     /* Cached cells are backdrop-independent only with Normal blending. */
-    if (st->pattern_depth && !st->mask_rendering && next.blend_mode != 0)
+    if (st->pattern_depth && !st->mask_rendering && next.blend_mode != 0 && !st->pattern_deferred) {
+        if (st->pattern_needs_backdrop)
+            *st->pattern_needs_backdrop = 1;
         return 0;
+    }
     if (!st->glyph_uncolored && cupidimage_pdf_page_value(view, "SMask", &pos)) {
         pdf_soft_mask *mask = NULL;
         int replace;

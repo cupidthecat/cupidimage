@@ -78,8 +78,8 @@ def main():
         check('uncolored-alpha',fixture(content='/PC cs 1 0 0 /P scn 0 0 18 12 re f',paint=2,
               program='/Half gs 0 0 1.5 1.5 re f',resources='<< /ExtGState << /Half << /ca .5 >> >> >>'),
               lambda x,y:(255,128,128) if x%4<2 and y%4>=2 else white,reference=False)
-        check('backdrop-dependent-blend-rejected',fixture(program='/M gs 1 0 0 rg 0 0 1.5 1.5 re f',
-              resources='<< /ExtGState << /M << /BM /Multiply >> >> >>'),reject=True)
+        check('blend-on-transparent-backdrop',fixture(program='/M gs 1 0 0 rg 0 0 1.5 1.5 re f',
+              resources='<< /ExtGState << /M << /BM /Multiply >> >> >>'),base)
         check('pattern-stroke',fixture(content='/Pattern CS /P SCN 3 w 0 6 m 18 6 l S'),
               lambda x,y:base(x,y) if 6<=y<=9 else white)
         check('outer-alpha',fixture(content='/Half gs /Pattern cs /P scn 0 0 18 12 re f',

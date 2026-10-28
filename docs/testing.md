@@ -379,3 +379,8 @@ uncolored patterns. It also checks saved color state, input clipping, 16-bit
 image samples and repeated translucent paint without premature byte rounding.
 The fixtures are generated in temporary directories; no downloaded corpus is
 needed. Device-conversion formulas come from ISO 32000-1 section 10.3.
+
+`make test-pdf-pattern-backdrops` checks non-isolated tiling evaluation against
+analytic pixels, including changing backdrops, overlapping cells, transformed
+grids, text, soft masks and deferred validation. Known independent-renderer
+differences are documented in [PDF patterns](pdf-patterns.md).

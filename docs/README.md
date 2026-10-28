@@ -8,6 +8,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [Formats](formats.md): decoder features, rendering behavior, and limits.
 - [PDF content syntax](pdf-content.md): names, text strings, operands and parser limits.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
+- [PDF patterns](pdf-patterns.md): tiling, backdrop-dependent evaluation and cache limits.
 - [PDF shading](pdf-shading.md): gradients, triangle streams, interpolation and validation limits.
 - [PDF transparency](pdf-transparency.md): compositing, RGB/gray groups, validation and remaining limits.
 - [Conformance tracker](format-conformance.md): standards, evidence, and unfinished work.

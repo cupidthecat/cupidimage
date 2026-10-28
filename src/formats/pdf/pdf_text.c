@@ -318,6 +318,7 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
     const unsigned char *bytes = (const unsigned char *)text;
     size_t pos = 0;
     while (pos < length && !st->image_failed) {
+        st->paint_serial = ++st->form_budget->paint_serial;
         size_t before = pos;
         const pdf_font_map *font = st->gs.current_font;
         double width, advance_y = 0, origin_x = 0, origin_y = 0;
@@ -394,6 +395,7 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
             } else
                 pdf_draw_glyph(st, draw);
         }
+        cupidimage_pdf_patterns_end_paint(st);
         double spacing = st->gs.char_space;
         /* Word spacing applies to a single-byte character code 32, not to a
            Unicode mapping or one byte within a multibyte character code. */

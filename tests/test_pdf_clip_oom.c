@@ -35,6 +35,7 @@
 #include "../src/formats/pdf/pdf_mesh.c"
 #include "../src/formats/pdf/pdf_object_values.c"
 #include "../src/formats/pdf/pdf_patch.c"
+#include "../src/formats/pdf/pdf_pattern_render.c"
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
@@ -177,7 +178,7 @@ int main(void) {
         image.width = 2;
         image.height = 2;
         image.rgba = pixels;
-        pdf_form_budget budget = {0, 3, 3, 0, 0, 0};
+        pdf_form_budget budget = {0, 3, 3, 0, 0, 0, 0};
         pdf_render_state state = {0};
         state.img = &image;
         state.document = (const unsigned char *)shading_doc;
@@ -719,9 +720,13 @@ int main(void) {
                 fault_free(live[0]);
         }
     }
-    for (int uncolored = 0; uncolored < 2; uncolored++) {
-        const char *program =
-            uncolored ? "1.5 0 0 1.5 0 0 cm /Mask Do" : "1 0 0 rg 1.5 0 0 1.5 0 0 cm /Mask Do";
+    for (int variant = 0; variant < 4; variant++) {
+        int uncolored = variant & 1, deferred = variant >= 2;
+        const char *program = deferred
+                                  ? (uncolored ? "/Blend gs 1.5 0 0 1.5 0 0 cm /Mask Do"
+                                               : "/Blend gs 1 0 0 rg 1.5 0 0 1.5 0 0 cm /Mask Do")
+                                  : (uncolored ? "1.5 0 0 1.5 0 0 cm /Mask Do"
+                                               : "1 0 0 rg 1.5 0 0 1.5 0 0 cm /Mask Do");
         char pattern_document[2048];
         int length =
             snprintf(pattern_document, sizeof(pattern_document),
@@ -729,7 +734,8 @@ int main(void) {
                      "[/Pattern /DeviceRGB] >> >> >> endobj\n"
                      "5 0 obj << /Type /Pattern /PatternType 1 /PaintType %d /TilingType 1 /BBox "
                      "[0 0 1.5 1.5] /XStep 3 /YStep 3 "
-                     "/Resources << /XObject << /Mask 6 0 R >> >> /Length %zu >> "
+                     "/Resources << /ExtGState << /Blend << /BM /Multiply >> >> "
+                     "/XObject << /Mask 6 0 R >> >> /Length %zu >> "
                      "stream\n%s\nendstream endobj\n"
                      "6 0 obj << /Subtype /Image /Width 1 /Height 1 /ImageMask true /Filter "
                      "/ASCIIHexDecode /Length 3 >> stream\n00>\nendstream endobj\n",

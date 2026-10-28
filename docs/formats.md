@@ -452,17 +452,17 @@ operators do not move it. Form and glyph resource scopes retain their own initia
 transforms. Tiling types 1 and 3 use rounded device-grid step vectors; type 2 keeps
 the requested geometry. Singular original or rounded grids are rejected.
 
-The cell cache preserves RGBA color and separate floating-point shape and alpha. Cell alpha constants and blend mode
-start at their defaults; the caller's transparency applies when the resulting
-pattern paints an object. Normal-blend transparency and nested patterns are
-supported. A cell that requests a non-Normal blend mode is rejected because its
-result depends on the backdrop and cannot use this cache. A mask definition
-inside a pattern has its own fixed backdrop and may use blend modes there. Cached colors remain eight-bit; shape and alpha retain double precision.
+Normal-blended cells use an RGBA cache with separate floating-point shape and
+alpha. Cells that request non-Normal blending are evaluated per painted object
+against its actual backdrop, with all tiles in one non-isolated group. The
+caller's transparency applies once to the resulting pattern source. A mask
+definition inside a pattern has its own fixed backdrop. See [PDF patterns](pdf-patterns.md)
+for the evaluation rules, tests, limits and remaining color-cache work.
 
 Uncoloured cells reject colour-setting operators and ordinary colour images;
 image masks and transparency parameters are allowed. Resources are local to the
 pattern dictionary. Limits are eight nested patterns, 65,536 cached instances per
-page, 64 MiB of cached cells and descriptors, 4,096 pixels per cell axis, four
+page, 64 MiB of definitions, cached cells, per-object surfaces and descriptors, 4,096 pixels per cell axis, four
 million pixels per cell, and 4,096 overlapping copies per period. The existing
 shared content and invocation budgets also apply. Empty bounding boxes produce
 transparent cells without entering a large replication loop.

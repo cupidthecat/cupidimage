@@ -394,6 +394,7 @@ static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double 
 }
 
 int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view) {
+    st->paint_serial = ++st->form_budget->paint_serial;
     pdf_object_view image = *view;
     image.owned = NULL; /* The caller retains the dictionary and stream. */
     unsigned char *samples = NULL;
@@ -560,6 +561,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     }
     ok = 1;
 done:
+    cupidimage_pdf_patterns_end_paint(st);
     st->gs.soft_mask = graphics_mask;
     free(mask.samples);
     free(samples);
