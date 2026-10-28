@@ -49,6 +49,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_functions.c"
 #include "../src/formats/pdf/pdf_groups.c"
 #include "../src/formats/pdf/pdf_icc.c"
+#include "../src/formats/pdf/pdf_icc_lut.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_inline.c"

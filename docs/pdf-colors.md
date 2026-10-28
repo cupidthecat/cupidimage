@@ -82,7 +82,7 @@ blending spaces, general rendering-intent selection, full NChannel support and
 overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
 
-## ICC matrix and tone-curve profiles
+## ICC matrix, curve and lookup profiles
 
 ICCBased source spaces now decode supported version 2 and version 4 profiles
 instead of using their alternate device space. The current profile models are:
@@ -91,6 +91,8 @@ instead of using their alternate device space. The current profile models are:
   per-channel tone-reproduction curves.
 - One-component gray input/display/output profiles with a gray tone curve.
   Their profile connection space may be XYZ or Lab.
+- Gray, RGB and CMYK forward lookup profiles using 8-bit Lab or 16-bit XYZ/Lab
+  tables. Other table and multiprocess models remain unsupported.
 
 The parser reads big-endian tag directories and signed fixed-point values.
 Identity curves, u8Fixed8 gamma curves, sampled 16-bit curves with linear
@@ -103,14 +105,17 @@ Transforms use the D50 profile connection space and then the fixed sRGB output
 conversion described above. The profile's header rendering intent is not used
 as a PDF graphics-state rendering intent. General intent selection, output
 profiles, black-point compensation and ICC blending spaces remain unfinished.
-Profiles containing higher-priority A2B or D2B transforms are rejected rather
-than silently replacing those LUT transforms with matrix tags.
+The relative-colorimetric path selects A2B1, then A2B0, before matrix/curve tags.
+Unsupported selected A2B types and profiles containing D2B transforms are rejected
+rather than silently replaced with matrix tags. Other PDF rendering intents are
+not yet applied.
 
 PDF N must match the supported profile's channel count. Range may be absent,
 null or an indirect array, but this implementation currently requires [0, 1]
 for each component. Profile references and metadata can pass through indirect
-or compressed objects. Unsupported profile models, CMYK/LUT profiles, unusual
-component ranges and fallback-to-Alternate policy remain open work.
+or compressed objects. PDF N may be 1, 3 or 4 and must agree with the profile.
+Unsupported profile models, unusual component ranges and fallback-to-Alternate
+policy remain open work.
 
 Decoded profile data are immutable and shared across saved graphics states,
 Forms, patterns and repeated selections within a page. The page owns the cache
@@ -254,7 +259,7 @@ counted as independent comparisons.
 
 NChannel spaces containing only process components use their Process dictionary
 rather than the aggregate alternate tint function. Supported process spaces are
-DeviceGray, DeviceRGB, DeviceCMYK, CalGray, CalRGB and the supported gray/RGB ICC
+DeviceGray, DeviceRGB, DeviceCMYK, CalGray, CalRGB and the supported ICC
 models. Lab, special spaces and unknown spot components are rejected.
 
 Non-CMYK spaces require every process component in its normal order. CMYK may
@@ -295,3 +300,48 @@ Spot-only and mixed process/spot NChannel spaces remain unsupported, even when
 Colorants entries are present. MixingHints, physical ink interactions, overprint
 and spot-aware transparency require further work. Existing ICC and color-management
 limits still apply; this is not complete NChannel support.
+
+## ICC lookup-table details
+
+`pdf_icc_lut.c` evaluates the forward input tables, multidimensional CLUT and
+output tables. One-dimensional tables use linear interpolation. Three-component
+CLUTs use tetrahedral interpolation; four-component CLUTs interpolate between two
+three-dimensional slices. Device-input matrices must be identity matrices.
+Sixteen-bit tables have 2 to 4,096 entries per channel; eight-bit tables have 256.
+All payload extents must fit the validated profile data. Producer padding after
+the declared tables is ignored, without treating it as extra samples or stages.
+
+PCSXYZ output is decoded without prematurely clipping values above 1. Legacy
+16-bit Lab encoding is preserved even in version 4 profiles. Eight-bit PCSXYZ is
+not supported because its interpretation is undefined by ICC.1. The table layouts,
+encodings and tag selection follow ICC.1:2022 sections 8.10, 10.10 and 10.11.
+
+The existing profile cache and memory limits apply. CMYK profiles flow through
+text, packed/JPEG images, soft-mask Matte processing, Indexed palettes, patterns,
+shading, default-space replacement and supported NChannel process definitions.
+This does not change the unmanaged conversion used by plain DeviceCMYK.
+
+`make test-pdf-icc-lut` exercises raw table interpolation, extrema, nonfinite input,
+malformed extents, source integration and allocation recovery. Its optional
+independent pass compares table evaluations and rendered pixels:
+
+    python3 scripts/test_pdf_icc_lut.py bin/test_pdf_icc_lut bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+Three owned assets cover CMYK/Lab, eight-bit RGB/Lab and XYZ values above 1.
+Their raster references are analytic. Existing installed profiles can also be
+checked without copying them into the repository:
+
+    python3 scripts/compare_pdf_icc_profiles.py bin/test_pdf_pages path/to/profile.icc
+
+That optional comparison uses relative colorimetry with black-point compensation
+disabled and permits a two-channel-value rounding difference. Forty samples each
+from two installed CMYK profiles matched exactly in the current check. This is
+not a claim about every profile or every input color.
+
+Black-point compensation remains a known difference. An authored constant A2B1
+profile produces gray 119 without compensation; the comparison renderer maps its
+nonzero source black point to black. A separate uncompensated color-engine check
+confirmed the native result. The compensated result is not used as an oracle for
+the current uncompensated path. General rendering intents, black-point
+compensation, output profiles, mAB/mBA, multiprocess tags and ICC blending spaces
+still require work.

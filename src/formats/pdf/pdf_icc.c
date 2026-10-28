@@ -1,4 +1,5 @@
 #include "pdf_functions.h"
+#include "pdf_icc_lut.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ struct pdf_icc_profile {
     size_t length;
     int components, lab_pcs;
     pdf_icc_curve curves[3];
+    pdf_icc_lut lut;
     pdf_image_colors output;
 };
 
@@ -119,13 +121,17 @@ static int icc_parse(pdf_icc_profile *profile) {
     if (profile->length < 132 || icc_u32(p) != profile->length || memcmp(p + 36, "acsp", 4) ||
         (p[8] != 2 && p[8] != 4))
         return 0;
-    int gray = !memcmp(p + 16, "GRAY", 4), rgb = !memcmp(p + 16, "RGB ", 4);
-    if ((!gray && !rgb) || profile->components != (gray ? 1 : 3) ||
+    int gray = !memcmp(p + 16, "GRAY", 4), rgb = !memcmp(p + 16, "RGB ", 4),
+        cmyk = !memcmp(p + 16, "CMYK", 4);
+    if ((!gray && !rgb && !cmyk) ||
+        profile->components != (gray  ? 1
+                                : rgb ? 3
+                                      : 4) ||
         (memcmp(p + 12, "scnr", 4) && memcmp(p + 12, "mntr", 4) &&
-         (!gray || memcmp(p + 12, "prtr", 4))))
+         (memcmp(p + 12, "prtr", 4) && memcmp(p + 12, "spac", 4))))
         return 0;
     profile->lab_pcs = !memcmp(p + 20, "Lab ", 4);
-    if ((memcmp(p + 20, "XYZ ", 4) && !profile->lab_pcs) || (rgb && profile->lab_pcs))
+    if (memcmp(p + 20, "XYZ ", 4) && !profile->lab_pcs)
         return 0;
     if (icc_u32(p + 68) != 0xf6d6 || icc_u32(p + 72) != 0x10000 || icc_u32(p + 76) != 0xd32d)
         return 0;
@@ -139,7 +145,7 @@ static int icc_parse(pdf_icc_profile *profile) {
             length > profile->length - offset)
             return 0;
         /* Do not silently substitute matrix tags for a higher-priority LUT transform. */
-        if (!memcmp(entry, "A2B", 3) || !memcmp(entry, "D2B", 3))
+        if (!memcmp(entry, "D2B", 3))
             return 0;
     }
     pdf_image_colors *out = &profile->output;
@@ -151,6 +157,26 @@ static int icc_parse(pdf_icc_profile *profile) {
     out->gamma[0] = out->gamma[1] = out->gamma[2] = 1;
     out->lab_range[0] = out->lab_range[2] = -128;
     out->lab_range[1] = out->lab_range[3] = 127;
+    const unsigned char *table = NULL;
+    size_t table_length = 0;
+    int selected = icc_tag(profile, "A2B1", &table, &table_length);
+    if (!selected)
+        selected = icc_tag(profile, "A2B0", &table, &table_length);
+    if (selected < 0)
+        return 0;
+    if (selected) {
+        if (!cupidimage_pdf_icc_lut_parse(&profile->lut, table, table_length,
+                                          (unsigned)profile->components, profile->lab_pcs))
+            return 0;
+        out->components = 3;
+        out->calibrated = profile->lab_pcs ? 3 : 2;
+        if (profile->lab_pcs && profile->lut.bytes == 2)
+            out->lab_range[1] = out->lab_range[3] = 128;
+        return cupidimage_pdf_calibrated_output(out);
+    }
+    if (cmyk || (rgb && (profile->lab_pcs || !memcmp(p + 12, "prtr", 4))) ||
+        !memcmp(p + 12, "spac", 4))
+        return 0;
     static const char *columns[] = {"rXYZ", "gXYZ", "bXYZ"};
     static const char *curves[] = {"rTRC", "gTRC", "bTRC"};
     for (int i = 0; i < profile->components; i++) {
@@ -188,8 +214,8 @@ int cupidimage_pdf_icc_space(const pdf_render_state *st, pdf_object_id object,
     int ok = profile && cupidimage_pdf_state_object(st, object, &source) &&
              cupidimage_pdf_resolve_value(st->document, st->document_size, &source, 0, &view, 0) &&
              cupidimage_pdf_image_integer(st, &view, "N", &profile->components) &&
-             (profile->components == 1 || profile->components == 3);
-    double range[6] = {0, 1, 0, 1, 0, 1};
+             (profile->components == 1 || profile->components == 3 || profile->components == 4);
+    double range[8] = {0, 1, 0, 1, 0, 1, 0, 1};
     pdf_object_view range_view = {0};
     int present = ok ? cupidimage_pdf_optional_value(st->document, st->document_size, &view,
                                                      "Range", &range_view)
@@ -228,6 +254,23 @@ int cupidimage_pdf_icc_space(const pdf_render_state *st, pdf_object_id object,
 
 int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values[4], int gray,
                              double output[3]) {
+    if (profile->lut.inputs) {
+        double pcs[4] = {0};
+        if (!cupidimage_pdf_icc_lut_value(&profile->lut, values, pcs))
+            return 0;
+        if (profile->lab_pcs) {
+            double factor = profile->lut.bytes == 2 ? 65535.0 / 65280.0 : 1;
+            pcs[0] *= 100 * factor;
+            pcs[1] = pcs[1] * 255 * factor - 128;
+            pcs[2] = pcs[2] * 255 * factor - 128;
+            cupidimage_pdf_calibrated_color(&profile->output, pcs, gray, output);
+        } else {
+            for (unsigned i = 0; i < 3; i++)
+                pcs[i] *= 65535.0 / 32768.0;
+            cupidimage_pdf_xyz_color(&profile->output, pcs, gray, output);
+        }
+        return 1;
+    }
     double linear[4] = {0};
     for (int i = 0; i < profile->components; i++)
         if (!icc_curve_value(profile->curves + i, values[i], linear + i))

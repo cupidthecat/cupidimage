@@ -2098,10 +2098,13 @@
           "evidence": [
             "src/formats/pdf/pdf_icc.c",
             "scripts/test_pdf_icc.py",
-            "docs/pdf-colors.md"
+            "docs/pdf-colors.md",
+            "src/formats/pdf/pdf_icc_lut.c",
+            "scripts/test_pdf_icc_lut.py",
+            "scripts/compare_pdf_icc_profiles.py"
           ],
           "limitations": [
-            "Only supported gray/RGB matrix and tone-curve profiles with unit component ranges are implemented. LUT/multiprocess profiles, CMYK, alternate fallback, general intent handling and ICC blending remain incomplete."
+            "Supported matrix/TRC and 8/16-bit forward table profiles cover gray/RGB/CMYK sources with unit ranges. mAB/mBA, multiprocess profiles, unusual ranges, alternate fallback, general intents, black-point compensation, output profiles and ICC blending remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -2111,7 +2114,8 @@
           "audit": "Selected native source-profile parsing, curve equations and ownership paths tested; full ICC audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.5.5",
-            "ICC.1:2022 10.6, 10.18 and Annex F"
+            "ICC.1:2022 10.6, 10.18 and Annex F",
+            "ICC.1:2022 8.10, 10.10 and 10.11"
           ]
         },
         {
@@ -2179,10 +2183,11 @@
             "src/formats/pdf/pdf_image_colors.c",
             "scripts/test_pdf_default_colors.py",
             "scripts/test_pdf_devicen.py",
-            "scripts/test_pdf_nchannel.py"
+            "scripts/test_pdf_nchannel.py",
+            "scripts/test_pdf_icc_lut.py"
           ],
           "limitations": [
-            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. CMYK ICC, NChannel spot mixtures and calibrated/ICC blending spaces remain unfinished.",
+            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. Unsupported ICC models, NChannel spot mixtures and calibrated/ICC blending spaces remain unfinished.",
             "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
           ],
           "dependencies": [
@@ -2251,7 +2256,8 @@
             "scripts/test_pdf_colors.py",
             "docs/pdf-colors.md",
             "scripts/test_pdf_devicen.py",
-            "scripts/test_pdf_nchannel.py"
+            "scripts/test_pdf_nchannel.py",
+            "scripts/test_pdf_icc_lut.py"
           ],
           "limitations": [
             "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and calibrated/ICC blending spaces remain unfinished.",

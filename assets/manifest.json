@@ -703,6 +703,18 @@
       "sha256": "9d793cac5309c3f709a8d0b9b1acd9fb10cd474f163be899391331da6f2d648e"
     },
     {
+      "path": "assets/pdf/reference/icc-lut16-cmyk.pdf",
+      "sha256": "cbc96e1ae6feca38469c2001543f551e95e3c5a5b5b922abbbf46ba0174ed826"
+    },
+    {
+      "path": "assets/pdf/reference/icc-lut16-xyz-range.pdf",
+      "sha256": "bc499c97198bd7435be98e0cedc2996cbd315888cceee2b9dd0f258f507e0c27"
+    },
+    {
+      "path": "assets/pdf/reference/icc-lut8-rgb.pdf",
+      "sha256": "3a8e483d4fabf693dfb6f69d6a3c258a0d30920827153a62b5291d37c31d7c0f"
+    },
+    {
       "path": "assets/pdf/reference/indexed-lab-patch.pdf",
       "sha256": "43b444b666fb23d49dd9b1e3aca8914944f8fa6905509b85cf250db8557960ce"
     },

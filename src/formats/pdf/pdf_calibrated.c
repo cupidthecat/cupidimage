@@ -148,7 +148,7 @@ static double calibrated_encode(double value) {
 
 void cupidimage_pdf_calibrated_color(const pdf_image_colors *space, const double values[4],
                                      int gray, double out[3]) {
-    double source[3], xyz[3];
+    double source[3];
     if (space->calibrated == 3) {
         double l = cupidimage_pdf_color_component(space, 0, values[0]);
         double a = cupidimage_pdf_color_component(space, 1, values[1]);
@@ -170,6 +170,12 @@ void cupidimage_pdf_calibrated_color(const pdf_image_colors *space, const double
             source[i] = space->matrix[i] * value[0] + space->matrix[3 + i] * value[1] +
                         space->matrix[6 + i] * value[2];
     }
+    cupidimage_pdf_xyz_color(space, source, gray, out);
+}
+
+void cupidimage_pdf_xyz_color(const pdf_image_colors *space, const double source[3], int gray,
+                              double out[3]) {
+    double xyz[3];
     calibrated_multiply(space->adaptation, source, xyz);
     if (gray) {
         out[0] = out[1] = out[2] = calibrated_encode(xyz[1]);

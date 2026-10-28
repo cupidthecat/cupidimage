@@ -129,3 +129,8 @@ program. `pdf_text_outline.c` builds transformed edges without modifying cached
 font coordinates. Paint state stays in the renderer, and the page budget bounds
 retained outline storage separately from font-program bytes. Font destruction
 releases cache entries.
+
+ICC profile ownership and tag selection live in `pdf_icc.c`; bounded forward
+lookup-table evaluation lives in `pdf_icc_lut.c`. Both use the shared calibrated
+XYZ-to-output conversion. Raw tables borrow immutable profile storage, so cache
+cleanup has one owner and no per-pixel allocation.

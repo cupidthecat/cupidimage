@@ -251,6 +251,7 @@ int cupidimage_pdf_empty_color(const pdf_image_colors *, const pdf_pattern *);
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
 int cupidimage_pdf_calibrated_output(pdf_image_colors *);
 int cupidimage_pdf_icc_space(const pdf_render_state *, pdf_object_id, pdf_image_colors *);
+void cupidimage_pdf_xyz_color(const pdf_image_colors *, const double[3], int, double[3]);
 int cupidimage_pdf_icc_color(const pdf_icc_profile *, const double[4], int, double[3]);
 void cupidimage_pdf_icc_free(pdf_icc_store *);
 int cupidimage_pdf_calibrated_space(const pdf_render_state *, const pdf_object_view *, size_t *,

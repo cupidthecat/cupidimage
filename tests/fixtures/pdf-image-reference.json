@@ -497,6 +497,27 @@
       "height": 16,
       "rgba_zlib": "eJxj+M8wCkfhKByFo3AEQgCMef0f",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-lut16-cmyk.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-lut8-rgb.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJyzsbH5bzOKR/EoHsWjeMRhAIgrjJ8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-lut16-xyz-range.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z5D2//8oHsWjeBSP4hGHASX8li4=",
+      "tolerance": 0
     }
   ]
 }

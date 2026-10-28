@@ -566,3 +566,11 @@ patterns, shading and scoped resources. Its independent pass covers consistent
 alternates; deliberately conflicting aggregate functions use the Process dictionary
 as their specification-based oracle. Regenerate its three analytic assets with
 `scripts/generate_pdf_nchannel_fixtures.py`. Spot mixtures remain unsupported.
+
+`make test-pdf-icc-lut` checks 8/16-bit ICC table pipelines and their use in PDF
+text, CMYK JPEG images, masks, palettes, patterns and shading. The optional
+`--reference` pass adds raw pipeline and raster comparisons. Regenerate its three
+analytic assets with `scripts/generate_pdf_icc_lut_fixtures.py`.
+`scripts/compare_pdf_icc_profiles.py` can compare supplied profile files with an
+installed independent color engine; it disables black-point compensation and
+never adds those profiles to the repository.
