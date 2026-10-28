@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -24,20 +24,21 @@
 static void svg_segments_add_arc(svg_segments *segs, float cx, float cy, float rx, float ry,
                                  float start_ang, float end_ang, int steps);
 static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, float x1, float y1,
-                                     float rx, float ry, float x_axis_rotation,
-                                     int large_arc, int sweep);
+                                     float rx, float ry, float x_axis_rotation, int large_arc,
+                                     int sweep);
 static float svg_point_segment_distance(float px, float py, float x0, float y0, float x1, float y1);
-static float svg_point_segment_distance_cap(float px, float py, float x0, float y0, float x1, float y1,
-                                            float half, int start_cap, int end_cap);
+static float svg_point_segment_distance_cap(float px, float py, float x0, float y0, float x1,
+                                            float y1, float half, int start_cap, int end_cap);
 static int svg_point_in_triangle(float px, float py, const svg_join_tri *tri);
-static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap,
-                            float ax, float ay, float bx, float by, float cx, float cy);
-static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, float y1,
-                             float x2, float y2, float x3, float y3, float tol, int depth);
-static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, float y1,
-                            float x2, float y2, float tol, int depth);
+static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap, float ax, float ay, float bx,
+                            float by, float cx, float cy);
+static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, float y1, float x2,
+                             float y2, float x3, float y3, float tol, int depth);
+static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, float y1, float x2,
+                            float y2, float tol, int depth);
 
-void cupidimage_svg_bbox_init(svg_bbox *bbox) {
+void cupidimage_svg_bbox_init(svg_bbox *bbox)
+{
     if (!bbox) {
         return;
     }
@@ -47,7 +48,8 @@ void cupidimage_svg_bbox_init(svg_bbox *bbox) {
     bbox->h = -1.0f;
 }
 
-void cupidimage_svg_bbox_add_rect(svg_bbox *bbox, float x, float y, float w, float h) {
+void cupidimage_svg_bbox_add_rect(svg_bbox *bbox, float x, float y, float w, float h)
+{
     if (!bbox || w < 0.0f || h < 0.0f) {
         return;
     }
@@ -68,11 +70,13 @@ void cupidimage_svg_bbox_add_rect(svg_bbox *bbox, float x, float y, float w, flo
     bbox->h = maxy - miny;
 }
 
-int cupidimage_svg_bbox_valid(const svg_bbox *bbox) {
+int cupidimage_svg_bbox_valid(const svg_bbox *bbox)
+{
     return bbox && bbox->w > 0.0f && bbox->h > 0.0f;
 }
 
-void cupidimage_svg_bbox_expand(svg_bbox *bbox, float amount) {
+void cupidimage_svg_bbox_expand(svg_bbox *bbox, float amount)
+{
     if (!bbox || amount <= 0.0f) {
         return;
     }
@@ -85,73 +89,9 @@ void cupidimage_svg_bbox_expand(svg_bbox *bbox, float amount) {
     bbox->h += amount * 2.0f;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int cupidimage_svg_segments_add(svg_segments *segs, float x0, float y0, float x1, float y1, int to_stroke, int to_fill) {
+int cupidimage_svg_segments_add(svg_segments *segs, float x0, float y0, float x1, float y1,
+                                int to_stroke, int to_fill)
+{
     if (to_stroke) {
         if (segs->stroke_count >= segs->stroke_cap) {
             size_t new_cap = segs->stroke_cap ? segs->stroke_cap * 2 : 32;
@@ -176,18 +116,27 @@ int cupidimage_svg_segments_add(svg_segments *segs, float x0, float y0, float x1
         }
         segs->fill[segs->fill_count++] = (svg_segment){x0, y0, x1, y1};
     }
-    if (x0 < segs->minx) segs->minx = x0;
-    if (y0 < segs->miny) segs->miny = y0;
-    if (x0 > segs->maxx) segs->maxx = x0;
-    if (y0 > segs->maxy) segs->maxy = y0;
-    if (x1 < segs->minx) segs->minx = x1;
-    if (y1 < segs->miny) segs->miny = y1;
-    if (x1 > segs->maxx) segs->maxx = x1;
-    if (y1 > segs->maxy) segs->maxy = y1;
+    if (x0 < segs->minx)
+        segs->minx = x0;
+    if (y0 < segs->miny)
+        segs->miny = y0;
+    if (x0 > segs->maxx)
+        segs->maxx = x0;
+    if (y0 > segs->maxy)
+        segs->maxy = y0;
+    if (x1 < segs->minx)
+        segs->minx = x1;
+    if (y1 < segs->miny)
+        segs->miny = y1;
+    if (x1 > segs->maxx)
+        segs->maxx = x1;
+    if (y1 > segs->maxy)
+        segs->maxy = y1;
     return 1;
 }
 
-void cupidimage_svg_segments_init(svg_segments *segs) {
+void cupidimage_svg_segments_init(svg_segments *segs)
+{
     segs->stroke = NULL;
     segs->stroke_count = 0;
     segs->stroke_cap = 0;
@@ -200,7 +149,8 @@ void cupidimage_svg_segments_init(svg_segments *segs) {
     segs->maxy = -1e30f;
 }
 
-void cupidimage_svg_segments_free(svg_segments *segs) {
+void cupidimage_svg_segments_free(svg_segments *segs)
+{
     free(segs->stroke);
     free(segs->fill);
     segs->stroke = NULL;
@@ -212,7 +162,8 @@ void cupidimage_svg_segments_free(svg_segments *segs) {
 }
 
 static void svg_segments_add_arc(svg_segments *segs, float cx, float cy, float rx, float ry,
-                                 float start_ang, float end_ang, int steps) {
+                                 float start_ang, float end_ang, int steps)
+{
     if (!segs || steps < 1) {
         return;
     }
@@ -228,14 +179,20 @@ static void svg_segments_add_arc(svg_segments *segs, float cx, float cy, float r
     }
 }
 
-void cupidimage_svg_segments_add_rect(svg_segments *segs, float x, float y, float w, float h, float rx, float ry) {
+void cupidimage_svg_segments_add_rect(svg_segments *segs, float x, float y, float w, float h,
+                                      float rx, float ry)
+{
     if (!segs || w <= 0.0f || h <= 0.0f) {
         return;
     }
-    if (rx < 0.0f) rx = 0.0f;
-    if (ry < 0.0f) ry = 0.0f;
-    if (rx > w * 0.5f) rx = w * 0.5f;
-    if (ry > h * 0.5f) ry = h * 0.5f;
+    if (rx < 0.0f)
+        rx = 0.0f;
+    if (ry < 0.0f)
+        ry = 0.0f;
+    if (rx > w * 0.5f)
+        rx = w * 0.5f;
+    if (ry > h * 0.5f)
+        ry = h * 0.5f;
     if (rx <= 0.0f || ry <= 0.0f) {
         cupidimage_svg_segments_add(segs, x, y, x + w, y, 1, 0);
         cupidimage_svg_segments_add(segs, x + w, y, x + w, y + h, 1, 0);
@@ -244,8 +201,10 @@ void cupidimage_svg_segments_add_rect(svg_segments *segs, float x, float y, floa
         return;
     }
     int steps = (int)lroundf(fmaxf(rx, ry) * 0.5f);
-    if (steps < 4) steps = 4;
-    if (steps > 24) steps = 24;
+    if (steps < 4)
+        steps = 4;
+    if (steps > 24)
+        steps = 24;
     float left = x + rx;
     float right = x + w - rx;
     float top = y + ry;
@@ -260,13 +219,16 @@ void cupidimage_svg_segments_add_rect(svg_segments *segs, float x, float y, floa
     svg_segments_add_arc(segs, left, top, rx, ry, (float)M_PI, 1.5f * (float)M_PI, steps);
 }
 
-void cupidimage_svg_segments_add_ellipse(svg_segments *segs, float cx, float cy, float rx, float ry) {
+void cupidimage_svg_segments_add_ellipse(svg_segments *segs, float cx, float cy, float rx, float ry)
+{
     if (!segs || rx <= 0.0f || ry <= 0.0f) {
         return;
     }
     int steps = (int)lroundf(fmaxf(rx, ry) * 0.75f);
-    if (steps < 16) steps = 16;
-    if (steps > 128) steps = 128;
+    if (steps < 16)
+        steps = 16;
+    if (steps > 128)
+        steps = 128;
     float prevx = cx + rx;
     float prevy = cy;
     for (int i = 1; i <= steps; i++) {
@@ -280,8 +242,9 @@ void cupidimage_svg_segments_add_ellipse(svg_segments *segs, float cx, float cy,
 }
 
 static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, float x1, float y1,
-                                     float rx, float ry, float x_axis_rotation,
-                                     int large_arc, int sweep) {
+                                     float rx, float ry, float x_axis_rotation, int large_arc,
+                                     int sweep)
+{
     if (!segs) {
         return;
     }
@@ -337,7 +300,8 @@ static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, flo
         delta += 2.0f * (float)M_PI;
     }
     int segments = (int)ceilf(fabsf(delta) / (float)(M_PI / 8.0f));
-    if (segments < 1) segments = 1;
+    if (segments < 1)
+        segments = 1;
     float prevx = x0;
     float prevy = y0;
     for (int i = 1; i <= segments; i++) {
@@ -352,7 +316,8 @@ static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, flo
     }
 }
 
-static float svg_point_segment_distance(float px, float py, float x0, float y0, float x1, float y1) {
+static float svg_point_segment_distance(float px, float py, float x0, float y0, float x1, float y1)
+{
     float dx = x1 - x0;
     float dy = y1 - y0;
     float denom = dx * dx + dy * dy;
@@ -362,8 +327,10 @@ static float svg_point_segment_distance(float px, float py, float x0, float y0, 
         return sqrtf(ux * ux + uy * uy);
     }
     float t = ((px - x0) * dx + (py - y0) * dy) / denom;
-    if (t < 0.0f) t = 0.0f;
-    if (t > 1.0f) t = 1.0f;
+    if (t < 0.0f)
+        t = 0.0f;
+    if (t > 1.0f)
+        t = 1.0f;
     float lx = x0 + t * dx;
     float ly = y0 + t * dy;
     float ux = px - lx;
@@ -371,8 +338,9 @@ static float svg_point_segment_distance(float px, float py, float x0, float y0, 
     return sqrtf(ux * ux + uy * uy);
 }
 
-static float svg_point_segment_distance_cap(float px, float py, float x0, float y0, float x1, float y1,
-                                            float half, int start_cap, int end_cap) {
+static float svg_point_segment_distance_cap(float px, float py, float x0, float y0, float x1,
+                                            float y1, float half, int start_cap, int end_cap)
+{
     float dx = x1 - x0;
     float dy = y1 - y0;
     float len2 = dx * dx + dy * dy;
@@ -397,8 +365,10 @@ static float svg_point_segment_distance_cap(float px, float py, float x0, float 
     if (end_cap == SVG_LINECAP_BUTT && t > 1.0f) {
         return 1e30f;
     }
-    if (t < min_t) t = min_t;
-    if (t > max_t) t = max_t;
+    if (t < min_t)
+        t = min_t;
+    if (t > max_t)
+        t = max_t;
     float lx = x0 + t * dx;
     float ly = y0 + t * dy;
     float ux = px - lx;
@@ -406,7 +376,8 @@ static float svg_point_segment_distance_cap(float px, float py, float x0, float 
     return sqrtf(ux * ux + uy * uy);
 }
 
-int cupidimage_svg_point_in_segments(const svg_segments *segs, int evenodd, float px, float py) {
+int cupidimage_svg_point_in_segments(const svg_segments *segs, int evenodd, float px, float py)
+{
     int winding = 0;
     int crossings = 0;
     for (size_t i = 0; i < segs->fill_count; i++) {
@@ -436,7 +407,8 @@ int cupidimage_svg_point_in_segments(const svg_segments *segs, int evenodd, floa
     return winding != 0;
 }
 
-int cupidimage_svg_point_on_segments(const svg_segments *segs, float px, float py, float half_width) {
+int cupidimage_svg_point_on_segments(const svg_segments *segs, float px, float py, float half_width)
+{
     float min_dist = 1e30f;
     for (size_t i = 0; i < segs->stroke_count; i++) {
         float d = svg_point_segment_distance(px, py, segs->stroke[i].x0, segs->stroke[i].y0,
@@ -448,7 +420,9 @@ int cupidimage_svg_point_on_segments(const svg_segments *segs, float px, float p
     return min_dist <= half_width;
 }
 
-void cupidimage_svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start_open, uint8_t *end_open) {
+void cupidimage_svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start_open,
+                                            uint8_t *end_open)
+{
     const float eps = 1e-3f;
     for (size_t i = 0; i < segs->stroke_count; i++) {
         int scount = 0;
@@ -462,17 +436,22 @@ void cupidimage_svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *s
             float ay = segs->stroke[j].y0;
             float bx = segs->stroke[j].x1;
             float by = segs->stroke[j].y1;
-            if (fabsf(sx - ax) <= eps && fabsf(sy - ay) <= eps) scount++;
-            else if (fabsf(sx - bx) <= eps && fabsf(sy - by) <= eps) scount++;
-            if (fabsf(ex - ax) <= eps && fabsf(ey - ay) <= eps) ecount++;
-            else if (fabsf(ex - bx) <= eps && fabsf(ey - by) <= eps) ecount++;
+            if (fabsf(sx - ax) <= eps && fabsf(sy - ay) <= eps)
+                scount++;
+            else if (fabsf(sx - bx) <= eps && fabsf(sy - by) <= eps)
+                scount++;
+            if (fabsf(ex - ax) <= eps && fabsf(ey - ay) <= eps)
+                ecount++;
+            else if (fabsf(ex - bx) <= eps && fabsf(ey - by) <= eps)
+                ecount++;
         }
         start_open[i] = (scount <= 1);
         end_open[i] = (ecount <= 1);
     }
 }
 
-static int svg_point_in_triangle(float px, float py, const svg_join_tri *tri) {
+static int svg_point_in_triangle(float px, float py, const svg_join_tri *tri)
+{
     float d1 = (px - tri->bx) * (tri->ay - tri->by) - (tri->ax - tri->bx) * (py - tri->by);
     float d2 = (px - tri->cx) * (tri->by - tri->cy) - (tri->bx - tri->cx) * (py - tri->cy);
     float d3 = (px - tri->ax) * (tri->cy - tri->ay) - (tri->cx - tri->ax) * (py - tri->ay);
@@ -481,8 +460,9 @@ static int svg_point_in_triangle(float px, float py, const svg_join_tri *tri) {
     return !(has_neg && has_pos);
 }
 
-static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap,
-                            float ax, float ay, float bx, float by, float cx, float cy) {
+static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap, float ax, float ay, float bx,
+                            float by, float cx, float cy)
+{
     if (!tris || !count || !cap) {
         return 0;
     }
@@ -496,15 +476,19 @@ static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap,
         *cap = new_cap;
     }
     svg_join_tri *t = &(*tris)[(*count)++];
-    t->ax = ax; t->ay = ay;
-    t->bx = bx; t->by = by;
-    t->cx = cx; t->cy = cy;
+    t->ax = ax;
+    t->ay = ay;
+    t->bx = bx;
+    t->by = by;
+    t->cx = cx;
+    t->cy = cy;
     return 1;
 }
 
 void cupidimage_svg_build_join_tris(const svg_segments *segs, const svg_style *style,
-                                const uint8_t *start_open, const uint8_t *end_open,
-                                svg_join_tri **out_tris, int *out_count) {
+                                    const uint8_t *start_open, const uint8_t *end_open,
+                                    svg_join_tri **out_tris, int *out_count)
+{
     if (!segs || !style || !out_tris || !out_count) {
         return;
     }
@@ -556,15 +540,19 @@ void cupidimage_svg_build_join_tris(const svg_segments *segs, const svg_style *s
             }
             float d1x = endpoint == 0 ? (segs->stroke[i].x1 - jx) : (segs->stroke[i].x0 - jx);
             float d1y = endpoint == 0 ? (segs->stroke[i].y1 - jy) : (segs->stroke[i].y0 - jy);
-            float d2x = j_endpoint == 0 ? (segs->stroke[j_idx].x1 - jx) : (segs->stroke[j_idx].x0 - jx);
-            float d2y = j_endpoint == 0 ? (segs->stroke[j_idx].y1 - jy) : (segs->stroke[j_idx].y0 - jy);
+            float d2x =
+                j_endpoint == 0 ? (segs->stroke[j_idx].x1 - jx) : (segs->stroke[j_idx].x0 - jx);
+            float d2y =
+                j_endpoint == 0 ? (segs->stroke[j_idx].y1 - jy) : (segs->stroke[j_idx].y0 - jy);
             float len1 = sqrtf(d1x * d1x + d1y * d1y);
             float len2 = sqrtf(d2x * d2x + d2y * d2y);
             if (len1 <= 1e-6f || len2 <= 1e-6f) {
                 continue;
             }
-            d1x /= len1; d1y /= len1;
-            d2x /= len2; d2y /= len2;
+            d1x /= len1;
+            d1y /= len1;
+            d2x /= len2;
+            d2y /= len2;
             float cross = d1x * d2y - d1y * d2x;
             if (fabsf(cross) <= 1e-6f) {
                 continue;
@@ -602,9 +590,11 @@ void cupidimage_svg_build_join_tris(const svg_segments *segs, const svg_style *s
     }
 }
 
-int cupidimage_svg_point_on_segments_cap(const svg_segments *segs, const svg_style *style, float px, float py,
-                                     float half_width, const uint8_t *start_open, const uint8_t *end_open,
-                                     const svg_join_tri *joins, int join_count) {
+int cupidimage_svg_point_on_segments_cap(const svg_segments *segs, const svg_style *style, float px,
+                                         float py, float half_width, const uint8_t *start_open,
+                                         const uint8_t *end_open, const svg_join_tri *joins,
+                                         int join_count)
+{
     float min_dist = 1e30f;
     for (size_t i = 0; i < segs->stroke_count; i++) {
         int join_cap = SVG_LINECAP_BUTT;
@@ -614,8 +604,8 @@ int cupidimage_svg_point_on_segments_cap(const svg_segments *segs, const svg_sty
         int start_cap = start_open && start_open[i] ? style->stroke_linecap : join_cap;
         int end_cap = end_open && end_open[i] ? style->stroke_linecap : join_cap;
         float d = svg_point_segment_distance_cap(px, py, segs->stroke[i].x0, segs->stroke[i].y0,
-                                                 segs->stroke[i].x1, segs->stroke[i].y1,
-                                                 half_width, start_cap, end_cap);
+                                                 segs->stroke[i].x1, segs->stroke[i].y1, half_width,
+                                                 start_cap, end_cap);
         if (d < min_dist) {
             min_dist = d;
         }
@@ -631,7 +621,9 @@ int cupidimage_svg_point_on_segments_cap(const svg_segments *segs, const svg_sty
     return 0;
 }
 
-int cupidimage_svg_segments_build_dashed(const svg_segments *src, const svg_style *style, svg_segments *out) {
+int cupidimage_svg_segments_build_dashed(const svg_segments *src, const svg_style *style,
+                                         svg_segments *out)
+{
     if (!src || !style || !out || src->stroke_count == 0 || style->stroke_dashcount == 0) {
         return 0;
     }
@@ -735,8 +727,10 @@ int cupidimage_svg_segments_build_dashed(const svg_segments *src, const svg_styl
     return out->stroke_count > 0;
 }
 
-void cupidimage_svg_transform_bounds(const svg_matrix *m, float minx, float miny, float maxx, float maxy,
-                                 float *out_minx, float *out_miny, float *out_maxx, float *out_maxy) {
+void cupidimage_svg_transform_bounds(const svg_matrix *m, float minx, float miny, float maxx,
+                                     float maxy, float *out_minx, float *out_miny, float *out_maxx,
+                                     float *out_maxy)
+{
     float x0 = minx, y0 = miny;
     float x1 = maxx, y1 = miny;
     float x2 = maxx, y2 = maxy;
@@ -755,7 +749,8 @@ void cupidimage_svg_transform_bounds(const svg_matrix *m, float minx, float miny
     *out_maxy = mxy;
 }
 
-float cupidimage_svg_apply_spread(float t, svg_spread_method spread) {
+float cupidimage_svg_apply_spread(float t, svg_spread_method spread)
+{
     if (spread == SVG_SPREAD_REPEAT) {
         t = t - floorf(t);
     } else if (spread == SVG_SPREAD_REFLECT) {
@@ -767,13 +762,16 @@ float cupidimage_svg_apply_spread(float t, svg_spread_method spread) {
             t = 2.0f - t;
         }
     } else {
-        if (t < 0.0f) t = 0.0f;
-        if (t > 1.0f) t = 1.0f;
+        if (t < 0.0f)
+            t = 0.0f;
+        if (t > 1.0f)
+            t = 1.0f;
     }
     return t;
 }
 
-uint32_t cupidimage_svg_gradient_stop_color(const svg_gradient *g, float t) {
+uint32_t cupidimage_svg_gradient_stop_color(const svg_gradient *g, float t)
+{
     if (!g || g->stop_count == 0) {
         return 0x00000000u;
     }
@@ -809,7 +807,9 @@ uint32_t cupidimage_svg_gradient_stop_color(const svg_gradient *g, float t) {
     return g->stops[g->stop_count - 1].color;
 }
 
-float cupidimage_svg_resolve_grad_coord(const svg_grad_coord *c, float base, float origin, svg_gradient_units units) {
+float cupidimage_svg_resolve_grad_coord(const svg_grad_coord *c, float base, float origin,
+                                        svg_gradient_units units)
+{
     if (!c) {
         return origin;
     }
@@ -822,19 +822,21 @@ float cupidimage_svg_resolve_grad_coord(const svg_grad_coord *c, float base, flo
     return c->value;
 }
 
-int cupidimage_svg_matrix_to_string(const svg_matrix *m, char *buf, size_t cap) {
+int cupidimage_svg_matrix_to_string(const svg_matrix *m, char *buf, size_t cap)
+{
     if (!m || !buf || cap == 0) {
         return 0;
     }
-    int n = snprintf(buf, cap, "matrix(%.6g %.6g %.6g %.6g %.6g %.6g)",
-                     m->a, m->b, m->c, m->d, m->e, m->f);
+    int n = snprintf(buf, cap, "matrix(%.6g %.6g %.6g %.6g %.6g %.6g)", m->a, m->b, m->c, m->d,
+                     m->e, m->f);
     if (n < 0 || (size_t)n >= cap) {
         return 0;
     }
     return 1;
 }
 
-int cupidimage_svg_parse_points(const char *s, float **out_points, int *out_count) {
+int cupidimage_svg_parse_points(const char *s, float **out_points, int *out_count)
+{
     if (!s || !out_points || !out_count) {
         return 0;
     }
@@ -869,8 +871,9 @@ int cupidimage_svg_parse_points(const char *s, float **out_points, int *out_coun
     return *out_count > 0;
 }
 
-static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, float y1,
-                             float x2, float y2, float x3, float y3, float tol, int depth) {
+static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, float y1, float x2,
+                             float y2, float x3, float y3, float tol, int depth)
+{
     float ux = 3.0f * x1 - 2.0f * x0 - x3;
     float uy = 3.0f * y1 - 2.0f * y0 - y3;
     float vx = 3.0f * x2 - 2.0f * x3 - x0;
@@ -897,8 +900,9 @@ static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, f
     return svg_flatten_cubic(segs, x0123, y0123, x123, y123, x23, y23, x3, y3, tol, depth + 1);
 }
 
-static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, float y1,
-                            float x2, float y2, float tol, int depth) {
+static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, float y1, float x2,
+                            float y2, float tol, int depth)
+{
     float ux = x0 - 2.0f * x1 + x2;
     float uy = y0 - 2.0f * y1 + y2;
     float d = ux * ux + uy * uy;
@@ -917,7 +921,8 @@ static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, fl
     return svg_flatten_quad(segs, x012, y012, x12, y12, x2, y2, tol, depth + 1);
 }
 
-int cupidimage_svg_parse_path(const char *d, svg_segments *segs) {
+int cupidimage_svg_parse_path(const char *d, svg_segments *segs)
+{
     if (!d) {
         return 0;
     }
@@ -946,200 +951,216 @@ int cupidimage_svg_parse_path(const char *d, svg_segments *segs) {
         int relative = islower((unsigned char)cmd);
         char ucmd = (char)toupper((unsigned char)cmd);
         switch (ucmd) {
-        case 'M': {
-            float x = 0.0f, y = 0.0f;
-            if (!cupidimage_svg_parse_number(&p, &x) || !cupidimage_svg_parse_number(&p, &y)) {
+            case 'M': {
+                float x = 0.0f, y = 0.0f;
+                if (!cupidimage_svg_parse_number(&p, &x) || !cupidimage_svg_parse_number(&p, &y)) {
+                    return 1;
+                }
+                if (relative) {
+                    x += cx;
+                    y += cy;
+                }
+                if (subpath_open) {
+                    cupidimage_svg_segments_add(segs, cx, cy, sx, sy, 0, 1);
+                }
+                cx = x;
+                cy = y;
+                sx = x;
+                sy = y;
+                subpath_open = 1;
+                have_cubic = 0;
+                have_quad = 0;
+                while (cupidimage_svg_parse_number(&p, &x) && cupidimage_svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        x += cx;
+                        y += cy;
+                    }
+                    cupidimage_svg_segments_add(segs, cx, cy, x, y, 1, 1);
+                    cx = x;
+                    cy = y;
+                }
+                break;
+            }
+            case 'L': {
+                float x = 0.0f, y = 0.0f;
+                while (cupidimage_svg_parse_number(&p, &x) && cupidimage_svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        x += cx;
+                        y += cy;
+                    }
+                    cupidimage_svg_segments_add(segs, cx, cy, x, y, 1, 1);
+                    cx = x;
+                    cy = y;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'H': {
+                float x = 0.0f;
+                while (cupidimage_svg_parse_number(&p, &x)) {
+                    if (relative) {
+                        x += cx;
+                    }
+                    cupidimage_svg_segments_add(segs, cx, cy, x, cy, 1, 1);
+                    cx = x;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'V': {
+                float y = 0.0f;
+                while (cupidimage_svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        y += cy;
+                    }
+                    cupidimage_svg_segments_add(segs, cx, cy, cx, y, 1, 1);
+                    cy = y;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'C': {
+                float x1, y1, x2, y2, x3, y3;
+                while (
+                    cupidimage_svg_parse_number(&p, &x1) && cupidimage_svg_parse_number(&p, &y1) &&
+                    cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2) &&
+                    cupidimage_svg_parse_number(&p, &x3) && cupidimage_svg_parse_number(&p, &y3)) {
+                    if (relative) {
+                        x1 += cx;
+                        y1 += cy;
+                        x2 += cx;
+                        y2 += cy;
+                        x3 += cx;
+                        y3 += cy;
+                    }
+                    if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x3;
+                    cy = y3;
+                    last_cx = x2;
+                    last_cy = y2;
+                    have_cubic = 1;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'S': {
+                float x2, y2, x3, y3;
+                while (
+                    cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2) &&
+                    cupidimage_svg_parse_number(&p, &x3) && cupidimage_svg_parse_number(&p, &y3)) {
+                    float x1 = cx;
+                    float y1 = cy;
+                    if (have_cubic) {
+                        x1 = 2.0f * cx - last_cx;
+                        y1 = 2.0f * cy - last_cy;
+                    }
+                    if (relative) {
+                        x2 += cx;
+                        y2 += cy;
+                        x3 += cx;
+                        y3 += cy;
+                    }
+                    if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x3;
+                    cy = y3;
+                    last_cx = x2;
+                    last_cy = y2;
+                    have_cubic = 1;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'Q': {
+                float x1, y1, x2, y2;
+                while (
+                    cupidimage_svg_parse_number(&p, &x1) && cupidimage_svg_parse_number(&p, &y1) &&
+                    cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2)) {
+                    if (relative) {
+                        x1 += cx;
+                        y1 += cy;
+                        x2 += cx;
+                        y2 += cy;
+                    }
+                    if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x2;
+                    cy = y2;
+                    last_qx = x1;
+                    last_qy = y1;
+                    have_quad = 1;
+                    have_cubic = 0;
+                }
+                break;
+            }
+            case 'T': {
+                float x2, y2;
+                while (cupidimage_svg_parse_number(&p, &x2) &&
+                       cupidimage_svg_parse_number(&p, &y2)) {
+                    float x1 = cx;
+                    float y1 = cy;
+                    if (have_quad) {
+                        x1 = 2.0f * cx - last_qx;
+                        y1 = 2.0f * cy - last_qy;
+                    }
+                    if (relative) {
+                        x2 += cx;
+                        y2 += cy;
+                    }
+                    if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x2;
+                    cy = y2;
+                    last_qx = x1;
+                    last_qy = y1;
+                    have_quad = 1;
+                    have_cubic = 0;
+                }
+                break;
+            }
+            case 'A': {
+                float rx, ry, xrot, large_arc, sweep, x, y;
+                while (cupidimage_svg_parse_number(&p, &rx) &&
+                       cupidimage_svg_parse_number(&p, &ry) &&
+                       cupidimage_svg_parse_number(&p, &xrot) &&
+                       cupidimage_svg_parse_number(&p, &large_arc) &&
+                       cupidimage_svg_parse_number(&p, &sweep) &&
+                       cupidimage_svg_parse_number(&p, &x) && cupidimage_svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        x += cx;
+                        y += cy;
+                    }
+                    svg_segments_add_arc_rot(segs, cx, cy, x, y, rx, ry, xrot,
+                                             (int)lroundf(large_arc) != 0,
+                                             (int)lroundf(sweep) != 0);
+                    cx = x;
+                    cy = y;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'Z': {
+                if (subpath_open) {
+                    cupidimage_svg_segments_add(segs, cx, cy, sx, sy, 1, 1);
+                    cx = sx;
+                    cy = sy;
+                    subpath_open = 0;
+                }
+                have_cubic = 0;
+                have_quad = 0;
+                break;
+            }
+            default:
                 return 1;
-            }
-            if (relative) {
-                x += cx;
-                y += cy;
-            }
-            if (subpath_open) {
-                cupidimage_svg_segments_add(segs, cx, cy, sx, sy, 0, 1);
-            }
-            cx = x;
-            cy = y;
-            sx = x;
-            sy = y;
-            subpath_open = 1;
-            have_cubic = 0;
-            have_quad = 0;
-            while (cupidimage_svg_parse_number(&p, &x) && cupidimage_svg_parse_number(&p, &y)) {
-                if (relative) {
-                    x += cx;
-                    y += cy;
-                }
-                cupidimage_svg_segments_add(segs, cx, cy, x, y, 1, 1);
-                cx = x;
-                cy = y;
-            }
-            break;
-        }
-        case 'L': {
-            float x = 0.0f, y = 0.0f;
-            while (cupidimage_svg_parse_number(&p, &x) && cupidimage_svg_parse_number(&p, &y)) {
-                if (relative) {
-                    x += cx;
-                    y += cy;
-                }
-                cupidimage_svg_segments_add(segs, cx, cy, x, y, 1, 1);
-                cx = x;
-                cy = y;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'H': {
-            float x = 0.0f;
-            while (cupidimage_svg_parse_number(&p, &x)) {
-                if (relative) {
-                    x += cx;
-                }
-                cupidimage_svg_segments_add(segs, cx, cy, x, cy, 1, 1);
-                cx = x;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'V': {
-            float y = 0.0f;
-            while (cupidimage_svg_parse_number(&p, &y)) {
-                if (relative) {
-                    y += cy;
-                }
-                cupidimage_svg_segments_add(segs, cx, cy, cx, y, 1, 1);
-                cy = y;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'C': {
-            float x1, y1, x2, y2, x3, y3;
-            while (cupidimage_svg_parse_number(&p, &x1) && cupidimage_svg_parse_number(&p, &y1) &&
-                   cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2) &&
-                   cupidimage_svg_parse_number(&p, &x3) && cupidimage_svg_parse_number(&p, &y3)) {
-                if (relative) {
-                    x1 += cx; y1 += cy;
-                    x2 += cx; y2 += cy;
-                    x3 += cx; y3 += cy;
-                }
-                if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
-                    return 0;
-                }
-                cx = x3;
-                cy = y3;
-                last_cx = x2;
-                last_cy = y2;
-                have_cubic = 1;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'S': {
-            float x2, y2, x3, y3;
-            while (cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2) &&
-                   cupidimage_svg_parse_number(&p, &x3) && cupidimage_svg_parse_number(&p, &y3)) {
-                float x1 = cx;
-                float y1 = cy;
-                if (have_cubic) {
-                    x1 = 2.0f * cx - last_cx;
-                    y1 = 2.0f * cy - last_cy;
-                }
-                if (relative) {
-                    x2 += cx; y2 += cy;
-                    x3 += cx; y3 += cy;
-                }
-                if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
-                    return 0;
-                }
-                cx = x3;
-                cy = y3;
-                last_cx = x2;
-                last_cy = y2;
-                have_cubic = 1;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'Q': {
-            float x1, y1, x2, y2;
-            while (cupidimage_svg_parse_number(&p, &x1) && cupidimage_svg_parse_number(&p, &y1) &&
-                   cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2)) {
-                if (relative) {
-                    x1 += cx; y1 += cy;
-                    x2 += cx; y2 += cy;
-                }
-                if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
-                    return 0;
-                }
-                cx = x2;
-                cy = y2;
-                last_qx = x1;
-                last_qy = y1;
-                have_quad = 1;
-                have_cubic = 0;
-            }
-            break;
-        }
-        case 'T': {
-            float x2, y2;
-            while (cupidimage_svg_parse_number(&p, &x2) && cupidimage_svg_parse_number(&p, &y2)) {
-                float x1 = cx;
-                float y1 = cy;
-                if (have_quad) {
-                    x1 = 2.0f * cx - last_qx;
-                    y1 = 2.0f * cy - last_qy;
-                }
-                if (relative) {
-                    x2 += cx; y2 += cy;
-                }
-                if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
-                    return 0;
-                }
-                cx = x2;
-                cy = y2;
-                last_qx = x1;
-                last_qy = y1;
-                have_quad = 1;
-                have_cubic = 0;
-            }
-            break;
-        }
-        case 'A': {
-            float rx, ry, xrot, large_arc, sweep, x, y;
-            while (cupidimage_svg_parse_number(&p, &rx) && cupidimage_svg_parse_number(&p, &ry) &&
-                   cupidimage_svg_parse_number(&p, &xrot) && cupidimage_svg_parse_number(&p, &large_arc) &&
-                   cupidimage_svg_parse_number(&p, &sweep) && cupidimage_svg_parse_number(&p, &x) && cupidimage_svg_parse_number(&p, &y)) {
-                if (relative) {
-                    x += cx; y += cy;
-                }
-                svg_segments_add_arc_rot(segs, cx, cy, x, y, rx, ry, xrot,
-                                         (int)lroundf(large_arc) != 0,
-                                         (int)lroundf(sweep) != 0);
-                cx = x;
-                cy = y;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'Z': {
-            if (subpath_open) {
-                cupidimage_svg_segments_add(segs, cx, cy, sx, sy, 1, 1);
-                cx = sx;
-                cy = sy;
-                subpath_open = 0;
-            }
-            have_cubic = 0;
-            have_quad = 0;
-            break;
-        }
-        default:
-            return 1;
         }
     }
     if (subpath_open) {
@@ -1148,8 +1169,9 @@ int cupidimage_svg_parse_path(const char *d, svg_segments *segs) {
     return 1;
 }
 
-
-int cupidimage_svg_parse_length_attr(const svg_tag *tag, const char *name, float base, float dpi, float *out) {
+int cupidimage_svg_parse_length_attr(const svg_tag *tag, const char *name, float base, float dpi,
+                                     float *out)
+{
     const char *val = cupidimage_svg_get_attr(tag, name);
     if (!val) {
         return 0;

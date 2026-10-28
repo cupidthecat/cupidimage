@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -28,12 +28,13 @@ static int svg_parse_hue_component(const char **p, float *out_deg);
 static int svg_parse_alpha_component(const char **p, float *out_alpha);
 static int svg_parse_url_id(const char *value, char *out, size_t outcap);
 static int svg_should_skip_use_wrapper_attr(const char *name);
-static void svg_style_apply_property(svg_style *style, const char *name, const char *value, float base_len,
-                                     float dpi, const svg_defs *defs);
-static void svg_style_apply_style_attr(svg_style *style, const char *value, float base_len, float dpi,
-                                       const svg_defs *defs);
+static void svg_style_apply_property(svg_style *style, const char *name, const char *value,
+                                     float base_len, float dpi, const svg_defs *defs);
+static void svg_style_apply_style_attr(svg_style *style, const char *value, float base_len,
+                                       float dpi, const svg_defs *defs);
 
-void cupidimage_svg_style_init(svg_style *style) {
+void cupidimage_svg_style_init(svg_style *style)
+{
     style->fill_type = SVG_PAINT_COLOR;
     style->stroke_type = SVG_PAINT_NONE;
     style->fill_color = 0x000000FFu;
@@ -73,163 +74,157 @@ void cupidimage_svg_style_init(svg_style *style) {
     style->visibility_hidden = 0;
 }
 
+static const svg_named_color svg_named_colors[] = {{"aliceblue", 0xF0F8FFFFu},
+                                                   {"antiquewhite", 0xFAEBD7FFu},
+                                                   {"aqua", 0x00FFFFFFu},
+                                                   {"aquamarine", 0x7FFFD4FFu},
+                                                   {"azure", 0xF0FFFFFFu},
+                                                   {"beige", 0xF5F5DCFFu},
+                                                   {"bisque", 0xFFE4C4FFu},
+                                                   {"black", 0x000000FFu},
+                                                   {"blanchedalmond", 0xFFEBCDFFu},
+                                                   {"blue", 0x0000FFFFu},
+                                                   {"blueviolet", 0x8A2BE2FFu},
+                                                   {"brown", 0xA52A2AFFu},
+                                                   {"burlywood", 0xDEB887FFu},
+                                                   {"cadetblue", 0x5F9EA0FFu},
+                                                   {"chartreuse", 0x7FFF00FFu},
+                                                   {"chocolate", 0xD2691EFFu},
+                                                   {"coral", 0xFF7F50FFu},
+                                                   {"cornflowerblue", 0x6495EDFFu},
+                                                   {"cornsilk", 0xFFF8DCFFu},
+                                                   {"crimson", 0xDC143CFFu},
+                                                   {"cyan", 0x00FFFFFFu},
+                                                   {"darkblue", 0x00008BFFu},
+                                                   {"darkcyan", 0x008B8BFFu},
+                                                   {"darkgoldenrod", 0xB8860BFFu},
+                                                   {"darkgray", 0xA9A9A9FFu},
+                                                   {"darkgreen", 0x006400FFu},
+                                                   {"darkgrey", 0xA9A9A9FFu},
+                                                   {"darkkhaki", 0xBDB76BFFu},
+                                                   {"darkmagenta", 0x8B008BFFu},
+                                                   {"darkolivegreen", 0x556B2FFFu},
+                                                   {"darkorange", 0xFF8C00FFu},
+                                                   {"darkorchid", 0x9932CCFFu},
+                                                   {"darkred", 0x8B0000FFu},
+                                                   {"darksalmon", 0xE9967AFFu},
+                                                   {"darkseagreen", 0x8FBC8FFFu},
+                                                   {"darkslateblue", 0x483D8BFFu},
+                                                   {"darkslategray", 0x2F4F4FFFu},
+                                                   {"darkslategrey", 0x2F4F4FFFu},
+                                                   {"darkturquoise", 0x00CED1FFu},
+                                                   {"darkviolet", 0x9400D3FFu},
+                                                   {"deeppink", 0xFF1493FFu},
+                                                   {"deepskyblue", 0x00BFFFFFu},
+                                                   {"dimgray", 0x696969FFu},
+                                                   {"dimgrey", 0x696969FFu},
+                                                   {"dodgerblue", 0x1E90FFFFu},
+                                                   {"firebrick", 0xB22222FFu},
+                                                   {"floralwhite", 0xFFFAF0FFu},
+                                                   {"forestgreen", 0x228B22FFu},
+                                                   {"fuchsia", 0xFF00FFFFu},
+                                                   {"gainsboro", 0xDCDCDCFFu},
+                                                   {"ghostwhite", 0xF8F8FFFFu},
+                                                   {"gold", 0xFFD700FFu},
+                                                   {"goldenrod", 0xDAA520FFu},
+                                                   {"gray", 0x808080FFu},
+                                                   {"green", 0x008000FFu},
+                                                   {"greenyellow", 0xADFF2FFFu},
+                                                   {"grey", 0x808080FFu},
+                                                   {"honeydew", 0xF0FFF0FFu},
+                                                   {"hotpink", 0xFF69B4FFu},
+                                                   {"indianred", 0xCD5C5CFFu},
+                                                   {"indigo", 0x4B0082FFu},
+                                                   {"ivory", 0xFFFFF0FFu},
+                                                   {"khaki", 0xF0E68CFFu},
+                                                   {"lavender", 0xE6E6FAFFu},
+                                                   {"lavenderblush", 0xFFF0F5FFu},
+                                                   {"lawngreen", 0x7CFC00FFu},
+                                                   {"lemonchiffon", 0xFFFACDFFu},
+                                                   {"lightblue", 0xADD8E6FFu},
+                                                   {"lightcoral", 0xF08080FFu},
+                                                   {"lightcyan", 0xE0FFFFFFu},
+                                                   {"lightgoldenrodyellow", 0xFAFAD2FFu},
+                                                   {"lightgray", 0xD3D3D3FFu},
+                                                   {"lightgreen", 0x90EE90FFu},
+                                                   {"lightgrey", 0xD3D3D3FFu},
+                                                   {"lightpink", 0xFFB6C1FFu},
+                                                   {"lightsalmon", 0xFFA07AFFu},
+                                                   {"lightseagreen", 0x20B2AAFFu},
+                                                   {"lightskyblue", 0x87CEFAFFu},
+                                                   {"lightslategray", 0x778899FFu},
+                                                   {"lightslategrey", 0x778899FFu},
+                                                   {"lightsteelblue", 0xB0C4DEFFu},
+                                                   {"lightyellow", 0xFFFFE0FFu},
+                                                   {"lime", 0x00FF00FFu},
+                                                   {"limegreen", 0x32CD32FFu},
+                                                   {"linen", 0xFAF0E6FFu},
+                                                   {"magenta", 0xFF00FFFFu},
+                                                   {"maroon", 0x800000FFu},
+                                                   {"mediumaquamarine", 0x66CDAAFFu},
+                                                   {"mediumblue", 0x0000CDFFu},
+                                                   {"mediumorchid", 0xBA55D3FFu},
+                                                   {"mediumpurple", 0x9370DBFFu},
+                                                   {"mediumseagreen", 0x3CB371FFu},
+                                                   {"mediumslateblue", 0x7B68EEFFu},
+                                                   {"mediumspringgreen", 0x00FA9AFFu},
+                                                   {"mediumturquoise", 0x48D1CCFFu},
+                                                   {"mediumvioletred", 0xC71585FFu},
+                                                   {"midnightblue", 0x191970FFu},
+                                                   {"mintcream", 0xF5FFFAFFu},
+                                                   {"mistyrose", 0xFFE4E1FFu},
+                                                   {"moccasin", 0xFFE4B5FFu},
+                                                   {"navajowhite", 0xFFDEADFFu},
+                                                   {"navy", 0x000080FFu},
+                                                   {"oldlace", 0xFDF5E6FFu},
+                                                   {"olive", 0x808000FFu},
+                                                   {"olivedrab", 0x6B8E23FFu},
+                                                   {"orange", 0xFFA500FFu},
+                                                   {"orangered", 0xFF4500FFu},
+                                                   {"orchid", 0xDA70D6FFu},
+                                                   {"palegoldenrod", 0xEEE8AAFFu},
+                                                   {"palegreen", 0x98FB98FFu},
+                                                   {"paleturquoise", 0xAFEEEEFFu},
+                                                   {"palevioletred", 0xDB7093FFu},
+                                                   {"papayawhip", 0xFFEFD5FFu},
+                                                   {"peachpuff", 0xFFDAB9FFu},
+                                                   {"peru", 0xCD853FFFu},
+                                                   {"pink", 0xFFC0CBFFu},
+                                                   {"plum", 0xDDA0DDFFu},
+                                                   {"powderblue", 0xB0E0E6FFu},
+                                                   {"purple", 0x800080FFu},
+                                                   {"rebeccapurple", 0x663399FFu},
+                                                   {"red", 0xFF0000FFu},
+                                                   {"rosybrown", 0xBC8F8FFFu},
+                                                   {"royalblue", 0x4169E1FFu},
+                                                   {"saddlebrown", 0x8B4513FFu},
+                                                   {"salmon", 0xFA8072FFu},
+                                                   {"sandybrown", 0xF4A460FFu},
+                                                   {"seagreen", 0x2E8B57FFu},
+                                                   {"seashell", 0xFFF5EEFFu},
+                                                   {"sienna", 0xA0522DFFu},
+                                                   {"silver", 0xC0C0C0FFu},
+                                                   {"skyblue", 0x87CEEBFFu},
+                                                   {"slateblue", 0x6A5ACDFFu},
+                                                   {"slategray", 0x708090FFu},
+                                                   {"slategrey", 0x708090FFu},
+                                                   {"snow", 0xFFFAFAFFu},
+                                                   {"springgreen", 0x00FF7FFFu},
+                                                   {"steelblue", 0x4682B4FFu},
+                                                   {"tan", 0xD2B48CFFu},
+                                                   {"teal", 0x008080FFu},
+                                                   {"thistle", 0xD8BFD8FFu},
+                                                   {"tomato", 0xFF6347FFu},
+                                                   {"turquoise", 0x40E0D0FFu},
+                                                   {"violet", 0xEE82EEFFu},
+                                                   {"wheat", 0xF5DEB3FFu},
+                                                   {"white", 0xFFFFFFFFu},
+                                                   {"whitesmoke", 0xF5F5F5FFu},
+                                                   {"yellow", 0xFFFF00FFu},
+                                                   {"yellowgreen", 0x9ACD32FFu}};
 
-
-
-static const svg_named_color svg_named_colors[] = {
-    {"aliceblue", 0xF0F8FFFFu},
-    {"antiquewhite", 0xFAEBD7FFu},
-    {"aqua", 0x00FFFFFFu},
-    {"aquamarine", 0x7FFFD4FFu},
-    {"azure", 0xF0FFFFFFu},
-    {"beige", 0xF5F5DCFFu},
-    {"bisque", 0xFFE4C4FFu},
-    {"black", 0x000000FFu},
-    {"blanchedalmond", 0xFFEBCDFFu},
-    {"blue", 0x0000FFFFu},
-    {"blueviolet", 0x8A2BE2FFu},
-    {"brown", 0xA52A2AFFu},
-    {"burlywood", 0xDEB887FFu},
-    {"cadetblue", 0x5F9EA0FFu},
-    {"chartreuse", 0x7FFF00FFu},
-    {"chocolate", 0xD2691EFFu},
-    {"coral", 0xFF7F50FFu},
-    {"cornflowerblue", 0x6495EDFFu},
-    {"cornsilk", 0xFFF8DCFFu},
-    {"crimson", 0xDC143CFFu},
-    {"cyan", 0x00FFFFFFu},
-    {"darkblue", 0x00008BFFu},
-    {"darkcyan", 0x008B8BFFu},
-    {"darkgoldenrod", 0xB8860BFFu},
-    {"darkgray", 0xA9A9A9FFu},
-    {"darkgreen", 0x006400FFu},
-    {"darkgrey", 0xA9A9A9FFu},
-    {"darkkhaki", 0xBDB76BFFu},
-    {"darkmagenta", 0x8B008BFFu},
-    {"darkolivegreen", 0x556B2FFFu},
-    {"darkorange", 0xFF8C00FFu},
-    {"darkorchid", 0x9932CCFFu},
-    {"darkred", 0x8B0000FFu},
-    {"darksalmon", 0xE9967AFFu},
-    {"darkseagreen", 0x8FBC8FFFu},
-    {"darkslateblue", 0x483D8BFFu},
-    {"darkslategray", 0x2F4F4FFFu},
-    {"darkslategrey", 0x2F4F4FFFu},
-    {"darkturquoise", 0x00CED1FFu},
-    {"darkviolet", 0x9400D3FFu},
-    {"deeppink", 0xFF1493FFu},
-    {"deepskyblue", 0x00BFFFFFu},
-    {"dimgray", 0x696969FFu},
-    {"dimgrey", 0x696969FFu},
-    {"dodgerblue", 0x1E90FFFFu},
-    {"firebrick", 0xB22222FFu},
-    {"floralwhite", 0xFFFAF0FFu},
-    {"forestgreen", 0x228B22FFu},
-    {"fuchsia", 0xFF00FFFFu},
-    {"gainsboro", 0xDCDCDCFFu},
-    {"ghostwhite", 0xF8F8FFFFu},
-    {"gold", 0xFFD700FFu},
-    {"goldenrod", 0xDAA520FFu},
-    {"gray", 0x808080FFu},
-    {"green", 0x008000FFu},
-    {"greenyellow", 0xADFF2FFFu},
-    {"grey", 0x808080FFu},
-    {"honeydew", 0xF0FFF0FFu},
-    {"hotpink", 0xFF69B4FFu},
-    {"indianred", 0xCD5C5CFFu},
-    {"indigo", 0x4B0082FFu},
-    {"ivory", 0xFFFFF0FFu},
-    {"khaki", 0xF0E68CFFu},
-    {"lavender", 0xE6E6FAFFu},
-    {"lavenderblush", 0xFFF0F5FFu},
-    {"lawngreen", 0x7CFC00FFu},
-    {"lemonchiffon", 0xFFFACDFFu},
-    {"lightblue", 0xADD8E6FFu},
-    {"lightcoral", 0xF08080FFu},
-    {"lightcyan", 0xE0FFFFFFu},
-    {"lightgoldenrodyellow", 0xFAFAD2FFu},
-    {"lightgray", 0xD3D3D3FFu},
-    {"lightgreen", 0x90EE90FFu},
-    {"lightgrey", 0xD3D3D3FFu},
-    {"lightpink", 0xFFB6C1FFu},
-    {"lightsalmon", 0xFFA07AFFu},
-    {"lightseagreen", 0x20B2AAFFu},
-    {"lightskyblue", 0x87CEFAFFu},
-    {"lightslategray", 0x778899FFu},
-    {"lightslategrey", 0x778899FFu},
-    {"lightsteelblue", 0xB0C4DEFFu},
-    {"lightyellow", 0xFFFFE0FFu},
-    {"lime", 0x00FF00FFu},
-    {"limegreen", 0x32CD32FFu},
-    {"linen", 0xFAF0E6FFu},
-    {"magenta", 0xFF00FFFFu},
-    {"maroon", 0x800000FFu},
-    {"mediumaquamarine", 0x66CDAAFFu},
-    {"mediumblue", 0x0000CDFFu},
-    {"mediumorchid", 0xBA55D3FFu},
-    {"mediumpurple", 0x9370DBFFu},
-    {"mediumseagreen", 0x3CB371FFu},
-    {"mediumslateblue", 0x7B68EEFFu},
-    {"mediumspringgreen", 0x00FA9AFFu},
-    {"mediumturquoise", 0x48D1CCFFu},
-    {"mediumvioletred", 0xC71585FFu},
-    {"midnightblue", 0x191970FFu},
-    {"mintcream", 0xF5FFFAFFu},
-    {"mistyrose", 0xFFE4E1FFu},
-    {"moccasin", 0xFFE4B5FFu},
-    {"navajowhite", 0xFFDEADFFu},
-    {"navy", 0x000080FFu},
-    {"oldlace", 0xFDF5E6FFu},
-    {"olive", 0x808000FFu},
-    {"olivedrab", 0x6B8E23FFu},
-    {"orange", 0xFFA500FFu},
-    {"orangered", 0xFF4500FFu},
-    {"orchid", 0xDA70D6FFu},
-    {"palegoldenrod", 0xEEE8AAFFu},
-    {"palegreen", 0x98FB98FFu},
-    {"paleturquoise", 0xAFEEEEFFu},
-    {"palevioletred", 0xDB7093FFu},
-    {"papayawhip", 0xFFEFD5FFu},
-    {"peachpuff", 0xFFDAB9FFu},
-    {"peru", 0xCD853FFFu},
-    {"pink", 0xFFC0CBFFu},
-    {"plum", 0xDDA0DDFFu},
-    {"powderblue", 0xB0E0E6FFu},
-    {"purple", 0x800080FFu},
-    {"rebeccapurple", 0x663399FFu},
-    {"red", 0xFF0000FFu},
-    {"rosybrown", 0xBC8F8FFFu},
-    {"royalblue", 0x4169E1FFu},
-    {"saddlebrown", 0x8B4513FFu},
-    {"salmon", 0xFA8072FFu},
-    {"sandybrown", 0xF4A460FFu},
-    {"seagreen", 0x2E8B57FFu},
-    {"seashell", 0xFFF5EEFFu},
-    {"sienna", 0xA0522DFFu},
-    {"silver", 0xC0C0C0FFu},
-    {"skyblue", 0x87CEEBFFu},
-    {"slateblue", 0x6A5ACDFFu},
-    {"slategray", 0x708090FFu},
-    {"slategrey", 0x708090FFu},
-    {"snow", 0xFFFAFAFFu},
-    {"springgreen", 0x00FF7FFFu},
-    {"steelblue", 0x4682B4FFu},
-    {"tan", 0xD2B48CFFu},
-    {"teal", 0x008080FFu},
-    {"thistle", 0xD8BFD8FFu},
-    {"tomato", 0xFF6347FFu},
-    {"turquoise", 0x40E0D0FFu},
-    {"violet", 0xEE82EEFFu},
-    {"wheat", 0xF5DEB3FFu},
-    {"white", 0xFFFFFFFFu},
-    {"whitesmoke", 0xF5F5F5FFu},
-    {"yellow", 0xFFFF00FFu},
-    {"yellowgreen", 0x9ACD32FFu}
-};
-
-
-
-float cupidimage_svg_clamp01(float v) {
+float cupidimage_svg_clamp01(float v)
+{
     if (v < 0.0f) {
         return 0.0f;
     }
@@ -239,7 +234,8 @@ float cupidimage_svg_clamp01(float v) {
     return v;
 }
 
-static float svg_hue_to_rgb_component(float p, float q, float t) {
+static float svg_hue_to_rgb_component(float p, float q, float t)
+{
     if (t < 0.0f) {
         t += 1.0f;
     } else if (t > 1.0f) {
@@ -257,7 +253,8 @@ static float svg_hue_to_rgb_component(float p, float q, float t) {
     return p;
 }
 
-static void svg_hsl_to_rgb(float h_deg, float s, float l, float *r, float *g, float *b) {
+static void svg_hsl_to_rgb(float h_deg, float s, float l, float *r, float *g, float *b)
+{
     if (!r || !g || !b) {
         return;
     }
@@ -278,7 +275,8 @@ static void svg_hsl_to_rgb(float h_deg, float s, float l, float *r, float *g, fl
     *b = svg_hue_to_rgb_component(p, q, h - (1.0f / 3.0f));
 }
 
-static int svg_parse_color_component(const char **p, float *out, int *is_percent) {
+static int svg_parse_color_component(const char **p, float *out, int *is_percent)
+{
     if (!p || !*p || !out) {
         return 0;
     }
@@ -307,7 +305,8 @@ static int svg_parse_color_component(const char **p, float *out, int *is_percent
     return 1;
 }
 
-static int svg_parse_hue_component(const char **p, float *out_deg) {
+static int svg_parse_hue_component(const char **p, float *out_deg)
+{
     if (!p || !*p || !out_deg) {
         return 0;
     }
@@ -340,7 +339,8 @@ static int svg_parse_hue_component(const char **p, float *out_deg) {
     return 1;
 }
 
-static int svg_parse_alpha_component(const char **p, float *out_alpha) {
+static int svg_parse_alpha_component(const char **p, float *out_alpha)
+{
     float v = 0.0f;
     int is_percent = 0;
     if (!svg_parse_color_component(p, &v, &is_percent)) {
@@ -358,7 +358,8 @@ static int svg_parse_alpha_component(const char **p, float *out_alpha) {
     return 1;
 }
 
-int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none) {
+int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none)
+{
     if (is_none) {
         *is_none = 0;
     }
@@ -384,7 +385,10 @@ int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none) {
             int r = isxdigit((unsigned char)s[0]) ? (int)strtol((char[]){s[0], 0}, NULL, 16) : -1;
             int g = isxdigit((unsigned char)s[1]) ? (int)strtol((char[]){s[1], 0}, NULL, 16) : -1;
             int b = isxdigit((unsigned char)s[2]) ? (int)strtol((char[]){s[2], 0}, NULL, 16) : -1;
-            int a = (len == 4) ? (isxdigit((unsigned char)s[3]) ? (int)strtol((char[]){s[3], 0}, NULL, 16) : -1) : 15;
+            int a = (len == 4)
+                        ? (isxdigit((unsigned char)s[3]) ? (int)strtol((char[]){s[3], 0}, NULL, 16)
+                                                         : -1)
+                        : 15;
             if (r < 0 || g < 0 || b < 0 || a < 0) {
                 return 0;
             }
@@ -436,7 +440,8 @@ int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none) {
         int g = (int)lroundf(fmaxf(0.0f, fminf(255.0f, rgb[1])));
         int b = (int)lroundf(fmaxf(0.0f, fminf(255.0f, rgb[2])));
         int a = (int)lroundf(cupidimage_svg_clamp01(alpha) * 255.0f);
-        *out = ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
+        *out =
+            ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
         return 1;
     }
     if (svg_strncasecmp(s, "hsl(", 4) == 0 || svg_strncasecmp(s, "hsla(", 5) == 0) {
@@ -482,7 +487,8 @@ int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none) {
         int g = (int)lroundf(cupidimage_svg_clamp01(gf) * 255.0f);
         int b = (int)lroundf(cupidimage_svg_clamp01(bf) * 255.0f);
         int a = (int)lroundf(cupidimage_svg_clamp01(alpha) * 255.0f);
-        *out = ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
+        *out =
+            ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
         return 1;
     }
     for (size_t i = 0; i < sizeof(svg_named_colors) / sizeof(svg_named_colors[0]); i++) {
@@ -494,44 +500,76 @@ int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none) {
     return 0;
 }
 
-int cupidimage_svg_property_id(const char *name) {
+int cupidimage_svg_property_id(const char *name)
+{
     if (!name) {
         return -1;
     }
-    if (strcmp(name, "fill") == 0) return SVG_PROP_FILL;
-    if (strcmp(name, "stroke") == 0) return SVG_PROP_STROKE;
-    if (strcmp(name, "stroke-width") == 0) return SVG_PROP_STROKE_WIDTH;
-    if (strcmp(name, "stroke-linecap") == 0) return SVG_PROP_STROKE_LINECAP;
-    if (strcmp(name, "stroke-linejoin") == 0) return SVG_PROP_STROKE_LINEJOIN;
-    if (strcmp(name, "stroke-miterlimit") == 0) return SVG_PROP_STROKE_MITERLIMIT;
-    if (strcmp(name, "stroke-dasharray") == 0) return SVG_PROP_STROKE_DASHARRAY;
-    if (strcmp(name, "stroke-dashoffset") == 0) return SVG_PROP_STROKE_DASHOFFSET;
-    if (strcmp(name, "clip-path") == 0) return SVG_PROP_CLIP_PATH;
-    if (strcmp(name, "mask") == 0) return SVG_PROP_MASK;
-    if (strcmp(name, "marker") == 0) return SVG_PROP_MARKER;
-    if (strcmp(name, "marker-start") == 0) return SVG_PROP_MARKER_START;
-    if (strcmp(name, "marker-mid") == 0) return SVG_PROP_MARKER_MID;
-    if (strcmp(name, "marker-end") == 0) return SVG_PROP_MARKER_END;
-    if (strcmp(name, "filter") == 0) return SVG_PROP_FILTER;
-    if (strcmp(name, "opacity") == 0) return SVG_PROP_OPACITY;
-    if (strcmp(name, "fill-opacity") == 0) return SVG_PROP_FILL_OPACITY;
-    if (strcmp(name, "stroke-opacity") == 0) return SVG_PROP_STROKE_OPACITY;
-    if (strcmp(name, "fill-rule") == 0) return SVG_PROP_FILL_RULE;
-    if (strcmp(name, "color") == 0) return SVG_PROP_COLOR;
-    if (strcmp(name, "font-size") == 0) return SVG_PROP_FONT_SIZE;
-    if (strcmp(name, "text-anchor") == 0) return SVG_PROP_TEXT_ANCHOR;
-    if (strcmp(name, "font-weight") == 0) return SVG_PROP_FONT_WEIGHT;
-    if (strcmp(name, "font-style") == 0) return SVG_PROP_FONT_STYLE;
-    if (strcmp(name, "dominant-baseline") == 0) return SVG_PROP_DOMINANT_BASELINE;
-    if (strcmp(name, "alignment-baseline") == 0) return SVG_PROP_DOMINANT_BASELINE;
-    if (strcmp(name, "letter-spacing") == 0) return SVG_PROP_LETTER_SPACING;
-    if (strcmp(name, "word-spacing") == 0) return SVG_PROP_WORD_SPACING;
-    if (strcmp(name, "display") == 0) return SVG_PROP_DISPLAY;
-    if (strcmp(name, "visibility") == 0) return SVG_PROP_VISIBILITY;
+    if (strcmp(name, "fill") == 0)
+        return SVG_PROP_FILL;
+    if (strcmp(name, "stroke") == 0)
+        return SVG_PROP_STROKE;
+    if (strcmp(name, "stroke-width") == 0)
+        return SVG_PROP_STROKE_WIDTH;
+    if (strcmp(name, "stroke-linecap") == 0)
+        return SVG_PROP_STROKE_LINECAP;
+    if (strcmp(name, "stroke-linejoin") == 0)
+        return SVG_PROP_STROKE_LINEJOIN;
+    if (strcmp(name, "stroke-miterlimit") == 0)
+        return SVG_PROP_STROKE_MITERLIMIT;
+    if (strcmp(name, "stroke-dasharray") == 0)
+        return SVG_PROP_STROKE_DASHARRAY;
+    if (strcmp(name, "stroke-dashoffset") == 0)
+        return SVG_PROP_STROKE_DASHOFFSET;
+    if (strcmp(name, "clip-path") == 0)
+        return SVG_PROP_CLIP_PATH;
+    if (strcmp(name, "mask") == 0)
+        return SVG_PROP_MASK;
+    if (strcmp(name, "marker") == 0)
+        return SVG_PROP_MARKER;
+    if (strcmp(name, "marker-start") == 0)
+        return SVG_PROP_MARKER_START;
+    if (strcmp(name, "marker-mid") == 0)
+        return SVG_PROP_MARKER_MID;
+    if (strcmp(name, "marker-end") == 0)
+        return SVG_PROP_MARKER_END;
+    if (strcmp(name, "filter") == 0)
+        return SVG_PROP_FILTER;
+    if (strcmp(name, "opacity") == 0)
+        return SVG_PROP_OPACITY;
+    if (strcmp(name, "fill-opacity") == 0)
+        return SVG_PROP_FILL_OPACITY;
+    if (strcmp(name, "stroke-opacity") == 0)
+        return SVG_PROP_STROKE_OPACITY;
+    if (strcmp(name, "fill-rule") == 0)
+        return SVG_PROP_FILL_RULE;
+    if (strcmp(name, "color") == 0)
+        return SVG_PROP_COLOR;
+    if (strcmp(name, "font-size") == 0)
+        return SVG_PROP_FONT_SIZE;
+    if (strcmp(name, "text-anchor") == 0)
+        return SVG_PROP_TEXT_ANCHOR;
+    if (strcmp(name, "font-weight") == 0)
+        return SVG_PROP_FONT_WEIGHT;
+    if (strcmp(name, "font-style") == 0)
+        return SVG_PROP_FONT_STYLE;
+    if (strcmp(name, "dominant-baseline") == 0)
+        return SVG_PROP_DOMINANT_BASELINE;
+    if (strcmp(name, "alignment-baseline") == 0)
+        return SVG_PROP_DOMINANT_BASELINE;
+    if (strcmp(name, "letter-spacing") == 0)
+        return SVG_PROP_LETTER_SPACING;
+    if (strcmp(name, "word-spacing") == 0)
+        return SVG_PROP_WORD_SPACING;
+    if (strcmp(name, "display") == 0)
+        return SVG_PROP_DISPLAY;
+    if (strcmp(name, "visibility") == 0)
+        return SVG_PROP_VISIBILITY;
     return -1;
 }
 
-static int svg_parse_url_id(const char *value, char *out, size_t outcap) {
+static int svg_parse_url_id(const char *value, char *out, size_t outcap)
+{
     if (!value || !out || outcap == 0) {
         return 0;
     }
@@ -562,7 +600,8 @@ static int svg_parse_url_id(const char *value, char *out, size_t outcap) {
     return 1;
 }
 
-int cupidimage_svg_parse_href_id(const char *value, char *out, size_t outcap) {
+int cupidimage_svg_parse_href_id(const char *value, char *out, size_t outcap)
+{
     if (!value || !out || outcap == 0) {
         return 0;
     }
@@ -608,7 +647,8 @@ int cupidimage_svg_parse_href_id(const char *value, char *out, size_t outcap) {
     return 0;
 }
 
-static int svg_should_skip_use_wrapper_attr(const char *name) {
+static int svg_should_skip_use_wrapper_attr(const char *name)
+{
     if (!name) {
         return 1;
     }
@@ -621,7 +661,8 @@ static int svg_should_skip_use_wrapper_attr(const char *name) {
            strcmp(local, "transform") == 0;
 }
 
-char *cupidimage_svg_build_use_wrapper_attrs(const svg_tag *tag) {
+char *cupidimage_svg_build_use_wrapper_attrs(const svg_tag *tag)
+{
     if (!tag) {
         return NULL;
     }
@@ -662,7 +703,8 @@ char *cupidimage_svg_build_use_wrapper_attrs(const svg_tag *tag) {
     return buf;
 }
 
-char *cupidimage_svg_wrap_with_group_attrs(const char *content, const char *attrs) {
+char *cupidimage_svg_wrap_with_group_attrs(const char *content, const char *attrs)
+{
     if (!content) {
         return NULL;
     }
@@ -683,16 +725,19 @@ char *cupidimage_svg_wrap_with_group_attrs(const char *content, const char *attr
     return out;
 }
 
-void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const char *value, float base_len,
-                                        float dpi, const svg_defs *defs) {
+void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const char *value,
+                                            float base_len, float dpi, const svg_defs *defs)
+{
     if (!style || !value) {
         return;
     }
     if (prop == SVG_PROP_FILL || prop == SVG_PROP_STROKE) {
         svg_paint_type *ptype = (prop == SVG_PROP_FILL) ? &style->fill_type : &style->stroke_type;
         uint32_t *pcolor = (prop == SVG_PROP_FILL) ? &style->fill_color : &style->stroke_color;
-        const svg_gradient **pgrad = (prop == SVG_PROP_FILL) ? &style->fill_gradient : &style->stroke_gradient;
-        svg_pattern **ppat = (prop == SVG_PROP_FILL) ? &style->fill_pattern : &style->stroke_pattern;
+        const svg_gradient **pgrad =
+            (prop == SVG_PROP_FILL) ? &style->fill_gradient : &style->stroke_gradient;
+        svg_pattern **ppat =
+            (prop == SVG_PROP_FILL) ? &style->fill_pattern : &style->stroke_pattern;
         if (svg_strcasecmp(value, "currentcolor") == 0) {
             *ptype = SVG_PAINT_COLOR;
             *pcolor = style->color;
@@ -702,13 +747,15 @@ void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const ch
         }
         char url_id[96];
         if (svg_parse_url_id(value, url_id, sizeof(url_id))) {
-            const svg_gradient *grad = defs ? cupidimage_svg_defs_find_gradient(defs, url_id) : NULL;
+            const svg_gradient *grad =
+                defs ? cupidimage_svg_defs_find_gradient(defs, url_id) : NULL;
             if (grad) {
                 *ptype = grad->type;
                 *pgrad = grad;
                 *ppat = NULL;
             } else {
-                const svg_pattern *pat = defs ? cupidimage_svg_defs_find_pattern(defs, url_id) : NULL;
+                const svg_pattern *pat =
+                    defs ? cupidimage_svg_defs_find_pattern(defs, url_id) : NULL;
                 if (pat) {
                     *ptype = SVG_PAINT_PATTERN;
                     *ppat = (svg_pattern *)pat;
@@ -772,7 +819,8 @@ void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const ch
         char *end = NULL;
         double v = strtod(value, &end);
         if (end != value) {
-            if (v < 1.0) v = 1.0;
+            if (v < 1.0)
+                v = 1.0;
             style->stroke_miterlimit = (float)v;
         }
         return;
@@ -831,7 +879,8 @@ void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const ch
         }
         char url_id[96];
         if (svg_parse_url_id(value, url_id, sizeof(url_id))) {
-            style->clip_path = defs ? cupidimage_svg_defs_find_clip((svg_defs *)defs, url_id) : NULL;
+            style->clip_path =
+                defs ? cupidimage_svg_defs_find_clip((svg_defs *)defs, url_id) : NULL;
         }
         return;
     }
@@ -846,8 +895,8 @@ void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const ch
         }
         return;
     }
-    if (prop == SVG_PROP_MARKER || prop == SVG_PROP_MARKER_START ||
-        prop == SVG_PROP_MARKER_MID || prop == SVG_PROP_MARKER_END) {
+    if (prop == SVG_PROP_MARKER || prop == SVG_PROP_MARKER_START || prop == SVG_PROP_MARKER_MID ||
+        prop == SVG_PROP_MARKER_END) {
         svg_marker *mk = NULL;
         if (svg_strcasecmp(value, "none") != 0) {
             char url_id[96];
@@ -960,8 +1009,7 @@ void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const ch
                    svg_strcasecmp(value, "text-before-edge") == 0 ||
                    svg_strcasecmp(value, "before-edge") == 0) {
             style->dominant_baseline = 2;
-        } else if (svg_strcasecmp(value, "alphabetic") == 0 ||
-                   svg_strcasecmp(value, "auto") == 0 ||
+        } else if (svg_strcasecmp(value, "alphabetic") == 0 || svg_strcasecmp(value, "auto") == 0 ||
                    svg_strcasecmp(value, "baseline") == 0 ||
                    svg_strcasecmp(value, "text-after-edge") == 0 ||
                    svg_strcasecmp(value, "after-edge") == 0) {
@@ -1003,8 +1051,9 @@ void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const ch
     }
 }
 
-static void svg_style_apply_property(svg_style *style, const char *name, const char *value, float base_len,
-                                     float dpi, const svg_defs *defs) {
+static void svg_style_apply_property(svg_style *style, const char *name, const char *value,
+                                     float base_len, float dpi, const svg_defs *defs)
+{
     if (!style || !name || !value) {
         return;
     }
@@ -1015,8 +1064,9 @@ static void svg_style_apply_property(svg_style *style, const char *name, const c
     cupidimage_svg_style_apply_property_id(style, prop, value, base_len, dpi, defs);
 }
 
-static void svg_style_apply_style_attr(svg_style *style, const char *value, float base_len, float dpi,
-                                       const svg_defs *defs) {
+static void svg_style_apply_style_attr(svg_style *style, const char *value, float base_len,
+                                       float dpi, const svg_defs *defs)
+{
     if (!style || !value) {
         return;
     }
@@ -1072,7 +1122,8 @@ static void svg_style_apply_style_attr(svg_style *style, const char *value, floa
     }
 }
 
-void cupidimage_svg_blend_premul(uint8_t *dst, uint8_t sr, uint8_t sg, uint8_t sb, uint8_t sa) {
+void cupidimage_svg_blend_premul(uint8_t *dst, uint8_t sr, uint8_t sg, uint8_t sb, uint8_t sa)
+{
     uint32_t inv = 255u - sa;
     dst[0] = (uint8_t)(sr + (uint32_t)dst[0] * inv / 255u);
     dst[1] = (uint8_t)(sg + (uint32_t)dst[1] * inv / 255u);
@@ -1080,8 +1131,9 @@ void cupidimage_svg_blend_premul(uint8_t *dst, uint8_t sr, uint8_t sg, uint8_t s
     dst[3] = (uint8_t)(sa + (uint32_t)dst[3] * inv / 255u);
 }
 
-void cupidimage_svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, float base_len, float dpi,
-                                         const svg_defs *defs) {
+void cupidimage_svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, float base_len,
+                                             float dpi, const svg_defs *defs)
+{
     for (int i = 0; i < tag->attr_count; i++) {
         const char *name = svg_local_name(tag->attrs[i].name);
         const char *value = tag->attrs[i].value;
@@ -1095,15 +1147,17 @@ void cupidimage_svg_apply_presentation_attrs(svg_style *style, const svg_tag *ta
     }
 }
 
-void cupidimage_svg_apply_inline_style_attr(svg_style *style, const svg_tag *tag, float base_len, float dpi,
-                                        const svg_defs *defs) {
+void cupidimage_svg_apply_inline_style_attr(svg_style *style, const svg_tag *tag, float base_len,
+                                            float dpi, const svg_defs *defs)
+{
     const char *style_attr = cupidimage_svg_get_attr(tag, "style");
     if (style_attr) {
         svg_style_apply_style_attr(style, style_attr, base_len, dpi, defs);
     }
 }
 
-int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
+int cupidimage_svg_parse_transform(const char *value, svg_matrix *out)
+{
     if (!value || !out) {
         return 0;
     }
@@ -1119,8 +1173,10 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
         }
         if (strncmp(p, "matrix", 6) == 0) {
             p += 6;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float v[6];
             for (int i = 0; i < 6; i++) {
@@ -1132,8 +1188,10 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "translate", 9) == 0) {
             p += 9;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float tx = 0.0f, ty = 0.0f;
             cupidimage_svg_parse_transform_number(&p, &tx);
@@ -1147,8 +1205,10 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "scale", 5) == 0) {
             p += 5;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float sx = 1.0f, sy = 1.0f;
             cupidimage_svg_parse_transform_number(&p, &sx);
@@ -1162,8 +1222,10 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "rotate", 6) == 0) {
             p += 6;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float angle = 0.0f;
             if (!cupidimage_svg_parse_transform_number(&p, &angle)) {
@@ -1188,8 +1250,10 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "skewx", 5) == 0) {
             p += 5;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float angle = 0.0f;
             if (!cupidimage_svg_parse_transform_number(&p, &angle)) {
@@ -1201,8 +1265,10 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "skewy", 5) == 0) {
             p += 5;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float angle = 0.0f;
             if (!cupidimage_svg_parse_transform_number(&p, &angle)) {
@@ -1215,7 +1281,8 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
         } else {
             break;
         }
-        while (*p && *p != ')') p++;
+        while (*p && *p != ')')
+            p++;
         if (*p == ')') {
             p++;
         }
@@ -1224,7 +1291,8 @@ int cupidimage_svg_parse_transform(const char *value, svg_matrix *out) {
     return 1;
 }
 
-int cupidimage_svg_next_tag(char **p, svg_tag *tag) {
+int cupidimage_svg_next_tag(char **p, svg_tag *tag)
+{
     char *s = *p;
     while (s && *s) {
         char *lt = strchr(s, '<');

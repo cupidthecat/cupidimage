@@ -1,9 +1,10 @@
 #include "cupidimage.h"
 
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
 
-void cupidimage_free(cupidimage_image *img) {
+void cupidimage_free(cupidimage_image *img)
+{
     if (!img) {
         return;
     }

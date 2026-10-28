@@ -3,19 +3,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-static unsigned tt_u16(const unsigned char *p) { return (unsigned)p[0] * 256 + p[1]; }
-static int tt_i16(const unsigned char *p) {
+static unsigned tt_u16(const unsigned char *p)
+{
+    return (unsigned)p[0] * 256 + p[1];
+}
+static int tt_i16(const unsigned char *p)
+{
     unsigned v = tt_u16(p);
     return v < 32768 ? (int)v : (int)v - 65536;
 }
-static uint32_t tt_u32(const unsigned char *p) {
+static uint32_t tt_u32(const unsigned char *p)
+{
     return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
 }
-static size_t tt_location(const pdf_tt_font *f, unsigned glyph) {
+static size_t tt_location(const pdf_tt_font *f, unsigned glyph)
+{
     const unsigned char *p = f->loca.data + (size_t)glyph * f->location_size;
     return f->location_size == 2 ? (size_t)tt_u16(p) * 2 : tt_u32(p);
 }
-int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t length) {
+int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t length)
+{
     memset(f, 0, sizeof(*f));
     if (length < 12 || (tt_u32(data) != 0x10000 && memcmp(data, "true", 4)))
         return 0;
@@ -61,18 +68,21 @@ int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t len
     }
     return 1;
 }
-unsigned cupidimage_pdf_tt_advance(const pdf_tt_font *f, unsigned glyph) {
+unsigned cupidimage_pdf_tt_advance(const pdf_tt_font *f, unsigned glyph)
+{
     if (glyph >= f->glyphs)
         glyph = 0;
     if (glyph >= f->hmetrics)
         glyph = f->hmetrics - 1;
     return tt_u16(f->hmtx.data + glyph * 4);
 }
-void cupidimage_pdf_tt_outline_free(pdf_tt_outline *o) {
+void cupidimage_pdf_tt_outline_free(pdf_tt_outline *o)
+{
     free(o->points);
     memset(o, 0, sizeof(*o));
 }
-static int tt_reserve(pdf_tt_outline *o, unsigned added) {
+static int tt_reserve(pdf_tt_outline *o, unsigned added)
+{
     if (added > 65536 - o->count)
         return 0;
     unsigned need = o->count + added;
@@ -88,7 +98,8 @@ static int tt_reserve(pdf_tt_outline *o, unsigned added) {
     o->capacity = capacity;
     return 1;
 }
-static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt_outline *o) {
+static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt_outline *o)
+{
     if (contours > 4096 || length < 10 + (size_t)contours * 2)
         return 0;
     unsigned count = contours ? tt_u16(p + 10 + (contours - 1) * 2) + 1 : 0, previous = 0;
@@ -163,7 +174,8 @@ static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt
     return 1;
 }
 static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, unsigned chain[16],
-                    unsigned depth, unsigned *calls) {
+                    unsigned depth, unsigned *calls)
+{
     if (depth == 16 || glyph >= f->glyphs || !*calls)
         return 0;
     (*calls)--;
@@ -276,7 +288,8 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
     }
     return 1;
 }
-int cupidimage_pdf_tt_outline(const pdf_tt_font *font, unsigned glyph, pdf_tt_outline *outline) {
+int cupidimage_pdf_tt_outline(const pdf_tt_font *font, unsigned glyph, pdf_tt_outline *outline)
+{
     outline->count = 0;
     unsigned chain[16], calls = 4096;
     if (!tt_glyph(font, glyph, outline, chain, 0, &calls)) {

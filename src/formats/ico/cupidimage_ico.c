@@ -1,10 +1,10 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #ifdef CUPIDIMAGE_ICO_DEBUG
 #define ICO_DEBUG(...) fprintf(stderr, "ICO: " __VA_ARGS__)
@@ -19,25 +19,27 @@
 #define BI_RGB 0u
 #define BI_PNG 5u
 
-static void set_err(char *err, size_t errcap, const char *msg) {
+static void set_err(char *err, size_t errcap, const char *msg)
+{
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
 }
 
-static uint16_t read_le16(const unsigned char *p) {
+static uint16_t read_le16(const unsigned char *p)
+{
     return (uint16_t)(p[0] | (p[1] << 8));
 }
 
-static uint32_t read_le32(const unsigned char *p) {
+static uint32_t read_le32(const unsigned char *p)
+{
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
 static int ico_parse_directory(const unsigned char *data, size_t size,
-                               cupidimage_ico_entry **entries_out,
-                               int *count_out,
-                               int *is_cursor_out,
-                               char *err, size_t errcap) {
+                               cupidimage_ico_entry **entries_out, int *count_out,
+                               int *is_cursor_out, char *err, size_t errcap)
+{
     if (!data || !entries_out || !count_out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -117,7 +119,8 @@ static int ico_parse_directory(const unsigned char *data, size_t size,
 }
 
 static int ico_find_png(const unsigned char *data, size_t size, size_t start,
-                        const unsigned char **png_data, size_t *png_size) {
+                        const unsigned char **png_data, size_t *png_size)
+{
     if (start + 4u > size) {
         return 0;
     }
@@ -131,11 +134,9 @@ static int ico_find_png(const unsigned char *data, size_t size, size_t start,
     return 0;
 }
 
-static int ico_decode_dib(const unsigned char *data, size_t size,
-                          const cupidimage_ico_entry *entry,
-                          int is_cursor,
-                          cupidimage_image *out,
-                          char *err, size_t errcap) {
+static int ico_decode_dib(const unsigned char *data, size_t size, const cupidimage_ico_entry *entry,
+                          int is_cursor, cupidimage_image *out, char *err, size_t errcap)
+{
     (void)is_cursor;
     const unsigned char *buf = data + entry->offset;
     size_t buf_size = entry->size;
@@ -251,7 +252,8 @@ static int ico_decode_dib(const unsigned char *data, size_t size,
             return 0;
         }
         if (entry->colors && entry->colors != palette_entries) {
-            ICO_DEBUG("warning: directory colors %u != palette %u\n", entry->colors, palette_entries);
+            ICO_DEBUG("warning: directory colors %u != palette %u\n", entry->colors,
+                      palette_entries);
         }
         memset(palette, 0, sizeof(palette));
         for (uint32_t i = 0; i < palette_entries; i++) {
@@ -398,10 +400,9 @@ static int ico_decode_dib(const unsigned char *data, size_t size,
 }
 
 static int ico_decode_entry(const unsigned char *data, size_t size,
-                            const cupidimage_ico_entry *entry,
-                            int is_cursor,
-                            cupidimage_image *out,
-                            char *err, size_t errcap) {
+                            const cupidimage_ico_entry *entry, int is_cursor, cupidimage_image *out,
+                            char *err, size_t errcap)
+{
     size_t offset = entry->offset;
     size_t entry_size = entry->size;
     if (offset > size || entry_size > size - offset) {
@@ -432,10 +433,9 @@ static int ico_decode_entry(const unsigned char *data, size_t size,
     return 1;
 }
 
-static int ico_load_page_mem(const unsigned char *data, size_t size,
-                             int page,
-                             cupidimage_image *out,
-                             char *err, size_t errcap) {
+static int ico_load_page_mem(const unsigned char *data, size_t size, int page,
+                             cupidimage_image *out, char *err, size_t errcap)
+{
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -462,16 +462,15 @@ static int ico_load_page_mem(const unsigned char *data, size_t size,
     return ico_decode_entry(data, size, &entry, is_cursor, out, err, errcap);
 }
 
-int cupidimage_load_ico(const unsigned char *data, size_t size,
-                        cupidimage_image *out,
-                        char *err, size_t errcap) {
+int cupidimage_load_ico(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap)
+{
     return ico_load_page_mem(data, size, 0, out, err, errcap);
 }
 
-int cupidimage_load_ico_page(const char *path,
-                             int page,
-                             cupidimage_image *out,
-                             char *err, size_t errcap) {
+int cupidimage_load_ico_page(const char *path, int page, cupidimage_image *out, char *err,
+                             size_t errcap)
+{
     if (!path || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -488,11 +487,9 @@ int cupidimage_load_ico_page(const char *path,
     return ok;
 }
 
-int cupidimage_ico_get_directory(const char *path,
-                                 cupidimage_ico_entry **entries,
-                                 int *count,
-                                 int *is_cursor,
-                                 char *err, size_t errcap) {
+int cupidimage_ico_get_directory(const char *path, cupidimage_ico_entry **entries, int *count,
+                                 int *is_cursor, char *err, size_t errcap)
+{
     if (!path || !entries || !count) {
         set_err(err, errcap, "invalid arguments");
         return 0;

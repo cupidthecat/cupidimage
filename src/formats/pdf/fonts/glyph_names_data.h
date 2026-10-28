@@ -28,7 +28,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-static const struct {const char *name; uint32_t scalar; unsigned char single;} pdf_glyph_names[] = {
+static const struct {
+    const char *name;
+    uint32_t scalar;
+    unsigned char single;
+} pdf_glyph_names[] = {
     {"A", 0x41, 1},
     {"AE", 0xc6, 1},
     {"AEacute", 0x1fc, 1},

@@ -5,7 +5,8 @@
 
 /* ISO 32000-1, 8.4.3: lengths and dash phase are measured in user space. */
 int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, size_t length,
-                            double phase) {
+                            double phase)
+{
     double values[32], sum = 0;
     int count = 0;
     size_t pos = 0;
@@ -30,7 +31,8 @@ int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, s
     return 1;
 }
 
-static int stroke_skip_reference(const pdf_object_view *view, size_t *pos) {
+static int stroke_skip_reference(const pdf_object_view *view, size_t *pos)
+{
     double ignored;
     for (int i = 0; i < 2; i++) {
         cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -41,7 +43,8 @@ static int stroke_skip_reference(const pdf_object_view *view, size_t *pos) {
     return *pos < view->len && view->data[(*pos)++] == 'R';
 }
 static int stroke_read_array(const pdf_render_state *st, const pdf_object_view *view, size_t *pos,
-                             pdf_graphics_state *gs, unsigned depth) {
+                             pdf_graphics_state *gs, unsigned depth)
+{
     int object;
     if (depth == 16)
         return 0;
@@ -83,7 +86,8 @@ static int stroke_read_array(const pdf_render_state *st, const pdf_object_view *
     return !gs->dash_count || sum > 0;
 }
 static int stroke_read_dash(const pdf_render_state *st, const pdf_object_view *view, size_t pos,
-                            pdf_graphics_state *gs, unsigned depth) {
+                            pdf_graphics_state *gs, unsigned depth)
+{
     int object;
     if (depth == 16)
         return 0;
@@ -118,7 +122,8 @@ static int stroke_read_dash(const pdf_render_state *st, const pdf_object_view *v
     return 1;
 }
 int cupidimage_pdf_apply_stroke_view(const pdf_render_state *st, const pdf_object_view *view,
-                                     pdf_graphics_state *next) {
+                                     pdf_graphics_state *next)
+{
     const char *keys[] = {"LC", "LJ", "ML"};
     size_t pos;
     double value;
@@ -155,22 +160,30 @@ typedef struct {
     double matrix[4], inverse[4], radius;
     unsigned primitives;
 } stroke_raster;
-static stroke_point stroke_transform(const double m[4], stroke_point p) {
+static stroke_point stroke_transform(const double m[4], stroke_point p)
+{
     return (stroke_point){m[0] * p.x + m[2] * p.y, m[1] * p.x + m[3] * p.y};
 }
-static double stroke_cross(stroke_point a, stroke_point b) { return a.x * b.y - a.y * b.x; }
-static stroke_point stroke_sub(stroke_point a, stroke_point b) {
+static double stroke_cross(stroke_point a, stroke_point b)
+{
+    return a.x * b.y - a.y * b.x;
+}
+static stroke_point stroke_sub(stroke_point a, stroke_point b)
+{
     return (stroke_point){a.x - b.x, a.y - b.y};
 }
-static stroke_point stroke_add(stroke_point a, stroke_point b) {
+static stroke_point stroke_add(stroke_point a, stroke_point b)
+{
     return (stroke_point){a.x + b.x, a.y + b.y};
 }
-static stroke_point stroke_scale(stroke_point a, double s) {
+static stroke_point stroke_scale(stroke_point a, double s)
+{
     return (stroke_point){a.x * s, a.y * s};
 }
 
 /* Each primitive ORs into one coverage mask: overlapping joins/caps paint once. */
-static int stroke_primitive(stroke_raster *r, const stroke_point *points, int count, int circle) {
+static int stroke_primitive(stroke_raster *r, const stroke_point *points, int count, int circle)
+{
     if (++r->primitives > 262144)
         return 0;
     stroke_point device[4];
@@ -225,7 +238,8 @@ static int stroke_primitive(stroke_raster *r, const stroke_point *points, int co
         }
     return 1;
 }
-static int stroke_cap(stroke_raster *r, stroke_point p, stroke_point direction, int cap) {
+static int stroke_cap(stroke_raster *r, stroke_point p, stroke_point direction, int cap)
+{
     if (cap == 0)
         return 1;
     if (cap == 1)
@@ -236,7 +250,8 @@ static int stroke_cap(stroke_raster *r, stroke_point p, stroke_point direction, 
                            stroke_add(stroke_sub(p, n), v), stroke_sub(p, n)};
     return stroke_primitive(r, box, 4, 0);
 }
-static int stroke_join(stroke_raster *r, const stroke_piece *a, const stroke_piece *b) {
+static int stroke_join(stroke_raster *r, const stroke_piece *a, const stroke_piece *b)
+{
     stroke_point u = stroke_sub(a->b, a->a), v = stroke_sub(b->b, b->a), p = b->a;
     double lu = hypot(u.x, u.y), lv = hypot(v.x, v.y);
     if (!lu || !lv)
@@ -267,7 +282,8 @@ static int stroke_join(stroke_raster *r, const stroke_piece *a, const stroke_pie
     return stroke_primitive(r, polygon, count, 0);
 }
 static int stroke_append(stroke_piece **pieces, unsigned *count, unsigned *capacity, stroke_point a,
-                         stroke_point b, int previous) {
+                         stroke_point b, int previous)
+{
     if (*count == 65536)
         return 0;
     if (*count == *capacity) {
@@ -282,7 +298,8 @@ static int stroke_append(stroke_piece **pieces, unsigned *count, unsigned *capac
     return 1;
 }
 void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path,
-                                    unsigned char *target) {
+                                    unsigned char *target)
+{
     if (!st || !st->img || !path->seg_count)
         return;
     stroke_raster r = {0};

@@ -1,12 +1,13 @@
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 int cupidimage_kitty_delete_all(FILE *out, char *err, size_t errcap);
 int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id, char *err, size_t errcap);
 
-void test_delete_all(void) {
+void test_delete_all(void)
+{
     FILE *f = fmemopen(NULL, 256, "w");
     char err[128] = {0};
 
@@ -16,7 +17,8 @@ void test_delete_all(void) {
     fclose(f);
 }
 
-void test_delete_image(void) {
+void test_delete_image(void)
+{
     FILE *f = fmemopen(NULL, 256, "w");
     char err[128] = {0};
 
@@ -26,7 +28,8 @@ void test_delete_image(void) {
     fclose(f);
 }
 
-int main(void) {
+int main(void)
+{
     test_delete_all();
     test_delete_image();
     printf("All delete tests: PASS\n");

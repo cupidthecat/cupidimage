@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -28,13 +28,15 @@ static void svg_color_matrix_identity(float *m);
 static void svg_color_matrix_saturate(float s, float *m);
 static void svg_color_matrix_huerotate(float angle_deg, float *m);
 static void svg_color_matrix_luminance_to_alpha(float *m);
-static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op,
-                                     char ***names, int *name_count, int *name_cap);
-static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_gradient_units units);
+static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op, char ***names,
+                                     int *name_count, int *name_cap);
+static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op,
+                                    svg_gradient_units units);
 static void svg_transfer_func_init(svg_transfer_func *func);
 static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func);
 
-static int svg_find_filter_result(const char *name, char **names, int name_count) {
+static int svg_find_filter_result(const char *name, char **names, int name_count)
+{
     if (!name || !*name || !names) {
         return -1;
     }
@@ -46,14 +48,16 @@ static int svg_find_filter_result(const char *name, char **names, int name_count
     return -1;
 }
 
-svg_filter_ref cupidimage_svg_make_filter_ref(int type, int index) {
+svg_filter_ref cupidimage_svg_make_filter_ref(int type, int index)
+{
     svg_filter_ref ref;
     ref.type = type;
     ref.index = index;
     return ref;
 }
 
-static svg_filter_ref svg_parse_filter_ref(const char *s, char **names, int name_count) {
+static svg_filter_ref svg_parse_filter_ref(const char *s, char **names, int name_count)
+{
     if (!s || !*s) {
         return cupidimage_svg_make_filter_ref(SVG_FILTER_IN_CURRENT, -1);
     }
@@ -82,7 +86,8 @@ static svg_filter_ref svg_parse_filter_ref(const char *s, char **names, int name
     return cupidimage_svg_make_filter_ref(SVG_FILTER_IN_CURRENT, -1);
 }
 
-static void svg_filter_op_init(svg_filter_op *op) {
+static void svg_filter_op_init(svg_filter_op *op)
+{
     if (!op) {
         return;
     }
@@ -128,7 +133,8 @@ static void svg_filter_op_init(svg_filter_op *op) {
     op->has_image_geom = 0;
 }
 
-void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count) {
+void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count)
+{
     if (!ops || count <= 0) {
         return;
     }
@@ -141,7 +147,8 @@ void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count) {
     }
 }
 
-static void svg_color_matrix_identity(float *m) {
+static void svg_color_matrix_identity(float *m)
+{
     for (int i = 0; i < 20; i++) {
         m[i] = 0.0f;
     }
@@ -151,7 +158,8 @@ static void svg_color_matrix_identity(float *m) {
     m[18] = 1.0f;
 }
 
-static void svg_color_matrix_saturate(float s, float *m) {
+static void svg_color_matrix_saturate(float s, float *m)
+{
     float ir = 0.213f;
     float ig = 0.715f;
     float ib = 0.072f;
@@ -167,7 +175,8 @@ static void svg_color_matrix_saturate(float s, float *m) {
     m[12] = ib + s * (1.0f - ib);
 }
 
-static void svg_color_matrix_huerotate(float angle_deg, float *m) {
+static void svg_color_matrix_huerotate(float angle_deg, float *m)
+{
     float ir = 0.213f;
     float ig = 0.715f;
     float ib = 0.072f;
@@ -186,7 +195,8 @@ static void svg_color_matrix_huerotate(float angle_deg, float *m) {
     m[12] = ib + c * (1.0f - ib) + s * ib;
 }
 
-static void svg_color_matrix_luminance_to_alpha(float *m) {
+static void svg_color_matrix_luminance_to_alpha(float *m)
+{
     for (int i = 0; i < 20; i++) {
         m[i] = 0.0f;
     }
@@ -195,8 +205,9 @@ static void svg_color_matrix_luminance_to_alpha(float *m) {
     m[17] = 0.0722f;
 }
 
-static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op,
-                                     char ***names, int *name_count, int *name_cap) {
+static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op, char ***names,
+                                     int *name_count, int *name_cap)
+{
     if (!op) {
         return;
     }
@@ -229,7 +240,8 @@ static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op,
     op->result_id = idx;
 }
 
-static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_gradient_units units) {
+static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_gradient_units units)
+{
     if (!tag || !op) {
         return;
     }
@@ -238,16 +250,21 @@ static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_g
     const char *y = cupidimage_svg_get_attr(tag, "y");
     const char *w = cupidimage_svg_get_attr(tag, "width");
     const char *h = cupidimage_svg_get_attr(tag, "height");
-    if (x && cupidimage_svg_parse_grad_coord(x, &op->rx, units)) has = 1;
-    if (y && cupidimage_svg_parse_grad_coord(y, &op->ry, units)) has = 1;
-    if (w && cupidimage_svg_parse_grad_coord(w, &op->rwidth, units)) has = 1;
-    if (h && cupidimage_svg_parse_grad_coord(h, &op->rheight, units)) has = 1;
+    if (x && cupidimage_svg_parse_grad_coord(x, &op->rx, units))
+        has = 1;
+    if (y && cupidimage_svg_parse_grad_coord(y, &op->ry, units))
+        has = 1;
+    if (w && cupidimage_svg_parse_grad_coord(w, &op->rwidth, units))
+        has = 1;
+    if (h && cupidimage_svg_parse_grad_coord(h, &op->rheight, units))
+        has = 1;
     if (has) {
         op->has_region = 1;
     }
 }
 
-static void svg_transfer_func_init(svg_transfer_func *func) {
+static void svg_transfer_func_init(svg_transfer_func *func)
+{
     if (!func) {
         return;
     }
@@ -263,52 +280,62 @@ static void svg_transfer_func_init(svg_transfer_func *func) {
     }
 }
 
-float cupidimage_svg_transfer_apply(const svg_transfer_func *func, float v) {
+float cupidimage_svg_transfer_apply(const svg_transfer_func *func, float v)
+{
     if (!func) {
         return v;
     }
-    if (v < 0.0f) v = 0.0f;
-    if (v > 1.0f) v = 1.0f;
+    if (v < 0.0f)
+        v = 0.0f;
+    if (v > 1.0f)
+        v = 1.0f;
     float out = v;
     switch (func->type) {
-    case SVG_TRANSFER_TABLE:
-        if (func->table_count > 0) {
-            float t = v * (float)(func->table_count - 1);
-            int i0 = (int)floorf(t);
-            int i1 = i0 + 1;
-            if (i0 < 0) i0 = 0;
-            if (i1 >= func->table_count) i1 = func->table_count - 1;
-            float frac = t - (float)i0;
-            float v0 = func->table[i0];
-            float v1 = func->table[i1];
-            out = v0 + (v1 - v0) * frac;
-        }
-        break;
-    case SVG_TRANSFER_DISCRETE:
-        if (func->table_count > 0) {
-            int idx = (int)floorf(v * (float)func->table_count);
-            if (idx < 0) idx = 0;
-            if (idx >= func->table_count) idx = func->table_count - 1;
-            out = func->table[idx];
-        }
-        break;
-    case SVG_TRANSFER_LINEAR:
-        out = func->slope * v + func->intercept;
-        break;
-    case SVG_TRANSFER_GAMMA:
-        out = func->amplitude * powf(v, func->exponent) + func->offset;
-        break;
-    case SVG_TRANSFER_IDENTITY:
-    default:
-        out = v;
-        break;
+        case SVG_TRANSFER_TABLE:
+            if (func->table_count > 0) {
+                float t = v * (float)(func->table_count - 1);
+                int i0 = (int)floorf(t);
+                int i1 = i0 + 1;
+                if (i0 < 0)
+                    i0 = 0;
+                if (i1 >= func->table_count)
+                    i1 = func->table_count - 1;
+                float frac = t - (float)i0;
+                float v0 = func->table[i0];
+                float v1 = func->table[i1];
+                out = v0 + (v1 - v0) * frac;
+            }
+            break;
+        case SVG_TRANSFER_DISCRETE:
+            if (func->table_count > 0) {
+                int idx = (int)floorf(v * (float)func->table_count);
+                if (idx < 0)
+                    idx = 0;
+                if (idx >= func->table_count)
+                    idx = func->table_count - 1;
+                out = func->table[idx];
+            }
+            break;
+        case SVG_TRANSFER_LINEAR:
+            out = func->slope * v + func->intercept;
+            break;
+        case SVG_TRANSFER_GAMMA:
+            out = func->amplitude * powf(v, func->exponent) + func->offset;
+            break;
+        case SVG_TRANSFER_IDENTITY:
+        default:
+            out = v;
+            break;
     }
-    if (out < 0.0f) out = 0.0f;
-    if (out > 1.0f) out = 1.0f;
+    if (out < 0.0f)
+        out = 0.0f;
+    if (out > 1.0f)
+        out = 1.0f;
     return out;
 }
 
-static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func) {
+static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
+{
     if (!tag || !func) {
         return;
     }
@@ -328,8 +355,10 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
                 if (!cupidimage_svg_parse_number(&p, &v)) {
                     break;
                 }
-                if (v < 0.0f) v = 0.0f;
-                if (v > 1.0f) v = 1.0f;
+                if (v < 0.0f)
+                    v = 0.0f;
+                if (v > 1.0f)
+                    v = 1.0f;
                 func->table[func->table_count++] = v;
             }
         }
@@ -345,8 +374,10 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
                 if (!cupidimage_svg_parse_number(&p, &v)) {
                     break;
                 }
-                if (v < 0.0f) v = 0.0f;
-                if (v > 1.0f) v = 1.0f;
+                if (v < 0.0f)
+                    v = 0.0f;
+                if (v > 1.0f)
+                    v = 1.0f;
                 func->table[func->table_count++] = v;
             }
         }
@@ -356,8 +387,10 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
         func->type = SVG_TRANSFER_LINEAR;
         const char *slope = cupidimage_svg_get_attr(tag, "slope");
         const char *intercept = cupidimage_svg_get_attr(tag, "intercept");
-        if (slope) func->slope = (float)strtod(slope, NULL);
-        if (intercept) func->intercept = (float)strtod(intercept, NULL);
+        if (slope)
+            func->slope = (float)strtod(slope, NULL);
+        if (intercept)
+            func->intercept = (float)strtod(intercept, NULL);
         return;
     }
     if (svg_strcasecmp(type, "gamma") == 0) {
@@ -365,17 +398,21 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
         const char *amplitude = cupidimage_svg_get_attr(tag, "amplitude");
         const char *exponent = cupidimage_svg_get_attr(tag, "exponent");
         const char *offset = cupidimage_svg_get_attr(tag, "offset");
-        if (amplitude) func->amplitude = (float)strtod(amplitude, NULL);
-        if (exponent) func->exponent = (float)strtod(exponent, NULL);
-        if (offset) func->offset = (float)strtod(offset, NULL);
+        if (amplitude)
+            func->amplitude = (float)strtod(amplitude, NULL);
+        if (exponent)
+            func->exponent = (float)strtod(exponent, NULL);
+        if (offset)
+            func->offset = (float)strtod(offset, NULL);
         return;
     }
     func->type = SVG_TRANSFER_IDENTITY;
 }
 
 int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, int *out_count,
-                                int *out_result_count, float base_len, float dpi,
-                                svg_gradient_units units) {
+                                    int *out_result_count, float base_len, float dpi,
+                                    svg_gradient_units units)
+{
     if (!content || !out_ops || !out_count) {
         return 0;
     }
@@ -406,9 +443,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             if (transfer_index >= 0 && strcmp(local_end, "fecomponenttransfer") == 0) {
                 transfer_index = -1;
             }
-            if (lighting_index >= 0 &&
-                (strcmp(local_end, "fediffuselighting") == 0 ||
-                 strcmp(local_end, "fespecularlighting") == 0)) {
+            if (lighting_index >= 0 && (strcmp(local_end, "fediffuselighting") == 0 ||
+                                        strcmp(local_end, "fespecularlighting") == 0)) {
                 lighting_index = -1;
             }
             continue;
@@ -417,8 +453,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "femergenode") == 0 && merge_index >= 0) {
             svg_filter_op *op = &(*out_ops)[merge_index];
             if (op->merge_count < (int)(sizeof(op->merge_inputs) / sizeof(op->merge_inputs[0]))) {
-                op->merge_inputs[op->merge_count++] = svg_parse_filter_ref(cupidimage_svg_get_attr(&tag, "in"),
-                                                                          names, name_count);
+                op->merge_inputs[op->merge_count++] =
+                    svg_parse_filter_ref(cupidimage_svg_get_attr(&tag, "in"), names, name_count);
             }
             continue;
         }
@@ -448,8 +484,10 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             float el = 0.0f;
             const char *azs = cupidimage_svg_get_attr(&tag, "azimuth");
             const char *els = cupidimage_svg_get_attr(&tag, "elevation");
-            if (azs) az = (float)strtod(azs, NULL);
-            if (els) el = (float)strtod(els, NULL);
+            if (azs)
+                az = (float)strtod(azs, NULL);
+            if (els)
+                el = (float)strtod(els, NULL);
             float azr = az * (float)M_PI / 180.0f;
             float elr = el * (float)M_PI / 180.0f;
             op->light_x = cosf(elr) * cosf(azr);
@@ -460,7 +498,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "femerge") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -481,7 +520,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "fetile") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -501,7 +541,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "feimage") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -560,7 +601,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "fecomponenttransfer") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -607,8 +649,10 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             if (order_y) {
                 oy = (int)lroundf(strtod(order_y, NULL));
             }
-            if (ox <= 0) ox = 3;
-            if (oy <= 0) oy = 3;
+            if (ox <= 0)
+                ox = 3;
+            if (oy <= 0)
+                oy = 3;
             int kcount = ox * oy;
             const char *km = cupidimage_svg_get_attr(&tag, "kernelMatrix");
             if (!km) {
@@ -634,7 +678,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     free(kernel);
                     break;
@@ -672,9 +717,12 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             const char *edge = cupidimage_svg_get_attr(&tag, "edgeMode");
             if (edge) {
-                if (svg_strcasecmp(edge, "duplicate") == 0) op->mode = SVG_EDGE_DUPLICATE;
-                else if (svg_strcasecmp(edge, "wrap") == 0) op->mode = SVG_EDGE_WRAP;
-                else op->mode = SVG_EDGE_NONE;
+                if (svg_strcasecmp(edge, "duplicate") == 0)
+                    op->mode = SVG_EDGE_DUPLICATE;
+                else if (svg_strcasecmp(edge, "wrap") == 0)
+                    op->mode = SVG_EDGE_WRAP;
+                else
+                    op->mode = SVG_EDGE_NONE;
             } else {
                 op->mode = SVG_EDGE_NONE;
             }
@@ -692,7 +740,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "feturbulence") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -717,8 +766,10 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             const char *oct = cupidimage_svg_get_attr(&tag, "numOctaves");
             if (oct) {
                 int v = (int)lroundf(strtod(oct, NULL));
-                if (v < 1) v = 1;
-                if (v > 8) v = 8;
+                if (v < 1)
+                    v = 1;
+                if (v > 8)
+                    v = 8;
                 op->turb_octaves = v;
             }
             const char *seed = cupidimage_svg_get_attr(&tag, "seed");
@@ -738,7 +789,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "fedisplacementmap") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -757,16 +809,24 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             const char *xch = cupidimage_svg_get_attr(&tag, "xChannelSelector");
             const char *ych = cupidimage_svg_get_attr(&tag, "yChannelSelector");
             if (xch) {
-                if (svg_strcasecmp(xch, "g") == 0) op->displace_x_channel = SVG_DISPLACE_G;
-                else if (svg_strcasecmp(xch, "b") == 0) op->displace_x_channel = SVG_DISPLACE_B;
-                else if (svg_strcasecmp(xch, "a") == 0) op->displace_x_channel = SVG_DISPLACE_A;
-                else op->displace_x_channel = SVG_DISPLACE_R;
+                if (svg_strcasecmp(xch, "g") == 0)
+                    op->displace_x_channel = SVG_DISPLACE_G;
+                else if (svg_strcasecmp(xch, "b") == 0)
+                    op->displace_x_channel = SVG_DISPLACE_B;
+                else if (svg_strcasecmp(xch, "a") == 0)
+                    op->displace_x_channel = SVG_DISPLACE_A;
+                else
+                    op->displace_x_channel = SVG_DISPLACE_R;
             }
             if (ych) {
-                if (svg_strcasecmp(ych, "g") == 0) op->displace_y_channel = SVG_DISPLACE_G;
-                else if (svg_strcasecmp(ych, "b") == 0) op->displace_y_channel = SVG_DISPLACE_B;
-                else if (svg_strcasecmp(ych, "a") == 0) op->displace_y_channel = SVG_DISPLACE_A;
-                else op->displace_y_channel = SVG_DISPLACE_R;
+                if (svg_strcasecmp(ych, "g") == 0)
+                    op->displace_y_channel = SVG_DISPLACE_G;
+                else if (svg_strcasecmp(ych, "b") == 0)
+                    op->displace_y_channel = SVG_DISPLACE_B;
+                else if (svg_strcasecmp(ych, "a") == 0)
+                    op->displace_y_channel = SVG_DISPLACE_A;
+                else
+                    op->displace_y_channel = SVG_DISPLACE_R;
             }
             op->in1 = svg_parse_filter_ref(cupidimage_svg_get_attr(&tag, "in"), names, name_count);
             op->in2 = svg_parse_filter_ref(cupidimage_svg_get_attr(&tag, "in2"), names, name_count);
@@ -779,7 +839,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
         if (strcmp(local, "fediffuselighting") == 0 || strcmp(local, "fespecularlighting") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -795,13 +856,17 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             op->in1 = svg_parse_filter_ref(cupidimage_svg_get_attr(&tag, "in"), names, name_count);
             const char *surface = cupidimage_svg_get_attr(&tag, "surfaceScale");
-            if (surface) op->surface_scale = (float)strtod(surface, NULL);
+            if (surface)
+                op->surface_scale = (float)strtod(surface, NULL);
             const char *diff = cupidimage_svg_get_attr(&tag, "diffuseConstant");
-            if (diff) op->diffuse_constant = (float)strtod(diff, NULL);
+            if (diff)
+                op->diffuse_constant = (float)strtod(diff, NULL);
             const char *spec = cupidimage_svg_get_attr(&tag, "specularConstant");
-            if (spec) op->specular_constant = (float)strtod(spec, NULL);
+            if (spec)
+                op->specular_constant = (float)strtod(spec, NULL);
             const char *exp = cupidimage_svg_get_attr(&tag, "specularExponent");
-            if (exp) op->specular_exponent = (float)strtod(exp, NULL);
+            if (exp)
+                op->specular_exponent = (float)strtod(exp, NULL);
             uint32_t color = 0xFFFFFFFFu;
             int is_none = 0;
             const char *lc = cupidimage_svg_get_attr(&tag, "lighting-color");
@@ -835,7 +900,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -858,11 +924,14 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             int okx = 0, oky = 0;
             float dx = cupidimage_svg_parse_length(dxs, base_len, dpi, &okx);
             float dy = cupidimage_svg_parse_length(dys, base_len, dpi, &oky);
-            if (!okx) dx = 0.0f;
-            if (!oky) dy = 0.0f;
+            if (!okx)
+                dx = 0.0f;
+            if (!oky)
+                dy = 0.0f;
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -925,7 +994,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -958,13 +1028,16 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             uint8_t a = (uint8_t)(color & 0xFFu);
             float alpha = (a / 255.0f) * opacity;
-            if (alpha < 0.0f) alpha = 0.0f;
-            if (alpha > 1.0f) alpha = 1.0f;
+            if (alpha < 0.0f)
+                alpha = 0.0f;
+            if (alpha > 1.0f)
+                alpha = 1.0f;
             a = (uint8_t)lroundf(alpha * 255.0f);
             color = (color & 0xFFFFFF00u) | a;
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -983,17 +1056,25 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             const char *mode = cupidimage_svg_get_attr(&tag, "mode");
             int blend_mode = SVG_BLEND_NORMAL;
             if (mode) {
-                if (svg_strcasecmp(mode, "multiply") == 0) blend_mode = SVG_BLEND_MULTIPLY;
-                else if (svg_strcasecmp(mode, "screen") == 0) blend_mode = SVG_BLEND_SCREEN;
-                else if (svg_strcasecmp(mode, "darken") == 0) blend_mode = SVG_BLEND_DARKEN;
-                else if (svg_strcasecmp(mode, "lighten") == 0) blend_mode = SVG_BLEND_LIGHTEN;
-                else if (svg_strcasecmp(mode, "overlay") == 0) blend_mode = SVG_BLEND_OVERLAY;
-                else if (svg_strcasecmp(mode, "hard-light") == 0) blend_mode = SVG_BLEND_HARDLIGHT;
-                else if (svg_strcasecmp(mode, "soft-light") == 0) blend_mode = SVG_BLEND_SOFTLIGHT;
+                if (svg_strcasecmp(mode, "multiply") == 0)
+                    blend_mode = SVG_BLEND_MULTIPLY;
+                else if (svg_strcasecmp(mode, "screen") == 0)
+                    blend_mode = SVG_BLEND_SCREEN;
+                else if (svg_strcasecmp(mode, "darken") == 0)
+                    blend_mode = SVG_BLEND_DARKEN;
+                else if (svg_strcasecmp(mode, "lighten") == 0)
+                    blend_mode = SVG_BLEND_LIGHTEN;
+                else if (svg_strcasecmp(mode, "overlay") == 0)
+                    blend_mode = SVG_BLEND_OVERLAY;
+                else if (svg_strcasecmp(mode, "hard-light") == 0)
+                    blend_mode = SVG_BLEND_HARDLIGHT;
+                else if (svg_strcasecmp(mode, "soft-light") == 0)
+                    blend_mode = SVG_BLEND_SOFTLIGHT;
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -1014,24 +1095,34 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             const char *opname = cupidimage_svg_get_attr(&tag, "operator");
             int comp = SVG_COMPOSITE_OVER;
             if (opname) {
-                if (svg_strcasecmp(opname, "in") == 0) comp = SVG_COMPOSITE_IN;
-                else if (svg_strcasecmp(opname, "out") == 0) comp = SVG_COMPOSITE_OUT;
-                else if (svg_strcasecmp(opname, "atop") == 0) comp = SVG_COMPOSITE_ATOP;
-                else if (svg_strcasecmp(opname, "xor") == 0) comp = SVG_COMPOSITE_XOR;
-                else if (svg_strcasecmp(opname, "arithmetic") == 0) comp = SVG_COMPOSITE_ARITHMETIC;
+                if (svg_strcasecmp(opname, "in") == 0)
+                    comp = SVG_COMPOSITE_IN;
+                else if (svg_strcasecmp(opname, "out") == 0)
+                    comp = SVG_COMPOSITE_OUT;
+                else if (svg_strcasecmp(opname, "atop") == 0)
+                    comp = SVG_COMPOSITE_ATOP;
+                else if (svg_strcasecmp(opname, "xor") == 0)
+                    comp = SVG_COMPOSITE_XOR;
+                else if (svg_strcasecmp(opname, "arithmetic") == 0)
+                    comp = SVG_COMPOSITE_ARITHMETIC;
             }
             float k1 = 0.0f, k2 = 0.0f, k3 = 0.0f, k4 = 0.0f;
             const char *k1s = cupidimage_svg_get_attr(&tag, "k1");
             const char *k2s = cupidimage_svg_get_attr(&tag, "k2");
             const char *k3s = cupidimage_svg_get_attr(&tag, "k3");
             const char *k4s = cupidimage_svg_get_attr(&tag, "k4");
-            if (k1s) k1 = (float)strtod(k1s, NULL);
-            if (k2s) k2 = (float)strtod(k2s, NULL);
-            if (k3s) k3 = (float)strtod(k3s, NULL);
-            if (k4s) k4 = (float)strtod(k4s, NULL);
+            if (k1s)
+                k1 = (float)strtod(k1s, NULL);
+            if (k2s)
+                k2 = (float)strtod(k2s, NULL);
+            if (k3s)
+                k3 = (float)strtod(k3s, NULL);
+            if (k4s)
+                k4 = (float)strtod(k4s, NULL);
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -1070,7 +1161,8 @@ int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }

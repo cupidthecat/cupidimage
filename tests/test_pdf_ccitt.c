@@ -6,7 +6,8 @@
 
 static unsigned checks, failures;
 static void check(const char *parameters, const char *bits, const unsigned char *expected,
-                  size_t expected_size, int valid) {
+                  size_t expected_size, int valid)
+{
     unsigned char encoded[4096] = {0};
     size_t n = strlen(bits);
     if (n > sizeof(encoded) * 8)
@@ -39,7 +40,8 @@ static void check(const char *parameters, const char *bits, const unsigned char 
     "00110101"                                                                                     \
     "000101"
 #define BOUNDED "/Columns 8 /Rows 1 /EndOfBlock false"
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     if (argc == 7) {
         FILE *file = fopen(argv[1], "rb");
         unsigned char input[65536];

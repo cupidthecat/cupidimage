@@ -291,3 +291,11 @@ test-pdf-mesh: $(BINDIR)/test_pdf_pages
 
 test-pdf-patch: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_patch.py $(BINDIR)/test_pdf_pages
+
+CLANG_FORMAT ?= clang-format
+.PHONY: format format-check
+format:
+	CLANG_FORMAT="$(CLANG_FORMAT)" python3 scripts/format.py --write
+
+format-check:
+	CLANG_FORMAT="$(CLANG_FORMAT)" python3 scripts/format.py --check

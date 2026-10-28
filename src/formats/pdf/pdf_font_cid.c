@@ -5,19 +5,22 @@
 #include <string.h>
 
 /* CID metrics are separate from Unicode mappings and glyph outlines. */
-void cupidimage_pdf_cid_font_free(pdf_cid_font *font) {
+void cupidimage_pdf_cid_font_free(pdf_cid_font *font)
+{
     if (font) {
         cupidimage_pdf_cmap_free(font->encoding);
         free(font->metrics);
         free(font);
     }
 }
-size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font) {
+size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font)
+{
     return font ? sizeof(*font) + (font->metrics ? 65536 * sizeof(pdf_cid_metric) : 0) +
                       cupidimage_pdf_cmap_bytes(font->encoding)
                 : 0;
 }
-static int cid_skip_reference(const pdf_object_view *v, size_t *p) {
+static int cid_skip_reference(const pdf_object_view *v, size_t *p)
+{
     double n;
     for (int i = 0; i < 2; i++) {
         cupidimage_pdf_skip_ws_and_comments(v->data, v->len, p);
@@ -28,7 +31,8 @@ static int cid_skip_reference(const pdf_object_view *v, size_t *p) {
     return *p < v->len && v->data[(*p)++] == 'R';
 }
 static int cid_number(const unsigned char *data, size_t size, const pdf_object_view *v, size_t *p,
-                      double *n, unsigned depth) {
+                      double *n, unsigned depth)
+{
     if (depth == 16)
         return 0;
     int object;
@@ -47,7 +51,8 @@ static int cid_number(const unsigned char *data, size_t size, const pdf_object_v
             cupidimage_pdf_is_delim(v->data[*p]));
 }
 static int cid_resolve(const unsigned char *data, size_t size, const pdf_object_view *v, size_t *p,
-                       pdf_object_view *out, unsigned depth) {
+                       pdf_object_view *out, unsigned depth)
+{
     if (depth == 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(v->data, v->len, p);
@@ -69,13 +74,15 @@ static int cid_resolve(const unsigned char *data, size_t size, const pdf_object_
     out->len = v->len - *p;
     return 1;
 }
-static int cid_hex(unsigned char c) {
+static int cid_hex(unsigned char c)
+{
     return c >= '0' && c <= '9'   ? c - '0'
            : c >= 'a' && c <= 'f' ? c - 'a' + 10
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
                                   : -1;
 }
-static int cid_value_name(const pdf_object_view *v, size_t p, const char *name) {
+static int cid_value_name(const pdf_object_view *v, size_t p, const char *name)
+{
     cupidimage_pdf_skip_ws_and_comments(v->data, v->len, &p);
     if (p == v->len || v->data[p++] != '/')
         return 0;
@@ -99,7 +106,8 @@ static int cid_value_name(const pdf_object_view *v, size_t p, const char *name) 
 }
 
 static int cid_width_array(const unsigned char *data, size_t size, const pdf_object_view *v,
-                           size_t p, pdf_cid_font *font, int vertical) {
+                           size_t p, pdf_cid_font *font, int vertical)
+{
     pdf_object_view array = {0};
     if (!cid_resolve(data, size, v, &p, &array, 0))
         return 0;
@@ -169,7 +177,8 @@ static int cid_width_array(const unsigned char *data, size_t size, const pdf_obj
     return ok;
 }
 int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
-                                  const pdf_object_view *view, pdf_font_map *font, size_t *budget) {
+                                  const pdf_object_view *view, pdf_font_map *font, size_t *budget)
+{
     if (!cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type0"))
         return 1;
     size_t pos;
@@ -272,7 +281,8 @@ done:
     return font->cid != NULL;
 }
 void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *width,
-                                double *advance_y, double *origin_x, double *origin_y) {
+                                double *advance_y, double *origin_x, double *origin_y)
+{
     const pdf_cid_metric *m = font->metrics ? font->metrics + cid : NULL;
     *width = m && (m->flags & 1) ? m->width : font->default_width;
     *advance_y = m && (m->flags & 2) ? m->advance_y : font->default_advance_y;

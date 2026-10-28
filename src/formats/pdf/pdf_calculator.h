@@ -3,6 +3,6 @@
 #include <stddef.h>
 typedef struct pdf_calculator_program pdf_calculator_program;
 pdf_calculator_program *cupidimage_pdf_calculator_compile(const unsigned char *data, size_t length);
-int cupidimage_pdf_calculator_evaluate(const pdf_calculator_program *program,
-    const double *input, int inputs, double *output, int outputs, size_t *budget);
+int cupidimage_pdf_calculator_evaluate(const pdf_calculator_program *program, const double *input,
+                                       int inputs, double *output, int outputs, size_t *budget);
 #endif

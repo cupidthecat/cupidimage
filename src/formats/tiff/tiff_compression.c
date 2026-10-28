@@ -2,11 +2,12 @@
 
 static void ccitt_set_run(uint8_t *row, uint32_t start, uint32_t run, int color);
 static int ccitt_get_bit(const uint8_t *row, uint32_t x);
-static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32_t start, int color);
+static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32_t start,
+                                      int color);
 
-int cupidimage_tiff_packbits_decode(const uint8_t *src, size_t src_size,
-                                uint8_t *dst, size_t dst_size,
-                                char *err, size_t errcap) {
+int cupidimage_tiff_packbits_decode(const uint8_t *src, size_t src_size, uint8_t *dst,
+                                    size_t dst_size, char *err, size_t errcap)
+{
     size_t pos = 0;
     size_t out = 0;
     while (out < dst_size) {
@@ -47,7 +48,8 @@ typedef struct tiff_lzw {
     int bitcount;
 } tiff_lzw;
 
-static int tiff_lzw_read_code(tiff_lzw *lz, int code_size, uint32_t *out) {
+static int tiff_lzw_read_code(tiff_lzw *lz, int code_size, uint32_t *out)
+{
     while (lz->bitcount < code_size) {
         if (lz->pos >= lz->size) {
             return 0;
@@ -60,9 +62,9 @@ static int tiff_lzw_read_code(tiff_lzw *lz, int code_size, uint32_t *out) {
     return 1;
 }
 
-int cupidimage_tiff_lzw_decode(const uint8_t *src, size_t src_size,
-                           uint8_t *dst, size_t dst_size,
-                           char *err, size_t errcap) {
+int cupidimage_tiff_lzw_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
+                               char *err, size_t errcap)
+{
     uint16_t prefix[4096];
     uint8_t suffix[4096];
     uint8_t stack[4096];
@@ -184,7 +186,8 @@ typedef struct ccitt_bitstream {
     int fill_order;
 } ccitt_bitstream;
 
-static int ccitt_read_bit(ccitt_bitstream *bs, int *out) {
+static int ccitt_read_bit(ccitt_bitstream *bs, int *out)
+{
     if (bs->pos >= bs->size) {
         return 0;
     }
@@ -199,10 +202,10 @@ static int ccitt_read_bit(ccitt_bitstream *bs, int *out) {
     return 1;
 }
 
-static int ccitt_decode_single(ccitt_bitstream *bs,
-                               const ccitt_code *term, size_t term_len,
-                               const ccitt_code *makeup, size_t makeup_len,
-                               uint32_t *run, int *is_makeup) {
+static int ccitt_decode_single(ccitt_bitstream *bs, const ccitt_code *term, size_t term_len,
+                               const ccitt_code *makeup, size_t makeup_len, uint32_t *run,
+                               int *is_makeup)
+{
     uint32_t code = 0;
     for (int len = 1; len <= 13; len++) {
         int bit = 0;
@@ -228,7 +231,8 @@ static int ccitt_decode_single(ccitt_bitstream *bs,
     return 0;
 }
 
-static int ccitt_decode_run(ccitt_bitstream *bs, int color, uint32_t *run) {
+static int ccitt_decode_run(ccitt_bitstream *bs, int color, uint32_t *run)
+{
     const ccitt_code *term = color ? ccitt_black_term : ccitt_white_term;
     const ccitt_code *makeup = color ? ccitt_black_makeup : ccitt_white_makeup;
     size_t term_len = color ? (sizeof(ccitt_black_term) / sizeof(ccitt_black_term[0]))
@@ -251,7 +255,8 @@ static int ccitt_decode_run(ccitt_bitstream *bs, int color, uint32_t *run) {
     return 1;
 }
 
-static void ccitt_set_run(uint8_t *row, uint32_t start, uint32_t run, int color) {
+static void ccitt_set_run(uint8_t *row, uint32_t start, uint32_t run, int color)
+{
     for (uint32_t i = 0; i < run; i++) {
         uint32_t x = start + i;
         uint8_t mask = (uint8_t)(0x80u >> (x & 7u));
@@ -263,12 +268,14 @@ static void ccitt_set_run(uint8_t *row, uint32_t start, uint32_t run, int color)
     }
 }
 
-static int ccitt_get_bit(const uint8_t *row, uint32_t x) {
+static int ccitt_get_bit(const uint8_t *row, uint32_t x)
+{
     uint8_t mask = (uint8_t)(0x80u >> (x & 7u));
     return (row[x / 8u] & mask) ? 1 : 0;
 }
 
-static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32_t start, int color) {
+static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32_t start, int color)
+{
     uint32_t x = start;
     while (x < width) {
         if (ccitt_get_bit(row, x) != color) {
@@ -279,7 +286,8 @@ static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32
     return x;
 }
 
-static int ccitt_skip_eol(ccitt_bitstream *bs) {
+static int ccitt_skip_eol(ccitt_bitstream *bs)
+{
     int zeros = 0;
     for (;;) {
         int bit = 0;
@@ -300,7 +308,8 @@ static int ccitt_skip_eol(ccitt_bitstream *bs) {
     }
 }
 
-static int ccitt_decode_1d_line(ccitt_bitstream *bs, uint32_t width, uint8_t *row) {
+static int ccitt_decode_1d_line(ccitt_bitstream *bs, uint32_t width, uint8_t *row)
+{
     uint32_t x = 0;
     int color = 0;
     while (x < width) {
@@ -318,13 +327,10 @@ static int ccitt_decode_1d_line(ccitt_bitstream *bs, uint32_t width, uint8_t *ro
     return 1;
 }
 
-enum {
-    CCITT_2D_PASS = 0,
-    CCITT_2D_HORIZ = 1,
-    CCITT_2D_VERT = 2
-};
+enum { CCITT_2D_PASS = 0, CCITT_2D_HORIZ = 1, CCITT_2D_VERT = 2 };
 
-static int ccitt_decode_2d_code(ccitt_bitstream *bs, int *type, int *val) {
+static int ccitt_decode_2d_code(ccitt_bitstream *bs, int *type, int *val)
+{
     uint32_t code = 0;
     for (int len = 1; len <= 7; len++) {
         int bit = 0;
@@ -384,8 +390,9 @@ static int ccitt_decode_2d_code(ccitt_bitstream *bs, int *type, int *val) {
     return 0;
 }
 
-static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width,
-                                const uint8_t *ref, uint8_t *row) {
+static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width, const uint8_t *ref,
+                                uint8_t *row)
+{
     uint32_t a0 = 0;
     int color = 0;
     while (a0 < width) {
@@ -404,8 +411,7 @@ static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width,
         } else if (type == CCITT_2D_HORIZ) {
             uint32_t run1 = 0;
             uint32_t run2 = 0;
-            if (!ccitt_decode_run(bs, color, &run1) ||
-                !ccitt_decode_run(bs, !color, &run2)) {
+            if (!ccitt_decode_run(bs, color, &run1) || !ccitt_decode_run(bs, !color, &run2)) {
                 return 0;
             }
             if (a0 + run1 + run2 > width) {
@@ -433,11 +439,10 @@ static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width,
     return 1;
 }
 
-int cupidimage_tiff_ccitt_decode(const uint8_t *src, size_t src_size,
-                             uint8_t *dst, size_t dst_size,
-                             uint32_t width, uint32_t height,
-                             uint16_t compression, uint32_t group3_options,
-                             int fill_order, char *err, size_t errcap) {
+int cupidimage_tiff_ccitt_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
+                                 uint32_t width, uint32_t height, uint16_t compression,
+                                 uint32_t group3_options, int fill_order, char *err, size_t errcap)
+{
     size_t row_bytes = ((size_t)width + 7u) / 8u;
     if (dst_size < row_bytes * (size_t)height) {
         cupidimage_set_err(err, errcap, "invalid CCITT buffer");

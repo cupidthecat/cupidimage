@@ -1,11 +1,11 @@
-#include "cupidimage.h"
 #include "core/internal.h"
-#include "formats/webp/cupidimage_webp_tables.h"
+#include "cupidimage.h"
 #include "formats/webp/cupidimage_webp_lossless.h"
+#include "formats/webp/cupidimage_webp_tables.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "webp_internal.h"
 
@@ -19,7 +19,8 @@ typedef struct vp8_bool_decoder {
     int used;
 } vp8_bool_decoder;
 
-static void vp8_br_init(vp8_bool_decoder *br, const uint8_t *data, size_t size) {
+static void vp8_br_init(vp8_bool_decoder *br, const uint8_t *data, size_t size)
+{
     br->input = NULL;
     br->input_len = 0;
     br->range = 255;
@@ -38,7 +39,8 @@ static void vp8_br_init(vp8_bool_decoder *br, const uint8_t *data, size_t size) 
     }
 }
 
-static int vp8_br_read_bit(vp8_bool_decoder *br, int prob) {
+static int vp8_br_read_bit(vp8_bool_decoder *br, int prob)
+{
     br->used = 1;
     uint32_t split = 1 + (((br->range - 1) * (uint32_t)prob) >> 8);
     uint32_t bigsplit = split << 8;
@@ -61,13 +63,15 @@ static int vp8_br_read_bit(vp8_bool_decoder *br, int prob) {
             if (br->input_len) {
                 br->value |= *br->input++;
                 br->input_len--;
-            } else br->overread++;
+            } else
+                br->overread++;
         }
     }
     return bit;
 }
 
-static uint32_t vp8_br_read_bits(vp8_bool_decoder *br, int bits) {
+static uint32_t vp8_br_read_bits(vp8_bool_decoder *br, int bits)
+{
     uint32_t v = 0;
     for (int i = bits - 1; i >= 0; i--) {
         v |= (uint32_t)vp8_br_read_bit(br, 128) << i;
@@ -75,7 +79,8 @@ static uint32_t vp8_br_read_bits(vp8_bool_decoder *br, int bits) {
     return v;
 }
 
-static int vp8_br_read_signed(vp8_bool_decoder *br, int bits) {
+static int vp8_br_read_signed(vp8_bool_decoder *br, int bits)
+{
     int v = (int)vp8_br_read_bits(br, bits);
     int sign = vp8_br_read_bit(br, 128);
     return sign ? -v : v;
@@ -96,13 +101,7 @@ enum {
     DCT_EOB = 11
 };
 
-enum {
-    DC_PRED = 0,
-    V_PRED = 1,
-    H_PRED = 2,
-    TM_PRED = 3,
-    B_PRED = 4
-};
+enum { DC_PRED = 0, V_PRED = 1, H_PRED = 2, TM_PRED = 3, B_PRED = 4 };
 
 enum {
     B_DC_PRED = 0,
@@ -118,162 +117,147 @@ enum {
 };
 
 static const int16_t coeff_tree[22] = {
-    -DCT_EOB,  2,
-    -DCT_0,    4,
-    -DCT_1,    6,
-     8,       12,
-    -DCT_2,   10,
-    -DCT_3,   -DCT_4,
-    14,       16,
-    -DCT_CAT1, -DCT_CAT2,
-    18,       20,
-    -DCT_CAT3, -DCT_CAT4,
-    -DCT_CAT5, -DCT_CAT6
-};
+    -DCT_EOB, 2,  -DCT_0, 4,         -DCT_1,    6,  8,  12,        -DCT_2,    10,        -DCT_3,
+    -DCT_4,   14, 16,     -DCT_CAT1, -DCT_CAT2, 18, 20, -DCT_CAT3, -DCT_CAT4, -DCT_CAT5, -DCT_CAT6};
 
-static const int16_t ymode_tree[8] = {
-    -B_PRED, 2, 4, 6, -DC_PRED, -V_PRED, -H_PRED, -TM_PRED
-};
+static const int16_t ymode_tree[8] = {-B_PRED, 2, 4, 6, -DC_PRED, -V_PRED, -H_PRED, -TM_PRED};
 
-static const int16_t uv_mode_tree[6] = {
-    -DC_PRED, 2,
-    -V_PRED, 4,
-    -H_PRED, -TM_PRED
-};
+static const int16_t uv_mode_tree[6] = {-DC_PRED, 2, -V_PRED, 4, -H_PRED, -TM_PRED};
 
-static const int16_t bmode_tree[18] = {
-    -B_DC_PRED, 2, -B_TM_PRED, 4, -B_VE_PRED, 6, 8, 12,
-    -B_HE_PRED, 10, -B_RD_PRED, -B_VR_PRED, -B_LD_PRED, 14,
-    -B_VL_PRED, 16, -B_HD_PRED, -B_HU_PRED
-};
+static const int16_t bmode_tree[18] = {-B_DC_PRED, 2,  -B_TM_PRED, 4,  -B_VE_PRED, 6,
+                                       8,          12, -B_HE_PRED, 10, -B_RD_PRED, -B_VR_PRED,
+                                       -B_LD_PRED, 14, -B_VL_PRED, 16, -B_HD_PRED, -B_HU_PRED};
 
 static const int16_t segment_tree[6] = {2, 4, 0, -1, -2, -3};
 
-static const uint8_t pcat1[2]  = {159, 0};
-static const uint8_t pcat2[3]  = {165, 145, 0};
-static const uint8_t pcat3[4]  = {173, 148, 140, 0};
-static const uint8_t pcat4[5]  = {176, 155, 140, 135, 0};
-static const uint8_t pcat5[6]  = {180, 157, 141, 134, 130, 0};
+static const uint8_t pcat1[2] = {159, 0};
+static const uint8_t pcat2[3] = {165, 145, 0};
+static const uint8_t pcat3[4] = {173, 148, 140, 0};
+static const uint8_t pcat4[5] = {176, 155, 140, 135, 0};
+static const uint8_t pcat5[6] = {180, 157, 141, 134, 130, 0};
 static const uint8_t pcat6[12] = {254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0};
 
 static const uint8_t kf_ymode_prob[4] = {145, 156, 163, 128};
 static const uint8_t kf_uv_mode_prob[3] = {142, 114, 183};
 
-static const uint8_t zigzag[16] = {
-    0, 1, 4, 8,
-    5, 2, 3, 6,
-    9, 12, 13, 10,
-    7, 11, 14, 15
-};
+static const uint8_t zigzag[16] = {0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15};
 
-static const uint8_t coeff_bands[16] = {
-    0, 1, 2, 3,
-    6, 4, 5, 6,
-    6, 6, 6, 6,
-    6, 6, 6, 7
-};
+static const uint8_t coeff_bands[16] = {0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7};
 
-static const uint8_t left_context_index[25] = {
-    0, 0, 0, 0,
-    1, 1, 1, 1,
-    2, 2, 2, 2,
-    3, 3, 3, 3,
-    4, 4, 5, 5,
-    6, 6, 7, 7,
-    8
-};
+static const uint8_t left_context_index[25] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3,
+                                               3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8};
 
-static const uint8_t above_context_index[25] = {
-    0, 1, 2, 3,
-    0, 1, 2, 3,
-    0, 1, 2, 3,
-    0, 1, 2, 3,
-    4, 5, 4, 5,
-    6, 7, 6, 7,
-    8
-};
+static const uint8_t above_context_index[25] = {0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0,
+                                                1, 2, 3, 4, 5, 4, 5, 6, 7, 6, 7, 8};
 
-static int vp8_read_tree(vp8_bool_decoder *br, const int16_t *tree, const uint8_t *probs) {
+static int vp8_read_tree(vp8_bool_decoder *br, const int16_t *tree, const uint8_t *probs)
+{
     int i = 0;
     while ((i = tree[i + vp8_br_read_bit(br, probs[i >> 1])]) > 0) {
     }
     return -i;
 }
 
-static int vp8_read_tree_skip_eob(vp8_bool_decoder *br, const int16_t *tree, const uint8_t *probs) {
+static int vp8_read_tree_skip_eob(vp8_bool_decoder *br, const int16_t *tree, const uint8_t *probs)
+{
     int i = 2;
     while ((i = tree[i + vp8_br_read_bit(br, probs[i >> 1])]) > 0) {
     }
     return -i;
 }
 
-static uint8_t avg2p(int x, int y) {
+static uint8_t avg2p(int x, int y)
+{
     return (uint8_t)((x + y + 1) >> 1);
 }
 
-static uint8_t avg3p(int x, int y, int z) {
+static uint8_t avg3p(int x, int y, int z)
+{
     return (uint8_t)((x + 2 * y + z + 2) >> 2);
 }
 
-static int prediction_border(const uint8_t *above, const uint8_t *left, int corner, int index) {
+static int prediction_border(const uint8_t *above, const uint8_t *left, int corner, int index)
+{
     return index > 0 ? above[index - 1] : index < 0 ? left[-index - 1] : corner;
 }
 
-static uint8_t predict_vertical_right(const uint8_t *above, const uint8_t *left,
-                                      int corner, int x, int y) {
+static uint8_t predict_vertical_right(const uint8_t *above, const uint8_t *left, int corner, int x,
+                                      int y)
+{
     int step = 2 * x - y;
     int index = step < 0 ? step : step / 2;
     int a = prediction_border(above, left, corner, index);
     int b = prediction_border(above, left, corner, index + 1);
-    if (step >= 0 && !(step & 1)) return avg2p(a, b);
+    if (step >= 0 && !(step & 1))
+        return avg2p(a, b);
     return avg3p(a, b, prediction_border(above, left, corner, index + 2));
 }
 
-static void subblock_intra_predict(uint8_t *dst, int stride,
-                                   const uint8_t *above, const uint8_t *left,
-                                   uint8_t corner, int mode) {
+static void subblock_intra_predict(uint8_t *dst, int stride, const uint8_t *above,
+                                   const uint8_t *left, uint8_t corner, int mode)
+{
     int dc = 4;
-    for (int i = 0; i < 4; i++) dc += above[i] + left[i];
-    for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) {
-        int value = dc >> 3;
-        switch (mode) {
-        case B_TM_PRED: value = clamp_u8(left[y] + above[x] - corner); break;
-        case B_VE_PRED:
-            value = avg3p(x ? above[x - 1] : corner, above[x], above[x + 1]); break;
-        case B_HE_PRED:
-            value = avg3p(y ? left[y - 1] : corner, left[y], left[y < 3 ? y + 1 : 3]); break;
-        case B_LD_PRED: {
-            int i = x + y;
-            value = avg3p(above[i], above[i + 1], above[i < 6 ? i + 2 : 7]); break;
+    for (int i = 0; i < 4; i++)
+        dc += above[i] + left[i];
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x++) {
+            int value = dc >> 3;
+            switch (mode) {
+                case B_TM_PRED:
+                    value = clamp_u8(left[y] + above[x] - corner);
+                    break;
+                case B_VE_PRED:
+                    value = avg3p(x ? above[x - 1] : corner, above[x], above[x + 1]);
+                    break;
+                case B_HE_PRED:
+                    value = avg3p(y ? left[y - 1] : corner, left[y], left[y < 3 ? y + 1 : 3]);
+                    break;
+                case B_LD_PRED: {
+                    int i = x + y;
+                    value = avg3p(above[i], above[i + 1], above[i < 6 ? i + 2 : 7]);
+                    break;
+                }
+                case B_RD_PRED: {
+                    int i = x - y;
+                    value = avg3p(prediction_border(above, left, corner, i - 1),
+                                  prediction_border(above, left, corner, i),
+                                  prediction_border(above, left, corner, i + 1));
+                    break;
+                }
+                case B_VR_PRED:
+                    value = predict_vertical_right(above, left, corner, x, y);
+                    break;
+                case B_HD_PRED:
+                    value = predict_vertical_right(left, above, corner, y, x);
+                    break;
+                case B_VL_PRED: {
+                    int i = x + y / 2;
+                    if (x == 3 && y >= 2)
+                        value = avg3p(above[y + 2], above[y + 3], above[y + 4]);
+                    else
+                        value = y & 1 ? avg3p(above[i], above[i + 1], above[i + 2])
+                                      : avg2p(above[i], above[i + 1]);
+                    break;
+                }
+                case B_HU_PRED: {
+                    int i = y + x / 2;
+                    if (i >= 3)
+                        value = left[3];
+                    else
+                        value = x & 1 ? avg3p(left[i], left[i + 1], left[i < 2 ? i + 2 : 3])
+                                      : avg2p(left[i], left[i + 1]);
+                    break;
+                }
+                default:
+                    break;
+            }
+            dst[y * stride + x] = (uint8_t)value;
         }
-        case B_RD_PRED: {
-            int i = x - y;
-            value = avg3p(prediction_border(above,left,corner,i - 1),
-                          prediction_border(above,left,corner,i),
-                          prediction_border(above,left,corner,i + 1)); break;
-        }
-        case B_VR_PRED: value = predict_vertical_right(above,left,corner,x,y); break;
-        case B_HD_PRED: value = predict_vertical_right(left,above,corner,y,x); break;
-        case B_VL_PRED: {
-            int i = x + y / 2;
-            if (x == 3 && y >= 2) value = avg3p(above[y + 2],above[y + 3],above[y + 4]);
-            else value = y & 1 ? avg3p(above[i],above[i + 1],above[i + 2]) : avg2p(above[i],above[i + 1]);
-            break;
-        }
-        case B_HU_PRED: {
-            int i = y + x / 2;
-            if (i >= 3) value = left[3];
-            else value = x & 1 ? avg3p(left[i],left[i + 1],left[i < 2 ? i + 2 : 3]) : avg2p(left[i],left[i + 1]);
-            break;
-        }
-        default: break;
-        }
-        dst[y * stride + x] = (uint8_t)value;
-    }
 }
 
 static void predict_16x16(uint8_t *dst, int stride, const uint8_t *above, const uint8_t *left,
-                          int has_above, int has_left, uint8_t top_left, int mode) {
+                          int has_above, int has_left, uint8_t top_left, int mode)
+{
     if (mode == V_PRED) {
         for (int y = 0; y < 16; y++) {
             memcpy(dst + y * stride, above, 16);
@@ -321,7 +305,8 @@ static void predict_16x16(uint8_t *dst, int stride, const uint8_t *above, const 
 }
 
 static void predict_8x8(uint8_t *dst, int stride, const uint8_t *above, const uint8_t *left,
-                        int has_above, int has_left, uint8_t top_left, int mode) {
+                        int has_above, int has_left, uint8_t top_left, int mode)
+{
     if (mode == V_PRED) {
         for (int y = 0; y < 8; y++) {
             memcpy(dst + y * stride, above, 8);
@@ -368,8 +353,8 @@ static void predict_8x8(uint8_t *dst, int stride, const uint8_t *above, const ui
     }
 }
 
-static uint8_t get_top_left(const uint8_t *plane, int stride, int x, int y,
-                             int width, int height) {
+static uint8_t get_top_left(const uint8_t *plane, int stride, int x, int y, int width, int height)
+{
     if (y < 0) {
         return 127;
     }
@@ -385,8 +370,9 @@ static uint8_t get_top_left(const uint8_t *plane, int stride, int x, int y,
     return plane[y * stride + x];
 }
 
-static void get_above_row(const uint8_t *plane, int stride, int x, int y,
-                          int width, int height, int count, uint8_t top_default, uint8_t *out) {
+static void get_above_row(const uint8_t *plane, int stride, int x, int y, int width, int height,
+                          int count, uint8_t top_default, uint8_t *out)
+{
     if (y < 0) {
         for (int i = 0; i < count; i++) {
             out[i] = top_default;
@@ -408,8 +394,9 @@ static void get_above_row(const uint8_t *plane, int stride, int x, int y,
     }
 }
 
-static void get_left_col(const uint8_t *plane, int stride, int x, int y,
-                         int width, int height, int count, uint8_t left_default, uint8_t *out) {
+static void get_left_col(const uint8_t *plane, int stride, int x, int y, int width, int height,
+                         int count, uint8_t left_default, uint8_t *out)
+{
     if (x < 0) {
         for (int i = 0; i < count; i++) {
             out[i] = left_default;
@@ -431,7 +418,8 @@ static void get_left_col(const uint8_t *plane, int stride, int x, int y,
     }
 }
 
-static void dequant_block(int16_t *coeffs, int dc, int ac, int apply_dc) {
+static void dequant_block(int16_t *coeffs, int dc, int ac, int apply_dc)
+{
     if (apply_dc) {
         coeffs[0] = (int16_t)(coeffs[0] * dc);
     }
@@ -440,7 +428,8 @@ static void dequant_block(int16_t *coeffs, int dc, int ac, int apply_dc) {
     }
 }
 
-static void idct4x4(const int16_t *input, int16_t *output) {
+static void idct4x4(const int16_t *input, int16_t *output)
+{
     static const int cospi8sqrt2minus1 = 20091;
     static const int sinpi8sqrt2 = 35468;
     int32_t temp[16];
@@ -476,7 +465,8 @@ static void idct4x4(const int16_t *input, int16_t *output) {
     }
 }
 
-static void wht4x4(const int16_t *input, int16_t *output) {
+static void wht4x4(const int16_t *input, int16_t *output)
+{
     int32_t tmp[16];
     for (int i = 0; i < 4; i++) {
         int a1 = input[i] + input[12 + i];
@@ -500,13 +490,18 @@ static void wht4x4(const int16_t *input, int16_t *output) {
     }
 }
 
-static int clamp_level(int level) {
-    if (level < 0) return 0;
-    if (level > 63) return 63;
+static int clamp_level(int level)
+{
+    if (level < 0)
+        return 0;
+    if (level > 63)
+        return 63;
     return level;
 }
 
-static int filter_level_for_mb(int base_level, int seg_enabled, int seg_abs, const int seg_lf[4], int seg_id) {
+static int filter_level_for_mb(int base_level, int seg_enabled, int seg_abs, const int seg_lf[4],
+                               int seg_id)
+{
     int level = base_level;
     if (seg_enabled) {
         if (seg_abs) {
@@ -518,30 +513,39 @@ static int filter_level_for_mb(int base_level, int seg_enabled, int seg_abs, con
     return level;
 }
 
-static int signed_byte(int value) {
+static int signed_byte(int value)
+{
     return value < -128 ? -128 : value > 127 ? 127 : value;
 }
 
 /* RFC 6386 section 15: normal edges inspect four samples on each side;
    macroblock edges use six taps, while subblocks use two or four. */
-static void filter_edge(uint8_t *edge, int across, int along, int count,
-                        int level, int sharpness, int simple, int macroblock) {
+static void filter_edge(uint8_t *edge, int across, int along, int count, int level, int sharpness,
+                        int simple, int macroblock)
+{
     int interior = level;
     if (sharpness) {
         interior >>= sharpness > 4 ? 2 : 1;
-        if (interior > 9 - sharpness) interior = 9 - sharpness;
+        if (interior > 9 - sharpness)
+            interior = 9 - sharpness;
     }
-    if (interior < 1) interior = 1;
+    if (interior < 1)
+        interior = 1;
     int limit = 2 * level + interior + (macroblock ? 4 : 0);
     int hev_limit = level >= 40 ? 2 : level >= 15 ? 1 : 0;
     for (int n = 0; n < count; n++, edge += along) {
         int v[8];
-        for (int i = 0; i < 8; i++) v[i] = edge[(i - 4) * across];
-        if (2 * abs(v[3] - v[4]) + abs(v[2] - v[5]) / 2 > limit) continue;
+        for (int i = 0; i < 8; i++)
+            v[i] = edge[(i - 4) * across];
+        if (2 * abs(v[3] - v[4]) + abs(v[2] - v[5]) / 2 > limit)
+            continue;
         int smooth = 1;
-        if (!simple) for (int i = 0; i < 7; i++)
-            if (i != 3 && abs(v[i] - v[i + 1]) > interior) smooth = 0;
-        if (!smooth) continue;
+        if (!simple)
+            for (int i = 0; i < 7; i++)
+                if (i != 3 && abs(v[i] - v[i + 1]) > interior)
+                    smooth = 0;
+        if (!smooth)
+            continue;
         int high = abs(v[2] - v[3]) > hev_limit || abs(v[5] - v[4]) > hev_limit;
         if (!simple && macroblock && !high) {
             int adjustment = signed_byte(signed_byte(v[2] - v[5]) + 3 * (v[4] - v[3]));
@@ -551,8 +555,8 @@ static void filter_edge(uint8_t *edge, int across, int along, int count,
                 v[4 + i] = clamp_u8(v[4 + i] - delta);
             }
         } else {
-            int adjustment = signed_byte(3 * (v[4] - v[3]) +
-                                        ((simple || high) ? signed_byte(v[2] - v[5]) : 0));
+            int adjustment =
+                signed_byte(3 * (v[4] - v[3]) + ((simple || high) ? signed_byte(v[2] - v[5]) : 0));
             int right = signed_byte(adjustment + 4) >> 3;
             int left = signed_byte(adjustment + 3) >> 3;
             v[3] = clamp_u8(v[3] + left);
@@ -563,33 +567,45 @@ static void filter_edge(uint8_t *edge, int across, int along, int count,
                 v[5] = clamp_u8(v[5] - outer);
             }
         }
-        for (int i = 1; i < 7; i++) edge[(i - 4) * across] = (uint8_t)v[i];
+        for (int i = 1; i < 7; i++)
+            edge[(i - 4) * across] = (uint8_t)v[i];
     }
 }
 
-static void loop_filter_plane(uint8_t *plane, int stride, int width, int height,
-                              int mb_cols, int mb_rows, const uint8_t *seg_ids,
-                              int base_level, int sharpness, int filter_type,
-                              int seg_enabled, int seg_abs, const int seg_lf[4], int is_uv,
-                              const uint8_t *modes, const uint8_t *empty,
-                              int reference_delta, int mode_delta) {
-    (void)width; (void)height; /* Reconstruction planes contain whole macroblocks. */
+static void loop_filter_plane(uint8_t *plane, int stride, int width, int height, int mb_cols,
+                              int mb_rows, const uint8_t *seg_ids, int base_level, int sharpness,
+                              int filter_type, int seg_enabled, int seg_abs, const int seg_lf[4],
+                              int is_uv, const uint8_t *modes, const uint8_t *empty,
+                              int reference_delta, int mode_delta)
+{
+    (void)width;
+    (void)height; /* Reconstruction planes contain whole macroblocks. */
     int block = is_uv ? 8 : 16;
-    if (is_uv && filter_type) return;
-    for (int y = 0; y < mb_rows; y++) for (int x = 0; x < mb_cols; x++) {
-        size_t index = (size_t)y * mb_cols + x;
-        int level = filter_level_for_mb(base_level, seg_enabled, seg_abs, seg_lf, seg_ids[index]);
-        level = clamp_level(level + reference_delta + (modes[index] == B_PRED ? mode_delta : 0));
-        if (!level) continue;
-        uint8_t *base = plane + y * block * stride + x * block;
-        int subblocks = !empty[index] || modes[index] == B_PRED;
-        if (x) filter_edge(base, 1, stride, block, level, sharpness, filter_type, 1);
-        if (subblocks) for (int offset = 4; offset < block; offset += 4)
-            filter_edge(base + offset, 1, stride, block, level, sharpness, filter_type, 0);
-        if (y) filter_edge(base, stride, 1, block, level, sharpness, filter_type, 1);
-        if (subblocks) for (int offset = 4; offset < block; offset += 4)
-            filter_edge(base + offset * stride, stride, 1, block, level, sharpness, filter_type, 0);
-    }
+    if (is_uv && filter_type)
+        return;
+    for (int y = 0; y < mb_rows; y++)
+        for (int x = 0; x < mb_cols; x++) {
+            size_t index = (size_t)y * mb_cols + x;
+            int level =
+                filter_level_for_mb(base_level, seg_enabled, seg_abs, seg_lf, seg_ids[index]);
+            level =
+                clamp_level(level + reference_delta + (modes[index] == B_PRED ? mode_delta : 0));
+            if (!level)
+                continue;
+            uint8_t *base = plane + y * block * stride + x * block;
+            int subblocks = !empty[index] || modes[index] == B_PRED;
+            if (x)
+                filter_edge(base, 1, stride, block, level, sharpness, filter_type, 1);
+            if (subblocks)
+                for (int offset = 4; offset < block; offset += 4)
+                    filter_edge(base + offset, 1, stride, block, level, sharpness, filter_type, 0);
+            if (y)
+                filter_edge(base, stride, 1, block, level, sharpness, filter_type, 1);
+            if (subblocks)
+                for (int offset = 4; offset < block; offset += 4)
+                    filter_edge(base + offset * stride, stride, 1, block, level, sharpness,
+                                filter_type, 0);
+        }
 }
 
 typedef struct vp8_dequant {
@@ -601,15 +617,18 @@ typedef struct vp8_dequant {
     int uv_ac;
 } vp8_dequant;
 
-static int clamp_q(int q) {
-    if (q < 0) return 0;
-    if (q > 127) return 127;
+static int clamp_q(int q)
+{
+    if (q < 0)
+        return 0;
+    if (q > 127)
+        return 127;
     return q;
 }
 
-static void dequant_init(vp8_dequant *dq, int qindex, int y1_dc_delta,
-                         int y2_dc_delta, int y2_ac_delta,
-                         int uv_dc_delta, int uv_ac_delta) {
+static void dequant_init(vp8_dequant *dq, int qindex, int y1_dc_delta, int y2_dc_delta,
+                         int y2_ac_delta, int uv_dc_delta, int uv_ac_delta)
+{
     dq->y1_dc = cupidimage_vp8_dc_qlookup[clamp_q(qindex + y1_dc_delta)];
     dq->y1_ac = cupidimage_vp8_ac_qlookup[clamp_q(qindex)];
     dq->y2_dc = cupidimage_vp8_dc_qlookup[clamp_q(qindex + y2_dc_delta)] * 2;
@@ -618,14 +637,14 @@ static void dequant_init(vp8_dequant *dq, int qindex, int y1_dc_delta,
         dq->y2_ac = 8;
     }
     dq->uv_dc = cupidimage_vp8_dc_qlookup[clamp_q(qindex + uv_dc_delta)];
-    if (dq->uv_dc > 132) dq->uv_dc = 132;
+    if (dq->uv_dc > 132)
+        dq->uv_dc = 132;
     dq->uv_ac = cupidimage_vp8_ac_qlookup[clamp_q(qindex + uv_ac_delta)];
 }
 
-static void decode_entropy_header(vp8_bool_decoder *br,
-                                  uint8_t coeff_probs[4][8][3][11],
-                                  int *coeff_skip_enabled,
-                                  uint8_t *coeff_skip_prob) {
+static void decode_entropy_header(vp8_bool_decoder *br, uint8_t coeff_probs[4][8][3][11],
+                                  int *coeff_skip_enabled, uint8_t *coeff_skip_prob)
+{
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 8; j++) {
             for (int k = 0; k < 3; k++) {
@@ -643,10 +662,9 @@ static void decode_entropy_header(vp8_bool_decoder *br,
     }
 }
 
-static int decode_block_coeffs(vp8_bool_decoder *br,
-                               uint8_t coeff_probs[4][8][3][11],
-                               int block_type, int ctx, int start_coeff,
-                               int16_t *coeffs) {
+static int decode_block_coeffs(vp8_bool_decoder *br, uint8_t coeff_probs[4][8][3][11],
+                               int block_type, int ctx, int start_coeff, int16_t *coeffs)
+{
     int prev_zero = 0;
     int has_coeff = 0;
     int ctx3 = ctx;
@@ -700,7 +718,8 @@ static int decode_block_coeffs(vp8_bool_decoder *br,
 
 static void yuv_to_rgba(const uint8_t *y_plane, const uint8_t *u_plane, const uint8_t *v_plane,
                         const uint8_t *alpha, int width, int height, int y_stride, int uv_stride,
-                        uint8_t *rgba) {
+                        uint8_t *rgba)
+{
     for (int y = 0; y < height; y++) {
         int uv_y = (y >> 1) * uv_stride;
         for (int x = 0; x < width; x++) {
@@ -721,10 +740,9 @@ static void yuv_to_rgba(const uint8_t *y_plane, const uint8_t *u_plane, const ui
     }
 }
 
-int cupidimage_decode_vp8(const unsigned char *data, size_t size,
-                                 const uint8_t *alpha, size_t alpha_size,
-                                 cupidimage_image *out,
-                                 char *err, size_t errcap) {
+int cupidimage_decode_vp8(const unsigned char *data, size_t size, const uint8_t *alpha,
+                          size_t alpha_size, cupidimage_image *out, char *err, size_t errcap)
+{
     if (size < 10) {
         set_err(err, errcap, "invalid VP8 frame");
         return 0;
@@ -822,15 +840,17 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
     size_t token_off = header_off + first_part_size;
     size_t table_bytes = 3u * (partition_count - 1);
     if (table_bytes > size - token_off) {
-        set_err(err, errcap, "truncated VP8 partition table"); return 0;
+        set_err(err, errcap, "truncated VP8 partition table");
+        return 0;
     }
     size_t partition_start = token_off + table_bytes;
     vp8_bool_decoder token_readers[8];
     for (unsigned i = 0; i < partition_count; i++) {
-        size_t length = i + 1 == partition_count ? size - partition_start
-                                                : read_le24(data + token_off + i * 3);
+        size_t length =
+            i + 1 == partition_count ? size - partition_start : read_le24(data + token_off + i * 3);
         if (length > size - partition_start) {
-            set_err(err, errcap, "truncated VP8 coefficient partition"); return 0;
+            set_err(err, errcap, "truncated VP8 coefficient partition");
+            return 0;
         }
         vp8_br_init(&token_readers[i], data + partition_start, length);
         partition_start += length;
@@ -851,7 +871,8 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
     decode_entropy_header(&br, coeff_probs, &coeff_skip_enabled, &coeff_skip_prob);
 
     if (br.overread || !width || !height || (uint64_t)width * height > 67108864u) {
-        set_err(err, errcap, "truncated VP8 header or image too large"); return 0;
+        set_err(err, errcap, "truncated VP8 header or image too large");
+        return 0;
     }
     int mb_cols = (width + 15) / 16;
     int mb_rows = (height + 15) / 16;
@@ -912,17 +933,22 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                 for (int by = 0; by < 4; by++) {
                     for (int bx = 0; bx < 4; bx++) {
                         int idx = by * 4 + bx;
-                        int above_mode = (by == 0) ? above_bmode[mb_x * 4 + bx] : bmode_ptr[idx - 4];
+                        int above_mode =
+                            (by == 0) ? above_bmode[mb_x * 4 + bx] : bmode_ptr[idx - 4];
                         int left_mode = (bx == 0) ? left_bmode[by] : bmode_ptr[idx - 1];
-                        int bmode = vp8_read_tree(&br, bmode_tree, cupidimage_vp8_kf_bmode_prob[above_mode][left_mode]);
+                        int bmode = vp8_read_tree(
+                            &br, bmode_tree, cupidimage_vp8_kf_bmode_prob[above_mode][left_mode]);
                         bmode_ptr[idx] = (uint8_t)bmode;
                     }
                 }
             } else {
                 int fill_mode = B_DC_PRED;
-                if (y_mode == V_PRED) fill_mode = B_VE_PRED;
-                else if (y_mode == H_PRED) fill_mode = B_HE_PRED;
-                else if (y_mode == TM_PRED) fill_mode = B_TM_PRED;
+                if (y_mode == V_PRED)
+                    fill_mode = B_VE_PRED;
+                else if (y_mode == H_PRED)
+                    fill_mode = B_HE_PRED;
+                else if (y_mode == TM_PRED)
+                    fill_mode = B_TM_PRED;
                 for (int i = 0; i < 16; i++) {
                     bmode_ptr[i] = (uint8_t)fill_mode;
                 }
@@ -939,8 +965,14 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
     }
 
     if (br.overread) {
-        free(y_modes); free(uv_modes); free(skip_flags); free(seg_ids); free(b_modes); free(above_bmode);
-        set_err(err, errcap, "truncated VP8 prediction data"); return 0;
+        free(y_modes);
+        free(uv_modes);
+        free(skip_flags);
+        free(seg_ids);
+        free(b_modes);
+        free(above_bmode);
+        set_err(err, errcap, "truncated VP8 prediction data");
+        return 0;
     }
     (void)payload_off;
     (void)seg_update_data;
@@ -1011,7 +1043,8 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
             int16_t y2_out[16];
             if (has_y2 && !skip) {
                 int block_idx = 24;
-                int ctx = left_ctx[left_context_index[block_idx]] + above_ctx[mb_x * 9 + above_context_index[block_idx]];
+                int ctx = left_ctx[left_context_index[block_idx]] +
+                          above_ctx[mb_x * 9 + above_context_index[block_idx]];
                 int nonzero = decode_block_coeffs(tokens, coeff_probs, 1, ctx, 0, y2_coeffs);
                 coefficients_present |= nonzero;
                 left_ctx[left_context_index[block_idx]] = (uint8_t)nonzero;
@@ -1031,13 +1064,17 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
             uint8_t above_row[16];
             uint8_t left_col[16];
-            uint8_t top_left = get_top_left(y_plane, width, mb_x * 16 - 1, mb_y * 16 - 1, width, height);
-            get_above_row(y_plane, width, mb_x * 16, mb_y * 16 - 1, width, height, 16, 127, above_row);
-            get_left_col(y_plane, width, mb_x * 16 - 1, mb_y * 16, width, height, 16, 129, left_col);
+            uint8_t top_left =
+                get_top_left(y_plane, width, mb_x * 16 - 1, mb_y * 16 - 1, width, height);
+            get_above_row(y_plane, width, mb_x * 16, mb_y * 16 - 1, width, height, 16, 127,
+                          above_row);
+            get_left_col(y_plane, width, mb_x * 16 - 1, mb_y * 16, width, height, 16, 129,
+                         left_col);
 
             uint8_t pred_y[16 * 16];
             if (y_modes[mb_index] != B_PRED) {
-                predict_16x16(pred_y, 16, above_row, left_col, mb_y > 0, mb_x > 0, top_left, y_modes[mb_index]);
+                predict_16x16(pred_y, 16, above_row, left_col, mb_y > 0, mb_x > 0, top_left,
+                              y_modes[mb_index]);
             }
 
             for (int by = 0; by < 4; by++) {
@@ -1046,10 +1083,12 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                     int16_t coeffs[16];
                     int nonzero = 0;
                     if (!skip) {
-                        int ctx = left_ctx[left_context_index[block]] + above_ctx[mb_x * 9 + above_context_index[block]];
+                        int ctx = left_ctx[left_context_index[block]] +
+                                  above_ctx[mb_x * 9 + above_context_index[block]];
                         int start_coeff = has_y2 ? 1 : 0;
                         int block_type = has_y2 ? 0 : 3;
-                        nonzero = decode_block_coeffs(tokens, coeff_probs, block_type, ctx, start_coeff, coeffs);
+                        nonzero = decode_block_coeffs(tokens, coeff_probs, block_type, ctx,
+                                                      start_coeff, coeffs);
                         coefficients_present |= nonzero;
                         if (has_y2) {
                             coeffs[0] = y2_out[block];
@@ -1076,8 +1115,8 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                         uint8_t p = get_top_left(y_plane, width, x - 1, y - 1, width, height);
                         get_above_row(y_plane, width, x, y - 1, width, height, 8, 127, A);
                         if (bx == 3 && by > 0)
-                            get_above_row(y_plane, width, (mb_x + 1) * 16, mb_y * 16 - 1,
-                                          width, height, 4, 127, A + 4);
+                            get_above_row(y_plane, width, (mb_x + 1) * 16, mb_y * 16 - 1, width,
+                                          height, 4, 127, A + 4);
                         get_left_col(y_plane, width, x - 1, y, width, height, 4, 129, L);
                         subblock_intra_predict(block_pred, 4, A, L, p,
                                                b_modes[mb_index * 16u + (size_t)block]);
@@ -1121,8 +1160,10 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
             uint8_t pred_u[64];
             uint8_t pred_v[64];
-            predict_8x8(pred_u, 8, above_u, left_u, mb_y > 0, mb_x > 0, uv_top_left_u, uv_modes[mb_index]);
-            predict_8x8(pred_v, 8, above_v, left_v, mb_y > 0, mb_x > 0, uv_top_left_v, uv_modes[mb_index]);
+            predict_8x8(pred_u, 8, above_u, left_u, mb_y > 0, mb_x > 0, uv_top_left_u,
+                        uv_modes[mb_index]);
+            predict_8x8(pred_v, 8, above_v, left_v, mb_y > 0, mb_x > 0, uv_top_left_v,
+                        uv_modes[mb_index]);
 
             int16_t chroma[8][16];
             /* Coefficient order is all four U blocks, then all four V blocks. */
@@ -1130,11 +1171,13 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                 int block_idx = 16 + ci;
                 int nonzero = 0;
                 if (!skip) {
-                    int ctx = left_ctx[left_context_index[block_idx]] + above_ctx[mb_x * 9 + above_context_index[block_idx]];
+                    int ctx = left_ctx[left_context_index[block_idx]] +
+                              above_ctx[mb_x * 9 + above_context_index[block_idx]];
                     nonzero = decode_block_coeffs(tokens, coeff_probs, 2, ctx, 0, chroma[ci]);
                     coefficients_present |= nonzero;
                     dequant_block(chroma[ci], dq->uv_dc, dq->uv_ac, 1);
-                } else memset(chroma[ci], 0, sizeof(chroma[ci]));
+                } else
+                    memset(chroma[ci], 0, sizeof(chroma[ci]));
                 left_ctx[left_context_index[block_idx]] = (uint8_t)nonzero;
                 above_ctx[mb_x * 9 + above_context_index[block_idx]] = (uint8_t)nonzero;
             }
@@ -1172,11 +1215,21 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
     unsigned token_error = 0;
     for (unsigned i = 0; i < partition_count; i++)
-        if (token_readers[i].used) token_error |= token_readers[i].overread;
+        if (token_readers[i].used)
+            token_error |= token_readers[i].overread;
     if (token_error) {
-        free(y_modes); free(uv_modes); free(skip_flags); free(seg_ids); free(b_modes); free(above_bmode);
-        free(above_ctx); free(y_plane); free(u_plane); free(v_plane);
-        set_err(err, errcap, "truncated VP8 coefficient data"); return 0;
+        free(y_modes);
+        free(uv_modes);
+        free(skip_flags);
+        free(seg_ids);
+        free(b_modes);
+        free(above_bmode);
+        free(above_ctx);
+        free(y_plane);
+        free(u_plane);
+        free(v_plane);
+        set_err(err, errcap, "truncated VP8 coefficient data");
+        return 0;
     }
     out->width = visible_width;
     out->height = visible_height;
@@ -1198,17 +1251,18 @@ int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
     {
         loop_filter_plane(y_plane, width, width, height, mb_cols, mb_rows, seg_ids,
-                          loop_filter_level, sharpness, filter_type,
-                          seg_enabled, seg_abs, seg_lf, 0, y_modes, skip_flags, reference_delta[0], mode_delta[0]);
-        loop_filter_plane(u_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids,
-                          loop_filter_level, sharpness, filter_type,
-                          seg_enabled, seg_abs, seg_lf, 1, y_modes, skip_flags, reference_delta[0], mode_delta[0]);
-        loop_filter_plane(v_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids,
-                          loop_filter_level, sharpness, filter_type,
-                          seg_enabled, seg_abs, seg_lf, 1, y_modes, skip_flags, reference_delta[0], mode_delta[0]);
+                          loop_filter_level, sharpness, filter_type, seg_enabled, seg_abs, seg_lf,
+                          0, y_modes, skip_flags, reference_delta[0], mode_delta[0]);
+        loop_filter_plane(u_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids, loop_filter_level,
+                          sharpness, filter_type, seg_enabled, seg_abs, seg_lf, 1, y_modes,
+                          skip_flags, reference_delta[0], mode_delta[0]);
+        loop_filter_plane(v_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids, loop_filter_level,
+                          sharpness, filter_type, seg_enabled, seg_abs, seg_lf, 1, y_modes,
+                          skip_flags, reference_delta[0], mode_delta[0]);
     }
 
-    yuv_to_rgba(y_plane, u_plane, v_plane, alpha, visible_width, visible_height, width, uv_w, out->rgba);
+    yuv_to_rgba(y_plane, u_plane, v_plane, alpha, visible_width, visible_height, width, uv_w,
+                out->rgba);
 
     free(y_modes);
     free(uv_modes);

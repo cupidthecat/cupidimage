@@ -1,8 +1,8 @@
 #ifndef CUPIDIMAGE_SVG_INTERNAL_H
 #define CUPIDIMAGE_SVG_INTERNAL_H
 
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -48,33 +48,18 @@ typedef enum {
     SVG_PAINT_PATTERN
 } svg_paint_type;
 
-typedef enum {
-    SVG_LINECAP_BUTT,
-    SVG_LINECAP_ROUND,
-    SVG_LINECAP_SQUARE
-} svg_linecap;
+typedef enum { SVG_LINECAP_BUTT, SVG_LINECAP_ROUND, SVG_LINECAP_SQUARE } svg_linecap;
 
-typedef enum {
-    SVG_LINEJOIN_MITER,
-    SVG_LINEJOIN_ROUND,
-    SVG_LINEJOIN_BEVEL
-} svg_linejoin;
+typedef enum { SVG_LINEJOIN_MITER, SVG_LINEJOIN_ROUND, SVG_LINEJOIN_BEVEL } svg_linejoin;
 
 typedef enum {
     SVG_GRADIENT_UNITS_OBJECT_BOUNDING_BOX,
     SVG_GRADIENT_UNITS_USER_SPACE
 } svg_gradient_units;
 
-typedef enum {
-    SVG_SPREAD_PAD,
-    SVG_SPREAD_REFLECT,
-    SVG_SPREAD_REPEAT
-} svg_spread_method;
+typedef enum { SVG_SPREAD_PAD, SVG_SPREAD_REFLECT, SVG_SPREAD_REPEAT } svg_spread_method;
 
-typedef enum {
-    SVG_MASK_TYPE_LUMINANCE,
-    SVG_MASK_TYPE_ALPHA
-} svg_mask_type;
+typedef enum { SVG_MASK_TYPE_LUMINANCE, SVG_MASK_TYPE_ALPHA } svg_mask_type;
 
 typedef struct svg_grad_coord {
     float value;
@@ -483,16 +468,9 @@ typedef enum {
     SVG_TRANSFER_GAMMA
 } svg_transfer_type;
 
-typedef enum {
-    SVG_MORPHOLOGY_ERODE,
-    SVG_MORPHOLOGY_DILATE
-} svg_morphology_op;
+typedef enum { SVG_MORPHOLOGY_ERODE, SVG_MORPHOLOGY_DILATE } svg_morphology_op;
 
-typedef enum {
-    SVG_EDGE_NONE,
-    SVG_EDGE_DUPLICATE,
-    SVG_EDGE_WRAP
-} svg_edge_mode;
+typedef enum { SVG_EDGE_NONE, SVG_EDGE_DUPLICATE, SVG_EDGE_WRAP } svg_edge_mode;
 
 typedef enum {
     SVG_DISPLACE_R,
@@ -687,16 +665,17 @@ typedef struct svg_named_color {
     uint32_t rgba;
 } svg_named_color;
 
-void cupidimage_svg_apply_animation_children(svg_tag *target, const char *target_local, char *child_start, float time_s);
-void cupidimage_svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, uint8_t *buf, float base_len,
-                                 const svg_filter_region *region,
-                                 const svg_bbox *bbox, const svg_matrix *m,
-                                 uint8_t *background, uint8_t *background_alpha,
-                                 uint8_t *fill_paint, uint8_t *stroke_paint);
-void cupidimage_svg_apply_inline_style_attr(svg_style *style, const svg_tag *tag, float base_len, float dpi,
-                                        const svg_defs *defs);
-void cupidimage_svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, float base_len, float dpi,
-                                         const svg_defs *defs);
+void cupidimage_svg_apply_animation_children(svg_tag *target, const char *target_local,
+                                             char *child_start, float time_s);
+void cupidimage_svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, uint8_t *buf,
+                                     float base_len, const svg_filter_region *region,
+                                     const svg_bbox *bbox, const svg_matrix *m, uint8_t *background,
+                                     uint8_t *background_alpha, uint8_t *fill_paint,
+                                     uint8_t *stroke_paint);
+void cupidimage_svg_apply_inline_style_attr(svg_style *style, const svg_tag *tag, float base_len,
+                                            float dpi, const svg_defs *defs);
+void cupidimage_svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, float base_len,
+                                             float dpi, const svg_defs *defs);
 float cupidimage_svg_apply_spread(float t, svg_spread_method spread);
 void cupidimage_svg_bbox_add_rect(svg_bbox *bbox, float x, float y, float w, float h);
 void cupidimage_svg_bbox_expand(svg_bbox *bbox, float amount);
@@ -704,20 +683,19 @@ void cupidimage_svg_bbox_init(svg_bbox *bbox);
 int cupidimage_svg_bbox_valid(const svg_bbox *bbox);
 void cupidimage_svg_blend_premul(uint8_t *dst, uint8_t sr, uint8_t sg, uint8_t sb, uint8_t sa);
 void cupidimage_svg_build_join_tris(const svg_segments *segs, const svg_style *style,
-                                const uint8_t *start_open, const uint8_t *end_open,
-                                svg_join_tri **out_tris, int *out_count);
+                                    const uint8_t *start_open, const uint8_t *end_open,
+                                    svg_join_tri **out_tris, int *out_count);
 char *cupidimage_svg_build_use_wrapper_attrs(const svg_tag *tag);
 float cupidimage_svg_clamp01(float v);
 void cupidimage_svg_clip_finalize(svg_clip_path *c);
 void cupidimage_svg_clip_inherit(svg_clip_path *c, svg_defs *defs);
 void cupidimage_svg_composite_buffer(svg_render_ctx *ctx, const uint8_t *src);
 void cupidimage_svg_compute_filter_region(const svg_filter *filter, const svg_render_ctx *ctx,
-                                      const svg_bbox *bbox, const svg_matrix *m,
-                                      svg_filter_region *out);
+                                          const svg_bbox *bbox, const svg_matrix *m,
+                                          svg_filter_region *out);
 void cupidimage_svg_css_apply(svg_style *style, const svg_css *css, const svg_defs *defs,
-                          const svg_elem_info *stack, int depth,
-                          const svg_elem_info *siblings, int sibling_count,
-                          float base_len, float dpi);
+                              const svg_elem_info *stack, int depth, const svg_elem_info *siblings,
+                              int sibling_count, float base_len, float dpi);
 void cupidimage_svg_css_apply_animations_to_tag(svg_tag *tag, const svg_css *css, float time_s);
 void cupidimage_svg_css_free(svg_css *css);
 void cupidimage_svg_css_init(svg_css *css);
@@ -743,22 +721,25 @@ svg_use_def *cupidimage_svg_defs_find_use(svg_defs *defs, const char *id);
 void cupidimage_svg_defs_free(svg_defs *defs);
 void cupidimage_svg_defs_init(svg_defs *defs);
 int cupidimage_svg_dimension(float value, uint32_t *out);
-void cupidimage_svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                     float cx, float cy, float rx, float ry);
-void cupidimage_svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                   const cupidimage_image *img,
-                                   float x, float y, float w, float h,
-                                   int preserve_none, float align_x, float align_y);
-void cupidimage_svg_draw_samples_line(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                  float x0, float y0, float x1, float y1);
-void cupidimage_svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                  float x, float y, float w, float h, float rx, float ry);
-void cupidimage_svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                      const svg_segments *segs);
+void cupidimage_svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style,
+                                         const svg_matrix *m, float cx, float cy, float rx,
+                                         float ry);
+void cupidimage_svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style,
+                                       const svg_matrix *m, const cupidimage_image *img, float x,
+                                       float y, float w, float h, int preserve_none, float align_x,
+                                       float align_y);
+void cupidimage_svg_draw_samples_line(svg_render_ctx *ctx, const svg_style *style,
+                                      const svg_matrix *m, float x0, float y0, float x1, float y1);
+void cupidimage_svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style,
+                                      const svg_matrix *m, float x, float y, float w, float h,
+                                      float rx, float ry);
+void cupidimage_svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style,
+                                          const svg_matrix *m, const svg_segments *segs);
 void cupidimage_svg_elem_info_from_tag(svg_elem_info *info, const char *local, const svg_tag *tag);
 void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count);
 char *cupidimage_svg_find_close_tag(char *p, const char *tag_name, char **after);
-void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_x, float sigma_y);
+void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_x,
+                                  float sigma_y);
 const char *cupidimage_svg_get_attr(const svg_tag *tag, const char *name);
 const char *cupidimage_svg_get_attr_exact(const svg_tag *tag, const char *name);
 int cupidimage_svg_gradient_add_stop(svg_gradient *g, float offset, uint32_t color);
@@ -775,14 +756,15 @@ void cupidimage_svg_parse_clip_tag(const svg_tag *tag, svg_clip_path *c);
 int cupidimage_svg_parse_clock_seconds(const char *s, float *out);
 int cupidimage_svg_parse_color(const char *s, uint32_t *out, int *is_none);
 int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, int *out_count,
-                                int *out_result_count, float base_len, float dpi,
-                                svg_gradient_units units);
+                                    int *out_result_count, float base_len, float dpi,
+                                    svg_gradient_units units);
 void cupidimage_svg_parse_filter_tag(const svg_tag *tag, svg_filter *f);
 int cupidimage_svg_parse_grad_coord(const char *s, svg_grad_coord *out, svg_gradient_units units);
 void cupidimage_svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g);
 int cupidimage_svg_parse_href_id(const char *value, char *out, size_t outcap);
 float cupidimage_svg_parse_length(const char *s, float base, float dpi, int *ok);
-int cupidimage_svg_parse_length_attr(const svg_tag *tag, const char *name, float base, float dpi, float *out);
+int cupidimage_svg_parse_length_attr(const svg_tag *tag, const char *name, float base, float dpi,
+                                     float *out);
 int cupidimage_svg_parse_length_value(const char **p, float base, float dpi, float *out);
 void cupidimage_svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float base_len, float dpi);
 void cupidimage_svg_parse_mask_tag(const svg_tag *tag, svg_mask *m);
@@ -791,9 +773,11 @@ int cupidimage_svg_parse_opacity_value(const char *s, float *out);
 int cupidimage_svg_parse_path(const char *d, svg_segments *segs);
 void cupidimage_svg_parse_pattern_tag(const svg_tag *tag, svg_pattern *p);
 int cupidimage_svg_parse_points(const char *s, float **out_points, int *out_count);
-int cupidimage_svg_parse_preamble(const unsigned char *data, size_t size, svg_preamble *pre, svg_defs *defs,
-                              svg_css *css, float dpi, float anim_time, char *err, size_t errcap);
-void cupidimage_svg_parse_preserve_aspect_ratio(const char *s, int *preserve_none, float *align_x, float *align_y);
+int cupidimage_svg_parse_preamble(const unsigned char *data, size_t size, svg_preamble *pre,
+                                  svg_defs *defs, svg_css *css, float dpi, float anim_time,
+                                  char *err, size_t errcap);
+void cupidimage_svg_parse_preserve_aspect_ratio(const char *s, int *preserve_none, float *align_x,
+                                                float *align_y);
 void cupidimage_svg_parse_symbol_tag(const svg_tag *tag, svg_symbol *sym);
 int cupidimage_svg_parse_transform(const char *value, svg_matrix *out);
 int cupidimage_svg_parse_transform_number(const char **p, float *out);
@@ -801,44 +785,54 @@ int cupidimage_svg_parse_viewbox(const char *s, float *x, float *y, float *w, fl
 void cupidimage_svg_pattern_finalize(svg_pattern *p);
 void cupidimage_svg_pattern_inherit(svg_pattern *p, const svg_defs *defs);
 int cupidimage_svg_point_in_segments(const svg_segments *segs, int evenodd, float px, float py);
-int cupidimage_svg_point_on_segments(const svg_segments *segs, float px, float py, float half_width);
-int cupidimage_svg_point_on_segments_cap(const svg_segments *segs, const svg_style *style, float px, float py,
-                                     float half_width, const uint8_t *start_open, const uint8_t *end_open,
-                                     const svg_join_tri *joins, int join_count);
-int cupidimage_svg_prepare_const_paint(const svg_style *style, int is_stroke, uint8_t *pr, uint8_t *pg,
-                                   uint8_t *pb, uint8_t *pa);
+int cupidimage_svg_point_on_segments(const svg_segments *segs, float px, float py,
+                                     float half_width);
+int cupidimage_svg_point_on_segments_cap(const svg_segments *segs, const svg_style *style, float px,
+                                         float py, float half_width, const uint8_t *start_open,
+                                         const uint8_t *end_open, const svg_join_tri *joins,
+                                         int join_count);
+int cupidimage_svg_prepare_const_paint(const svg_style *style, int is_stroke, uint8_t *pr,
+                                       uint8_t *pg, uint8_t *pb, uint8_t *pa);
 int cupidimage_svg_property_id(const char *name);
 int cupidimage_svg_raster_bound(float value, int upper);
-int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err, size_t errcap,
-                      const cupidimage_svg_options *opts);
-void cupidimage_svg_render_text_element(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                    const svg_tag *text_tag, char **p,
-                                    const svg_defs *defs, const svg_css *css,
-                                    const svg_elem_info *stack_info, int stack_depth,
-                                    float base_len, float dpi, svg_bbox *out_bbox);
-float cupidimage_svg_resolve_grad_coord(const svg_grad_coord *c, float base, float origin, svg_gradient_units units);
-uint8_t cupidimage_svg_sample_mask_alpha(svg_style *style, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                                     int sx, int sy);
-int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, int is_stroke, const svg_bbox *bbox,
-                            float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa);
-int cupidimage_svg_segments_add(svg_segments *segs, float x0, float y0, float x1, float y1, int to_stroke, int to_fill);
-void cupidimage_svg_segments_add_ellipse(svg_segments *segs, float cx, float cy, float rx, float ry);
-void cupidimage_svg_segments_add_rect(svg_segments *segs, float x, float y, float w, float h, float rx, float ry);
-int cupidimage_svg_segments_build_dashed(const svg_segments *src, const svg_style *style, svg_segments *out);
-void cupidimage_svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start_open, uint8_t *end_open);
+int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err,
+                          size_t errcap, const cupidimage_svg_options *opts);
+void cupidimage_svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
+                                        const svg_matrix *m, const svg_tag *text_tag, char **p,
+                                        const svg_defs *defs, const svg_css *css,
+                                        const svg_elem_info *stack_info, int stack_depth,
+                                        float base_len, float dpi, svg_bbox *out_bbox);
+float cupidimage_svg_resolve_grad_coord(const svg_grad_coord *c, float base, float origin,
+                                        svg_gradient_units units);
+uint8_t cupidimage_svg_sample_mask_alpha(svg_style *style, const svg_render_ctx *ctx,
+                                         const svg_bbox *bbox, int sx, int sy);
+int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, int is_stroke,
+                                const svg_bbox *bbox, float x, float y, uint8_t *pr, uint8_t *pg,
+                                uint8_t *pb, uint8_t *pa);
+int cupidimage_svg_segments_add(svg_segments *segs, float x0, float y0, float x1, float y1,
+                                int to_stroke, int to_fill);
+void cupidimage_svg_segments_add_ellipse(svg_segments *segs, float cx, float cy, float rx,
+                                         float ry);
+void cupidimage_svg_segments_add_rect(svg_segments *segs, float x, float y, float w, float h,
+                                      float rx, float ry);
+int cupidimage_svg_segments_build_dashed(const svg_segments *src, const svg_style *style,
+                                         svg_segments *out);
+void cupidimage_svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start_open,
+                                            uint8_t *end_open);
 void cupidimage_svg_segments_free(svg_segments *segs);
 void cupidimage_svg_segments_init(svg_segments *segs);
 int cupidimage_svg_sibling_frame_push(svg_sibling_frame *frame, const svg_elem_info *info);
 void cupidimage_svg_sibling_frames_free(svg_sibling_frame *frames, int depth_cap);
 void cupidimage_svg_skip_separators(const char **p);
 int cupidimage_svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color);
-void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const char *value, float base_len,
-                                        float dpi, const svg_defs *defs);
+void cupidimage_svg_style_apply_property_id(svg_style *style, int prop, const char *value,
+                                            float base_len, float dpi, const svg_defs *defs);
 void cupidimage_svg_style_init(svg_style *style);
 char *cupidimage_svg_text_normalize(const char *text, int preserve);
 float cupidimage_svg_transfer_apply(const svg_transfer_func *func, float v);
-void cupidimage_svg_transform_bounds(const svg_matrix *m, float minx, float miny, float maxx, float maxy,
-                                 float *out_minx, float *out_miny, float *out_maxx, float *out_maxy);
+void cupidimage_svg_transform_bounds(const svg_matrix *m, float minx, float miny, float maxx,
+                                     float maxy, float *out_minx, float *out_miny, float *out_maxx,
+                                     float *out_maxy);
 char *cupidimage_svg_wrap_with_group_attrs(const char *content, const char *attrs);
 int cupidimage_svg_xml_space_preserve(const svg_tag *tag, int inherited);
 

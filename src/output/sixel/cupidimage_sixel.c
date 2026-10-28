@@ -1,22 +1,23 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "output/sixel/cupidimage_sixel.h"
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <limits.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 #endif
 
-static void set_err(char *err, size_t errcap, const char *msg) {
+static void set_err(char *err, size_t errcap, const char *msg)
+{
     if (err && errcap > 0) {
         strncpy(err, msg, errcap - 1);
         err[errcap - 1] = '\0';
@@ -41,27 +42,34 @@ typedef struct {
     uint32_t max_colors;
 } octree_quantizer;
 
-static octree_node *octree_create_node(int level, int is_leaf) {
-    (void)level;  /* Unused but kept for API consistency */
+static octree_node *octree_create_node(int level, int is_leaf)
+{
+    (void)level; /* Unused but kept for API consistency */
     octree_node *node = (octree_node *)calloc(1, sizeof(octree_node));
-    if (!node) return NULL;
+    if (!node)
+        return NULL;
     node->is_leaf = (uint8_t)is_leaf;
     return node;
 }
 
-static void octree_free(octree_node *node) {
-    if (!node) return;
+static void octree_free(octree_node *node)
+{
+    if (!node)
+        return;
     for (int i = 0; i < 8; i++) {
         octree_free(node->children[i]);
     }
     free(node);
 }
 
-static int octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_t r, uint8_t g, uint8_t b, int level) {
+static int octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_t r, uint8_t g,
+                            uint8_t b, int level)
+{
     if (!*node_ptr) {
         int is_leaf = (level == 8);
         *node_ptr = octree_create_node(level, is_leaf);
-        if (!*node_ptr) return 0;
+        if (!*node_ptr)
+            return 0;
 
         if (!is_leaf && level < 8) {
             (*node_ptr)->next = qt->reducible[level];
@@ -88,14 +96,16 @@ static int octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_
     return 1;
 }
 
-static void octree_reduce(octree_quantizer *qt) {
+static void octree_reduce(octree_quantizer *qt)
+{
     /* Find deepest level with reducible nodes */
     int level = 7;
     while (level >= 0 && !qt->reducible[level]) {
         level--;
     }
 
-    if (level < 0) return;
+    if (level < 0)
+        return;
 
     octree_node *node = qt->reducible[level];
     qt->reducible[level] = node->next;
@@ -129,15 +139,17 @@ static void octree_reduce(octree_quantizer *qt) {
     qt->leaf_count++;
 }
 
-static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, int *index) {
-    if (!node) return;
+static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, int *index)
+{
+    if (!node)
+        return;
 
     if (node->is_leaf && node->pixel_count > 0) {
         int idx = *index;
         palette[idx * 3 + 0] = (uint8_t)(node->red_sum / node->pixel_count);
         palette[idx * 3 + 1] = (uint8_t)(node->green_sum / node->pixel_count);
         palette[idx * 3 + 2] = (uint8_t)(node->blue_sum / node->pixel_count);
-        node->pixel_count = (uint32_t)((*index) + 1);  /* Store palette index + 1 */
+        node->pixel_count = (uint32_t)((*index) + 1); /* Store palette index + 1 */
         (*index)++;
     } else {
         for (int i = 0; i < 8; i++) {
@@ -146,9 +158,10 @@ static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, in
     }
 }
 
-static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
-                           uint8_t *palette, uint32_t max_colors, uint32_t *palette_size,
-                           int use_transparency, uint8_t *indexed) {
+static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height, uint8_t *palette,
+                           uint32_t max_colors, uint32_t *palette_size, int use_transparency,
+                           uint8_t *indexed)
+{
     octree_quantizer qt;
     memset(&qt, 0, sizeof(qt));
     qt.max_colors = max_colors;
@@ -162,10 +175,11 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
         uint8_t a = rgba[i * 4 + 3];
 
         if (use_transparency && a < 128) {
-            continue;  /* Skip transparent pixels */
+            continue; /* Skip transparent pixels */
         }
 
-        if (!octree_add_color(&qt, &qt.root, rgba[i * 4 + 0], rgba[i * 4 + 1], rgba[i * 4 + 2], 0)) {
+        if (!octree_add_color(&qt, &qt.root, rgba[i * 4 + 0], rgba[i * 4 + 1], rgba[i * 4 + 2],
+                              0)) {
             octree_free(qt.root);
             return 0;
         }
@@ -224,7 +238,8 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
 
 static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                          const uint8_t *palette, uint32_t palette_size,
-                                         int use_transparency, uint8_t *indexed) {
+                                         int use_transparency, uint8_t *indexed)
+{
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -239,7 +254,8 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
-            if (use_transparency && rgba[i * 4 + 3] < 128) continue;
+            if (use_transparency && rgba[i * 4 + 3] < 128)
+                continue;
 
             int r = (int)rgba[i * 4 + 0] + error_r[i];
             int g = (int)rgba[i * 4 + 1] + error_g[i];
@@ -309,7 +325,8 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
 
 static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                   const uint8_t *palette, uint32_t palette_size,
-                                  int use_transparency, uint8_t *indexed) {
+                                  int use_transparency, uint8_t *indexed)
+{
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -324,7 +341,8 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
-            if (use_transparency && rgba[i * 4 + 3] < 128) continue;
+            if (use_transparency && rgba[i * 4 + 3] < 128)
+                continue;
 
             int r = (int)rgba[i * 4 + 0] + error_r[i];
             int g = (int)rgba[i * 4 + 1] + error_g[i];
@@ -357,7 +375,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
             int eb = b - palette[best_idx * 3 + 2];
 
             /* Distribute error: Atkinson (diffuse 6/8 of error) */
-            int positions[6][2] = {{1,0}, {2,0}, {-1,1}, {0,1}, {1,1}, {0,2}};
+            int positions[6][2] = {{1, 0}, {2, 0}, {-1, 1}, {0, 1}, {1, 1}, {0, 2}};
 
             for (int p = 0; p < 6; p++) {
                 int nx = (int)x + positions[p][0];
@@ -380,19 +398,17 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
 
 static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                  const uint8_t *palette, uint32_t palette_size,
-                                 int use_transparency, uint8_t *indexed) {
+                                 int use_transparency, uint8_t *indexed)
+{
     /* 4x4 Bayer matrix */
     static const int bayer4x4[4][4] = {
-        { 0,  8,  2, 10},
-        {12,  4, 14,  6},
-        { 3, 11,  1,  9},
-        {15,  7, 13,  5}
-    };
+        {0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
 
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
-            if (use_transparency && rgba[i * 4 + 3] < 128) continue;
+            if (use_transparency && rgba[i * 4 + 3] < 128)
+                continue;
 
             int threshold = bayer4x4[y % 4][x % 4] * 16;
 
@@ -426,9 +442,10 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
 }
 
 static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint32_t height,
-                        const uint8_t *palette, uint32_t palette_size,
-                        float pixel_aspect_ratio, int use_transparency) {
-    (void)pixel_aspect_ratio;  /* Reserved for future use */
+                        const uint8_t *palette, uint32_t palette_size, float pixel_aspect_ratio,
+                        int use_transparency)
+{
+    (void)pixel_aspect_ratio; /* Reserved for future use */
 
     /* Start Sixel sequence: DCS P1 ; P2 ; P3 q
      * P1 = pixel aspect ratio (0 = default 2:1)
@@ -461,7 +478,8 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
         int first_color_in_band = 1;
 
         for (uint32_t color = 0; color < palette_size; color++) {
-            if (use_transparency && color == 0) continue;
+            if (use_transparency && color == 0)
+                continue;
             /* Check if this color is used in this band */
             int color_used = 0;
             for (uint32_t x = 0; x < width && !color_used; x++) {
@@ -477,7 +495,8 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
                 }
             }
 
-            if (!color_used) continue;
+            if (!color_used)
+                continue;
 
             /* Carriage return before each color except the first */
             if (!first_color_in_band) {
@@ -504,7 +523,7 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
                     }
                 }
 
-                int ch = sixel + 63;  /* Sixel encoding: add 63 to get ASCII char */
+                int ch = sixel + 63; /* Sixel encoding: add 63 to get ASCII char */
 
                 if (ch == run_char) {
                     run_count++;
@@ -552,7 +571,8 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
     return !ferror(out);
 }
 
-int cupidimage_is_sixel_terminal(void) {
+int cupidimage_is_sixel_terminal(void)
+{
     /* Windows Terminal */
     const char *wt = getenv("WT_SESSION");
     if (wt && *wt) {
@@ -563,9 +583,8 @@ int cupidimage_is_sixel_terminal(void) {
        In particular xterm-256color and xterm-kitty must not select Sixel. */
     const char *term = getenv("TERM");
     if (term) {
-        if (strstr(term, "mlterm") || strstr(term, "yaft") ||
-            strstr(term, "foot") || strstr(term, "xterm-sixel") ||
-            strstr(term, "contour")) {
+        if (strstr(term, "mlterm") || strstr(term, "yaft") || strstr(term, "foot") ||
+            strstr(term, "xterm-sixel") || strstr(term, "contour")) {
             return 1;
         }
     }
@@ -591,11 +610,12 @@ int cupidimage_is_sixel_terminal(void) {
 }
 
 int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
-                                        uint32_t term_width, uint32_t term_height,
-                                        const cupidimage_sixel_options *opts,
-                                        char *err, size_t errcap) {
-    (void)term_width;   /* Reserved for future scaling */
-    (void)term_height;  /* Reserved for future scaling */
+                                         uint32_t term_width, uint32_t term_height,
+                                         const cupidimage_sixel_options *opts, char *err,
+                                         size_t errcap)
+{
+    (void)term_width;  /* Reserved for future scaling */
+    (void)term_height; /* Reserved for future scaling */
     if (!img || !img->rgba || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -610,8 +630,10 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
 
     /* Get options or defaults */
     uint32_t max_colors = opts && opts->max_colors > 0 ? opts->max_colors : 256;
-    if (max_colors < 2) max_colors = 2;
-    if (max_colors > 256) max_colors = 256;
+    if (max_colors < 2)
+        max_colors = 2;
+    if (max_colors > 256)
+        max_colors = 256;
 
     uint8_t dither_mode = opts ? opts->dither_mode : 1;
     uint8_t use_transparency = opts ? opts->use_transparency : 0;
@@ -639,9 +661,12 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
         for (uint32_t i = 0; i < img->width * img->height; i++) {
             uint8_t a = rgba_copy[i * 4 + 3];
             if (a < 255) {
-                rgba_copy[i * 4 + 0] = (uint8_t)((rgba_copy[i * 4 + 0] * a + bg_r * (255U - a)) / 255U);
-                rgba_copy[i * 4 + 1] = (uint8_t)((rgba_copy[i * 4 + 1] * a + bg_g * (255U - a)) / 255U);
-                rgba_copy[i * 4 + 2] = (uint8_t)((rgba_copy[i * 4 + 2] * a + bg_b * (255U - a)) / 255U);
+                rgba_copy[i * 4 + 0] =
+                    (uint8_t)((rgba_copy[i * 4 + 0] * a + bg_r * (255U - a)) / 255U);
+                rgba_copy[i * 4 + 1] =
+                    (uint8_t)((rgba_copy[i * 4 + 1] * a + bg_g * (255U - a)) / 255U);
+                rgba_copy[i * 4 + 2] =
+                    (uint8_t)((rgba_copy[i * 4 + 2] * a + bg_b * (255U - a)) / 255U);
                 rgba_copy[i * 4 + 3] = 255;
             }
         }
@@ -660,8 +685,8 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
     }
 
     uint32_t palette_size = 0;
-    if (!quantize_colors(rgba_copy, img->width, img->height, palette, max_colors,
-                         &palette_size, use_transparency, indexed)) {
+    if (!quantize_colors(rgba_copy, img->width, img->height, palette, max_colors, &palette_size,
+                         use_transparency, indexed)) {
         free(rgba_copy);
         free(palette);
         free(indexed);
@@ -671,32 +696,39 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
 
     /* Apply dithering */
     if (dither_mode == 1) {
-        apply_floyd_steinberg_dither(rgba_copy, img->width, img->height, palette, palette_size, use_transparency, indexed);
+        apply_floyd_steinberg_dither(rgba_copy, img->width, img->height, palette, palette_size,
+                                     use_transparency, indexed);
     } else if (dither_mode == 2) {
-        apply_atkinson_dither(rgba_copy, img->width, img->height, palette, palette_size, use_transparency, indexed);
+        apply_atkinson_dither(rgba_copy, img->width, img->height, palette, palette_size,
+                              use_transparency, indexed);
     } else if (dither_mode == 3) {
-        apply_ordered_dither(rgba_copy, img->width, img->height, palette, palette_size, use_transparency, indexed);
+        apply_ordered_dither(rgba_copy, img->width, img->height, palette, palette_size,
+                             use_transparency, indexed);
     }
 
     /* Encode and output */
     float aspect = opts && opts->pixel_aspect_ratio > 0 ? opts->pixel_aspect_ratio : 2.0f;
-    int result = encode_sixel(out, indexed, img->width, img->height, palette, palette_size, aspect, use_transparency);
+    int result = encode_sixel(out, indexed, img->width, img->height, palette, palette_size, aspect,
+                              use_transparency);
 
     free(rgba_copy);
     free(palette);
     free(indexed);
 
-    if (!result) set_err(err, errcap, "failed to write Sixel output");
+    if (!result)
+        set_err(err, errcap, "failed to write Sixel output");
     return result;
 }
 
-int cupidimage_render_sixel(const cupidimage_image *img, FILE *out,
-                            uint32_t term_width, uint32_t term_height,
-                            char *err, size_t errcap) {
-    return cupidimage_render_sixel_with_options(img, out, term_width, term_height, NULL, err, errcap);
+int cupidimage_render_sixel(const cupidimage_image *img, FILE *out, uint32_t term_width,
+                            uint32_t term_height, char *err, size_t errcap)
+{
+    return cupidimage_render_sixel_with_options(img, out, term_width, term_height, NULL, err,
+                                                errcap);
 }
 
-static void sleep_ms(unsigned ms) {
+static void sleep_ms(unsigned ms)
+{
 #ifdef _WIN32
     Sleep(ms);
 #else
@@ -709,8 +741,9 @@ static void sleep_ms(unsigned ms) {
 
 int cupidimage_render_sixel_animation_with_options(const cupidimage_animation *anim, FILE *out,
                                                    uint32_t term_width, uint32_t term_height,
-                                                   const cupidimage_sixel_options *opts,
-                                                   char *err, size_t errcap) {
+                                                   const cupidimage_sixel_options *opts, char *err,
+                                                   size_t errcap)
+{
     if (!anim || !anim->frames || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -737,16 +770,17 @@ int cupidimage_render_sixel_animation_with_options(const cupidimage_animation *a
             fprintf(out, "\0338");
 
             /* Render frame */
-            if (!cupidimage_render_sixel_with_options(&anim->frames[i], out,
-                                                      term_width, term_height, opts, err, errcap)) {
-                fprintf(out, "\033[?25h");  /* Show cursor on error */
+            if (!cupidimage_render_sixel_with_options(&anim->frames[i], out, term_width,
+                                                      term_height, opts, err, errcap)) {
+                fprintf(out, "\033[?25h"); /* Show cursor on error */
                 return 0;
             }
 
             /* Delay - delays are already in milliseconds */
             if (i + 1 < anim->frame_count || loop + 1 < loop_count) {
                 uint32_t delay_ms = anim->delays ? anim->delays[i] : 100;
-                if (delay_ms < 20) delay_ms = 100;  /* Minimum delay */
+                if (delay_ms < 20)
+                    delay_ms = 100; /* Minimum delay */
                 sleep_ms(delay_ms);
             }
         }
@@ -760,8 +794,9 @@ int cupidimage_render_sixel_animation_with_options(const cupidimage_animation *a
 }
 
 int cupidimage_render_sixel_animation(const cupidimage_animation *anim, FILE *out,
-                                     uint32_t term_width, uint32_t term_height,
-                                     char *err, size_t errcap) {
-    return cupidimage_render_sixel_animation_with_options(anim, out, term_width, term_height,
-                                                          NULL, err, errcap);
+                                      uint32_t term_width, uint32_t term_height, char *err,
+                                      size_t errcap)
+{
+    return cupidimage_render_sixel_animation_with_options(anim, out, term_width, term_height, NULL,
+                                                          err, errcap);
 }

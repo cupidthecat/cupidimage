@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -26,11 +26,12 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
 static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox);
 static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox,
                               float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa);
-static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                                    float x, float y);
+static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx *ctx,
+                                    const svg_bbox *bbox, float x, float y);
 static int svg_decode_entity(const char *s, size_t *consumed);
 
-static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, const svg_bbox *bbox) {
+static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, const svg_bbox *bbox)
+{
     if (!clip || !ctx || !bbox || !clip->content || !*clip->content) {
         return 0;
     }
@@ -44,8 +45,7 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
         if (!needs_bbox) {
             return 1;
         }
-        if (clip->has_cached_bbox &&
-            fabsf(clip->cached_bbox_x - bbox->x) < 1e-4f &&
+        if (clip->has_cached_bbox && fabsf(clip->cached_bbox_x - bbox->x) < 1e-4f &&
             fabsf(clip->cached_bbox_y - bbox->y) < 1e-4f &&
             fabsf(clip->cached_bbox_w - bbox->w) < 1e-4f &&
             fabsf(clip->cached_bbox_h - bbox->h) < 1e-4f) {
@@ -58,10 +58,11 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     clip->rendering = 1;
 
     char header[256];
-    int header_len = snprintf(header, sizeof(header),
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
-                              "viewBox=\"%.6g %.6g %.6g %.6g\">",
-                              out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
+    int header_len =
+        snprintf(header, sizeof(header),
+                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
+                 "viewBox=\"%.6g %.6g %.6g %.6g\">",
+                 out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
     if (header_len < 0 || header_len >= (int)sizeof(header)) {
         clip->rendering = 0;
         return 0;
@@ -83,8 +84,7 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     if (needs_bbox) {
         float bw = bbox->w > 0.0f ? bbox->w : 1.0f;
         float bh = bbox->h > 0.0f ? bbox->h : 1.0f;
-        g2_len = snprintf(g2, sizeof(g2),
-                          "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
+        g2_len = snprintf(g2, sizeof(g2), "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
                           bbox->x, bbox->y, bw, bh);
         if (g2_len < 0 || g2_len >= (int)sizeof(g2)) {
             clip->rendering = 0;
@@ -139,7 +139,8 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     svg_render_ctx clip_ctx;
     memset(&clip_ctx, 0, sizeof(clip_ctx));
     char errbuf[128];
-    int ok = cupidimage_svg_render(&clip_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = cupidimage_svg_render(&clip_ctx, (const unsigned char *)svg, strlen(svg), errbuf,
+                                   sizeof(errbuf), &opts);
     free(svg);
     if (!ok) {
         clip->rendering = 0;
@@ -162,7 +163,8 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     return clip->rgba != NULL;
 }
 
-static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg_bbox *bbox) {
+static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg_bbox *bbox)
+{
     if (!mask || !ctx || !bbox || !mask->content || !*mask->content) {
         return 0;
     }
@@ -176,8 +178,7 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
         if (!needs_bbox) {
             return 1;
         }
-        if (mask->has_cached_bbox &&
-            fabsf(mask->cached_bbox_x - bbox->x) < 1e-4f &&
+        if (mask->has_cached_bbox && fabsf(mask->cached_bbox_x - bbox->x) < 1e-4f &&
             fabsf(mask->cached_bbox_y - bbox->y) < 1e-4f &&
             fabsf(mask->cached_bbox_w - bbox->w) < 1e-4f &&
             fabsf(mask->cached_bbox_h - bbox->h) < 1e-4f) {
@@ -190,10 +191,11 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     mask->rendering = 1;
 
     char header[256];
-    int header_len = snprintf(header, sizeof(header),
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
-                              "viewBox=\"%.6g %.6g %.6g %.6g\">",
-                              out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
+    int header_len =
+        snprintf(header, sizeof(header),
+                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
+                 "viewBox=\"%.6g %.6g %.6g %.6g\">",
+                 out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
     if (header_len < 0 || header_len >= (int)sizeof(header)) {
         mask->rendering = 0;
         return 0;
@@ -215,8 +217,7 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     if (needs_bbox) {
         float bw = bbox->w > 0.0f ? bbox->w : 1.0f;
         float bh = bbox->h > 0.0f ? bbox->h : 1.0f;
-        g2_len = snprintf(g2, sizeof(g2),
-                          "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
+        g2_len = snprintf(g2, sizeof(g2), "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
                           bbox->x, bbox->y, bw, bh);
         if (g2_len < 0 || g2_len >= (int)sizeof(g2)) {
             mask->rendering = 0;
@@ -271,7 +272,8 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     svg_render_ctx mask_ctx;
     memset(&mask_ctx, 0, sizeof(mask_ctx));
     char errbuf[128];
-    int ok = cupidimage_svg_render(&mask_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = cupidimage_svg_render(&mask_ctx, (const unsigned char *)svg, strlen(svg), errbuf,
+                                   sizeof(errbuf), &opts);
     free(svg);
     if (!ok) {
         mask->rendering = 0;
@@ -294,8 +296,9 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     return mask->rgba != NULL;
 }
 
-uint8_t cupidimage_svg_sample_mask_alpha(svg_style *style, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                                     int sx, int sy) {
+uint8_t cupidimage_svg_sample_mask_alpha(svg_style *style, const svg_render_ctx *ctx,
+                                         const svg_bbox *bbox, int sx, int sy)
+{
     if (!style || !ctx || !bbox) {
         return 255;
     }
@@ -331,7 +334,8 @@ uint8_t cupidimage_svg_sample_mask_alpha(svg_style *style, const svg_render_ctx 
     return alpha;
 }
 
-void cupidimage_svg_composite_buffer(svg_render_ctx *ctx, const uint8_t *src) {
+void cupidimage_svg_composite_buffer(svg_render_ctx *ctx, const uint8_t *src)
+{
     if (!ctx || !ctx->hi_rgba || !src) {
         return;
     }
@@ -342,10 +346,12 @@ void cupidimage_svg_composite_buffer(svg_render_ctx *ctx, const uint8_t *src) {
         if (sa == 0) {
             continue;
         }
-        cupidimage_svg_blend_premul(ctx->hi_rgba + idx, src[idx + 0], src[idx + 1], src[idx + 2], sa);
+        cupidimage_svg_blend_premul(ctx->hi_rgba + idx, src[idx + 0], src[idx + 1], src[idx + 2],
+                                    sa);
     }
 }
-static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox) {
+static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox)
+{
     if (!p || !ctx || !bbox || !p->content || !*p->content) {
         return 0;
     }
@@ -367,16 +373,17 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     }
     uint32_t px_w = (uint32_t)lroundf(tile_w * (float)ctx->ss);
     uint32_t px_h = (uint32_t)lroundf(tile_h * (float)ctx->ss);
-    if (px_w < 1) px_w = 1;
-    if (px_h < 1) px_h = 1;
+    if (px_w < 1)
+        px_w = 1;
+    if (px_h < 1)
+        px_h = 1;
     int needs_bbox = (p->units == SVG_GRADIENT_UNITS_OBJECT_BOUNDING_BOX) ||
                      (p->content_units == SVG_GRADIENT_UNITS_OBJECT_BOUNDING_BOX);
     if (p->rendered && p->rgba && p->tile_w == px_w && p->tile_h == px_h) {
         if (!needs_bbox) {
             return 1;
         }
-        if (p->has_cached_bbox &&
-            fabsf(p->cached_bbox_x - bbox->x) < 1e-4f &&
+        if (p->has_cached_bbox && fabsf(p->cached_bbox_x - bbox->x) < 1e-4f &&
             fabsf(p->cached_bbox_y - bbox->y) < 1e-4f &&
             fabsf(p->cached_bbox_w - bbox->w) < 1e-4f &&
             fabsf(p->cached_bbox_h - bbox->h) < 1e-4f) {
@@ -390,10 +397,11 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     p->rendering = 1;
 
     char header[256];
-    int header_len = snprintf(header, sizeof(header),
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6g\" height=\"%.6g\" "
-                              "viewBox=\"%.6g %.6g %.6g %.6g\">",
-                              tile_w, tile_h, tile_x, tile_y, tile_w, tile_h);
+    int header_len =
+        snprintf(header, sizeof(header),
+                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6g\" height=\"%.6g\" "
+                 "viewBox=\"%.6g %.6g %.6g %.6g\">",
+                 tile_w, tile_h, tile_x, tile_y, tile_w, tile_h);
     if (header_len < 0 || header_len >= (int)sizeof(header)) {
         p->rendering = 0;
         return 0;
@@ -404,8 +412,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
         float cw = bbox->w > 0.0f ? bbox->w : 1.0f;
         float ch = bbox->h > 0.0f ? bbox->h : 1.0f;
         gopen_len = snprintf(gopen, sizeof(gopen),
-                             "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
-                             bbox->x, bbox->y, cw, ch);
+                             "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">", bbox->x,
+                             bbox->y, cw, ch);
         if (gopen_len < 0 || gopen_len >= (int)sizeof(gopen)) {
             p->rendering = 0;
             return 0;
@@ -416,7 +424,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     size_t content_len = strlen(p->content);
     size_t gclose_len = strlen(gclose);
     size_t footer_len = strlen(footer);
-    size_t total = (size_t)header_len + (size_t)gopen_len + content_len + gclose_len + footer_len + 1u;
+    size_t total =
+        (size_t)header_len + (size_t)gopen_len + content_len + gclose_len + footer_len + 1u;
     char *svg = (char *)malloc(total);
     if (!svg) {
         p->rendering = 0;
@@ -453,7 +462,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     svg_render_ctx tile_ctx;
     memset(&tile_ctx, 0, sizeof(tile_ctx));
     char errbuf[128];
-    int ok = cupidimage_svg_render(&tile_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = cupidimage_svg_render(&tile_ctx, (const unsigned char *)svg, strlen(svg), errbuf,
+                                   sizeof(errbuf), &opts);
     free(svg);
     if (!ok) {
         p->rendering = 0;
@@ -477,7 +487,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
 }
 
 static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                              float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa) {
+                              float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa)
+{
     if (!p || !ctx || !bbox || !pr || !pg || !pb || !pa) {
         return 0;
     }
@@ -506,12 +517,16 @@ static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const s
     float ty = (py - tile_y) / tile_h;
     tx = tx - floorf(tx);
     ty = ty - floorf(ty);
-    if (tx < 0.0f) tx += 1.0f;
-    if (ty < 0.0f) ty += 1.0f;
+    if (tx < 0.0f)
+        tx += 1.0f;
+    if (ty < 0.0f)
+        ty += 1.0f;
     uint32_t ix = (uint32_t)floorf(tx * (float)p->tile_w);
     uint32_t iy = (uint32_t)floorf(ty * (float)p->tile_h);
-    if (ix >= p->tile_w) ix = p->tile_w - 1;
-    if (iy >= p->tile_h) iy = p->tile_h - 1;
+    if (ix >= p->tile_w)
+        ix = p->tile_w - 1;
+    if (iy >= p->tile_h)
+        iy = p->tile_h - 1;
     size_t idx = ((size_t)iy * (size_t)p->tile_w + (size_t)ix) * 4u;
     *pr = p->rgba[idx + 0];
     *pg = p->rgba[idx + 1];
@@ -520,8 +535,9 @@ static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const s
     return *pa > 0;
 }
 
-static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                                    float x, float y) {
+static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx *ctx,
+                                    const svg_bbox *bbox, float x, float y)
+{
     if (!g || g->stop_count == 0 || !ctx || !bbox) {
         return 0x00000000u;
     }
@@ -590,8 +606,9 @@ static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx 
     return cupidimage_svg_gradient_stop_color(g, t);
 }
 
-int cupidimage_svg_prepare_const_paint(const svg_style *style, int is_stroke, uint8_t *pr, uint8_t *pg,
-                                   uint8_t *pb, uint8_t *pa) {
+int cupidimage_svg_prepare_const_paint(const svg_style *style, int is_stroke, uint8_t *pr,
+                                       uint8_t *pg, uint8_t *pb, uint8_t *pa)
+{
     if (!style || !pr || !pg || !pb || !pa) {
         return 0;
     }
@@ -602,11 +619,15 @@ int cupidimage_svg_prepare_const_paint(const svg_style *style, int is_stroke, ui
     uint32_t color = is_stroke ? style->stroke_color : style->fill_color;
     uint8_t a = (uint8_t)(color & 0xFFu);
     float opacity = style->opacity * (is_stroke ? style->stroke_opacity : style->fill_opacity);
-    if (opacity < 0.0f) opacity = 0.0f;
-    if (opacity > 1.0f) opacity = 1.0f;
+    if (opacity < 0.0f)
+        opacity = 0.0f;
+    if (opacity > 1.0f)
+        opacity = 1.0f;
     float alpha = (a / 255.0f) * opacity;
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     uint8_t oa = (uint8_t)lroundf(alpha * 255.0f);
     uint8_t r = (uint8_t)(color >> 24);
     uint8_t g = (uint8_t)(color >> 16);
@@ -618,8 +639,10 @@ int cupidimage_svg_prepare_const_paint(const svg_style *style, int is_stroke, ui
     return oa > 0;
 }
 
-int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, int is_stroke, const svg_bbox *bbox,
-                            float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa) {
+int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, int is_stroke,
+                                const svg_bbox *bbox, float x, float y, uint8_t *pr, uint8_t *pg,
+                                uint8_t *pb, uint8_t *pa)
+{
     if (!style || !ctx || !bbox || !pr || !pg || !pb || !pa) {
         return 0;
     }
@@ -634,8 +657,10 @@ int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ct
             return 0;
         }
         float opacity = style->opacity * (is_stroke ? style->stroke_opacity : style->fill_opacity);
-        if (opacity < 0.0f) opacity = 0.0f;
-        if (opacity > 1.0f) opacity = 1.0f;
+        if (opacity < 0.0f)
+            opacity = 0.0f;
+        if (opacity > 1.0f)
+            opacity = 1.0f;
         uint8_t oa = (uint8_t)lroundf(sa * opacity);
         if (oa == 0) {
             return 0;
@@ -658,11 +683,15 @@ int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ct
         return 0;
     }
     float opacity = style->opacity * (is_stroke ? style->stroke_opacity : style->fill_opacity);
-    if (opacity < 0.0f) opacity = 0.0f;
-    if (opacity > 1.0f) opacity = 1.0f;
+    if (opacity < 0.0f)
+        opacity = 0.0f;
+    if (opacity > 1.0f)
+        opacity = 1.0f;
     float alpha = (a / 255.0f) * opacity;
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     uint8_t oa = (uint8_t)lroundf(alpha * 255.0f);
     if (oa == 0) {
         return 0;
@@ -677,7 +706,8 @@ int cupidimage_svg_sample_paint(const svg_style *style, const svg_render_ctx *ct
     return 1;
 }
 
-int cupidimage_svg_xml_space_preserve(const svg_tag *tag, int inherited) {
+int cupidimage_svg_xml_space_preserve(const svg_tag *tag, int inherited)
+{
     const char *space = cupidimage_svg_get_attr_exact(tag, "xml:space");
     if (!space) {
         return inherited;
@@ -691,7 +721,8 @@ int cupidimage_svg_xml_space_preserve(const svg_tag *tag, int inherited) {
     return inherited;
 }
 
-static int svg_decode_entity(const char *s, size_t *consumed) {
+static int svg_decode_entity(const char *s, size_t *consumed)
+{
     if (!s || s[0] != '&') {
         return -1;
     }
@@ -736,7 +767,8 @@ static int svg_decode_entity(const char *s, size_t *consumed) {
     return -1;
 }
 
-char *cupidimage_svg_text_normalize(const char *text, int preserve) {
+char *cupidimage_svg_text_normalize(const char *text, int preserve)
+{
     if (!text) {
         return NULL;
     }

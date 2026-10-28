@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -21,8 +21,9 @@
 
 #include "svg_internal.h"
 
-
-void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_x, float sigma_y) {
+void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_x,
+                                  float sigma_y)
+{
     if (!buf || w == 0 || h == 0) {
         return;
     }
@@ -36,11 +37,14 @@ void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float si
     const int max_radius = 96;
     if (sigma_x >= 0.01f) {
         int radius = (int)fminf((float)max_radius, ceilf(3.0f * sigma_x));
-        if (radius < 1) radius = 1;
-        if (radius > max_radius) radius = max_radius;
+        if (radius < 1)
+            radius = 1;
+        if (radius > max_radius)
+            radius = max_radius;
         float sigma_eff = sigma_x;
         float max_sigma = (float)radius / 3.0f;
-        if (sigma_eff > max_sigma) sigma_eff = max_sigma;
+        if (sigma_eff > max_sigma)
+            sigma_eff = max_sigma;
         int klen = radius * 2 + 1;
         float *kernel = (float *)malloc((size_t)klen * sizeof(float));
         if (!kernel) {
@@ -63,8 +67,10 @@ void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float si
                 float acc[4] = {0, 0, 0, 0};
                 for (int k = -radius; k <= radius; k++) {
                     int sx = (int)x + k;
-                    if (sx < 0) sx = 0;
-                    if (sx >= (int)w) sx = (int)w - 1;
+                    if (sx < 0)
+                        sx = 0;
+                    if (sx >= (int)w)
+                        sx = (int)w - 1;
                     size_t idx = ((size_t)y * w + (size_t)sx) * 4u;
                     float wgt = kernel[k + radius];
                     acc[0] += buf[idx + 0] * wgt;
@@ -84,11 +90,14 @@ void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float si
     }
     if (sigma_y >= 0.01f) {
         int radius = (int)fminf((float)max_radius, ceilf(3.0f * sigma_y));
-        if (radius < 1) radius = 1;
-        if (radius > max_radius) radius = max_radius;
+        if (radius < 1)
+            radius = 1;
+        if (radius > max_radius)
+            radius = max_radius;
         float sigma_eff = sigma_y;
         float max_sigma = (float)radius / 3.0f;
-        if (sigma_eff > max_sigma) sigma_eff = max_sigma;
+        if (sigma_eff > max_sigma)
+            sigma_eff = max_sigma;
         int klen = radius * 2 + 1;
         float *kernel = (float *)malloc((size_t)klen * sizeof(float));
         if (!kernel) {
@@ -111,8 +120,10 @@ void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float si
                 float acc[4] = {0, 0, 0, 0};
                 for (int k = -radius; k <= radius; k++) {
                     int sy = (int)y + k;
-                    if (sy < 0) sy = 0;
-                    if (sy >= (int)h) sy = (int)h - 1;
+                    if (sy < 0)
+                        sy = 0;
+                    if (sy >= (int)h)
+                        sy = (int)h - 1;
                     size_t idx = ((size_t)sy * w + (size_t)x) * 4u;
                     float wgt = kernel[k + radius];
                     acc[0] += buf[idx + 0] * wgt;

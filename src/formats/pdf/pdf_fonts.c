@@ -1,30 +1,35 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 
 #include <ctype.h>
-#include <stdint.h>
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pdf_internal.h"
 
-void cupidimage_pdf_font_table_init(pdf_font_table *table) {
-    if (!table) return;
+void cupidimage_pdf_font_table_init(pdf_font_table *table)
+{
+    if (!table)
+        return;
     table->cid_bytes = table->program_bytes = 0;
     table->fonts = NULL;
     table->count = 0;
     table->cap = 0;
 }
 
-void cupidimage_pdf_font_table_free(pdf_font_table *table) {
-    if (!table) return;
+void cupidimage_pdf_font_table_free(pdf_font_table *table)
+{
+    if (!table)
+        return;
     for (int i = 0; i < table->count; i++) {
         if (table->fonts[i].type3) {
             cupidimage_pdf_object_view_release(&table->fonts[i].type3->dictionary);
-            free(table->fonts[i].type3);table->fonts[i].type3=NULL;
+            free(table->fonts[i].type3);
+            table->fonts[i].type3 = NULL;
         }
         cupidimage_pdf_font_program_free(table->fonts[i].program);
         table->fonts[i].program = NULL;
@@ -43,7 +48,8 @@ void cupidimage_pdf_font_table_free(pdf_font_table *table) {
     table->cap = 0;
 }
 
-static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name, int object) {
+static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name, int object)
+{
     size_t name_length = name ? strlen(name) : 0;
     if (!table || (!object && !name_length) || name_length >= 32) {
         return NULL;
@@ -54,7 +60,7 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name,
             if (table->fonts[i].type3) {
                 cupidimage_pdf_object_view_release(&table->fonts[i].type3->dictionary);
                 free(table->fonts[i].type3);
-                table->fonts[i].type3=NULL;
+                table->fonts[i].type3 = NULL;
             }
             if (table->fonts[i].program) {
                 table->program_bytes -= cupidimage_pdf_font_program_bytes(table->fonts[i].program);
@@ -76,10 +82,12 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name,
         }
     }
 
-    if (table->count >= 256) return NULL;
+    if (table->count >= 256)
+        return NULL;
     if (table->count >= table->cap) {
         int new_cap = (table->cap > 0) ? table->cap * 2 : 8;
-        pdf_font_map *new_fonts = (pdf_font_map *)realloc(table->fonts, (size_t)new_cap * sizeof(pdf_font_map));
+        pdf_font_map *new_fonts =
+            (pdf_font_map *)realloc(table->fonts, (size_t)new_cap * sizeof(pdf_font_map));
         if (!new_fonts) {
             return NULL;
         }
@@ -89,13 +97,15 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name,
 
     pdf_font_map *font = &table->fonts[table->count++];
     memset(font, 0, sizeof(*font));
-    if (name) memcpy(font->name, name, name_length + 1);
+    if (name)
+        memcpy(font->name, name, name_length + 1);
     font->graphics_object = object;
     font->max_src_len = 1;
     return font;
 }
 
-const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, const char *name) {
+const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, const char *name)
+{
     if (!table || !name || !*name) {
         return NULL;
     }
@@ -107,19 +117,24 @@ const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, 
     return NULL;
 }
 
-const pdf_font_map *cupidimage_pdf_font_table_object(const pdf_font_table *table, int object) {
-    if (!table || object <= 0) return NULL;
+const pdf_font_map *cupidimage_pdf_font_table_object(const pdf_font_table *table, int object)
+{
+    if (!table || object <= 0)
+        return NULL;
     for (int i = 0; i < table->count; i++)
-        if (table->fonts[i].graphics_object == object) return &table->fonts[i];
+        if (table->fonts[i].graphics_object == object)
+            return &table->fonts[i];
     return NULL;
 }
 
 static int pdf_font_add_tounicode(pdf_font_map *font, uint32_t src_code, uint8_t src_len,
-                                  uint32_t dst_codepoint) {
+                                  uint32_t dst_codepoint)
+{
     if (!font || src_len == 0) {
         return 0;
     }
-    if (font->count >= 65536) return 0;
+    if (font->count >= 65536)
+        return 0;
     if (font->count >= font->cap) {
         int new_cap = (font->cap > 0) ? font->cap * 2 : 256;
         pdf_tounicode_entry *new_entries = (pdf_tounicode_entry *)realloc(
@@ -150,7 +165,8 @@ typedef enum {
 } pdf_cmap_tok_type;
 
 static pdf_cmap_tok_type pdf_cmap_next_token(const unsigned char *data, size_t len, size_t *pos,
-                                             char *tok, size_t tok_cap) {
+                                             char *tok, size_t tok_cap)
+{
     if (!data || !pos || !tok || tok_cap == 0) {
         return PDF_CMAP_TOK_EOF;
     }
@@ -216,14 +232,20 @@ static pdf_cmap_tok_type pdf_cmap_next_token(const unsigned char *data, size_t l
     return (n > 0) ? PDF_CMAP_TOK_WORD : PDF_CMAP_TOK_EOF;
 }
 
-static int pdf_hex_value(char c) {
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+static int pdf_hex_value(char c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
     return -1;
 }
 
-static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_len, uint32_t *first_u16) {
+static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_len,
+                                uint32_t *first_u16)
+{
     if (!hex || !*hex || !code || !code_len || !first_u16) {
         return 0;
     }
@@ -263,7 +285,9 @@ static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_l
     return 1;
 }
 
-static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream_len, pdf_font_map *font) {
+static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream_len,
+                                      pdf_font_map *font)
+{
     if (!stream || !font) {
         return 0;
     }
@@ -278,7 +302,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
 
         if (t == PDF_CMAP_TOK_WORD && strcmp(tok, "beginbfchar") == 0) {
             while (1) {
-                pdf_cmap_tok_type a = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type a =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (a == PDF_CMAP_TOK_EOF) {
                     return 0;
                 }
@@ -291,7 +316,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                 char src_hex[256];
                 snprintf(src_hex, sizeof(src_hex), "%s", tok);
 
-                pdf_cmap_tok_type b = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type b =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (b != PDF_CMAP_TOK_HEX) {
                     return 0;
                 }
@@ -303,15 +329,18 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                 uint32_t dummy = 0;
                 if (pdf_cmap_hex_to_code(src_hex, &src_code, &src_len, &dummy) &&
                     pdf_cmap_hex_to_code(tok, &dummy, &dst_len, &dst)) {
-                    if (!pdf_font_add_tounicode(font, src_code, src_len, dst)) return 0;
-                } else return 0;
+                    if (!pdf_font_add_tounicode(font, src_code, src_len, dst))
+                        return 0;
+                } else
+                    return 0;
             }
             continue;
         }
 
         if (t == PDF_CMAP_TOK_WORD && strcmp(tok, "beginbfrange") == 0) {
             while (1) {
-                pdf_cmap_tok_type a = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type a =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (a == PDF_CMAP_TOK_EOF) {
                     return 0;
                 }
@@ -324,7 +353,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                 char start_hex[256];
                 snprintf(start_hex, sizeof(start_hex), "%s", tok);
 
-                pdf_cmap_tok_type b = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type b =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (b != PDF_CMAP_TOK_HEX) {
                     return 0;
                 }
@@ -339,28 +369,40 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                     return 0;
                 }
 
-                pdf_cmap_tok_type c = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type c =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (c == PDF_CMAP_TOK_HEX) {
                     if (!pdf_cmap_hex_to_code(tok, &dummy, &dst_len, &dst_first)) {
                         return 0;
                     }
                     uint64_t count64 = (uint64_t)end_code - start_code + 1;
-                    if (count64 > 65536u - (unsigned)font->count || count64-1 > UINT32_MAX-dst_first) return 0;
+                    if (count64 > 65536u - (unsigned)font->count ||
+                        count64 - 1 > UINT32_MAX - dst_first)
+                        return 0;
                     uint32_t count = (uint32_t)count64;
                     for (uint32_t i = 0; i < count; i++) {
-                        if (!pdf_font_add_tounicode(font, start_code + i, start_len, dst_first + i)) return 0;
+                        if (!pdf_font_add_tounicode(font, start_code + i, start_len, dst_first + i))
+                            return 0;
                     }
                 } else if (c == PDF_CMAP_TOK_LBRACK) {
-                    if ((uint64_t)end_code-start_code+1 > 65536u-(unsigned)font->count) return 0;
+                    if ((uint64_t)end_code - start_code + 1 > 65536u - (unsigned)font->count)
+                        return 0;
                     uint64_t current = start_code;
                     while (current <= end_code) {
-                        pdf_cmap_tok_type d = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
-                        if (d != PDF_CMAP_TOK_HEX || !pdf_cmap_hex_to_code(tok, &dummy, &dst_len, &dst_first)) return 0;
-                        if (!pdf_font_add_tounicode(font, (uint32_t)current, start_len, dst_first)) return 0;
+                        pdf_cmap_tok_type d =
+                            pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                        if (d != PDF_CMAP_TOK_HEX ||
+                            !pdf_cmap_hex_to_code(tok, &dummy, &dst_len, &dst_first))
+                            return 0;
+                        if (!pdf_font_add_tounicode(font, (uint32_t)current, start_len, dst_first))
+                            return 0;
                         current++;
                     }
-                    if (pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok)) != PDF_CMAP_TOK_RBRACK) return 0;
-                } else return 0;
+                    if (pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok)) !=
+                        PDF_CMAP_TOK_RBRACK)
+                        return 0;
+                } else
+                    return 0;
             }
             continue;
         }
@@ -369,31 +411,39 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
     return 1;
 }
 
-static int pdf_font_entry_compare(const void *left, const void *right) {
+static int pdf_font_entry_compare(const void *left, const void *right)
+{
     const pdf_tounicode_entry *a = (const pdf_tounicode_entry *)left;
     const pdf_tounicode_entry *b = (const pdf_tounicode_entry *)right;
-    if (a->src_len != b->src_len) return a->src_len < b->src_len ? -1 : 1;
-    if (a->src_code != b->src_code) return a->src_code < b->src_code ? -1 : 1;
+    if (a->src_len != b->src_len)
+        return a->src_len < b->src_len ? -1 : 1;
+    if (a->src_code != b->src_code)
+        return a->src_code < b->src_code ? -1 : 1;
     return a->order < b->order ? -1 : a->order > b->order;
 }
 
 /* Sort once rather than searching the whole map for every insertion. Preserve
  * last-definition wins when the same source code appears more than once. */
-static void pdf_font_sort_map(pdf_font_map *font) {
-    if (!font->count) return;
+static void pdf_font_sort_map(pdf_font_map *font)
+{
+    if (!font->count)
+        return;
     qsort(font->entries, (size_t)font->count, sizeof(*font->entries), pdf_font_entry_compare);
     int used = 0;
     for (int i = 0; i < font->count; i++) {
-        if (used && font->entries[used-1].src_len == font->entries[i].src_len &&
-            font->entries[used-1].src_code == font->entries[i].src_code) font->entries[used-1] = font->entries[i];
-        else font->entries[used++] = font->entries[i];
+        if (used && font->entries[used - 1].src_len == font->entries[i].src_len &&
+            font->entries[used - 1].src_code == font->entries[i].src_code)
+            font->entries[used - 1] = font->entries[i];
+        else
+            font->entries[used++] = font->entries[i];
     }
     font->count = used;
 }
 
 static int pdf_parse_font_tounicode(const unsigned char *data, size_t size,
-                                    const pdf_object_view *font_view, pdf_font_map *font,
-                                    char *err, size_t errcap) {
+                                    const pdf_object_view *font_view, pdf_font_map *font, char *err,
+                                    size_t errcap)
+{
     int tounicode_obj = 0;
     size_t value_pos;
     if (!cupidimage_pdf_page_value(font_view, "ToUnicode", &value_pos)) {
@@ -414,7 +464,8 @@ static int pdf_parse_font_tounicode(const unsigned char *data, size_t size,
     size_t stream_len = 0, decoded_len = 0;
     unsigned char *decoded_owned = NULL;
     if (!cupidimage_pdf_object_stream(data, size, &cmap_obj, &stream_ptr, &stream_len) ||
-        !cupidimage_pdf_decode_stream(&cmap_obj, stream_ptr, stream_len, &decoded_owned, &decoded_len)) {
+        !cupidimage_pdf_decode_stream(&cmap_obj, stream_ptr, stream_len, &decoded_owned,
+                                      &decoded_len)) {
         cupidimage_pdf_object_view_release(&cmap_obj);
         cupidimage_set_err(err, errcap, "pdf: invalid or unsupported ToUnicode stream");
         return 0;
@@ -422,7 +473,8 @@ static int pdf_parse_font_tounicode(const unsigned char *data, size_t size,
     const unsigned char *decoded = decoded_owned;
 
     int ok = pdf_parse_tounicode_stream(decoded, decoded_len, font);
-    if (ok) pdf_font_sort_map(font);
+    if (ok)
+        pdf_font_sort_map(font);
     free(decoded_owned);
     cupidimage_pdf_object_view_release(&cmap_obj);
     if (!ok) {
@@ -435,40 +487,60 @@ static int pdf_parse_font_tounicode(const unsigned char *data, size_t size,
 /* Resolve only the named outer dictionary entry, preserving resource scope. */
 int cupidimage_pdf_font_dictionary_at(const unsigned char *data, size_t size,
                                       const pdf_object_view *parent, size_t pos,
-                                      pdf_object_view *out) {
+                                      pdf_object_view *out)
+{
     int object;
     if (cupidimage_pdf_page_reference(parent, pos, &object)) {
-        if (!cupidimage_pdf_get_object_content(data, size, object, out)) return 0;
+        if (!cupidimage_pdf_get_object_content(data, size, object, out))
+            return 0;
         pos = 0;
-    } else { out->data = parent->data; out->len = parent->len; }
+    } else {
+        out->data = parent->data;
+        out->len = parent->len;
+    }
     cupidimage_pdf_skip_ws_and_comments(out->data, out->len, &pos);
-    if (out->len-pos < 2 || memcmp(out->data+pos, "<<", 2)) goto fail;
+    if (out->len - pos < 2 || memcmp(out->data + pos, "<<", 2))
+        goto fail;
     size_t start = pos;
     pos += 2;
     unsigned depth = 1;
     while (pos < out->len) {
         cupidimage_pdf_skip_ws_and_comments(out->data, out->len, &pos);
-        if (pos == out->len) break;
+        if (pos == out->len)
+            break;
         unsigned char c = out->data[pos++];
         if (c == '(') {
             unsigned nesting = 1;
             while (pos < out->len && nesting) {
                 c = out->data[pos++];
-                if (c == '\\' && pos < out->len) pos++;
-                else if (c == '(') nesting++;
-                else if (c == ')') nesting--;
+                if (c == '\\' && pos < out->len)
+                    pos++;
+                else if (c == '(')
+                    nesting++;
+                else if (c == ')')
+                    nesting--;
             }
-            if (nesting) break;
+            if (nesting)
+                break;
         } else if (c == '<') {
-            if (pos < out->len && out->data[pos] == '<') { pos++; if (++depth > 64) break; }
-            else {
-                while (pos < out->len && out->data[pos] != '>') pos++;
-                if (pos == out->len) break;
+            if (pos < out->len && out->data[pos] == '<') {
+                pos++;
+                if (++depth > 64)
+                    break;
+            } else {
+                while (pos < out->len && out->data[pos] != '>')
+                    pos++;
+                if (pos == out->len)
+                    break;
                 pos++;
             }
         } else if (c == '>' && pos < out->len && out->data[pos] == '>') {
             pos++;
-            if (--depth == 0) { out->data += start; out->len = pos-start; return 1; }
+            if (--depth == 0) {
+                out->data += start;
+                out->len = pos - start;
+                return 1;
+            }
         }
     }
 fail:
@@ -477,8 +549,8 @@ fail:
 }
 
 static int pdf_font_dictionary(const unsigned char *data, size_t size,
-                               const pdf_object_view *parent, const char *key,
-                               pdf_object_view *out) {
+                               const pdf_object_view *parent, const char *key, pdf_object_view *out)
+{
     size_t pos;
     return cupidimage_pdf_page_value(parent, key, &pos) &&
            cupidimage_pdf_font_dictionary_at(data, size, parent, pos, out);
@@ -486,67 +558,90 @@ static int pdf_font_dictionary(const unsigned char *data, size_t size,
 
 /* Simple-font widths use character codes before ToUnicode mapping. */
 static int pdf_parse_font_widths(const unsigned char *data, size_t size,
-                                 const pdf_object_view *view, pdf_font_map *font) {
+                                 const pdf_object_view *view, pdf_font_map *font)
+{
     size_t pos;
-    if (cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type0")) return 1;
-    if (!font->type3 && cupidimage_pdf_page_value(view,"FontDescriptor",&pos)) {
-        pdf_object_view descriptor={0};
-        if (!pdf_font_dictionary(data,size,view,"FontDescriptor",&descriptor)) return 0;
-        if (cupidimage_pdf_page_value(&descriptor,"MissingWidth",&pos)) {
+    if (cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type0"))
+        return 1;
+    if (!font->type3 && cupidimage_pdf_page_value(view, "FontDescriptor", &pos)) {
+        pdf_object_view descriptor = {0};
+        if (!pdf_font_dictionary(data, size, view, "FontDescriptor", &descriptor))
+            return 0;
+        if (cupidimage_pdf_page_value(&descriptor, "MissingWidth", &pos)) {
             double width;
-            int valid=cupidimage_pdf_parse_pdf_number(descriptor.data,descriptor.len,&pos,&width) &&
-                isfinite(width) && fabs(width)<=1e6 &&
-                (pos==descriptor.len || cupidimage_pdf_is_ws(descriptor.data[pos]) || cupidimage_pdf_is_delim(descriptor.data[pos]));
-            if (!valid) { cupidimage_pdf_object_view_release(&descriptor); return 0; }
-            font->missing_width=width/1000.0;
-            font->has_missing_width=1;
+            int valid =
+                cupidimage_pdf_parse_pdf_number(descriptor.data, descriptor.len, &pos, &width) &&
+                isfinite(width) && fabs(width) <= 1e6 &&
+                (pos == descriptor.len || cupidimage_pdf_is_ws(descriptor.data[pos]) ||
+                 cupidimage_pdf_is_delim(descriptor.data[pos]));
+            if (!valid) {
+                cupidimage_pdf_object_view_release(&descriptor);
+                return 0;
+            }
+            font->missing_width = width / 1000.0;
+            font->has_missing_width = 1;
         }
         cupidimage_pdf_object_view_release(&descriptor);
     }
-    if (!cupidimage_pdf_page_value(view,"Widths",&pos)) return font->type3==NULL;
-    int first,last;
-    if (!cupidimage_pdf_dictionary_integer(data,size,view,"FirstChar",&first) ||
-        !cupidimage_pdf_dictionary_integer(data,size,view,"LastChar",&last) ||
-        first<0 || last<first || last>255) return 0;
-    pdf_object_view array={0};
+    if (!cupidimage_pdf_page_value(view, "Widths", &pos))
+        return font->type3 == NULL;
+    int first, last;
+    if (!cupidimage_pdf_dictionary_integer(data, size, view, "FirstChar", &first) ||
+        !cupidimage_pdf_dictionary_integer(data, size, view, "LastChar", &last) || first < 0 ||
+        last < first || last > 255)
+        return 0;
+    pdf_object_view array = {0};
     int object;
-    if (cupidimage_pdf_page_reference(view,pos,&object)) {
-        if (!cupidimage_pdf_get_object_content(data,size,object,&array)) return 0;
-        pos=0;
-    } else { array.data=view->data; array.len=view->len; }
-    cupidimage_pdf_skip_ws_and_comments(array.data,array.len,&pos);
-    int valid=pos<array.len && array.data[pos++]=='[';
-    for (int code=first;valid && code<=last;code++) {
+    if (cupidimage_pdf_page_reference(view, pos, &object)) {
+        if (!cupidimage_pdf_get_object_content(data, size, object, &array))
+            return 0;
+        pos = 0;
+    } else {
+        array.data = view->data;
+        array.len = view->len;
+    }
+    cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+    int valid = pos < array.len && array.data[pos++] == '[';
+    for (int code = first; valid && code <= last; code++) {
         double width;
-        cupidimage_pdf_skip_ws_and_comments(array.data,array.len,&pos);
-        valid=cupidimage_pdf_parse_pdf_number(array.data,array.len,&pos,&width) &&
-              isfinite(width) && fabs(width)<=1e6;
+        cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+        valid = cupidimage_pdf_parse_pdf_number(array.data, array.len, &pos, &width) &&
+                isfinite(width) && fabs(width) <= 1e6;
         if (valid) {
-            font->widths[code]=font->type3?width*font->type3->matrix[0]:width/1000.0;
-            if (font->type3)font->type3->widths[code]=width;
+            font->widths[code] = font->type3 ? width * font->type3->matrix[0] : width / 1000.0;
+            if (font->type3)
+                font->type3->widths[code] = width;
         }
     }
-    cupidimage_pdf_skip_ws_and_comments(array.data,array.len,&pos);
-    valid=valid && pos<array.len && array.data[pos]==']';
+    cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
+    valid = valid && pos < array.len && array.data[pos] == ']';
     cupidimage_pdf_object_view_release(&array);
-    if (!valid) return 0;
-    font->first_char=first; font->last_char=last; font->has_widths=1;
+    if (!valid)
+        return 0;
+    font->first_char = first;
+    font->last_char = last;
+    font->has_widths = 1;
     return 1;
 }
 
 static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
-                                       const unsigned char *dict_data, size_t dict_start, size_t dict_end,
-                                       pdf_font_table *table, int graphics, char *err, size_t errcap) {
-    pdf_object_view dictionary = {dict_data, dict_end+2, NULL};
+                                       const unsigned char *dict_data, size_t dict_start,
+                                       size_t dict_end, pdf_font_table *table, int graphics,
+                                       char *err, size_t errcap)
+{
+    pdf_object_view dictionary = {dict_data, dict_end + 2, NULL};
     size_t pos = dict_start;
     while (pos < dict_end) {
         cupidimage_pdf_skip_ws_and_comments(dict_data, dict_end, &pos);
-        if (pos == dict_end) break;
+        if (pos == dict_end)
+            break;
         char name[128];
-        if (!cupidimage_pdf_read_name(&dictionary, &pos, name)) return 0;
+        if (!cupidimage_pdf_read_name(&dictionary, &pos, name))
+            return 0;
         cupidimage_pdf_skip_ws_and_comments(dict_data, dict_end, &pos);
         pdf_object_view font_view = {0};
-        if (!pdf_font_dictionary(data, size, &dictionary, name, &font_view)) return 0;
+        if (!pdf_font_dictionary(data, size, &dictionary, name, &font_view))
+            return 0;
         int object;
         if (cupidimage_pdf_page_reference(&dictionary, pos, &object)) {
             double ignored;
@@ -557,8 +652,9 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             pos++;
         } else {
             /* Inline dictionaries borrow this resource dictionary's storage. */
-            if (font_view.data != dict_data+pos || font_view.len > dict_end-pos) {
-                cupidimage_pdf_object_view_release(&font_view); return 0;
+            if (font_view.data != dict_data + pos || font_view.len > dict_end - pos) {
+                cupidimage_pdf_object_view_release(&font_view);
+                return 0;
             }
             pos += font_view.len;
         }
@@ -570,10 +666,13 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
                 continue;
             }
             double font_size;
-            int valid = cupidimage_pdf_graphics_font(data, size, &font_view, &graphics_object, &font_size);
+            int valid =
+                cupidimage_pdf_graphics_font(data, size, &font_view, &graphics_object, &font_size);
             cupidimage_pdf_object_view_release(&font_view);
-            if (!valid) return 0;
-            if (!graphics_object || cupidimage_pdf_font_table_object(table, graphics_object)) continue;
+            if (!valid)
+                return 0;
+            if (!graphics_object || cupidimage_pdf_font_table_object(table, graphics_object))
+                continue;
             pdf_object_view font_object = {0};
             if (!cupidimage_pdf_get_object_content(data, size, graphics_object, &font_object) ||
                 !cupidimage_pdf_font_dictionary_at(data, size, &font_object, 0, &font_view)) {
@@ -588,18 +687,19 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             cupidimage_pdf_object_view_release(&font_object);
         }
         pdf_font_map *font = pdf_font_table_add(table, graphics ? NULL : name, graphics_object);
-        int ok = font &&
-                 cupidimage_pdf_parse_cid_font(data, size, &font_view, font, &table->cid_bytes) &&
-                 cupidimage_pdf_parse_type3_font(data, size, &font_view, font) &&
-                 pdf_parse_font_widths(data, size, &font_view, font) &&
-                 cupidimage_pdf_parse_font_program(data, size, &font_view, font,
-                                                    &table->program_bytes) &&
-                 cupidimage_pdf_parse_standard_font(data, size, &font_view, font, &table->program_bytes);
+        int ok =
+            font &&
+            cupidimage_pdf_parse_cid_font(data, size, &font_view, font, &table->cid_bytes) &&
+            cupidimage_pdf_parse_type3_font(data, size, &font_view, font) &&
+            pdf_parse_font_widths(data, size, &font_view, font) &&
+            cupidimage_pdf_parse_font_program(data, size, &font_view, font,
+                                              &table->program_bytes) &&
+            cupidimage_pdf_parse_standard_font(data, size, &font_view, font, &table->program_bytes);
         if (ok) {
             /* Extraction metadata must not discard a valid glyph program or CID metrics. */
             int independent = font->program || font->type3 || font->cid;
-            ok = pdf_parse_font_tounicode(data, size, &font_view, font,
-                                         independent ? NULL : err, independent ? 0 : errcap);
+            ok = pdf_parse_font_tounicode(data, size, &font_view, font, independent ? NULL : err,
+                                          independent ? 0 : errcap);
             if (!ok && independent) {
                 free(font->entries);
                 font->entries = NULL;
@@ -609,40 +709,48 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             }
         }
         cupidimage_pdf_object_view_release(&font_view);
-        if (!ok) return 0;
+        if (!ok)
+            return 0;
     }
     return 1;
 }
 
 static int pdf_collect_graphics_fonts(const unsigned char *data, size_t size,
                                       const pdf_object_view *resources, pdf_font_table *table,
-                                      char *err, size_t errcap) {
+                                      char *err, size_t errcap)
+{
     size_t pos;
-    if (!cupidimage_pdf_page_value(resources, "ExtGState", &pos)) return 1;
+    if (!cupidimage_pdf_page_value(resources, "ExtGState", &pos))
+        return 1;
     pdf_object_view states = {0};
     int ok = pdf_font_dictionary(data, size, resources, "ExtGState", &states) &&
-             pdf_collect_fonts_from_dict(data, size, states.data, 2, states.len - 2,
-                                         table, 1, err, errcap);
+             pdf_collect_fonts_from_dict(data, size, states.data, 2, states.len - 2, table, 1, err,
+                                         errcap);
     cupidimage_pdf_object_view_release(&states);
     return ok;
 }
 
-int cupidimage_pdf_collect_resource_fonts(const unsigned char *data,size_t size,
-                                         const pdf_object_view *owner,pdf_font_table *table,
-                                         char *err,size_t errcap) {
-    pdf_object_view resources={0},fonts={0};
-    int ok=pdf_font_dictionary(data,size,owner,"Resources",&resources);
+int cupidimage_pdf_collect_resource_fonts(const unsigned char *data, size_t size,
+                                          const pdf_object_view *owner, pdf_font_table *table,
+                                          char *err, size_t errcap)
+{
+    pdf_object_view resources = {0}, fonts = {0};
+    int ok = pdf_font_dictionary(data, size, owner, "Resources", &resources);
     size_t pos;
-    if(ok && cupidimage_pdf_page_value(&resources,"Font",&pos))
-        ok=pdf_font_dictionary(data,size,&resources,"Font",&fonts) &&
-           pdf_collect_fonts_from_dict(data,size,fonts.data,2,fonts.len-2,table,0,err,errcap);
-    if (ok) ok = pdf_collect_graphics_fonts(data, size, &resources, table, err, errcap);
-    cupidimage_pdf_object_view_release(&fonts);cupidimage_pdf_object_view_release(&resources);
+    if (ok && cupidimage_pdf_page_value(&resources, "Font", &pos))
+        ok = pdf_font_dictionary(data, size, &resources, "Font", &fonts) &&
+             pdf_collect_fonts_from_dict(data, size, fonts.data, 2, fonts.len - 2, table, 0, err,
+                                         errcap);
+    if (ok)
+        ok = pdf_collect_graphics_fonts(data, size, &resources, table, err, errcap);
+    cupidimage_pdf_object_view_release(&fonts);
+    cupidimage_pdf_object_view_release(&resources);
     return ok;
 }
 
 int cupidimage_pdf_collect_page_fonts(const unsigned char *data, size_t size, int page_obj,
-                                  pdf_font_table *table, char *err, size_t errcap) {
+                                      pdf_font_table *table, char *err, size_t errcap)
+{
     if (!table) {
         cupidimage_set_err(err, errcap, "pdf: null font table");
         return 0;
@@ -650,22 +758,26 @@ int cupidimage_pdf_collect_page_fonts(const unsigned char *data, size_t size, in
 
     for (unsigned depth = 0; page_obj > 0 && depth < 64; depth++) {
         pdf_object_view page = {0}, resources = {0}, fonts = {0};
-        if (!cupidimage_pdf_get_object_content(data, size, page_obj, &page)) return 0;
+        if (!cupidimage_pdf_get_object_content(data, size, page_obj, &page))
+            return 0;
         size_t pos;
         int parent = 0;
         if (cupidimage_pdf_page_value(&page, "Resources", &pos)) {
             int ok = pdf_font_dictionary(data, size, &page, "Resources", &resources);
             if (ok && cupidimage_pdf_page_value(&resources, "Font", &pos)) {
                 ok = pdf_font_dictionary(data, size, &resources, "Font", &fonts) &&
-                     pdf_collect_fonts_from_dict(data, size, fonts.data, 2, fonts.len-2, table, 0, err, errcap);
+                     pdf_collect_fonts_from_dict(data, size, fonts.data, 2, fonts.len - 2, table, 0,
+                                                 err, errcap);
             }
-            if (ok) ok = pdf_collect_graphics_fonts(data, size, &resources, table, err, errcap);
+            if (ok)
+                ok = pdf_collect_graphics_fonts(data, size, &resources, table, err, errcap);
             cupidimage_pdf_object_view_release(&fonts);
             cupidimage_pdf_object_view_release(&resources);
             cupidimage_pdf_object_view_release(&page);
             return ok;
         }
-        if (cupidimage_pdf_page_value(&page, "Parent", &pos)) cupidimage_pdf_page_reference(&page, pos, &parent);
+        if (cupidimage_pdf_page_value(&page, "Parent", &pos))
+            cupidimage_pdf_page_reference(&page, pos, &parent);
         cupidimage_pdf_object_view_release(&page);
         page_obj = parent;
     }

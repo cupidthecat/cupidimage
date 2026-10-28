@@ -7,7 +7,8 @@ typedef struct {
     unsigned char rgb[3];
 } probe;
 
-int main(void) {
+int main(void)
+{
     static const probe probes[] = {
         {"c stroke", "3 w 12 12 m 12 60 60 60 60 12 c S", 36, 48, {0, 0, 0}},
         {"c leaves chord open", "3 w 12 12 m 12 60 60 60 60 12 c S", 36, 12, {255, 255, 255}},
@@ -81,8 +82,8 @@ int main(void) {
         } else {
             const unsigned char *pixel = image.rgba + ((72 - p->y) * 4 / 3 * 96 + p->x * 4 / 3) * 4;
             if (memcmp(pixel, p->rgb, 3) || pixel[3] != 255) {
-                fprintf(stderr, "FAIL %s: got %u,%u,%u expected %u,%u,%u\n", p->name,
-                        pixel[0], pixel[1], pixel[2], p->rgb[0], p->rgb[1], p->rgb[2]);
+                fprintf(stderr, "FAIL %s: got %u,%u,%u expected %u,%u,%u\n", p->name, pixel[0],
+                        pixel[1], pixel[2], p->rgb[0], p->rgb[1], p->rgb[2]);
                 failures++;
             }
         }

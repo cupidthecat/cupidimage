@@ -33,6 +33,27 @@ make -j2 CC=clang OBJDIR=obj/clang BINDIR=bin/clang \
 Python 3 and Bash are needed for the regression suite. Optional asset generators
 have their own dependencies; routine decoding and tests use committed fixtures.
 
+## Source formatting
+
+Project C and C++ files use the LLVM-based settings in `.clang-format`.
+The formatter version is pinned in `.clang-format-version` so local edits and CI
+produce the same result. This is a development tool, not a library dependency.
+
+Install it in a virtual environment:
+
+```sh
+python3 -m venv .cache/format-venv
+.cache/format-venv/bin/python -m pip install "clang-format==$(cat .clang-format-version)"
+make format CLANG_FORMAT="$PWD/.cache/format-venv/bin/clang-format"
+make format-check CLANG_FORMAT="$PWD/.cache/format-venv/bin/clang-format"
+```
+
+If the pinned `clang-format` is already on `PATH`, omit `CLANG_FORMAT`.
+`make format` rewrites tracked project sources; `make format-check` checks them
+without changing files. Add new source files to Git before running either target.
+Vendored files under `third_party/` and generated `.inc` tables stay unchanged.
+CI runs the check on pushes and pull requests.
+
 ## Install the library
 
 The install script installs the static library and public header, not the CLI:

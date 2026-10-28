@@ -19,5 +19,6 @@ int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, s
                               size_t clear_length, size_t encrypted_length);
 void cupidimage_pdf_type1_free(pdf_type1_font *font);
 unsigned cupidimage_pdf_type1_name(const pdf_type1_font *font, const char *name);
-int cupidimage_pdf_type1_outline(const pdf_type1_font *font, unsigned glyph, pdf_cff_outline *outline);
+int cupidimage_pdf_type1_outline(const pdf_type1_font *font, unsigned glyph,
+                                 pdf_cff_outline *outline);
 #endif

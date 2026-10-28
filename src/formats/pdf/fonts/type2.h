@@ -14,7 +14,9 @@ typedef struct {
     unsigned base, accent;
     double accent_x, accent_y;
 } pdf_cff_outline;
-int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph, pdf_cff_outline *outline);
+int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph,
+                                 pdf_cff_outline *outline);
 void cupidimage_pdf_type2_free(pdf_cff_outline *outline);
-int cupidimage_pdf_cff_glyph_outline(const pdf_cff_font *font, unsigned glyph, pdf_cff_outline *outline);
+int cupidimage_pdf_cff_glyph_outline(const pdf_cff_font *font, unsigned glyph,
+                                     pdf_cff_outline *outline);
 #endif

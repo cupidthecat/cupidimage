@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -28,7 +28,8 @@ static void svg_stop_apply_style(const char *style, uint32_t *color, int *color_
 static int svg_stop_offset_cmp(const void *a, const void *b);
 static void svg_gradient_sort_stops(svg_gradient *g);
 
-void cupidimage_svg_defs_init(svg_defs *defs) {
+void cupidimage_svg_defs_init(svg_defs *defs)
+{
     if (!defs) {
         return;
     }
@@ -61,7 +62,8 @@ void cupidimage_svg_defs_init(svg_defs *defs) {
     defs->filter_cap = 0;
 }
 
-void cupidimage_svg_defs_free(svg_defs *defs) {
+void cupidimage_svg_defs_free(svg_defs *defs)
+{
     if (!defs) {
         return;
     }
@@ -150,13 +152,15 @@ void cupidimage_svg_defs_free(svg_defs *defs) {
     defs->filter_cap = 0;
 }
 
-svg_gradient *cupidimage_svg_defs_add_gradient(svg_defs *defs, const char *id, svg_paint_type type) {
+svg_gradient *cupidimage_svg_defs_add_gradient(svg_defs *defs, const char *id, svg_paint_type type)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
     if (defs->gradient_count >= defs->gradient_cap) {
         int new_cap = defs->gradient_cap ? defs->gradient_cap * 2 : 16;
-        svg_gradient *n = (svg_gradient *)realloc(defs->gradients, (size_t)new_cap * sizeof(svg_gradient));
+        svg_gradient *n =
+            (svg_gradient *)realloc(defs->gradients, (size_t)new_cap * sizeof(svg_gradient));
         if (!n) {
             return NULL;
         }
@@ -200,7 +204,8 @@ svg_gradient *cupidimage_svg_defs_add_gradient(svg_defs *defs, const char *id, s
     return g;
 }
 
-const svg_gradient *cupidimage_svg_defs_find_gradient(const svg_defs *defs, const char *id) {
+const svg_gradient *cupidimage_svg_defs_find_gradient(const svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -212,13 +217,15 @@ const svg_gradient *cupidimage_svg_defs_find_gradient(const svg_defs *defs, cons
     return NULL;
 }
 
-svg_pattern *cupidimage_svg_defs_add_pattern(svg_defs *defs, const char *id) {
+svg_pattern *cupidimage_svg_defs_add_pattern(svg_defs *defs, const char *id)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
     if (defs->pattern_count >= defs->pattern_cap) {
         int new_cap = defs->pattern_cap ? defs->pattern_cap * 2 : 16;
-        svg_pattern *n = (svg_pattern *)realloc(defs->patterns, (size_t)new_cap * sizeof(svg_pattern));
+        svg_pattern *n =
+            (svg_pattern *)realloc(defs->patterns, (size_t)new_cap * sizeof(svg_pattern));
         if (!n) {
             return NULL;
         }
@@ -258,7 +265,8 @@ svg_pattern *cupidimage_svg_defs_add_pattern(svg_defs *defs, const char *id) {
     return p;
 }
 
-const svg_pattern *cupidimage_svg_defs_find_pattern(const svg_defs *defs, const char *id) {
+const svg_pattern *cupidimage_svg_defs_find_pattern(const svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -270,13 +278,15 @@ const svg_pattern *cupidimage_svg_defs_find_pattern(const svg_defs *defs, const 
     return NULL;
 }
 
-svg_clip_path *cupidimage_svg_defs_add_clip(svg_defs *defs, const char *id) {
+svg_clip_path *cupidimage_svg_defs_add_clip(svg_defs *defs, const char *id)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
     if (defs->clip_count >= defs->clip_cap) {
         int new_cap = defs->clip_cap ? defs->clip_cap * 2 : 16;
-        svg_clip_path *n = (svg_clip_path *)realloc(defs->clips, (size_t)new_cap * sizeof(svg_clip_path));
+        svg_clip_path *n =
+            (svg_clip_path *)realloc(defs->clips, (size_t)new_cap * sizeof(svg_clip_path));
         if (!n) {
             return NULL;
         }
@@ -305,7 +315,8 @@ svg_clip_path *cupidimage_svg_defs_add_clip(svg_defs *defs, const char *id) {
     return c;
 }
 
-svg_mask *cupidimage_svg_defs_add_mask(svg_defs *defs, const char *id) {
+svg_mask *cupidimage_svg_defs_add_mask(svg_defs *defs, const char *id)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
@@ -353,7 +364,8 @@ svg_mask *cupidimage_svg_defs_add_mask(svg_defs *defs, const char *id) {
     return m;
 }
 
-svg_filter *cupidimage_svg_defs_add_filter(svg_defs *defs, const char *id) {
+svg_filter *cupidimage_svg_defs_add_filter(svg_defs *defs, const char *id)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
@@ -384,7 +396,8 @@ svg_filter *cupidimage_svg_defs_add_filter(svg_defs *defs, const char *id) {
     return f;
 }
 
-svg_clip_path *cupidimage_svg_defs_find_clip(svg_defs *defs, const char *id) {
+svg_clip_path *cupidimage_svg_defs_find_clip(svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -396,7 +409,8 @@ svg_clip_path *cupidimage_svg_defs_find_clip(svg_defs *defs, const char *id) {
     return NULL;
 }
 
-svg_mask *cupidimage_svg_defs_find_mask(svg_defs *defs, const char *id) {
+svg_mask *cupidimage_svg_defs_find_mask(svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -408,7 +422,8 @@ svg_mask *cupidimage_svg_defs_find_mask(svg_defs *defs, const char *id) {
     return NULL;
 }
 
-const svg_filter *cupidimage_svg_defs_find_filter(const svg_defs *defs, const char *id) {
+const svg_filter *cupidimage_svg_defs_find_filter(const svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -420,7 +435,8 @@ const svg_filter *cupidimage_svg_defs_find_filter(const svg_defs *defs, const ch
     return NULL;
 }
 
-svg_path_def *cupidimage_svg_defs_add_path(svg_defs *defs, const char *id, const char *d) {
+svg_path_def *cupidimage_svg_defs_add_path(svg_defs *defs, const char *id, const char *d)
+{
     if (!defs || !id || !*id || !d) {
         return NULL;
     }
@@ -433,7 +449,8 @@ svg_path_def *cupidimage_svg_defs_add_path(svg_defs *defs, const char *id, const
     }
     if (defs->path_count >= defs->path_cap) {
         int new_cap = defs->path_cap ? defs->path_cap * 2 : 16;
-        svg_path_def *n = (svg_path_def *)realloc(defs->paths, (size_t)new_cap * sizeof(svg_path_def));
+        svg_path_def *n =
+            (svg_path_def *)realloc(defs->paths, (size_t)new_cap * sizeof(svg_path_def));
         if (!n) {
             return NULL;
         }
@@ -446,7 +463,8 @@ svg_path_def *cupidimage_svg_defs_add_path(svg_defs *defs, const char *id, const
     return pd;
 }
 
-const svg_path_def *cupidimage_svg_defs_find_path(const svg_defs *defs, const char *id) {
+const svg_path_def *cupidimage_svg_defs_find_path(const svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -458,7 +476,8 @@ const svg_path_def *cupidimage_svg_defs_find_path(const svg_defs *defs, const ch
     return NULL;
 }
 
-static int svg_tag_is_use_def_shape(const char *local) {
+static int svg_tag_is_use_def_shape(const char *local)
+{
     if (!local) {
         return 0;
     }
@@ -468,7 +487,8 @@ static int svg_tag_is_use_def_shape(const char *local) {
            strcmp(local, "path") == 0;
 }
 
-svg_use_def *cupidimage_svg_defs_find_use(svg_defs *defs, const char *id) {
+svg_use_def *cupidimage_svg_defs_find_use(svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -480,7 +500,8 @@ svg_use_def *cupidimage_svg_defs_find_use(svg_defs *defs, const char *id) {
     return NULL;
 }
 
-svg_use_def *cupidimage_svg_defs_add_use(svg_defs *defs, const svg_tag *tag) {
+svg_use_def *cupidimage_svg_defs_add_use(svg_defs *defs, const svg_tag *tag)
+{
     if (!defs || !tag) {
         return NULL;
     }
@@ -493,7 +514,8 @@ svg_use_def *cupidimage_svg_defs_add_use(svg_defs *defs, const svg_tag *tag) {
     if (!ud) {
         if (defs->use_count >= defs->use_cap) {
             int new_cap = defs->use_cap ? defs->use_cap * 2 : 16;
-            svg_use_def *n = (svg_use_def *)realloc(defs->uses, (size_t)new_cap * sizeof(svg_use_def));
+            svg_use_def *n =
+                (svg_use_def *)realloc(defs->uses, (size_t)new_cap * sizeof(svg_use_def));
             if (!n) {
                 return NULL;
             }
@@ -539,7 +561,8 @@ svg_use_def *cupidimage_svg_defs_add_use(svg_defs *defs, const svg_tag *tag) {
     return ud;
 }
 
-svg_symbol *cupidimage_svg_defs_add_symbol(svg_defs *defs, const char *id) {
+svg_symbol *cupidimage_svg_defs_add_symbol(svg_defs *defs, const char *id)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
@@ -565,7 +588,8 @@ svg_symbol *cupidimage_svg_defs_add_symbol(svg_defs *defs, const char *id) {
     return sym;
 }
 
-const svg_symbol *cupidimage_svg_defs_find_symbol(const svg_defs *defs, const char *id) {
+const svg_symbol *cupidimage_svg_defs_find_symbol(const svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -577,7 +601,8 @@ const svg_symbol *cupidimage_svg_defs_find_symbol(const svg_defs *defs, const ch
     return NULL;
 }
 
-svg_marker *cupidimage_svg_defs_add_marker(svg_defs *defs, const char *id) {
+svg_marker *cupidimage_svg_defs_add_marker(svg_defs *defs, const char *id)
+{
     if (!defs || !id || !*id) {
         return NULL;
     }
@@ -611,7 +636,8 @@ svg_marker *cupidimage_svg_defs_add_marker(svg_defs *defs, const char *id) {
     return mk;
 }
 
-svg_marker *cupidimage_svg_defs_find_marker(svg_defs *defs, const char *id) {
+svg_marker *cupidimage_svg_defs_find_marker(svg_defs *defs, const char *id)
+{
     if (!defs || !id) {
         return NULL;
     }
@@ -623,7 +649,8 @@ svg_marker *cupidimage_svg_defs_find_marker(svg_defs *defs, const char *id) {
     return NULL;
 }
 
-int cupidimage_svg_parse_grad_coord(const char *s, svg_grad_coord *out, svg_gradient_units units) {
+int cupidimage_svg_parse_grad_coord(const char *s, svg_grad_coord *out, svg_gradient_units units)
+{
     if (!out || !s) {
         return 0;
     }
@@ -656,7 +683,8 @@ int cupidimage_svg_parse_grad_coord(const char *s, svg_grad_coord *out, svg_grad
     return 1;
 }
 
-static int svg_parse_stop_offset(const char *s, float *out) {
+static int svg_parse_stop_offset(const char *s, float *out)
+{
     if (!s || !out) {
         return 0;
     }
@@ -679,14 +707,17 @@ static int svg_parse_stop_offset(const char *s, float *out) {
         percent = 1;
     }
     float off = percent ? (float)(v / 100.0) : (float)v;
-    if (off < 0.0f) off = 0.0f;
-    if (off > 1.0f) off = 1.0f;
+    if (off < 0.0f)
+        off = 0.0f;
+    if (off > 1.0f)
+        off = 1.0f;
     *out = off;
     return 1;
 }
 
 static void svg_stop_apply_style(const char *style, uint32_t *color, int *color_set, float *opacity,
-                                 int *opacity_set) {
+                                 int *opacity_set)
+{
     if (!style) {
         return;
     }
@@ -755,12 +786,14 @@ static void svg_stop_apply_style(const char *style, uint32_t *color, int *color_
     }
 }
 
-int cupidimage_svg_gradient_add_stop(svg_gradient *g, float offset, uint32_t color) {
+int cupidimage_svg_gradient_add_stop(svg_gradient *g, float offset, uint32_t color)
+{
     if (!g) {
         return 0;
     }
     int idx = g->stop_count;
-    svg_gradient_stop *n = (svg_gradient_stop *)realloc(g->stops, (size_t)(idx + 1) * sizeof(svg_gradient_stop));
+    svg_gradient_stop *n =
+        (svg_gradient_stop *)realloc(g->stops, (size_t)(idx + 1) * sizeof(svg_gradient_stop));
     if (!n) {
         return 0;
     }
@@ -771,7 +804,8 @@ int cupidimage_svg_gradient_add_stop(svg_gradient *g, float offset, uint32_t col
     return 1;
 }
 
-int cupidimage_svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color) {
+int cupidimage_svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color)
+{
     if (!tag || !offset || !color) {
         return 0;
     }
@@ -811,8 +845,10 @@ int cupidimage_svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color
     }
     uint8_t a = (uint8_t)(stop_color & 0xFFu);
     float alpha = (a / 255.0f) * stop_opacity;
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     a = (uint8_t)lroundf(alpha * 255.0f);
     stop_color = (stop_color & 0xFFFFFF00u) | a;
     *offset = off;
@@ -822,21 +858,26 @@ int cupidimage_svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color
     return 1;
 }
 
-static int svg_stop_offset_cmp(const void *a, const void *b) {
+static int svg_stop_offset_cmp(const void *a, const void *b)
+{
     const svg_gradient_stop *sa = (const svg_gradient_stop *)a;
     const svg_gradient_stop *sb = (const svg_gradient_stop *)b;
-    if (sa->offset < sb->offset) return -1;
-    if (sa->offset > sb->offset) return 1;
+    if (sa->offset < sb->offset)
+        return -1;
+    if (sa->offset > sb->offset)
+        return 1;
     return 0;
 }
 
-static void svg_gradient_sort_stops(svg_gradient *g) {
+static void svg_gradient_sort_stops(svg_gradient *g)
+{
     if (g && g->stop_count > 1) {
         qsort(g->stops, (size_t)g->stop_count, sizeof(svg_gradient_stop), svg_stop_offset_cmp);
     }
 }
 
-void cupidimage_svg_gradient_inherit(svg_gradient *g, const svg_defs *defs) {
+void cupidimage_svg_gradient_inherit(svg_gradient *g, const svg_defs *defs)
+{
     if (!g || !g->href || !defs) {
         return;
     }
@@ -867,7 +908,8 @@ void cupidimage_svg_gradient_inherit(svg_gradient *g, const svg_defs *defs) {
             g->r = ref->r;
         }
     }
-    if (!g->has_focal && g->type == SVG_PAINT_RADIAL_GRADIENT && ref->type == SVG_PAINT_RADIAL_GRADIENT) {
+    if (!g->has_focal && g->type == SVG_PAINT_RADIAL_GRADIENT &&
+        ref->type == SVG_PAINT_RADIAL_GRADIENT) {
         g->fx = ref->fx;
         g->fy = ref->fy;
     }
@@ -881,7 +923,8 @@ void cupidimage_svg_gradient_inherit(svg_gradient *g, const svg_defs *defs) {
     }
 }
 
-void cupidimage_svg_gradient_finalize(svg_gradient *g) {
+void cupidimage_svg_gradient_finalize(svg_gradient *g)
+{
     if (!g) {
         return;
     }
@@ -893,7 +936,8 @@ void cupidimage_svg_gradient_finalize(svg_gradient *g) {
     svg_gradient_sort_stops(g);
 }
 
-void cupidimage_svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g) {
+void cupidimage_svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g)
+{
     if (!tag || !g) {
         return;
     }
@@ -940,11 +984,16 @@ void cupidimage_svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g) {
         const char *y1 = cupidimage_svg_get_attr(tag, "y1");
         const char *x2 = cupidimage_svg_get_attr(tag, "x2");
         const char *y2 = cupidimage_svg_get_attr(tag, "y2");
-        if (x1 && cupidimage_svg_parse_grad_coord(x1, &g->x1, g->units)) has = 1;
-        if (y1 && cupidimage_svg_parse_grad_coord(y1, &g->y1, g->units)) has = 1;
-        if (x2 && cupidimage_svg_parse_grad_coord(x2, &g->x2, g->units)) has = 1;
-        if (y2 && cupidimage_svg_parse_grad_coord(y2, &g->y2, g->units)) has = 1;
-        if (has) g->has_coords = 1;
+        if (x1 && cupidimage_svg_parse_grad_coord(x1, &g->x1, g->units))
+            has = 1;
+        if (y1 && cupidimage_svg_parse_grad_coord(y1, &g->y1, g->units))
+            has = 1;
+        if (x2 && cupidimage_svg_parse_grad_coord(x2, &g->x2, g->units))
+            has = 1;
+        if (y2 && cupidimage_svg_parse_grad_coord(y2, &g->y2, g->units))
+            has = 1;
+        if (has)
+            g->has_coords = 1;
     } else {
         int has = 0;
         const char *cx = cupidimage_svg_get_attr(tag, "cx");
@@ -952,20 +1001,25 @@ void cupidimage_svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g) {
         const char *r = cupidimage_svg_get_attr(tag, "r");
         const char *fx = cupidimage_svg_get_attr(tag, "fx");
         const char *fy = cupidimage_svg_get_attr(tag, "fy");
-        if (cx && cupidimage_svg_parse_grad_coord(cx, &g->cx, g->units)) has = 1;
-        if (cy && cupidimage_svg_parse_grad_coord(cy, &g->cy, g->units)) has = 1;
-        if (r && cupidimage_svg_parse_grad_coord(r, &g->r, g->units)) has = 1;
+        if (cx && cupidimage_svg_parse_grad_coord(cx, &g->cx, g->units))
+            has = 1;
+        if (cy && cupidimage_svg_parse_grad_coord(cy, &g->cy, g->units))
+            has = 1;
+        if (r && cupidimage_svg_parse_grad_coord(r, &g->r, g->units))
+            has = 1;
         if (fx && cupidimage_svg_parse_grad_coord(fx, &g->fx, g->units)) {
             g->has_focal = 1;
         }
         if (fy && cupidimage_svg_parse_grad_coord(fy, &g->fy, g->units)) {
             g->has_focal = 1;
         }
-        if (has) g->has_coords = 1;
+        if (has)
+            g->has_coords = 1;
     }
 }
 
-void cupidimage_svg_parse_pattern_tag(const svg_tag *tag, svg_pattern *p) {
+void cupidimage_svg_parse_pattern_tag(const svg_tag *tag, svg_pattern *p)
+{
     if (!tag || !p) {
         return;
     }
@@ -1008,16 +1062,21 @@ void cupidimage_svg_parse_pattern_tag(const svg_tag *tag, svg_pattern *p) {
     const char *y = cupidimage_svg_get_attr(tag, "y");
     const char *w = cupidimage_svg_get_attr(tag, "width");
     const char *h = cupidimage_svg_get_attr(tag, "height");
-    if (x && cupidimage_svg_parse_grad_coord(x, &p->x, p->units)) has = 1;
-    if (y && cupidimage_svg_parse_grad_coord(y, &p->y, p->units)) has = 1;
-    if (w && cupidimage_svg_parse_grad_coord(w, &p->width, p->units)) has = 1;
-    if (h && cupidimage_svg_parse_grad_coord(h, &p->height, p->units)) has = 1;
+    if (x && cupidimage_svg_parse_grad_coord(x, &p->x, p->units))
+        has = 1;
+    if (y && cupidimage_svg_parse_grad_coord(y, &p->y, p->units))
+        has = 1;
+    if (w && cupidimage_svg_parse_grad_coord(w, &p->width, p->units))
+        has = 1;
+    if (h && cupidimage_svg_parse_grad_coord(h, &p->height, p->units))
+        has = 1;
     if (has) {
         p->has_coords = 1;
     }
 }
 
-void cupidimage_svg_pattern_inherit(svg_pattern *p, const svg_defs *defs) {
+void cupidimage_svg_pattern_inherit(svg_pattern *p, const svg_defs *defs)
+{
     if (!p || !p->href || !defs) {
         return;
     }
@@ -1047,7 +1106,8 @@ void cupidimage_svg_pattern_inherit(svg_pattern *p, const svg_defs *defs) {
     }
 }
 
-void cupidimage_svg_pattern_finalize(svg_pattern *p) {
+void cupidimage_svg_pattern_finalize(svg_pattern *p)
+{
     if (!p) {
         return;
     }
@@ -1058,7 +1118,8 @@ void cupidimage_svg_pattern_finalize(svg_pattern *p) {
     }
 }
 
-void cupidimage_svg_parse_clip_tag(const svg_tag *tag, svg_clip_path *c) {
+void cupidimage_svg_parse_clip_tag(const svg_tag *tag, svg_clip_path *c)
+{
     if (!tag || !c) {
         return;
     }
@@ -1088,7 +1149,8 @@ void cupidimage_svg_parse_clip_tag(const svg_tag *tag, svg_clip_path *c) {
     }
 }
 
-void cupidimage_svg_clip_inherit(svg_clip_path *c, svg_defs *defs) {
+void cupidimage_svg_clip_inherit(svg_clip_path *c, svg_defs *defs)
+{
     if (!c || !c->href || !defs) {
         return;
     }
@@ -1109,7 +1171,8 @@ void cupidimage_svg_clip_inherit(svg_clip_path *c, svg_defs *defs) {
     }
 }
 
-void cupidimage_svg_clip_finalize(svg_clip_path *c) {
+void cupidimage_svg_clip_finalize(svg_clip_path *c)
+{
     if (!c) {
         return;
     }
@@ -1120,7 +1183,8 @@ void cupidimage_svg_clip_finalize(svg_clip_path *c) {
     }
 }
 
-void cupidimage_svg_parse_mask_tag(const svg_tag *tag, svg_mask *m) {
+void cupidimage_svg_parse_mask_tag(const svg_tag *tag, svg_mask *m)
+{
     if (!tag || !m) {
         return;
     }
@@ -1163,10 +1227,14 @@ void cupidimage_svg_parse_mask_tag(const svg_tag *tag, svg_mask *m) {
     const char *y = cupidimage_svg_get_attr(tag, "y");
     const char *w = cupidimage_svg_get_attr(tag, "width");
     const char *h = cupidimage_svg_get_attr(tag, "height");
-    if (x && cupidimage_svg_parse_grad_coord(x, &m->x, m->units)) has = 1;
-    if (y && cupidimage_svg_parse_grad_coord(y, &m->y, m->units)) has = 1;
-    if (w && cupidimage_svg_parse_grad_coord(w, &m->width, m->units)) has = 1;
-    if (h && cupidimage_svg_parse_grad_coord(h, &m->height, m->units)) has = 1;
+    if (x && cupidimage_svg_parse_grad_coord(x, &m->x, m->units))
+        has = 1;
+    if (y && cupidimage_svg_parse_grad_coord(y, &m->y, m->units))
+        has = 1;
+    if (w && cupidimage_svg_parse_grad_coord(w, &m->width, m->units))
+        has = 1;
+    if (h && cupidimage_svg_parse_grad_coord(h, &m->height, m->units))
+        has = 1;
     if (has) {
         m->has_coords = 1;
     }
@@ -1182,7 +1250,8 @@ void cupidimage_svg_parse_mask_tag(const svg_tag *tag, svg_mask *m) {
     }
 }
 
-void cupidimage_svg_parse_filter_tag(const svg_tag *tag, svg_filter *f) {
+void cupidimage_svg_parse_filter_tag(const svg_tag *tag, svg_filter *f)
+{
     if (!tag || !f) {
         return;
     }
@@ -1201,29 +1270,35 @@ void cupidimage_svg_parse_filter_tag(const svg_tag *tag, svg_filter *f) {
     const char *y = cupidimage_svg_get_attr(tag, "y");
     const char *w = cupidimage_svg_get_attr(tag, "width");
     const char *h = cupidimage_svg_get_attr(tag, "height");
-    if (x && cupidimage_svg_parse_grad_coord(x, &f->x, f->units)) has = 1;
-    if (y && cupidimage_svg_parse_grad_coord(y, &f->y, f->units)) has = 1;
-    if (w && cupidimage_svg_parse_grad_coord(w, &f->width, f->units)) has = 1;
-    if (h && cupidimage_svg_parse_grad_coord(h, &f->height, f->units)) has = 1;
+    if (x && cupidimage_svg_parse_grad_coord(x, &f->x, f->units))
+        has = 1;
+    if (y && cupidimage_svg_parse_grad_coord(y, &f->y, f->units))
+        has = 1;
+    if (w && cupidimage_svg_parse_grad_coord(w, &f->width, f->units))
+        has = 1;
+    if (h && cupidimage_svg_parse_grad_coord(h, &f->height, f->units))
+        has = 1;
     if (has) {
         f->has_coords = 1;
     }
 }
 
-void cupidimage_svg_parse_symbol_tag(const svg_tag *tag, svg_symbol *sym) {
+void cupidimage_svg_parse_symbol_tag(const svg_tag *tag, svg_symbol *sym)
+{
     if (!tag || !sym) {
         return;
     }
-    sym->vb_ok = cupidimage_svg_parse_viewbox(cupidimage_svg_get_attr(tag, "viewBox"),
-                                   &sym->vb_x, &sym->vb_y, &sym->vb_w, &sym->vb_h);
+    sym->vb_ok = cupidimage_svg_parse_viewbox(cupidimage_svg_get_attr(tag, "viewBox"), &sym->vb_x,
+                                              &sym->vb_y, &sym->vb_w, &sym->vb_h);
     sym->preserve_none = 0;
     sym->align_x = 0.5f;
     sym->align_y = 0.5f;
     cupidimage_svg_parse_preserve_aspect_ratio(cupidimage_svg_get_attr(tag, "preserveAspectRatio"),
-                                    &sym->preserve_none, &sym->align_x, &sym->align_y);
+                                               &sym->preserve_none, &sym->align_x, &sym->align_y);
 }
 
-void cupidimage_svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float base_len, float dpi) {
+void cupidimage_svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float base_len, float dpi)
+{
     if (!tag || !mk) {
         return;
     }
@@ -1237,11 +1312,13 @@ void cupidimage_svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float b
     if (ok) {
         mk->ref_y = v;
     }
-    v = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "markerWidth"), base_len, dpi, &ok);
+    v = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "markerWidth"), base_len, dpi,
+                                    &ok);
     if (ok && v > 0.0f) {
         mk->marker_w = v;
     }
-    v = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "markerHeight"), base_len, dpi, &ok);
+    v = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "markerHeight"), base_len, dpi,
+                                    &ok);
     if (ok && v > 0.0f) {
         mk->marker_h = v;
     }
@@ -1271,16 +1348,17 @@ void cupidimage_svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float b
             }
         }
     }
-    mk->vb_ok = cupidimage_svg_parse_viewbox(cupidimage_svg_get_attr(tag, "viewBox"),
-                                  &mk->vb_x, &mk->vb_y, &mk->vb_w, &mk->vb_h);
+    mk->vb_ok = cupidimage_svg_parse_viewbox(cupidimage_svg_get_attr(tag, "viewBox"), &mk->vb_x,
+                                             &mk->vb_y, &mk->vb_w, &mk->vb_h);
     mk->preserve_none = 0;
     mk->align_x = 0.5f;
     mk->align_y = 0.5f;
     cupidimage_svg_parse_preserve_aspect_ratio(cupidimage_svg_get_attr(tag, "preserveAspectRatio"),
-                                    &mk->preserve_none, &mk->align_x, &mk->align_y);
+                                               &mk->preserve_none, &mk->align_x, &mk->align_y);
 }
 
-void cupidimage_svg_mask_inherit(svg_mask *m, svg_defs *defs) {
+void cupidimage_svg_mask_inherit(svg_mask *m, svg_defs *defs)
+{
     if (!m || !m->href || !defs) {
         return;
     }
@@ -1313,7 +1391,8 @@ void cupidimage_svg_mask_inherit(svg_mask *m, svg_defs *defs) {
     }
 }
 
-void cupidimage_svg_mask_finalize(svg_mask *m) {
+void cupidimage_svg_mask_finalize(svg_mask *m)
+{
     if (!m) {
         return;
     }

@@ -1,10 +1,9 @@
 #include "tiff_internal.h"
 
-
 int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *info,
-                                const uint8_t *raw, size_t row_bytes,
-                                uint8_t *rgba, size_t rgba_size,
-                                char *err, size_t errcap) {
+                                    const uint8_t *raw, size_t row_bytes, uint8_t *rgba,
+                                    size_t rgba_size, char *err, size_t errcap)
+{
     uint16_t bps = info->bits_per_sample[0];
     int photometric = info->photometric;
     int samples = info->samples_per_pixel;
@@ -86,13 +85,19 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
 
             if (photometric == TIFF_PHOTOMETRIC_RGB) {
                 if (float_samples) {
-                    r = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 0u, bps));
-                    g = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 1u, bps));
-                    b = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 2u, bps));
+                    r = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 0u, bps));
+                    g = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 1u, bps));
+                    b = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 2u, bps));
                 } else {
-                    uint32_t r0 = cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order);
-                    uint32_t g0 = cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order);
-                    uint32_t b0 = cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order);
+                    uint32_t r0 = cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps,
+                                                              info->fill_order);
+                    uint32_t g0 = cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps,
+                                                              info->fill_order);
+                    uint32_t b0 = cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps,
+                                                              info->fill_order);
                     r = cupidimage_tiff_scale_sample(r0, bps);
                     g = cupidimage_tiff_scale_sample(g0, bps);
                     b = cupidimage_tiff_scale_sample(b0, bps);
@@ -101,9 +106,11 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
                        photometric == TIFF_PHOTOMETRIC_WHITE_IS_ZERO) {
                 uint8_t gray = 0;
                 if (float_samples) {
-                    gray = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base, bps));
+                    gray = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base, bps));
                 } else {
-                    uint32_t v = cupidimage_tiff_read_sample(ctx, row, sample_base, bps, info->fill_order);
+                    uint32_t v =
+                        cupidimage_tiff_read_sample(ctx, row, sample_base, bps, info->fill_order);
                     gray = cupidimage_tiff_scale_sample(v, bps);
                 }
                 if (photometric == TIFF_PHOTOMETRIC_WHITE_IS_ZERO) {
@@ -111,7 +118,8 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
                 }
                 r = g = b = gray;
             } else if (photometric == TIFF_PHOTOMETRIC_PALETTE) {
-                uint32_t idx = cupidimage_tiff_read_sample(ctx, row, sample_base, bps, info->fill_order);
+                uint32_t idx =
+                    cupidimage_tiff_read_sample(ctx, row, sample_base, bps, info->fill_order);
                 if (idx >= palette_len) {
                     cupidimage_set_err(err, errcap, "invalid TIFF palette index");
                     return 0;
@@ -125,23 +133,45 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
             } else if (photometric == TIFF_PHOTOMETRIC_CMYK) {
                 uint8_t c, m, yv, k;
                 if (float_samples) {
-                    c = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 0u, bps));
-                    m = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 1u, bps));
-                    yv = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 2u, bps));
-                    k = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + 3u, bps));
+                    c = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 0u, bps));
+                    m = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 1u, bps));
+                    yv = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 2u, bps));
+                    k = cupidimage_tiff_scale_float(
+                        cupidimage_tiff_read_sample_float(ctx, row, sample_base + 3u, bps));
                 } else {
-                    c = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
-                    m = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
-                    yv = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
-                    k = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 3u, bps, info->fill_order), bps);
+                    c = cupidimage_tiff_scale_sample(
+                        cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps,
+                                                    info->fill_order),
+                        bps);
+                    m = cupidimage_tiff_scale_sample(
+                        cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps,
+                                                    info->fill_order),
+                        bps);
+                    yv = cupidimage_tiff_scale_sample(
+                        cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps,
+                                                    info->fill_order),
+                        bps);
+                    k = cupidimage_tiff_scale_sample(
+                        cupidimage_tiff_read_sample(ctx, row, sample_base + 3u, bps,
+                                                    info->fill_order),
+                        bps);
                 }
                 r = (uint8_t)(((255u - c) * (255u - k) + 127u) / 255u);
                 g = (uint8_t)(((255u - m) * (255u - k) + 127u) / 255u);
                 b = (uint8_t)(((255u - yv) * (255u - k) + 127u) / 255u);
             } else if (photometric == TIFF_PHOTOMETRIC_YCBCR) {
-                uint8_t yv = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
-                uint8_t cb = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
-                uint8_t cr = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
+                uint8_t yv = cupidimage_tiff_scale_sample(
+                    cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order),
+                    bps);
+                uint8_t cb = cupidimage_tiff_scale_sample(
+                    cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order),
+                    bps);
+                uint8_t cr = cupidimage_tiff_scale_sample(
+                    cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order),
+                    bps);
                 int cbi = (int)cb - 128;
                 int cri = (int)cr - 128;
                 double cbi_d = (double)cbi;
@@ -153,9 +183,15 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
                 g = cupidimage_tiff_clamp8(gi);
                 b = cupidimage_tiff_clamp8(bi);
             } else if (photometric == TIFF_PHOTOMETRIC_CIELAB) {
-                uint8_t l8 = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
-                uint8_t a8 = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
-                uint8_t b8 = cupidimage_tiff_scale_sample(cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
+                uint8_t l8 = cupidimage_tiff_scale_sample(
+                    cupidimage_tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order),
+                    bps);
+                uint8_t a8 = cupidimage_tiff_scale_sample(
+                    cupidimage_tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order),
+                    bps);
+                uint8_t b8 = cupidimage_tiff_scale_sample(
+                    cupidimage_tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order),
+                    bps);
                 double L = ((double)l8 * 100.0) / 255.0;
                 double aa = (double)a8 - 128.0;
                 double bb = (double)b8 - 128.0;
@@ -181,10 +217,11 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
 
             if (alpha_index >= 0) {
                 if (float_samples) {
-                    a = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(ctx, row, sample_base + (uint32_t)alpha_index, bps));
+                    a = cupidimage_tiff_scale_float(cupidimage_tiff_read_sample_float(
+                        ctx, row, sample_base + (uint32_t)alpha_index, bps));
                 } else {
-                    uint32_t av = cupidimage_tiff_read_sample(ctx, row, sample_base + (uint32_t)alpha_index,
-                                                   bps, info->fill_order);
+                    uint32_t av = cupidimage_tiff_read_sample(
+                        ctx, row, sample_base + (uint32_t)alpha_index, bps, info->fill_order);
                     a = cupidimage_tiff_scale_sample(av, bps);
                 }
                 if (premultiplied && a > 0 && a < 255) {
@@ -206,7 +243,8 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
 }
 
 int cupidimage_tiff_apply_orientation_rgba(uint8_t **rgba, uint32_t *width, uint32_t *height,
-                                       uint16_t orientation, char *err, size_t errcap) {
+                                           uint16_t orientation, char *err, size_t errcap)
+{
     if (orientation == 1) {
         return 1;
     }
@@ -231,15 +269,42 @@ int cupidimage_tiff_apply_orientation_rgba(uint8_t **rgba, uint32_t *width, uint
             uint32_t sx = 0;
             uint32_t sy = 0;
             switch (orientation) {
-                case 1: sx = x; sy = y; break;
-                case 2: sx = src_w - 1u - x; sy = y; break;
-                case 3: sx = src_w - 1u - x; sy = src_h - 1u - y; break;
-                case 4: sx = x; sy = src_h - 1u - y; break;
-                case 5: sx = y; sy = x; break;
-                case 6: sx = y; sy = src_h - 1u - x; break;
-                case 7: sx = src_w - 1u - y; sy = src_h - 1u - x; break;
-                case 8: sx = src_w - 1u - y; sy = x; break;
-                default: sx = x; sy = y; break;
+                case 1:
+                    sx = x;
+                    sy = y;
+                    break;
+                case 2:
+                    sx = src_w - 1u - x;
+                    sy = y;
+                    break;
+                case 3:
+                    sx = src_w - 1u - x;
+                    sy = src_h - 1u - y;
+                    break;
+                case 4:
+                    sx = x;
+                    sy = src_h - 1u - y;
+                    break;
+                case 5:
+                    sx = y;
+                    sy = x;
+                    break;
+                case 6:
+                    sx = y;
+                    sy = src_h - 1u - x;
+                    break;
+                case 7:
+                    sx = src_w - 1u - y;
+                    sy = src_h - 1u - x;
+                    break;
+                case 8:
+                    sx = src_w - 1u - y;
+                    sy = x;
+                    break;
+                default:
+                    sx = x;
+                    sy = y;
+                    break;
             }
             size_t src_idx = ((size_t)sy * (size_t)src_w + sx) * 4u;
             size_t dst_idx = ((size_t)y * (size_t)dst_w + x) * 4u;

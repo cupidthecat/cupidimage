@@ -1,14 +1,11 @@
 #include "tiff_internal.h"
 
-static int tiff_load_page(const unsigned char *data, size_t size,
-                          int page_index,
-                          cupidimage_image *out,
-                          char *err, size_t errcap);
+static int tiff_load_page(const unsigned char *data, size_t size, int page_index,
+                          cupidimage_image *out, char *err, size_t errcap);
 
-static int tiff_load_page(const unsigned char *data, size_t size,
-                          int page_index,
-                          cupidimage_image *out,
-                          char *err, size_t errcap) {
+static int tiff_load_page(const unsigned char *data, size_t size, int page_index,
+                          cupidimage_image *out, char *err, size_t errcap)
+{
     tiff_context ctx;
     if (!cupidimage_tiff_parse_header(data, size, &ctx, err, errcap)) {
         return 0;
@@ -34,14 +31,16 @@ static int tiff_load_page(const unsigned char *data, size_t size,
             cupidimage_set_err(err, errcap, "out of memory");
             return 0;
         }
-        if (!cupidimage_tiff_collect_subifds(&ctx, ifd_offset, &sub_list, &sub_count, &sub_cap, err, errcap)) {
+        if (!cupidimage_tiff_collect_subifds(&ctx, ifd_offset, &sub_list, &sub_count, &sub_cap, err,
+                                             errcap)) {
             free(ifd_list);
             free(sub_list);
             return 0;
         }
         uint64_t entry_count = 0;
         uint64_t next_ifd = 0;
-        if (!cupidimage_tiff_read_ifd_header(&ctx, ifd_offset, &entry_count, &next_ifd, err, errcap)) {
+        if (!cupidimage_tiff_read_ifd_header(&ctx, ifd_offset, &entry_count, &next_ifd, err,
+                                             errcap)) {
             free(ifd_list);
             free(sub_list);
             return 0;
@@ -194,8 +193,7 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (info.compression != TIFF_COMPRESSION_NONE &&
-        info.compression != TIFF_COMPRESSION_LZW &&
+    if (info.compression != TIFF_COMPRESSION_NONE && info.compression != TIFF_COMPRESSION_LZW &&
         info.compression != TIFF_COMPRESSION_PACKBITS &&
         info.compression != TIFF_COMPRESSION_DEFLATE &&
         info.compression != TIFF_COMPRESSION_ADOBE_DEFLATE &&
@@ -232,11 +230,13 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         uint8_t *jpeg_rgba = NULL;
         uint32_t jpeg_w = 0;
         uint32_t jpeg_h = 0;
-        if (!cupidimage_tiff_decode_jpeg_image(&ctx, &info, &jpeg_rgba, &jpeg_w, &jpeg_h, err, errcap)) {
+        if (!cupidimage_tiff_decode_jpeg_image(&ctx, &info, &jpeg_rgba, &jpeg_w, &jpeg_h, err,
+                                               errcap)) {
             cupidimage_tiff_info_free(&info);
             return 0;
         }
-        if (!cupidimage_tiff_apply_orientation_rgba(&jpeg_rgba, &jpeg_w, &jpeg_h, info.orientation, err, errcap)) {
+        if (!cupidimage_tiff_apply_orientation_rgba(&jpeg_rgba, &jpeg_w, &jpeg_h, info.orientation,
+                                                    err, errcap)) {
             free(jpeg_rgba);
             cupidimage_tiff_info_free(&info);
             return 0;
@@ -251,7 +251,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
     if (info.photometric == TIFF_PHOTOMETRIC_YCBCR &&
         (info.ycbcr_subsampling[0] != 1 || info.ycbcr_subsampling[1] != 1)) {
         size_t rgba_size = 0;
-        if (cupidimage_tiff_mul_overflow_size_t((size_t)info.width, (size_t)info.height, &rgba_size) ||
+        if (cupidimage_tiff_mul_overflow_size_t((size_t)info.width, (size_t)info.height,
+                                                &rgba_size) ||
             cupidimage_tiff_mul_overflow_size_t(rgba_size, 4u, &rgba_size)) {
             cupidimage_set_err(err, errcap, "invalid TIFF image size");
             cupidimage_tiff_info_free(&info);
@@ -270,7 +271,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         }
         uint32_t out_w = info.width;
         uint32_t out_h = info.height;
-        if (!cupidimage_tiff_apply_orientation_rgba(&rgba, &out_w, &out_h, info.orientation, err, errcap)) {
+        if (!cupidimage_tiff_apply_orientation_rgba(&rgba, &out_w, &out_h, info.orientation, err,
+                                                    errcap)) {
             free(rgba);
             cupidimage_tiff_info_free(&info);
             return 0;
@@ -284,7 +286,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
 
     size_t row_bytes = 0;
     size_t bits_per_row = 0;
-    if (cupidimage_tiff_mul_overflow_size_t((size_t)info.width, (size_t)info.samples_per_pixel, &bits_per_row) ||
+    if (cupidimage_tiff_mul_overflow_size_t((size_t)info.width, (size_t)info.samples_per_pixel,
+                                            &bits_per_row) ||
         cupidimage_tiff_mul_overflow_size_t(bits_per_row, (size_t)bps, &bits_per_row)) {
         cupidimage_set_err(err, errcap, "invalid TIFF row size");
         cupidimage_tiff_info_free(&info);
@@ -301,7 +304,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
 
     size_t bytes_per_pixel = 0;
     if ((bps & 7u) == 0) {
-        if (cupidimage_tiff_mul_overflow_size_t((size_t)info.samples_per_pixel, (size_t)(bps / 8u), &bytes_per_pixel)) {
+        if (cupidimage_tiff_mul_overflow_size_t((size_t)info.samples_per_pixel, (size_t)(bps / 8u),
+                                                &bytes_per_pixel)) {
             cupidimage_set_err(err, errcap, "invalid TIFF pixel size");
             cupidimage_tiff_info_free(&info);
             return 0;
@@ -329,14 +333,14 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (!cupidimage_tiff_decode_image(&ctx, &info, raw, raw_size, row_bytes, bytes_per_pixel, err, errcap)) {
+    if (!cupidimage_tiff_decode_image(&ctx, &info, raw, raw_size, row_bytes, bytes_per_pixel, err,
+                                      errcap)) {
         free(raw);
         cupidimage_tiff_info_free(&info);
         return 0;
     }
 
-    if (info.predictor == 2 &&
-        info.planar_config == TIFF_PLANAR_CHUNKY &&
+    if (info.predictor == 2 && info.planar_config == TIFF_PLANAR_CHUNKY &&
         (info.tile_offsets == NULL || info.tile_offsets_count == 0)) {
         if (!cupidimage_tiff_apply_predictor(&ctx, &info, raw, row_bytes, err, errcap)) {
             free(raw);
@@ -353,7 +357,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (!cupidimage_tiff_convert_to_rgba(&ctx, &info, raw, row_bytes, rgba, rgba_size, err, errcap)) {
+    if (!cupidimage_tiff_convert_to_rgba(&ctx, &info, raw, row_bytes, rgba, rgba_size, err,
+                                         errcap)) {
         free(raw);
         free(rgba);
         cupidimage_tiff_info_free(&info);
@@ -363,7 +368,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
     free(raw);
     uint32_t out_w = info.width;
     uint32_t out_h = info.height;
-    if (!cupidimage_tiff_apply_orientation_rgba(&rgba, &out_w, &out_h, info.orientation, err, errcap)) {
+    if (!cupidimage_tiff_apply_orientation_rgba(&rgba, &out_w, &out_h, info.orientation, err,
+                                                errcap)) {
         free(rgba);
         cupidimage_tiff_info_free(&info);
         return 0;
@@ -376,10 +382,9 @@ static int tiff_load_page(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_tiff_page(const unsigned char *data, size_t size,
-                              cupidimage_image *out,
-                              int page_index,
-                              char *err, size_t errcap) {
+int cupidimage_load_tiff_page(const unsigned char *data, size_t size, cupidimage_image *out,
+                              int page_index, char *err, size_t errcap)
+{
     if (!data || !out) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -389,15 +394,15 @@ int cupidimage_load_tiff_page(const unsigned char *data, size_t size,
     return tiff_load_page(data, size, page_index, out, err, errcap);
 }
 
-int cupidimage_load_tiff(const unsigned char *data, size_t size,
-                         cupidimage_image *out,
-                         char *err, size_t errcap) {
+int cupidimage_load_tiff(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap)
+{
     return cupidimage_load_tiff_page(data, size, out, 0, err, errcap);
 }
 
-int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size,
-                                   int *count,
-                                   char *err, size_t errcap) {
+int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size, int *count, char *err,
+                                   size_t errcap)
+{
     if (!data || !count) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -423,14 +428,16 @@ int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size,
             cupidimage_set_err(err, errcap, "out of memory");
             return 0;
         }
-        if (!cupidimage_tiff_collect_subifds(&ctx, ifd_offset, &sub_list, &sub_count, &sub_cap, err, errcap)) {
+        if (!cupidimage_tiff_collect_subifds(&ctx, ifd_offset, &sub_list, &sub_count, &sub_cap, err,
+                                             errcap)) {
             free(ifd_list);
             free(sub_list);
             return 0;
         }
         uint64_t entry_count = 0;
         uint64_t next_ifd = 0;
-        if (!cupidimage_tiff_read_ifd_header(&ctx, ifd_offset, &entry_count, &next_ifd, err, errcap)) {
+        if (!cupidimage_tiff_read_ifd_header(&ctx, ifd_offset, &entry_count, &next_ifd, err,
+                                             errcap)) {
             free(ifd_list);
             free(sub_list);
             return 0;
@@ -453,8 +460,7 @@ int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_tiff_file(const char *path,
-                              cupidimage_image *out,
-                              char *err, size_t errcap) {
+int cupidimage_load_tiff_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
+{
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_tiff);
 }

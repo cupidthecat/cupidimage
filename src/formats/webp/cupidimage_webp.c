@@ -1,18 +1,19 @@
-#include "cupidimage.h"
 #include "core/internal.h"
-#include "formats/webp/cupidimage_webp_tables.h"
+#include "cupidimage.h"
 #include "formats/webp/cupidimage_webp_lossless.h"
+#include "formats/webp/cupidimage_webp_tables.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "webp_internal.h"
 
 /* RFC 9649 section 2.7.1.2: alpha uses the lossless green channel and
    then reverses the optional byte-wise spatial filter. */
-static uint8_t *decode_alpha(const uint8_t *data, size_t size, unsigned width,
-                              unsigned height, char *err, size_t errcap) {
+static uint8_t *decode_alpha(const uint8_t *data, size_t size, unsigned width, unsigned height,
+                             char *err, size_t errcap)
+{
     if (!size || !width || !height || (size_t)width > SIZE_MAX / height / 4u) {
         set_err(err, errcap, "invalid ALPH dimensions or header");
         return NULL;
@@ -25,37 +26,59 @@ static uint8_t *decode_alpha(const uint8_t *data, size_t size, unsigned width,
         return NULL;
     }
     uint8_t *alpha = malloc(count);
-    if (!alpha) { set_err(err, errcap, "out of memory"); return NULL; }
-    if (!method) memcpy(alpha, data + 1, count);
+    if (!alpha) {
+        set_err(err, errcap, "out of memory");
+        return NULL;
+    }
+    if (!method)
+        memcpy(alpha, data + 1, count);
     else {
         uint8_t *wrapped = malloc(size + 4);
-        if (!wrapped) { free(alpha); set_err(err, errcap, "out of memory"); return NULL; }
+        if (!wrapped) {
+            free(alpha);
+            set_err(err, errcap, "out of memory");
+            return NULL;
+        }
         uint32_t dimensions = (width - 1) | ((height - 1) << 14);
         wrapped[0] = 0x2f;
-        for (unsigned i = 0; i < 4; i++) wrapped[i + 1] = (uint8_t)(dimensions >> (8 * i));
+        for (unsigned i = 0; i < 4; i++)
+            wrapped[i + 1] = (uint8_t)(dimensions >> (8 * i));
         memcpy(wrapped + 5, data + 1, size - 1);
         cupidimage_image decoded = {0};
         int ok = cupidimage_decode_vp8l(wrapped, size + 4, &decoded, err, errcap);
         free(wrapped);
-        if (!ok) { free(alpha); return NULL; }
-        for (size_t i = 0; i < count; i++) alpha[i] = decoded.rgba[i * 4 + 1];
+        if (!ok) {
+            free(alpha);
+            return NULL;
+        }
+        for (size_t i = 0; i < count; i++)
+            alpha[i] = decoded.rgba[i * 4 + 1];
         cupidimage_free(&decoded);
     }
-    if (filter) for (unsigned y = 0; y < height; y++) for (unsigned x = 0; x < width; x++) {
-        size_t i = (size_t)y * width + x;
-        int prediction = 0;
-        if (!y) { if (x) prediction = alpha[i - 1]; }
-        else if (!x) prediction = alpha[i - width];
-        else if (filter == 1) prediction = alpha[i - 1];
-        else if (filter == 2) prediction = alpha[i - width];
-        else prediction = clamp_u8(alpha[i - 1] + alpha[i - width] - alpha[i - width - 1]);
-        alpha[i] = (uint8_t)(alpha[i] + prediction);
-    }
+    if (filter)
+        for (unsigned y = 0; y < height; y++)
+            for (unsigned x = 0; x < width; x++) {
+                size_t i = (size_t)y * width + x;
+                int prediction = 0;
+                if (!y) {
+                    if (x)
+                        prediction = alpha[i - 1];
+                } else if (!x)
+                    prediction = alpha[i - width];
+                else if (filter == 1)
+                    prediction = alpha[i - 1];
+                else if (filter == 2)
+                    prediction = alpha[i - width];
+                else
+                    prediction = clamp_u8(alpha[i - 1] + alpha[i - width] - alpha[i - width - 1]);
+                alpha[i] = (uint8_t)(alpha[i] + prediction);
+            }
     return alpha;
 }
 
-int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out,
-                         char *err, size_t errcap) {
+int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap)
+{
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -107,23 +130,33 @@ int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_imag
                 return 0;
             }
         } else if (memcmp(chunk, "VP8 ", 4) == 0) {
-            if (vp8 || vp8l) { set_err(err, errcap, "duplicate WebP bitstream"); return 0; }
+            if (vp8 || vp8l) {
+                set_err(err, errcap, "duplicate WebP bitstream");
+                return 0;
+            }
             vp8 = data + off;
             vp8_size = csize;
         } else if (memcmp(chunk, "VP8L", 4) == 0) {
-            if (vp8 || vp8l || alph) { set_err(err, errcap, "invalid VP8L chunk ordering"); return 0; }
+            if (vp8 || vp8l || alph) {
+                set_err(err, errcap, "invalid VP8L chunk ordering");
+                return 0;
+            }
             vp8l = data + off;
             vp8l_size = csize;
         } else if (memcmp(chunk, "ALPH", 4) == 0) {
             if (alph || vp8 || vp8l || !has_vp8x || !(vp8x_flags & 0x10)) {
-                set_err(err, errcap, "invalid ALPH chunk ordering"); return 0;
+                set_err(err, errcap, "invalid ALPH chunk ordering");
+                return 0;
             }
             alph = data + off;
             alph_size = csize;
         }
         off += padded;
     }
-    if (off != size) { set_err(err, errcap, "truncated WebP chunk header"); return 0; }
+    if (off != size) {
+        set_err(err, errcap, "truncated WebP chunk header");
+        return 0;
+    }
 
     if (has_vp8x && (vp8x_flags & 0x02)) {
         set_err(err, errcap, "animated WebP not supported");
@@ -133,7 +166,9 @@ int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_imag
     if (vp8l && vp8l_size > 0) {
         int ok = cupidimage_decode_vp8l(vp8l, vp8l_size, out, err, errcap);
         if (ok && has_vp8x && (out->width != vp8x_width || out->height != vp8x_height)) {
-            cupidimage_free(out); set_err(err, errcap, "VP8L dimensions differ from canvas"); return 0;
+            cupidimage_free(out);
+            set_err(err, errcap, "VP8L dimensions differ from canvas");
+            return 0;
         }
         return ok;
     }
@@ -153,21 +188,24 @@ int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_imag
     (void)payload_off;
 
     if (!width || !height || (has_vp8x && (width != vp8x_width || height != vp8x_height))) {
-        set_err(err, errcap, "VP8 dimensions differ from canvas"); return 0;
+        set_err(err, errcap, "VP8 dimensions differ from canvas");
+        return 0;
     }
     uint8_t *alpha = NULL;
     if (alph) {
         alpha = decode_alpha(alph, alph_size, width, height, err, errcap);
-        if (!alpha) return 0;
+        if (!alpha)
+            return 0;
     }
-    int ok = cupidimage_decode_vp8(vp8, vp8_size, alpha,
-                                  alpha ? (size_t)width * height : 0, out, err, errcap);
+    int ok = cupidimage_decode_vp8(vp8, vp8_size, alpha, alpha ? (size_t)width * height : 0, out,
+                                   err, errcap);
     free(alpha);
-    if (!ok) cupidimage_free(out);
+    if (!ok)
+        cupidimage_free(out);
     return ok;
 }
 
-int cupidimage_load_webp_file(const char *path, cupidimage_image *out,
-                              char *err, size_t errcap) {
+int cupidimage_load_webp_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
+{
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_webp);
 }

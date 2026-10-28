@@ -1,8 +1,8 @@
 #ifndef CUPIDIMAGE_PDF_FONT_PROGRAM_H
 #define CUPIDIMAGE_PDF_FONT_PROGRAM_H
 #include "truetype.h"
-#include "type2.h"
 #include "type1.h"
+#include "type2.h"
 struct pdf_font_program {
     pdf_tt_font font;
     pdf_cff_font cff;

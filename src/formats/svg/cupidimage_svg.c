@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -21,17 +21,16 @@
 
 #include "svg_internal.h"
 
-
-int cupidimage_load_svg_with_options(const unsigned char *data, size_t size,
-                                     cupidimage_image *out,
-                                     const cupidimage_svg_options *opts,
-                                     char *err, size_t errcap) {
+int cupidimage_load_svg_with_options(const unsigned char *data, size_t size, cupidimage_image *out,
+                                     const cupidimage_svg_options *opts, char *err, size_t errcap)
+{
     if (!data || !out) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
     }
     memset(out, 0, sizeof(*out));
-    if (opts && (!isfinite(opts->scale) || !isfinite(opts->dpi) || !isfinite(opts->animation_time))) {
+    if (opts &&
+        (!isfinite(opts->scale) || !isfinite(opts->dpi) || !isfinite(opts->animation_time))) {
         cupidimage_set_err(err, errcap, "invalid SVG options");
         return 0;
     }
@@ -97,8 +96,9 @@ int cupidimage_load_svg_with_options(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap) {
+int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap)
+{
     cupidimage_svg_options opts;
     opts.width = 0;
     opts.height = 0;
@@ -110,14 +110,15 @@ int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image
     return cupidimage_load_svg_with_options(data, size, out, &opts, err, errcap);
 }
 
-int cupidimage_load_svg_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap) {
+int cupidimage_load_svg_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
+{
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_svg);
 }
 
 int cupidimage_load_svg_file_with_options(const char *path, cupidimage_image *out,
-                                          const cupidimage_svg_options *opts,
-                                          char *err, size_t errcap) {
+                                          const cupidimage_svg_options *opts, char *err,
+                                          size_t errcap)
+{
     if (!path || !out) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;

@@ -1,13 +1,13 @@
 #ifndef CUPIDIMAGE_TIFF_INTERNAL_H
 #define CUPIDIMAGE_TIFF_INTERNAL_H
 
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <limits.h>
 
 #ifdef CUPIDIMAGE_TIFF_DEBUG
 #define TIFF_DEBUG(...) fprintf(stderr, "TIFF: " __VA_ARGS__)
@@ -137,54 +137,45 @@ uint32_t cupidimage_tiff_read_u32(const tiff_context *ctx, const uint8_t *p);
 uint64_t cupidimage_tiff_read_u64(const tiff_context *ctx, const uint8_t *p);
 uint8_t cupidimage_tiff_sample16_to_8(uint16_t v);
 int cupidimage_tiff_apply_orientation_rgba(uint8_t **rgba, uint32_t *width, uint32_t *height,
-                                       uint16_t orientation, char *err, size_t errcap);
+                                           uint16_t orientation, char *err, size_t errcap);
 int cupidimage_tiff_apply_predictor(const tiff_context *ctx, const tiff_image_info *info,
-                                uint8_t *raw, size_t row_bytes, char *err, size_t errcap);
-int cupidimage_tiff_ccitt_decode(const uint8_t *src, size_t src_size,
-                             uint8_t *dst, size_t dst_size,
-                             uint32_t width, uint32_t height,
-                             uint16_t compression, uint32_t group3_options,
-                             int fill_order, char *err, size_t errcap);
+                                    uint8_t *raw, size_t row_bytes, char *err, size_t errcap);
+int cupidimage_tiff_ccitt_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
+                                 uint32_t width, uint32_t height, uint16_t compression,
+                                 uint32_t group3_options, int fill_order, char *err, size_t errcap);
 uint8_t cupidimage_tiff_clamp8(int v);
-int cupidimage_tiff_collect_subifds(const tiff_context *ctx, uint64_t ifd_offset,
-                                uint64_t **list, size_t *count, size_t *cap,
-                                char *err, size_t errcap);
+int cupidimage_tiff_collect_subifds(const tiff_context *ctx, uint64_t ifd_offset, uint64_t **list,
+                                    size_t *count, size_t *cap, char *err, size_t errcap);
 int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *info,
-                                const uint8_t *raw, size_t row_bytes,
-                                uint8_t *rgba, size_t rgba_size,
-                                char *err, size_t errcap);
-int cupidimage_tiff_decode_image(const tiff_context *ctx, const tiff_image_info *info,
-                             uint8_t *raw, size_t raw_size,
-                             size_t row_bytes, size_t bytes_per_pixel,
-                             char *err, size_t errcap);
+                                    const uint8_t *raw, size_t row_bytes, uint8_t *rgba,
+                                    size_t rgba_size, char *err, size_t errcap);
+int cupidimage_tiff_decode_image(const tiff_context *ctx, const tiff_image_info *info, uint8_t *raw,
+                                 size_t raw_size, size_t row_bytes, size_t bytes_per_pixel,
+                                 char *err, size_t errcap);
 int cupidimage_tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info *info,
-                                  uint8_t **out_rgba,
-                                  uint32_t *out_width, uint32_t *out_height,
-                                  char *err, size_t errcap);
+                                      uint8_t **out_rgba, uint32_t *out_width, uint32_t *out_height,
+                                      char *err, size_t errcap);
 int cupidimage_tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_image_info *info,
-                                        uint8_t *rgba, size_t rgba_size,
-                                        char *err, size_t errcap);
+                                            uint8_t *rgba, size_t rgba_size, char *err,
+                                            size_t errcap);
 int cupidimage_tiff_ifd_list_append(uint64_t **list, size_t *count, size_t *cap, uint64_t off);
 void cupidimage_tiff_info_free(tiff_image_info *info);
 void cupidimage_tiff_info_init(tiff_image_info *info);
-int cupidimage_tiff_lzw_decode(const uint8_t *src, size_t src_size,
-                           uint8_t *dst, size_t dst_size,
-                           char *err, size_t errcap);
-int cupidimage_tiff_packbits_decode(const uint8_t *src, size_t src_size,
-                                uint8_t *dst, size_t dst_size,
-                                char *err, size_t errcap);
+int cupidimage_tiff_lzw_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
+                               char *err, size_t errcap);
+int cupidimage_tiff_packbits_decode(const uint8_t *src, size_t src_size, uint8_t *dst,
+                                    size_t dst_size, char *err, size_t errcap);
 int cupidimage_tiff_parse_header(const unsigned char *data, size_t size, tiff_context *ctx,
-                             char *err, size_t errcap);
+                                 char *err, size_t errcap);
 int cupidimage_tiff_parse_image_info(const tiff_context *ctx, uint64_t ifd_offset,
-                                 tiff_image_info *info, char *err, size_t errcap);
+                                     tiff_image_info *info, char *err, size_t errcap);
 int cupidimage_tiff_range_valid(const tiff_context *ctx, uint64_t offset, uint64_t length);
-int cupidimage_tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset,
-                                uint64_t *entry_count, uint64_t *next_ifd,
-                                char *err, size_t errcap);
+int cupidimage_tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset, uint64_t *entry_count,
+                                    uint64_t *next_ifd, char *err, size_t errcap);
 uint32_t cupidimage_tiff_read_sample(const tiff_context *ctx, const uint8_t *row, uint32_t index,
-                                 uint16_t bps, uint16_t fill_order);
+                                     uint16_t bps, uint16_t fill_order);
 double cupidimage_tiff_read_sample_float(const tiff_context *ctx, const uint8_t *row,
-                                     uint32_t index, uint16_t bps);
+                                         uint32_t index, uint16_t bps);
 uint8_t cupidimage_tiff_scale_float(double v);
 uint8_t cupidimage_tiff_scale_sample(uint32_t v, uint16_t bps);
 void cupidimage_tiff_write_u16(const tiff_context *ctx, uint8_t *p, uint16_t v);

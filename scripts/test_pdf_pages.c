@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(int argc, char **argv) {
-    if (argc != 3) return 2;
+int main(int argc, char **argv)
+{
+    if (argc != 3)
+        return 2;
     cupidimage_image image = {0};
     char error[256] = {0};
     int count = 0;

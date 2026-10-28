@@ -4,23 +4,30 @@
 
 #include <ctype.h>
 #include <float.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <limits.h>
 #include <sys/ioctl.h>
+#include <time.h>
 #include <unistd.h>
 
-static void usage(const char *prog) {
-    fprintf(stderr, "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page number] [--sixel] [--sixel-colors N] [--sixel-dither MODE] [--ansi] <image-file> [max_width] [max_height]\n", prog);
+static void usage(const char *prog)
+{
+    fprintf(stderr,
+            "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
+            "number] [--sixel] [--sixel-colors N] [--sixel-dither MODE] [--ansi] <image-file> "
+            "[max_width] [max_height]\n",
+            prog);
     fprintf(stderr, "  --sixel: force Sixel output\n");
     fprintf(stderr, "  --sixel-colors N: set max palette colors (2-256, default 256)\n");
-    fprintf(stderr, "  --sixel-dither MODE: none, floyd-steinberg, atkinson, ordered (default: floyd-steinberg)\n");
+    fprintf(stderr, "  --sixel-dither MODE: none, floyd-steinberg, atkinson, ordered (default: "
+                    "floyd-steinberg)\n");
     fprintf(stderr, "  --ansi: force ANSI truecolor output (disable Kitty/Sixel auto-detection)\n");
 }
 
-static int is_gif_file(const char *path) {
+static int is_gif_file(const char *path)
+{
     unsigned char sig[6];
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -34,14 +41,16 @@ static int is_gif_file(const char *path) {
     return memcmp(sig, "GIF87a", 6) == 0 || memcmp(sig, "GIF89a", 6) == 0;
 }
 
-static void sleep_ms(unsigned ms) {
+static void sleep_ms(unsigned ms)
+{
     struct timespec ts;
     ts.tv_sec = (time_t)(ms / 1000u);
     ts.tv_nsec = (long)(ms % 1000u) * 1000000L;
     nanosleep(&ts, NULL);
 }
 
-static int monotonic_seconds(double *out) {
+static int monotonic_seconds(double *out)
+{
     if (!out) {
         return 0;
     }
@@ -59,7 +68,8 @@ static int monotonic_seconds(double *out) {
     return 0;
 }
 
-static int parse_int(const char *s, int *out) {
+static int parse_int(const char *s, int *out)
+{
     if (!s || !*s) {
         return 0;
     }
@@ -75,7 +85,8 @@ static int parse_int(const char *s, int *out) {
     return 1;
 }
 
-static int parse_float(const char *s, float *out) {
+static int parse_float(const char *s, float *out)
+{
     if (!s || !*s || !out) {
         return 0;
     }
@@ -88,7 +99,8 @@ static int parse_float(const char *s, float *out) {
     return 1;
 }
 
-static int path_has_svg_extension(const char *path) {
+static int path_has_svg_extension(const char *path)
+{
     if (!path) {
         return 0;
     }
@@ -99,7 +111,8 @@ static int path_has_svg_extension(const char *path) {
     return strcmp(dot, ".svg") == 0 || strcmp(dot, ".SVG") == 0;
 }
 
-static int path_has_pdf_extension(const char *path) {
+static int path_has_pdf_extension(const char *path)
+{
     if (!path) {
         return 0;
     }
@@ -110,7 +123,8 @@ static int path_has_pdf_extension(const char *path) {
     return strcmp(dot, ".pdf") == 0 || strcmp(dot, ".PDF") == 0;
 }
 
-static int read_file_text(const char *path, char **out_text, size_t *out_size) {
+static int read_file_text(const char *path, char **out_text, size_t *out_size)
+{
     if (!path || !out_text || !out_size) {
         return 0;
     }
@@ -149,11 +163,13 @@ static int read_file_text(const char *path, char **out_text, size_t *out_size) {
     return 1;
 }
 
-static int ci_eq_char(char a, char b) {
+static int ci_eq_char(char a, char b)
+{
     return tolower((unsigned char)a) == tolower((unsigned char)b);
 }
 
-static int ci_starts_with(const char *s, const char *prefix) {
+static int ci_starts_with(const char *s, const char *prefix)
+{
     if (!s || !prefix) {
         return 0;
     }
@@ -167,13 +183,15 @@ static int ci_starts_with(const char *s, const char *prefix) {
     return 1;
 }
 
-static int is_name_char(char c) {
+static int is_name_char(char c)
+{
     unsigned char uc = (unsigned char)c;
     return isalnum(uc) || c == '_' || c == '-' || c == ':' || c == '.';
 }
 
-static int extract_attr_value_ci(const char *start, const char *end,
-                                 const char *attr, char *out, size_t out_cap) {
+static int extract_attr_value_ci(const char *start, const char *end, const char *attr, char *out,
+                                 size_t out_cap)
+{
     if (!start || !end || !attr || !out || out_cap == 0 || end <= start) {
         return 0;
     }
@@ -222,7 +240,8 @@ static int extract_attr_value_ci(const char *start, const char *end,
     return 0;
 }
 
-static int parse_clock_seconds(const char *s, float *out) {
+static int parse_clock_seconds(const char *s, float *out)
+{
     if (!s || !*s || !out) {
         return 0;
     }
@@ -259,7 +278,8 @@ static int parse_clock_seconds(const char *s, float *out) {
     return 1;
 }
 
-static int parse_repeat_count(const char *s, float *count, int *indefinite) {
+static int parse_repeat_count(const char *s, float *count, int *indefinite)
+{
     if (!count || !indefinite) {
         return 0;
     }
@@ -290,7 +310,8 @@ static int parse_repeat_count(const char *s, float *count, int *indefinite) {
     return 1;
 }
 
-static const char *find_ci_substr(const char *haystack, const char *needle) {
+static const char *find_ci_substr(const char *haystack, const char *needle)
+{
     if (!haystack || !needle || !*needle) {
         return NULL;
     }
@@ -309,9 +330,9 @@ static const char *find_ci_substr(const char *haystack, const char *needle) {
     return NULL;
 }
 
-static int parse_css_animation_shorthand_timing(const char *value,
-                                                float *duration, float *delay,
-                                                float *repeat, int *indefinite) {
+static int parse_css_animation_shorthand_timing(const char *value, float *duration, float *delay,
+                                                float *repeat, int *indefinite)
+{
     if (!value || !duration || !delay || !repeat || !indefinite) {
         return 0;
     }
@@ -337,7 +358,8 @@ static int parse_css_animation_shorthand_timing(const char *value,
                 paren_depth++;
             } else if (c == ')' && paren_depth > 0) {
                 paren_depth--;
-            } else if ((isspace((unsigned char)c) || c == ',' || c == ';' || c == '}') && paren_depth == 0) {
+            } else if ((isspace((unsigned char)c) || c == ',' || c == ';' || c == '}') &&
+                       paren_depth == 0) {
                 break;
             }
             p++;
@@ -376,7 +398,8 @@ static int parse_css_animation_shorthand_timing(const char *value,
     return have_duration;
 }
 
-static int analyze_css_animation_timeline(const char *text, float *duration_s, int *indefinite) {
+static int analyze_css_animation_timeline(const char *text, float *duration_s, int *indefinite)
+{
     if (!text || !duration_s || !indefinite) {
         return 0;
     }
@@ -413,7 +436,8 @@ static int analyze_css_animation_timeline(const char *text, float *duration_s, i
         if (value) {
             float dur = 0.0f, delay = 0.0f, repeat = 1.0f;
             int ind = 0;
-            if (parse_css_animation_shorthand_timing(value, &dur, &delay, &repeat, &ind) && dur > 0.0f) {
+            if (parse_css_animation_shorthand_timing(value, &dur, &delay, &repeat, &ind) &&
+                dur > 0.0f) {
                 found = 1;
                 if (ind) {
                     has_indefinite = 1;
@@ -436,7 +460,8 @@ static int analyze_css_animation_timeline(const char *text, float *duration_s, i
     return found;
 }
 
-static int analyze_svg_animation_timeline(const char *text, float *duration_s, int *indefinite) {
+static int analyze_svg_animation_timeline(const char *text, float *duration_s, int *indefinite)
+{
     if (!text || !duration_s || !indefinite) {
         return 0;
     }
@@ -516,7 +541,8 @@ static int analyze_svg_animation_timeline(const char *text, float *duration_s, i
     return found || css_found;
 }
 
-static void apply_fit(int *maxw, int *maxh) {
+static void apply_fit(int *maxw, int *maxh)
+{
     struct winsize ws;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) != 0) {
         return;
@@ -530,7 +556,9 @@ static void apply_fit(int *maxw, int *maxh) {
 }
 
 static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, int maxh,
-                                        int force_sixel, int force_ansi, int sixel_colors, uint8_t sixel_dither) {
+                                        int force_sixel, int force_ansi, int sixel_colors,
+                                        uint8_t sixel_dither)
+{
     char err[256];
 
     /* Force ANSI if requested */
@@ -545,11 +573,11 @@ static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, i
         opts.dither_mode = sixel_dither;
         opts.use_transparency = 0;
         opts.background_color = 0xFFFFFF;
-        opts.pixel_aspect_ratio = 0;  /* Auto-detect */
+        opts.pixel_aspect_ratio = 0; /* Auto-detect */
         opts.delete_previous = 0;
 
-        if (cupidimage_render_sixel_with_options(img, stdout, (uint32_t)maxw, (uint32_t)maxh,
-                                                 &opts, err, sizeof(err))) {
+        if (cupidimage_render_sixel_with_options(img, stdout, (uint32_t)maxw, (uint32_t)maxh, &opts,
+                                                 err, sizeof(err))) {
             return 1;
         }
         fprintf(stderr, "sixel render failed: %s\n", err);
@@ -563,11 +591,11 @@ static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, i
         opts.dither_mode = sixel_dither;
         opts.use_transparency = 0;
         opts.background_color = 0xFFFFFF;
-        opts.pixel_aspect_ratio = 0;  /* Auto-detect */
+        opts.pixel_aspect_ratio = 0; /* Auto-detect */
         opts.delete_previous = 0;
 
-        if (cupidimage_render_sixel_with_options(img, stdout, (uint32_t)maxw, (uint32_t)maxh,
-                                                 &opts, err, sizeof(err))) {
+        if (cupidimage_render_sixel_with_options(img, stdout, (uint32_t)maxw, (uint32_t)maxh, &opts,
+                                                 err, sizeof(err))) {
             return 1;
         }
         /* Fallback on error */
@@ -576,7 +604,8 @@ static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, i
 
     /* Try Kitty next */
     if (cupidimage_is_kitty_terminal()) {
-        if (cupidimage_render_kitty(img, stdout, (uint32_t)maxw, (uint32_t)maxh, err, sizeof(err))) {
+        if (cupidimage_render_kitty(img, stdout, (uint32_t)maxw, (uint32_t)maxh, err,
+                                    sizeof(err))) {
             return 1;
         }
         /* Fallback to ANSI on error */
@@ -587,7 +616,9 @@ static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, i
 }
 
 static int render_animation_with_sixel_opts(const cupidimage_animation *anim, int maxw, int maxh,
-                                            int force_sixel, int force_ansi, int sixel_colors, uint8_t sixel_dither) {
+                                            int force_sixel, int force_ansi, int sixel_colors,
+                                            uint8_t sixel_dither)
+{
     char err[256];
 
     /* Force ANSI if requested - not supported for animations, return error */
@@ -602,11 +633,11 @@ static int render_animation_with_sixel_opts(const cupidimage_animation *anim, in
         opts.dither_mode = sixel_dither;
         opts.use_transparency = 0;
         opts.background_color = 0xFFFFFF;
-        opts.pixel_aspect_ratio = 0;  /* Auto-detect */
+        opts.pixel_aspect_ratio = 0; /* Auto-detect */
         opts.delete_previous = 0;
 
-        if (cupidimage_render_sixel_animation_with_options(anim, stdout, (uint32_t)maxw,
-                                                           (uint32_t)maxh, &opts, err, sizeof(err))) {
+        if (cupidimage_render_sixel_animation_with_options(
+                anim, stdout, (uint32_t)maxw, (uint32_t)maxh, &opts, err, sizeof(err))) {
             return 1;
         }
         fprintf(stderr, "sixel animation render failed: %s\n", err);
@@ -620,11 +651,11 @@ static int render_animation_with_sixel_opts(const cupidimage_animation *anim, in
         opts.dither_mode = sixel_dither;
         opts.use_transparency = 0;
         opts.background_color = 0xFFFFFF;
-        opts.pixel_aspect_ratio = 0;  /* Auto-detect */
+        opts.pixel_aspect_ratio = 0; /* Auto-detect */
         opts.delete_previous = 0;
 
-        if (cupidimage_render_sixel_animation_with_options(anim, stdout, (uint32_t)maxw,
-                                                           (uint32_t)maxh, &opts, err, sizeof(err))) {
+        if (cupidimage_render_sixel_animation_with_options(
+                anim, stdout, (uint32_t)maxw, (uint32_t)maxh, &opts, err, sizeof(err))) {
             return 1;
         }
         /* Fallback on error */
@@ -633,7 +664,8 @@ static int render_animation_with_sixel_opts(const cupidimage_animation *anim, in
 
     /* Try Kitty next */
     if (cupidimage_is_kitty_terminal()) {
-        if (cupidimage_render_kitty_animation(anim, stdout, (uint32_t)maxw, (uint32_t)maxh, err, sizeof(err))) {
+        if (cupidimage_render_kitty_animation(anim, stdout, (uint32_t)maxw, (uint32_t)maxh, err,
+                                              sizeof(err))) {
             return 1;
         }
         /* Fallback to frame-by-frame rendering on error */
@@ -643,7 +675,9 @@ static int render_animation_with_sixel_opts(const cupidimage_animation *anim, in
     return 0;
 }
 
-static int render_svg_animation(const char *path, int maxw, int maxh, int force_ansi, char *err, size_t errcap) {
+static int render_svg_animation(const char *path, int maxw, int maxh, int force_ansi, char *err,
+                                size_t errcap)
+{
     char *text = NULL;
     size_t text_size = 0;
     if (!read_file_text(path, &text, &text_size)) {
@@ -654,8 +688,10 @@ static int render_svg_animation(const char *path, int maxw, int maxh, int force_
     int indefinite = 0;
     int has_animation = analyze_svg_animation_timeline(text, &timeline_s, &indefinite);
     if (!has_animation) {
-        int has_smil = find_ci_substr(text, "<animate") != NULL || find_ci_substr(text, "<set") != NULL;
-        int has_css = find_ci_substr(text, "@keyframes") != NULL || find_ci_substr(text, "animation:") != NULL;
+        int has_smil =
+            find_ci_substr(text, "<animate") != NULL || find_ci_substr(text, "<set") != NULL;
+        int has_css = find_ci_substr(text, "@keyframes") != NULL ||
+                      find_ci_substr(text, "animation:") != NULL;
         if (has_smil || has_css) {
             has_animation = 1;
             if (timeline_s <= 0.05f) {
@@ -737,7 +773,8 @@ static int render_svg_animation(const char *path, int maxw, int maxh, int force_
     return 1;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     if (argc < 2) {
         usage(argv[0]);
         return 1;
@@ -756,7 +793,7 @@ int main(int argc, char **argv) {
     int force_sixel = 0;
     int force_ansi = 0;
     int sixel_colors = 256;
-    uint8_t sixel_dither = 1;  /* Floyd-Steinberg by default */
+    uint8_t sixel_dither = 1; /* Floyd-Steinberg by default */
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--fit") == 0) {
@@ -772,7 +809,8 @@ int main(int argc, char **argv) {
             continue;
         }
         if (strcmp(argv[i], "--sixel-colors") == 0) {
-            if (i + 1 >= argc || !parse_int(argv[i + 1], &sixel_colors) || sixel_colors < 2 || sixel_colors > 256) {
+            if (i + 1 >= argc || !parse_int(argv[i + 1], &sixel_colors) || sixel_colors < 2 ||
+                sixel_colors > 256) {
                 fprintf(stderr, "error: --sixel-colors requires a value between 2 and 256\n");
                 usage(argv[0]);
                 return 1;
@@ -880,7 +918,8 @@ int main(int argc, char **argv) {
             return 1;
         }
         if (anim.frame_count == 1 || !isatty(STDOUT_FILENO)) {
-            if (!render_image_with_sixel_opts(&anim.frames[0], maxw, maxh, force_sixel, force_ansi, sixel_colors, sixel_dither)) {
+            if (!render_image_with_sixel_opts(&anim.frames[0], maxw, maxh, force_sixel, force_ansi,
+                                              sixel_colors, sixel_dither)) {
                 fprintf(stderr, "render error\n");
                 cupidimage_free_animation(&anim);
                 return 1;
@@ -890,7 +929,8 @@ int main(int argc, char **argv) {
         }
 
         /* Try protocol-based animation rendering */
-        if (render_animation_with_sixel_opts(&anim, maxw, maxh, force_sixel, force_ansi, sixel_colors, sixel_dither)) {
+        if (render_animation_with_sixel_opts(&anim, maxw, maxh, force_sixel, force_ansi,
+                                             sixel_colors, sixel_dither)) {
             cupidimage_free_animation(&anim);
             return 0;
         }
@@ -904,7 +944,8 @@ int main(int argc, char **argv) {
         for (uint32_t loop = 0; loop < loops; loop++) {
             for (uint32_t i = 0; i < anim.frame_count; i++) {
                 fputs("\x1b[H", stdout);
-                if (!render_image_with_sixel_opts(&anim.frames[i], maxw, maxh, force_sixel, force_ansi, sixel_colors, sixel_dither)) {
+                if (!render_image_with_sixel_opts(&anim.frames[i], maxw, maxh, force_sixel,
+                                                  force_ansi, sixel_colors, sixel_dither)) {
                     fprintf(stderr, "render error\n");
                     cupidimage_free_animation(&anim);
                     fputs("\x1b[?25h", stdout);
@@ -962,7 +1003,8 @@ int main(int argc, char **argv) {
             if (page_count > 1 && !has_pdf_page) {
                 fprintf(stderr, "[pdf page %d/%d]\n", page + 1, page_count);
             }
-            if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi, sixel_colors, sixel_dither)) {
+            if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi,
+                                              sixel_colors, sixel_dither)) {
                 fprintf(stderr, "render error\n");
                 cupidimage_free(&img);
                 return 1;
@@ -1001,7 +1043,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi, sixel_colors, sixel_dither)) {
+    if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi, sixel_colors,
+                                      sixel_dither)) {
         fprintf(stderr, "render error\n");
         cupidimage_free(&img);
         return 1;

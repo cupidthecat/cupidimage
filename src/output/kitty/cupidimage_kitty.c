@@ -1,17 +1,19 @@
 #include "output/kitty/cupidimage_kitty.h"
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
 static const char base64_table[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-int kitty_base64_encode(const uint8_t *data, size_t size, char *out, size_t outcap) {
+int kitty_base64_encode(const uint8_t *data, size_t size, char *out, size_t outcap)
+{
     /* The API returns the encoded length as int. Check before size arithmetic. */
-    if (!out || (!data && size) || size > (size_t)(INT_MAX / 4) * 3u) return -1;
+    if (!out || (!data && size) || size > (size_t)(INT_MAX / 4) * 3u)
+        return -1;
     if (size == 0) {
         if (outcap > 0) {
             out[0] = '\0';
@@ -21,14 +23,14 @@ int kitty_base64_encode(const uint8_t *data, size_t size, char *out, size_t outc
 
     size_t outlen = ((size + 2) / 3) * 4;
     if (outcap < outlen + 1) {
-        return -1;  /* buffer too small */
+        return -1; /* buffer too small */
     }
 
     size_t i = 0;
     size_t j = 0;
 
     while (i + 2 < size) {
-        uint32_t n = ((uint32_t)data[i] << 16) | ((uint32_t)data[i+1] << 8) | data[i+2];
+        uint32_t n = ((uint32_t)data[i] << 16) | ((uint32_t)data[i + 1] << 8) | data[i + 2];
         out[j++] = base64_table[(n >> 18) & 0x3F];
         out[j++] = base64_table[(n >> 12) & 0x3F];
         out[j++] = base64_table[(n >> 6) & 0x3F];
@@ -39,7 +41,7 @@ int kitty_base64_encode(const uint8_t *data, size_t size, char *out, size_t outc
     if (i < size) {
         uint32_t n = (uint32_t)data[i] << 16;
         if (i + 1 < size) {
-            n |= (uint32_t)data[i+1] << 8;
+            n |= (uint32_t)data[i + 1] << 8;
         }
 
         out[j++] = base64_table[(n >> 18) & 0x3F];
@@ -52,7 +54,8 @@ int kitty_base64_encode(const uint8_t *data, size_t size, char *out, size_t outc
     return (int)j;
 }
 
-int cupidimage_is_kitty_terminal(void) {
+int cupidimage_is_kitty_terminal(void)
+{
     const char *kitty_window = getenv("KITTY_WINDOW_ID");
     if (kitty_window != NULL && kitty_window[0] != '\0') {
         return 1;
@@ -66,13 +69,15 @@ int cupidimage_is_kitty_terminal(void) {
     return 0;
 }
 
-static void set_err(char *err, size_t errcap, const char *msg) {
+static void set_err(char *err, size_t errcap, const char *msg)
+{
     if (err && errcap > 0) {
         snprintf(err, errcap, "%s", msg);
     }
 }
 
-static int kitty_finish_output(FILE *out, char *err, size_t errcap) {
+static int kitty_finish_output(FILE *out, char *err, size_t errcap)
+{
     if (ferror(out) || fflush(out) != 0) {
         set_err(err, errcap, "failed to write Kitty output");
         return 0;
@@ -80,8 +85,8 @@ static int kitty_finish_output(FILE *out, char *err, size_t errcap) {
     return 1;
 }
 
-static int kitty_image_size(const cupidimage_image *img, size_t *size,
-                             char *err, size_t errcap) {
+static int kitty_image_size(const cupidimage_image *img, size_t *size, char *err, size_t errcap)
+{
     if (!img || !img->rgba || !img->width || !img->height ||
         img->width > SIZE_MAX / 4u / img->height) {
         set_err(err, errcap, "invalid image dimensions or pixels");
@@ -95,7 +100,8 @@ static int kitty_image_size(const cupidimage_image *img, size_t *size,
     return 1;
 }
 
-int cupidimage_kitty_delete_all(FILE *out, char *err, size_t errcap) {
+int cupidimage_kitty_delete_all(FILE *out, char *err, size_t errcap)
+{
     if (!out) {
         set_err(err, errcap, "null output file");
         return 0;
@@ -106,8 +112,8 @@ int cupidimage_kitty_delete_all(FILE *out, char *err, size_t errcap) {
     return kitty_finish_output(out, err, errcap);
 }
 
-int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id,
-                                 char *err, size_t errcap) {
+int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id, char *err, size_t errcap)
+{
     if (!out) {
         set_err(err, errcap, "null output file");
         return 0;
@@ -118,9 +124,9 @@ int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id,
     return kitty_finish_output(out, err, errcap);
 }
 
-int cupidimage_kitty_delete_placement(FILE *out, uint32_t image_id,
-                                     uint32_t placement_id,
-                                     char *err, size_t errcap) {
+int cupidimage_kitty_delete_placement(FILE *out, uint32_t image_id, uint32_t placement_id,
+                                      char *err, size_t errcap)
+{
     if (!out) {
         set_err(err, errcap, "null output file");
         return 0;
@@ -135,24 +141,28 @@ static uint32_t next_image_id = 1;
 static uint32_t next_placement_id = 1;
 
 int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
-                                        uint32_t term_width, uint32_t term_height,
-                                        const cupidimage_kitty_options *opts,
-                                        char *err, size_t errcap) {
+                                         uint32_t term_width, uint32_t term_height,
+                                         const cupidimage_kitty_options *opts, char *err,
+                                         size_t errcap)
+{
     if (!out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
     }
     size_t data_size;
-    if (!kitty_image_size(img, &data_size, err, errcap)) return 0;
+    if (!kitty_image_size(img, &data_size, err, errcap))
+        return 0;
     cupidimage_kitty_options defaults = {0};
     defaults.compression = 1;
-    if (!opts) opts = &defaults;
+    if (!opts)
+        opts = &defaults;
 
     uint32_t img_id = opts->image_id ? opts->image_id : next_image_id++;
     uint32_t place_id = opts->placement_id ? opts->placement_id : next_placement_id++;
 
     if (opts->delete_previous) {
-        if (!cupidimage_kitty_delete_all(out, err, errcap)) return 0;
+        if (!cupidimage_kitty_delete_all(out, err, errcap))
+            return 0;
     }
 
     /* Calculate display dimensions in cells */
@@ -184,8 +194,8 @@ int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
             return 0;
         }
 
-        if (!cupidimage_deflate_compress(img->rgba, data_size, compressed,
-                                        max_compressed, &compressed_size)) {
+        if (!cupidimage_deflate_compress(img->rgba, data_size, compressed, max_compressed,
+                                         &compressed_size)) {
             free(compressed);
             set_err(err, errcap, "compression failed");
             return 0;
@@ -222,8 +232,8 @@ int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
     /* Send in chunks (Kitty has 4096 byte limit per escape sequence payload)
      * The limit applies to control_data + semicolon + base64_data combined.
      * Per spec: "All chunks, except the last, must have a size that is a multiple of 4" */
-    const size_t first_chunk_size = 3800;  /* Conservative: leave ~250 bytes for header */
-    const size_t chunk_size = 4088;        /* Continuation header is tiny: "m=X;" uses ~8 bytes */
+    const size_t first_chunk_size = 3800; /* Conservative: leave ~250 bytes for header */
+    const size_t chunk_size = 4088;       /* Continuation header is tiny: "m=X;" uses ~8 bytes */
     size_t offset = 0;
 
     while (offset < (size_t)encoded) {
@@ -234,8 +244,8 @@ int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
 
         /* Non-final chunks must be a multiple of 4 bytes */
         if (!is_last && (this_chunk % 4) != 0) {
-            this_chunk = this_chunk & ~(size_t)3;  /* Round down to multiple of 4 */
-            is_last = 0;  /* Re-check after adjustment */
+            this_chunk = this_chunk & ~(size_t)3; /* Round down to multiple of 4 */
+            is_last = 0;                          /* Re-check after adjustment */
         }
 
         if (offset == 0) {
@@ -243,36 +253,34 @@ int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
             if (use_compression) {
                 if (display_cols > 0 && display_rows > 0) {
                     fprintf(out, "\033_Gf=32,o=z,s=%u,v=%u,c=%u,r=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, display_cols, display_rows,
-                            img_id, place_id, is_last ? 0 : 1);
+                            img->width, img->height, display_cols, display_rows, img_id, place_id,
+                            is_last ? 0 : 1);
                 } else if (display_cols > 0) {
                     fprintf(out, "\033_Gf=32,o=z,s=%u,v=%u,c=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, display_cols,
-                            img_id, place_id, is_last ? 0 : 1);
+                            img->width, img->height, display_cols, img_id, place_id,
+                            is_last ? 0 : 1);
                 } else if (display_rows > 0) {
                     fprintf(out, "\033_Gf=32,o=z,s=%u,v=%u,r=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, display_rows,
-                            img_id, place_id, is_last ? 0 : 1);
+                            img->width, img->height, display_rows, img_id, place_id,
+                            is_last ? 0 : 1);
                 } else {
-                    fprintf(out, "\033_Gf=32,o=z,s=%u,v=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, img_id, place_id, is_last ? 0 : 1);
+                    fprintf(out, "\033_Gf=32,o=z,s=%u,v=%u,i=%u,p=%u,a=T,q=1,m=%d;", img->width,
+                            img->height, img_id, place_id, is_last ? 0 : 1);
                 }
             } else {
                 if (display_cols > 0 && display_rows > 0) {
                     fprintf(out, "\033_Gf=32,s=%u,v=%u,c=%u,r=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, display_cols, display_rows,
-                            img_id, place_id, is_last ? 0 : 1);
+                            img->width, img->height, display_cols, display_rows, img_id, place_id,
+                            is_last ? 0 : 1);
                 } else if (display_cols > 0) {
-                    fprintf(out, "\033_Gf=32,s=%u,v=%u,c=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, display_cols,
-                            img_id, place_id, is_last ? 0 : 1);
+                    fprintf(out, "\033_Gf=32,s=%u,v=%u,c=%u,i=%u,p=%u,a=T,q=1,m=%d;", img->width,
+                            img->height, display_cols, img_id, place_id, is_last ? 0 : 1);
                 } else if (display_rows > 0) {
-                    fprintf(out, "\033_Gf=32,s=%u,v=%u,r=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, display_rows,
-                            img_id, place_id, is_last ? 0 : 1);
+                    fprintf(out, "\033_Gf=32,s=%u,v=%u,r=%u,i=%u,p=%u,a=T,q=1,m=%d;", img->width,
+                            img->height, display_rows, img_id, place_id, is_last ? 0 : 1);
                 } else {
-                    fprintf(out, "\033_Gf=32,s=%u,v=%u,i=%u,p=%u,a=T,q=1,m=%d;",
-                            img->width, img->height, img_id, place_id, is_last ? 0 : 1);
+                    fprintf(out, "\033_Gf=32,s=%u,v=%u,i=%u,p=%u,a=T,q=1,m=%d;", img->width,
+                            img->height, img_id, place_id, is_last ? 0 : 1);
                 }
             }
         } else {
@@ -298,20 +306,20 @@ int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
     return kitty_finish_output(out, err, errcap);
 }
 
-int cupidimage_render_kitty(const cupidimage_image *img, FILE *out,
-                           uint32_t term_width, uint32_t term_height,
-                           char *err, size_t errcap) {
+int cupidimage_render_kitty(const cupidimage_image *img, FILE *out, uint32_t term_width,
+                            uint32_t term_height, char *err, size_t errcap)
+{
     cupidimage_kitty_options opts = {0};
-    opts.compression = 1;  /* enable by default */
-    return cupidimage_render_kitty_with_options(img, out, term_width, term_height,
-                                               &opts, err, errcap);
+    opts.compression = 1; /* enable by default */
+    return cupidimage_render_kitty_with_options(img, out, term_width, term_height, &opts, err,
+                                                errcap);
 }
 
-int cupidimage_render_kitty_animation_with_options(
-    const cupidimage_animation *anim, FILE *out,
-    uint32_t term_width, uint32_t term_height,
-    const cupidimage_kitty_options *opts,
-    char *err, size_t errcap) {
+int cupidimage_render_kitty_animation_with_options(const cupidimage_animation *anim, FILE *out,
+                                                   uint32_t term_width, uint32_t term_height,
+                                                   const cupidimage_kitty_options *opts, char *err,
+                                                   size_t errcap)
+{
 
     if (!anim || !out || !anim->frames || anim->frame_count == 0) {
         set_err(err, errcap, "invalid arguments or no animation data");
@@ -323,7 +331,8 @@ int cupidimage_render_kitty_animation_with_options(
     }
     for (uint32_t i = 0; i < anim->frame_count; i++) {
         size_t frame_size;
-        if (!kitty_image_size(&anim->frames[i], &frame_size, err, errcap)) return 0;
+        if (!kitty_image_size(&anim->frames[i], &frame_size, err, errcap))
+            return 0;
         if (anim->delays && anim->delays[i] > INT_MAX) {
             set_err(err, errcap, "animation delay out of range");
             return 0;
@@ -331,7 +340,8 @@ int cupidimage_render_kitty_animation_with_options(
     }
     cupidimage_kitty_options defaults = {0};
     defaults.compression = 1;
-    if (!opts) opts = &defaults;
+    if (!opts)
+        opts = &defaults;
 
     (void)term_width;
     (void)term_height;
@@ -340,7 +350,8 @@ int cupidimage_render_kitty_animation_with_options(
     uint32_t place_id = opts->placement_id ? opts->placement_id : next_placement_id++;
 
     if (opts->delete_previous) {
-        if (!cupidimage_kitty_delete_all(out, err, errcap)) return 0;
+        if (!cupidimage_kitty_delete_all(out, err, errcap))
+            return 0;
     }
 
     /* First, transmit and display the base image (first frame) */
@@ -349,8 +360,7 @@ int cupidimage_render_kitty_animation_with_options(
     first_opts.placement_id = place_id;
     first_opts.delete_previous = 0;
 
-    if (!cupidimage_render_kitty_with_options(&anim->frames[0], out,
-                                              term_width, term_height,
+    if (!cupidimage_render_kitty_with_options(&anim->frames[0], out, term_width, term_height,
                                               &first_opts, err, errcap)) {
         return 0;
     }
@@ -380,8 +390,8 @@ int cupidimage_render_kitty_animation_with_options(
                 return 0;
             }
 
-            if (!cupidimage_deflate_compress(frame->rgba, data_size, compressed,
-                                            max_compressed, &compressed_size)) {
+            if (!cupidimage_deflate_compress(frame->rgba, data_size, compressed, max_compressed,
+                                             &compressed_size)) {
                 free(compressed);
                 set_err(err, errcap, "compression failed");
                 return 0;
@@ -415,7 +425,7 @@ int cupidimage_render_kitty_animation_with_options(
         }
 
         /* Send frame data in chunks with a=f */
-        const size_t first_chunk_size = 3700;  /* Extra room for frame header */
+        const size_t first_chunk_size = 3700; /* Extra room for frame header */
         const size_t chunk_size = 4088;
         size_t offset = 0;
         int gap_ms = anim->delays ? (anim->delays[i] ? (int)anim->delays[i] : -1) : 40;
@@ -434,11 +444,11 @@ int cupidimage_render_kitty_animation_with_options(
             if (offset == 0) {
                 /* First chunk of frame - include frame metadata */
                 if (use_compression) {
-                    fprintf(out, "\033_Ga=f,i=%u,o=z,s=%u,v=%u,z=%d,q=1,m=%d;",
-                            img_id, frame->width, frame->height, gap_ms, is_last ? 0 : 1);
+                    fprintf(out, "\033_Ga=f,i=%u,o=z,s=%u,v=%u,z=%d,q=1,m=%d;", img_id,
+                            frame->width, frame->height, gap_ms, is_last ? 0 : 1);
                 } else {
-                    fprintf(out, "\033_Ga=f,i=%u,s=%u,v=%u,z=%d,q=1,m=%d;",
-                            img_id, frame->width, frame->height, gap_ms, is_last ? 0 : 1);
+                    fprintf(out, "\033_Ga=f,i=%u,s=%u,v=%u,z=%d,q=1,m=%d;", img_id, frame->width,
+                            frame->height, gap_ms, is_last ? 0 : 1);
                 }
             } else {
                 /* Continuation chunk - must include a=f */
@@ -472,11 +482,11 @@ int cupidimage_render_kitty_animation_with_options(
 }
 
 int cupidimage_render_kitty_animation(const cupidimage_animation *anim, FILE *out,
-                                     uint32_t term_width, uint32_t term_height,
-                                     char *err, size_t errcap) {
+                                      uint32_t term_width, uint32_t term_height, char *err,
+                                      size_t errcap)
+{
     cupidimage_kitty_options opts = {0};
     opts.compression = 1;
-    return cupidimage_render_kitty_animation_with_options(anim, out,
-                                                         term_width, term_height,
-                                                         &opts, err, errcap);
+    return cupidimage_render_kitty_animation_with_options(anim, out, term_width, term_height, &opts,
+                                                          err, errcap);
 }

@@ -1,9 +1,10 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include <ctype.h>
 #include <string.h>
 
-static int is_svg_data(const unsigned char *data, size_t size) {
+static int is_svg_data(const unsigned char *data, size_t size)
+{
     if (!data || size < 4) {
         return 0;
     }
@@ -31,14 +32,15 @@ static int is_svg_data(const unsigned char *data, size_t size) {
     return 0;
 }
 
-int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out,
-                          char *err, size_t errcap) {
+int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                          size_t errcap)
+{
     if (!data || !out) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
     }
-    if (size >= 6 && data[0] == 0 && data[1] == 0 &&
-        (data[2] == 1 || data[2] == 2) && data[3] == 0) {
+    if (size >= 6 && data[0] == 0 && data[1] == 0 && (data[2] == 1 || data[2] == 2) &&
+        data[3] == 0) {
         uint16_t count = (uint16_t)(data[4] | (data[5] << 8));
         if (count > 0 && 6u + (size_t)count * 16u <= size) {
             return cupidimage_load_ico(data, size, out, err, errcap);
@@ -74,7 +76,8 @@ int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_ima
         uint16_t width = (uint16_t)(data[12] | (data[13] << 8));
         uint16_t height = (uint16_t)(data[14] | (data[15] << 8));
         uint8_t depth = data[16];
-        int depth_ok = (depth == 0 || depth == 8 || depth == 15 || depth == 16 || depth == 24 || depth == 32);
+        int depth_ok =
+            (depth == 0 || depth == 8 || depth == 15 || depth == 16 || depth == 24 || depth == 32);
         if (color_map_type <= 1 && type <= 11 && depth_ok) {
             if (type == 0 || (width > 0 && height > 0)) {
                 return cupidimage_load_tga(data, size, out, err, errcap);
@@ -95,7 +98,7 @@ int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_ima
     return 0;
 }
 
-int cupidimage_load_image_file(const char *path, cupidimage_image *out,
-                               char *err, size_t errcap) {
+int cupidimage_load_image_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
+{
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_image);
 }

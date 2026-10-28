@@ -3,10 +3,12 @@
 #include "glyph_names_data.h"
 #include <stddef.h>
 #include <string.h>
-static int encoding_hex(char c) {
+static int encoding_hex(char c)
+{
     return c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
 }
-int cupidimage_pdf_glyph_scalar(const char *name, uint32_t *out) {
+int cupidimage_pdf_glyph_scalar(const char *name, uint32_t *out)
+{
     char base[128];
     size_t n = 0;
     while (name[n] && name[n] != '.') {
@@ -46,11 +48,13 @@ int cupidimage_pdf_glyph_scalar(const char *name, uint32_t *out) {
     *out = scalar;
     return scalar <= 0x10ffff && (scalar < 0xd800 || scalar > 0xdfff);
 }
-uint32_t cupidimage_pdf_glyph_unicode(const char *name) {
+uint32_t cupidimage_pdf_glyph_unicode(const char *name)
+{
     uint32_t scalar = 0;
     return cupidimage_pdf_glyph_scalar(name, &scalar) ? scalar : 0;
 }
-const char *cupidimage_pdf_encoding_name(const char *encoding, unsigned code) {
+const char *cupidimage_pdf_encoding_name(const char *encoding, unsigned code)
+{
     if (code > 255)
         return ".notdef";
     if (!strcmp(encoding, "MacRomanEncoding"))
@@ -61,7 +65,8 @@ const char *cupidimage_pdf_encoding_name(const char *encoding, unsigned code) {
         return pdf_WinAnsiEncoding[code];
     return pdf_StandardEncoding[code];
 }
-unsigned cupidimage_pdf_mac_roman_code(uint32_t scalar) {
+unsigned cupidimage_pdf_mac_roman_code(uint32_t scalar)
+{
     static const struct {
         uint32_t scalar;
         unsigned code;

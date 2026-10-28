@@ -1,5 +1,5 @@
-#include "cupidimage.h"
 #include "core/internal.h"
+#include "cupidimage.h"
 #include "formats/svg/cupidimage_svg_base.h"
 
 #include <ctype.h>
@@ -26,16 +26,17 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
 static float svg_segment_angle_deg(const svg_segment *seg);
 static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next);
 static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, const svg_matrix *m,
-                                     float px, float py, float angle_deg, float stroke_width, float dpi);
-static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                          const svg_segments *segs, float dpi);
+                                     float px, float py, float angle_deg, float stroke_width,
+                                     float dpi);
+static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style,
+                                          const svg_matrix *m, const svg_segments *segs, float dpi);
 static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                          const svg_tag *tag, const char *local, float dpi,
-                          char *child_start, float anim_time,
-                          const svg_defs *defs, svg_bbox *out_bbox);
+                          const svg_tag *tag, const char *local, float dpi, char *child_start,
+                          float anim_time, const svg_defs *defs, svg_bbox *out_bbox);
 
 static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *content,
-                                          const svg_matrix *gm, float dpi) {
+                                          const svg_matrix *gm, float dpi)
+{
     if (!ctx || !content || !*content || !gm) {
         return 0;
     }
@@ -43,11 +44,11 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
     float vb_y = ctx->vb_y;
     float vb_w = ctx->vb_w > 0.0f ? ctx->vb_w : (float)ctx->width;
     float vb_h = ctx->vb_h > 0.0f ? ctx->vb_h : (float)ctx->height;
-    int header_len = snprintf(NULL, 0,
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
-                              "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
-                              vb_w, vb_h, vb_x, vb_y, vb_w, vb_h,
-                              gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
+    int header_len = snprintf(
+        NULL, 0,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
+        "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
+        vb_w, vb_h, vb_x, vb_y, vb_w, vb_h, gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
     if (header_len <= 0) {
         return 0;
     }
@@ -59,11 +60,11 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
         return 0;
     }
     char *dst = svg;
-    dst += (size_t)snprintf(dst, (size_t)header_len + 1u,
-                            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
-                            "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
-                            vb_w, vb_h, vb_x, vb_y, vb_w, vb_h,
-                            gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
+    dst += (size_t)snprintf(
+        dst, (size_t)header_len + 1u,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
+        "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
+        vb_w, vb_h, vb_x, vb_y, vb_w, vb_h, gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
     memcpy(dst, content, content_len);
     dst += content_len;
     memcpy(dst, footer, strlen(footer));
@@ -82,7 +83,8 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
     svg_render_ctx tmp_ctx;
     memset(&tmp_ctx, 0, sizeof(tmp_ctx));
     char errbuf[128];
-    int ok = cupidimage_svg_render(&tmp_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = cupidimage_svg_render(&tmp_ctx, (const unsigned char *)svg, strlen(svg), errbuf,
+                                   sizeof(errbuf), &opts);
     free(svg);
     if (!ok || !tmp_ctx.hi_rgba) {
         free(tmp_ctx.hi_rgba);
@@ -93,14 +95,16 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
     return 1;
 }
 
-static float svg_segment_angle_deg(const svg_segment *seg) {
+static float svg_segment_angle_deg(const svg_segment *seg)
+{
     if (!seg) {
         return 0.0f;
     }
     return atan2f(seg->y1 - seg->y0, seg->x1 - seg->x0) * (180.0f / (float)M_PI);
 }
 
-static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next) {
+static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next)
+{
     if (!prev || !next) {
         return 0.0f;
     }
@@ -130,7 +134,9 @@ static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next
 }
 
 static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, const svg_matrix *m,
-                                     float px, float py, float angle_deg, float stroke_width, float dpi) {
+                                     float px, float py, float angle_deg, float stroke_width,
+                                     float dpi)
+{
     if (!ctx || !mk || !m || !mk->content || !*mk->content) {
         return;
     }
@@ -196,8 +202,9 @@ static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, 
     svg_render_transformed_snippet(ctx, mk->content, &gm, dpi);
 }
 
-static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                          const svg_segments *segs, float dpi) {
+static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style,
+                                          const svg_matrix *m, const svg_segments *segs, float dpi)
+{
     if (!ctx || !style || !m || !segs || segs->stroke_count == 0) {
         return;
     }
@@ -209,41 +216,36 @@ static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *
     }
     const svg_segment *first = &segs->stroke[0];
     const svg_segment *last_seg = &segs->stroke[segs->stroke_count - 1];
-    int is_closed = fabsf(first->x0 - last_seg->x1) < 1e-4f &&
-                    fabsf(first->y0 - last_seg->y1) < 1e-4f;
+    int is_closed =
+        fabsf(first->x0 - last_seg->x1) < 1e-4f && fabsf(first->y0 - last_seg->y1) < 1e-4f;
     if (style->marker_start) {
-        float a = is_closed && segs->stroke_count > 1
-            ? svg_join_angle_deg(last_seg, first)
-            : svg_segment_angle_deg(first);
+        float a = is_closed && segs->stroke_count > 1 ? svg_join_angle_deg(last_seg, first)
+                                                      : svg_segment_angle_deg(first);
         if (style->marker_start->orient_auto && style->marker_start->orient_auto_start_reverse) {
             a += 180.0f;
         }
-        svg_draw_marker_instance(ctx, style->marker_start, m,
-                                 first->x0, first->y0,
-                                 a, style->stroke_width, dpi);
+        svg_draw_marker_instance(ctx, style->marker_start, m, first->x0, first->y0, a,
+                                 style->stroke_width, dpi);
     }
     if (style->marker_mid && segs->stroke_count > 1) {
         for (size_t i = 1; i < segs->stroke_count; i++) {
             float a = svg_join_angle_deg(&segs->stroke[i - 1], &segs->stroke[i]);
-            svg_draw_marker_instance(ctx, style->marker_mid, m,
-                                     segs->stroke[i].x0, segs->stroke[i].y0,
-                                     a, style->stroke_width, dpi);
+            svg_draw_marker_instance(ctx, style->marker_mid, m, segs->stroke[i].x0,
+                                     segs->stroke[i].y0, a, style->stroke_width, dpi);
         }
     }
     if (style->marker_end) {
-        float a = is_closed && segs->stroke_count > 1
-            ? svg_join_angle_deg(last_seg, first)
-            : svg_segment_angle_deg(last_seg);
-        svg_draw_marker_instance(ctx, style->marker_end, m,
-                                 last_seg->x1, last_seg->y1,
-                                 a, style->stroke_width, dpi);
+        float a = is_closed && segs->stroke_count > 1 ? svg_join_angle_deg(last_seg, first)
+                                                      : svg_segment_angle_deg(last_seg);
+        svg_draw_marker_instance(ctx, style->marker_end, m, last_seg->x1, last_seg->y1, a,
+                                 style->stroke_width, dpi);
     }
 }
 
 static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                          const svg_tag *tag, const char *local, float dpi,
-                          char *child_start, float anim_time,
-                          const svg_defs *defs, svg_bbox *out_bbox) {
+                          const svg_tag *tag, const char *local, float dpi, char *child_start,
+                          float anim_time, const svg_defs *defs, svg_bbox *out_bbox)
+{
     if (!ctx || !style || !m || !tag || !local) {
         return 0;
     }
@@ -257,15 +259,24 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     }
     if (strcmp(local, "rect") == 0) {
         int ok = 0;
-        float x = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
-        if (!ok) x = 0.0f;
-        float y = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
-        if (!ok) y = 0.0f;
-        float w = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "width"), ctx->vb_w, dpi, &ok);
-        float h = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "height"), ctx->vb_h, dpi, &ok);
-        float rx = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "rx"), ctx->vb_w, dpi, &ok);
-        float ry = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "ry"), ctx->vb_h, dpi, &ok);
-        if (!ok) rx = 0.0f;
+        float x =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
+        if (!ok)
+            x = 0.0f;
+        float y =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
+        if (!ok)
+            y = 0.0f;
+        float w =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "width"), ctx->vb_w, dpi, &ok);
+        float h = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "height"), ctx->vb_h,
+                                              dpi, &ok);
+        float rx =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "rx"), ctx->vb_w, dpi, &ok);
+        float ry =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "ry"), ctx->vb_h, dpi, &ok);
+        if (!ok)
+            rx = 0.0f;
         if (!cupidimage_svg_get_attr(tag, "ry") && rx > 0.0f) {
             ry = rx;
         }
@@ -280,11 +291,16 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     }
     if (strcmp(local, "circle") == 0) {
         int ok = 0;
-        float cx = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cx"), ctx->vb_w, dpi, &ok);
-        if (!ok) cx = 0.0f;
-        float cy = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cy"), ctx->vb_h, dpi, &ok);
-        if (!ok) cy = 0.0f;
-        float r = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "r"), (ctx->vb_w + ctx->vb_h) * 0.5f, dpi, &ok);
+        float cx =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cx"), ctx->vb_w, dpi, &ok);
+        if (!ok)
+            cx = 0.0f;
+        float cy =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cy"), ctx->vb_h, dpi, &ok);
+        if (!ok)
+            cy = 0.0f;
+        float r = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "r"),
+                                              (ctx->vb_w + ctx->vb_h) * 0.5f, dpi, &ok);
         if (out_bbox && r > 0.0f) {
             cupidimage_svg_bbox_add_rect(out_bbox, cx - r, cy - r, r * 2.0f, r * 2.0f);
             if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
@@ -296,12 +312,18 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     }
     if (strcmp(local, "ellipse") == 0) {
         int ok = 0;
-        float cx = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cx"), ctx->vb_w, dpi, &ok);
-        if (!ok) cx = 0.0f;
-        float cy = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cy"), ctx->vb_h, dpi, &ok);
-        if (!ok) cy = 0.0f;
-        float rx = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "rx"), ctx->vb_w, dpi, &ok);
-        float ry = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "ry"), ctx->vb_h, dpi, &ok);
+        float cx =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cx"), ctx->vb_w, dpi, &ok);
+        if (!ok)
+            cx = 0.0f;
+        float cy =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "cy"), ctx->vb_h, dpi, &ok);
+        if (!ok)
+            cy = 0.0f;
+        float rx =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "rx"), ctx->vb_w, dpi, &ok);
+        float ry =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "ry"), ctx->vb_h, dpi, &ok);
         if (out_bbox && rx > 0.0f && ry > 0.0f) {
             cupidimage_svg_bbox_add_rect(out_bbox, cx - rx, cy - ry, rx * 2.0f, ry * 2.0f);
             if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
@@ -313,10 +335,14 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     }
     if (strcmp(local, "line") == 0) {
         int ok = 0;
-        float x1 = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x1"), ctx->vb_w, dpi, &ok);
-        float y1 = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y1"), ctx->vb_h, dpi, &ok);
-        float x2 = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x2"), ctx->vb_w, dpi, &ok);
-        float y2 = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y2"), ctx->vb_h, dpi, &ok);
+        float x1 =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x1"), ctx->vb_w, dpi, &ok);
+        float y1 =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y1"), ctx->vb_h, dpi, &ok);
+        float x2 =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x2"), ctx->vb_w, dpi, &ok);
+        float y2 =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y2"), ctx->vb_h, dpi, &ok);
         if (out_bbox) {
             float minx = fminf(x1, x2);
             float miny = fminf(y1, y2);
@@ -352,19 +378,26 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
                 for (int i = 1; i < count; i++) {
                     float px = pts[i * 2];
                     float py = pts[i * 2 + 1];
-                    if (px < minx) minx = px;
-                    if (px > maxx) maxx = px;
-                    if (py < miny) miny = py;
-                    if (py > maxy) maxy = py;
+                    if (px < minx)
+                        minx = px;
+                    if (px > maxx)
+                        maxx = px;
+                    if (py < miny)
+                        miny = py;
+                    if (py > maxy)
+                        maxy = py;
                 }
             }
             for (int i = 0; i < count - 1; i++) {
-                cupidimage_svg_segments_add(&segs, pts[i * 2], pts[i * 2 + 1], pts[(i + 1) * 2], pts[(i + 1) * 2 + 1], 1, 1);
+                cupidimage_svg_segments_add(&segs, pts[i * 2], pts[i * 2 + 1], pts[(i + 1) * 2],
+                                            pts[(i + 1) * 2 + 1], 1, 1);
             }
             if (strcmp(local, "polygon") == 0 && count > 1) {
-                cupidimage_svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[0], pts[1], 1, 1);
+                cupidimage_svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1],
+                                            pts[0], pts[1], 1, 1);
             } else if (strcmp(local, "polyline") == 0 && count > 1) {
-                cupidimage_svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[0], pts[1], 0, 1);
+                cupidimage_svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1],
+                                            pts[0], pts[1], 0, 1);
             }
             if (out_bbox && count > 0) {
                 cupidimage_svg_bbox_add_rect(out_bbox, minx, miny, maxx - minx, maxy - miny);
@@ -385,7 +418,8 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         cupidimage_svg_segments_init(&segs);
         if (cupidimage_svg_parse_path(d, &segs)) {
             if (out_bbox && segs.stroke_count > 0) {
-                cupidimage_svg_bbox_add_rect(out_bbox, segs.minx, segs.miny, segs.maxx - segs.minx, segs.maxy - segs.miny);
+                cupidimage_svg_bbox_add_rect(out_bbox, segs.minx, segs.miny, segs.maxx - segs.minx,
+                                             segs.maxy - segs.miny);
                 if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
                     cupidimage_svg_bbox_expand(out_bbox, style->stroke_width * 0.5f);
                 }
@@ -409,18 +443,22 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
             return 0;
         }
         int ok = 0;
-        float x = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
+        float x =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
         if (!ok) {
             x = 0.0f;
         }
-        float y = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
+        float y =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
         if (!ok) {
             y = 0.0f;
         }
         int w_ok = 0;
         int h_ok = 0;
-        float w = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "width"), ctx->vb_w, dpi, &w_ok);
-        float h = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "height"), ctx->vb_h, dpi, &h_ok);
+        float w = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "width"), ctx->vb_w, dpi,
+                                              &w_ok);
+        float h = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "height"), ctx->vb_h,
+                                              dpi, &h_ok);
         if (!w_ok) {
             w = (float)img.width;
             w_ok = 1;
@@ -432,14 +470,15 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         int preserve_none = 0;
         float align_x = 0.5f;
         float align_y = 0.5f;
-        cupidimage_svg_parse_preserve_aspect_ratio(cupidimage_svg_get_attr(tag, "preserveAspectRatio"),
-                                        &preserve_none, &align_x, &align_y);
+        cupidimage_svg_parse_preserve_aspect_ratio(
+            cupidimage_svg_get_attr(tag, "preserveAspectRatio"), &preserve_none, &align_x,
+            &align_y);
         if (w_ok && h_ok && w > 0.0f && h > 0.0f) {
             if (out_bbox) {
                 cupidimage_svg_bbox_add_rect(out_bbox, x, y, w, h);
             }
-            cupidimage_svg_draw_samples_image(ctx, style, m, &img, x, y, w, h,
-                                   preserve_none, align_x, align_y);
+            cupidimage_svg_draw_samples_image(ctx, style, m, &img, x, y, w, h, preserve_none,
+                                              align_x, align_y);
         }
         cupidimage_free(&img);
         return 1;
@@ -454,11 +493,13 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
             return 0;
         }
         int ok = 0;
-        float x = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
+        float x =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
         if (!ok) {
             x = 0.0f;
         }
-        float y = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
+        float y =
+            cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
         if (!ok) {
             y = 0.0f;
         }
@@ -476,8 +517,10 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         if (sym && sym->content && *sym->content) {
             int w_ok = 0;
             int h_ok = 0;
-            float sw = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "width"), ctx->vb_w, dpi, &w_ok);
-            float sh = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "height"), ctx->vb_h, dpi, &h_ok);
+            float sw = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "width"), ctx->vb_w,
+                                                   dpi, &w_ok);
+            float sh = cupidimage_svg_parse_length(cupidimage_svg_get_attr(tag, "height"),
+                                                   ctx->vb_h, dpi, &h_ok);
             float sx = 1.0f;
             float sy = 1.0f;
             float ax = 0.0f;
@@ -560,8 +603,8 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
                 ref_style.stroke_pattern = NULL;
             }
             svg_bbox tmp_bbox;
-            int drew = svg_draw_shape(ctx, &ref_style, &use_m, &ref_tag, ref_local, dpi,
-                                      NULL, anim_time, defs, &tmp_bbox);
+            int drew = svg_draw_shape(ctx, &ref_style, &use_m, &ref_tag, ref_local, dpi, NULL,
+                                      anim_time, defs, &tmp_bbox);
             if (drew && out_bbox && cupidimage_svg_bbox_valid(&tmp_bbox)) {
                 *out_bbox = tmp_bbox;
             }
@@ -576,7 +619,7 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         if (cupidimage_svg_parse_path(pd->d, &segs)) {
             if (out_bbox && segs.stroke_count > 0) {
                 cupidimage_svg_bbox_add_rect(out_bbox, segs.minx + x, segs.miny + y,
-                                  segs.maxx - segs.minx, segs.maxy - segs.miny);
+                                             segs.maxx - segs.minx, segs.maxy - segs.miny);
                 if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
                     cupidimage_svg_bbox_expand(out_bbox, style->stroke_width * 0.5f);
                 }
@@ -591,8 +634,9 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     return 0;
 }
 
-int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err, size_t errcap,
-                      const cupidimage_svg_options *opts) {
+int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err,
+                          size_t errcap, const cupidimage_svg_options *opts)
+{
     float dpi = opts ? opts->dpi : 96.0f;
     float anim_time = opts ? opts->animation_time : 0.0f;
     if (dpi <= 0.0f) {
@@ -604,14 +648,16 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
     svg_defs defs;
     svg_css css;
     svg_preamble pre;
-    if (!cupidimage_svg_parse_preamble(data, size, &pre, &defs, &css, dpi, anim_time, err, errcap)) {
+    if (!cupidimage_svg_parse_preamble(data, size, &pre, &defs, &css, dpi, anim_time, err,
+                                       errcap)) {
         cupidimage_svg_defs_free(&defs);
         cupidimage_svg_css_free(&css);
         return 0;
     }
     float intrinsic_w = pre.width_ok ? pre.width_attr : (pre.vb_ok ? pre.vb_w : 512.0f);
     float intrinsic_h = pre.height_ok ? pre.height_attr : (pre.vb_ok ? pre.vb_h : 512.0f);
-    if (!isfinite(intrinsic_w) || !isfinite(intrinsic_h) || intrinsic_w <= 0.0f || intrinsic_h <= 0.0f) {
+    if (!isfinite(intrinsic_w) || !isfinite(intrinsic_h) || intrinsic_w <= 0.0f ||
+        intrinsic_h <= 0.0f) {
         cupidimage_svg_defs_free(&defs);
         cupidimage_svg_css_free(&css);
         cupidimage_set_err(err, errcap, "invalid SVG dimensions");
@@ -635,9 +681,12 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
             out_h *= opts->scale;
         }
     }
-    if (out_w < 1.0f) out_w = 1.0f;
-    if (out_h < 1.0f) out_h = 1.0f;
-    if (!cupidimage_svg_dimension(out_w, &ctx->width) || !cupidimage_svg_dimension(out_h, &ctx->height)) {
+    if (out_w < 1.0f)
+        out_w = 1.0f;
+    if (out_h < 1.0f)
+        out_h = 1.0f;
+    if (!cupidimage_svg_dimension(out_w, &ctx->width) ||
+        !cupidimage_svg_dimension(out_h, &ctx->height)) {
         cupidimage_svg_defs_free(&defs);
         cupidimage_svg_css_free(&css);
         cupidimage_set_err(err, errcap, "invalid SVG dimensions");
@@ -760,7 +809,8 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
             cupidimage_svg_elem_info_from_tag(&root_info, local, &root_tag);
             svg_elem_info tmp_stack[SVG_MAX_DEPTH];
             tmp_stack[0] = root_info;
-            cupidimage_svg_css_apply(&root_style, &css, &defs, tmp_stack, 1, NULL, 0, base_len, dpi);
+            cupidimage_svg_css_apply(&root_style, &css, &defs, tmp_stack, 1, NULL, 0, base_len,
+                                     dpi);
             cupidimage_svg_apply_inline_style_attr(&root_style, &root_tag, base_len, dpi, &defs);
             svg_matrix root_attr;
             svg_matrix_identity(&root_attr);
@@ -797,10 +847,11 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
             }
             continue;
         }
-        if (strcmp(local, "defs") == 0 || strcmp(local, "clippath") == 0 || strcmp(local, "mask") == 0 ||
-            strcmp(local, "lineargradient") == 0 || strcmp(local, "radialgradient") == 0 ||
-            strcmp(local, "pattern") == 0 || strcmp(local, "filter") == 0 ||
-            strcmp(local, "symbol") == 0 || strcmp(local, "marker") == 0) {
+        if (strcmp(local, "defs") == 0 || strcmp(local, "clippath") == 0 ||
+            strcmp(local, "mask") == 0 || strcmp(local, "lineargradient") == 0 ||
+            strcmp(local, "radialgradient") == 0 || strcmp(local, "pattern") == 0 ||
+            strcmp(local, "filter") == 0 || strcmp(local, "symbol") == 0 ||
+            strcmp(local, "marker") == 0) {
             if (!tag.is_self_closing) {
                 skip_depth = 1;
             }
@@ -833,8 +884,8 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
             sib_level = SVG_MAX_DEPTH - 1;
         }
         svg_sibling_frame *sib_frame = &sibling_frames[sib_level];
-        cupidimage_svg_css_apply(&style, &css, &defs, tmp_stack, tmp_depth,
-                      sib_frame->items, sib_frame->count, base_len, dpi);
+        cupidimage_svg_css_apply(&style, &css, &defs, tmp_stack, tmp_depth, sib_frame->items,
+                                 sib_frame->count, base_len, dpi);
         cupidimage_svg_apply_inline_style_attr(&style, draw_tag, base_len, dpi, &defs);
         if (!cupidimage_svg_sibling_frame_push(sib_frame, &info)) {
             continue;
@@ -932,8 +983,9 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
                             fill_style.stroke_pattern = NULL;
                             fill_style.stroke_width = 0.0f;
                             char *tp = p;
-                            cupidimage_svg_render_text_element(&fill_ctx, &fill_style, &m, draw_tag, &tp, &defs, &css,
-                                                    text_stack, text_depth, base_len, dpi, NULL);
+                            cupidimage_svg_render_text_element(&fill_ctx, &fill_style, &m, draw_tag,
+                                                               &tp, &defs, &css, text_stack,
+                                                               text_depth, base_len, dpi, NULL);
                             fill_buf = fill_ctx.hi_rgba;
                         }
                     }
@@ -946,20 +998,22 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
                             stroke_style.fill_gradient = NULL;
                             stroke_style.fill_pattern = NULL;
                             char *tp = p;
-                            cupidimage_svg_render_text_element(&stroke_ctx, &stroke_style, &m, draw_tag, &tp, &defs, &css,
-                                                    text_stack, text_depth, base_len, dpi, NULL);
+                            cupidimage_svg_render_text_element(
+                                &stroke_ctx, &stroke_style, &m, draw_tag, &tp, &defs, &css,
+                                text_stack, text_depth, base_len, dpi, NULL);
                             stroke_buf = stroke_ctx.hi_rgba;
                         }
                     }
                     char *tp = p;
-                    cupidimage_svg_render_text_element(&tmp_ctx, &style, &m, draw_tag, &tp, &defs, &css,
-                                            text_stack, text_depth, base_len, dpi, &bbox);
+                    cupidimage_svg_render_text_element(&tmp_ctx, &style, &m, draw_tag, &tp, &defs,
+                                                       &css, text_stack, text_depth, base_len, dpi,
+                                                       &bbox);
                     p = tp;
                 }
                 drew = 1;
             } else {
-                drew = svg_draw_shape(&tmp_ctx, &style, &m, draw_tag, local, dpi,
-                                      NULL, anim_time, &defs, &bbox);
+                drew = svg_draw_shape(&tmp_ctx, &style, &m, draw_tag, local, dpi, NULL, anim_time,
+                                      &defs, &bbox);
                 if (drew) {
                     if (need_fill) {
                         svg_render_ctx fill_ctx = *ctx;
@@ -970,8 +1024,8 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
                             fill_style.stroke_gradient = NULL;
                             fill_style.stroke_pattern = NULL;
                             fill_style.stroke_width = 0.0f;
-                            svg_draw_shape(&fill_ctx, &fill_style, &m, draw_tag, local, dpi,
-                                           NULL, anim_time, &defs, NULL);
+                            svg_draw_shape(&fill_ctx, &fill_style, &m, draw_tag, local, dpi, NULL,
+                                           anim_time, &defs, NULL);
                             fill_buf = fill_ctx.hi_rgba;
                         }
                     }
@@ -993,8 +1047,9 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
             if (drew) {
                 svg_filter_region region;
                 cupidimage_svg_compute_filter_region(style.filter, &tmp_ctx, &bbox, &m, &region);
-                cupidimage_svg_apply_filter_ops(style.filter, &tmp_ctx, tmp_ctx.hi_rgba, base_len, &region,
-                                     &bbox, &m, bg_buf, bg_alpha_buf, fill_buf, stroke_buf);
+                cupidimage_svg_apply_filter_ops(style.filter, &tmp_ctx, tmp_ctx.hi_rgba, base_len,
+                                                &region, &bbox, &m, bg_buf, bg_alpha_buf, fill_buf,
+                                                stroke_buf);
                 cupidimage_svg_composite_buffer(ctx, tmp_ctx.hi_rgba);
             }
             free(tmp_ctx.hi_rgba);
@@ -1025,7 +1080,7 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
                     text_style.stroke_pattern = NULL;
                 }
                 cupidimage_svg_render_text_element(ctx, &text_style, &m, draw_tag, &p, &defs, &css,
-                                        text_stack, text_depth, base_len, dpi, NULL);
+                                                   text_stack, text_depth, base_len, dpi, NULL);
             }
             continue;
         }
@@ -1039,7 +1094,8 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
             draw_style.fill_pattern = NULL;
             draw_style.stroke_pattern = NULL;
         }
-        if (svg_draw_shape(ctx, &draw_style, &m, draw_tag, local, dpi, NULL, anim_time, &defs, NULL)) {
+        if (svg_draw_shape(ctx, &draw_style, &m, draw_tag, local, dpi, NULL, anim_time, &defs,
+                           NULL)) {
             continue;
         }
     }
@@ -1051,9 +1107,9 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
     return 1;
 }
 
-int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
-                                  uint32_t *width, uint32_t *height,
-                                  char *err, size_t errcap) {
+int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size, uint32_t *width,
+                                  uint32_t *height, char *err, size_t errcap)
+{
     if (!data || !width || !height) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -1076,9 +1132,12 @@ int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
         if (!tag.is_end && strcmp(svg_local_name(tag.name), "svg") == 0) {
             found = 1;
             float dpi = 96.0f;
-            w = cupidimage_svg_parse_length(cupidimage_svg_get_attr(&tag, "width"), 0.0f, dpi, &w_ok);
-            h = cupidimage_svg_parse_length(cupidimage_svg_get_attr(&tag, "height"), 0.0f, dpi, &h_ok);
-            vb_ok = cupidimage_svg_parse_viewbox(cupidimage_svg_get_attr(&tag, "viewBox"), &vb_x, &vb_y, &vb_w, &vb_h);
+            w = cupidimage_svg_parse_length(cupidimage_svg_get_attr(&tag, "width"), 0.0f, dpi,
+                                            &w_ok);
+            h = cupidimage_svg_parse_length(cupidimage_svg_get_attr(&tag, "height"), 0.0f, dpi,
+                                            &h_ok);
+            vb_ok = cupidimage_svg_parse_viewbox(cupidimage_svg_get_attr(&tag, "viewBox"), &vb_x,
+                                                 &vb_y, &vb_w, &vb_h);
             break;
         }
     }
@@ -1089,7 +1148,8 @@ int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
     }
     float intrinsic_w = w_ok ? w : (vb_ok ? vb_w : 512.0f);
     float intrinsic_h = h_ok ? h : (vb_ok ? vb_h : 512.0f);
-    if (!cupidimage_svg_dimension(intrinsic_w, width) || !cupidimage_svg_dimension(intrinsic_h, height)) {
+    if (!cupidimage_svg_dimension(intrinsic_w, width) ||
+        !cupidimage_svg_dimension(intrinsic_h, height)) {
         cupidimage_set_err(err, errcap, "invalid SVG dimensions");
         return 0;
     }

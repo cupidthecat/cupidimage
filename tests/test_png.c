@@ -28,21 +28,23 @@ typedef struct {
 
 static unsigned checks, failures;
 
-static void append(buffer *buf, const void *data, size_t size) {
+static void append(buffer *buf, const void *data, size_t size)
+{
     assert(size <= sizeof(buf->data) - buf->size);
-    if (size) memcpy(buf->data + buf->size, data, size);
+    if (size)
+        memcpy(buf->data + buf->size, data, size);
     buf->size += size;
 }
 
-static void put_be32(buffer *buf, uint32_t value) {
-    uint8_t bytes[4] = {
-        (uint8_t)(value >> 24), (uint8_t)(value >> 16),
-        (uint8_t)(value >> 8), (uint8_t)value
-    };
+static void put_be32(buffer *buf, uint32_t value)
+{
+    uint8_t bytes[4] = {(uint8_t)(value >> 24), (uint8_t)(value >> 16), (uint8_t)(value >> 8),
+                        (uint8_t)value};
     append(buf, bytes, sizeof(bytes));
 }
 
-static void chunk(buffer *png, const char *type, const void *data, size_t size) {
+static void chunk(buffer *png, const char *type, const void *data, size_t size)
+{
     put_be32(png, (uint32_t)size);
     size_t start = png->size;
     append(png, type, 4);
@@ -57,17 +59,26 @@ static void chunk(buffer *png, const char *type, const void *data, size_t size) 
     put_be32(png, ~crc);
 }
 
-static unsigned channels(uint8_t type) {
+static unsigned channels(uint8_t type)
+{
     switch (type) {
-    case 0: case 3: return 1;
-    case 2: return 3;
-    case 4: return 2;
-    case 6: return 4;
-    default: assert(0); return 0;
+        case 0:
+        case 3:
+            return 1;
+        case 2:
+            return 3;
+        case 4:
+            return 2;
+        case 6:
+            return 4;
+        default:
+            assert(0);
+            return 0;
     }
 }
 
-static buffer scanlines(const png_case *test) {
+static buffer scanlines(const png_case *test)
+{
     static const unsigned xs[7] = {0, 4, 0, 2, 0, 1, 0};
     static const unsigned ys[7] = {0, 0, 4, 0, 2, 0, 1};
     static const unsigned dx[7] = {8, 8, 4, 4, 2, 2, 1};
@@ -79,7 +90,8 @@ static buffer scanlines(const png_case *test) {
         unsigned y0 = test->interlace ? ys[pass] : 0;
         unsigned xstep = test->interlace ? dx[pass] : 1;
         unsigned ystep = test->interlace ? dy[pass] : 1;
-        if (x0 >= test->width || y0 >= test->height) continue;
+        if (x0 >= test->width || y0 >= test->height)
+            continue;
         for (unsigned y = y0; y < test->height; y += ystep) {
             uint8_t row[WIDTH * 8] = {0};
             unsigned bit = 0;
@@ -99,13 +111,17 @@ static buffer scanlines(const png_case *test) {
     return raw;
 }
 
-static buffer stored_zlib(const buffer *raw) {
+static buffer stored_zlib(const buffer *raw)
+{
     buffer compressed = {{0}, 0};
     unsigned length = (unsigned)raw->size;
-    uint8_t header[] = {
-        0x78, 0x01, 0x01, (uint8_t)length, (uint8_t)(length >> 8),
-        (uint8_t)~length, (uint8_t)(~length >> 8)
-    };
+    uint8_t header[] = {0x78,
+                        0x01,
+                        0x01,
+                        (uint8_t)length,
+                        (uint8_t)(length >> 8),
+                        (uint8_t)~length,
+                        (uint8_t)(~length >> 8)};
     append(&compressed, header, sizeof(header));
     append(&compressed, raw->data, raw->size);
     uint32_t a = 1, b = 0;
@@ -117,7 +133,8 @@ static buffer stored_zlib(const buffer *raw) {
     return compressed;
 }
 
-static buffer make_png(const png_case *test) {
+static buffer make_png(const png_case *test)
+{
     static const uint8_t signature[] = {137, 80, 78, 71, 13, 10, 26, 10};
     buffer png = {{0}, 0}, ihdr = {{0}, 0};
     append(&png, signature, sizeof(signature));
@@ -129,7 +146,8 @@ static buffer make_png(const png_case *test) {
     if (test->palette_entries) {
         chunk(&png, "PLTE", test->palette, test->palette_entries * 3);
     }
-    if (test->trns) chunk(&png, "tRNS", test->trns, test->trns_size);
+    if (test->trns)
+        chunk(&png, "tRNS", test->trns, test->trns_size);
     buffer raw = scanlines(test);
     buffer compressed = stored_zlib(&raw);
     const uint8_t *idat = test->idat ? test->idat : compressed.data;
@@ -141,21 +159,21 @@ static buffer make_png(const png_case *test) {
     return png;
 }
 
-static void check(const char *name, const png_case *test, int expected_ok) {
+static void check(const char *name, const png_case *test, int expected_ok)
+{
     buffer png = make_png(test);
     cupidimage_image image = {0};
     char err[128] = {0};
     int ok = cupidimage_load_png(png.data, png.size, &image, err, sizeof(err));
     checks++;
     if (!!ok != !!expected_ok) {
-        fprintf(stderr, "FAIL %s (type=%u depth=%u Adam7=%u): %s\n", name,
-                test->type, test->depth, test->interlace,
-                ok ? "accepted invalid PNG" : err);
+        fprintf(stderr, "FAIL %s (type=%u depth=%u Adam7=%u): %s\n", name, test->type, test->depth,
+                test->interlace, ok ? "accepted invalid PNG" : err);
         failures++;
     } else if (ok && (image.width != test->width || image.height != test->height ||
-                     memcmp(image.rgba, test->expected, test->width * test->height * 4))) {
-        fprintf(stderr, "FAIL %s (type=%u depth=%u Adam7=%u): wrong RGBA pixels\n",
-                name, test->type, test->depth, test->interlace);
+                      memcmp(image.rgba, test->expected, test->width * test->height * 4))) {
+        fprintf(stderr, "FAIL %s (type=%u depth=%u Adam7=%u): wrong RGBA pixels\n", name,
+                test->type, test->depth, test->interlace);
         failures++;
     } else if (!ok && (image.rgba || image.width || image.height || !err[0])) {
         fprintf(stderr, "FAIL %s: invalid output after decode failure\n", name);
@@ -164,7 +182,8 @@ static void check(const char *name, const png_case *test, int expected_ok) {
     cupidimage_free(&image);
 }
 
-static png_case new_case(uint8_t type, uint8_t depth, uint8_t interlace) {
+static png_case new_case(uint8_t type, uint8_t depth, uint8_t interlace)
+{
     png_case test = {0};
     test.width = WIDTH;
     test.height = HEIGHT;
@@ -174,15 +193,18 @@ static png_case new_case(uint8_t type, uint8_t depth, uint8_t interlace) {
     return test;
 }
 
-static uint8_t scaled(unsigned sample, uint8_t depth) {
+static uint8_t scaled(unsigned sample, uint8_t depth)
+{
     unsigned max = (1u << depth) - 1;
     return (uint8_t)((sample * 255u + max / 2) / max);
 }
 
-static void test_palette(uint8_t interlace) {
+static void test_palette(uint8_t interlace)
+{
     static const unsigned entries[] = {1, 2, 4, 16, 255, 256};
     uint8_t alpha[256];
-    for (unsigned i = 0; i < 256; i++) alpha[i] = (uint8_t)i;
+    for (unsigned i = 0; i < 256; i++)
+        alpha[i] = (uint8_t)i;
     for (unsigned e = 0; e < sizeof(entries) / sizeof(entries[0]); e++) {
         for (unsigned transparency = 0; transparency < 2; transparency++) {
             png_case test = new_case(3, 8, interlace);
@@ -201,7 +223,8 @@ static void test_palette(uint8_t interlace) {
                 unsigned index = p % 2 ? entries[e] - 1 : 0;
                 test.samples[p] = (uint16_t)index;
                 memcpy(test.expected + p * 4, test.palette + index * 3, 3);
-                test.expected[p * 4 + 3] = transparency && index < test.trns_size ? alpha[index] : 255;
+                test.expected[p * 4 + 3] =
+                    transparency && index < test.trns_size ? alpha[index] : 255;
             }
             check("palette endpoints", &test, 1);
             if (entries[e] == 2 || entries[e] == 4 || entries[e] == 16) {
@@ -224,7 +247,8 @@ static void test_palette(uint8_t interlace) {
     }
 }
 
-static void test_gray(uint8_t depth, uint8_t interlace) {
+static void test_gray(uint8_t depth, uint8_t interlace)
+{
     png_case test = new_case(0, depth, interlace);
     unsigned max = (1u << depth) - 1;
     unsigned key = depth == 16 ? 0x1234 : max / 2;
@@ -255,10 +279,15 @@ static void test_gray(uint8_t depth, uint8_t interlace) {
     check("empty grayscale tRNS", &test, 0);
 }
 
-static void test_rgb(uint8_t depth, uint8_t interlace) {
+static void test_rgb(uint8_t depth, uint8_t interlace)
+{
     png_case test = new_case(2, depth, interlace);
     unsigned key[] = {0x1234, 0x5678, 0x9abc};
-    if (depth == 8) { key[0] = 17; key[1] = 33; key[2] = 65; }
+    if (depth == 8) {
+        key[0] = 17;
+        key[1] = 33;
+        key[2] = 65;
+    }
     uint8_t trns[7] = {0};
     for (unsigned c = 0; c < 3; c++) {
         trns[c * 2] = (uint8_t)(key[c] >> 8);
@@ -275,7 +304,8 @@ static void test_rgb(uint8_t depth, uint8_t interlace) {
     check("opaque RGB", &test, 1);
     test.trns = trns;
     test.trns_size = 6;
-    for (unsigned p = 0; p < WIDTH * HEIGHT; p++) test.expected[p * 4 + 3] = p % 4 ? 255 : 0;
+    for (unsigned p = 0; p < WIDTH * HEIGHT; p++)
+        test.expected[p * 4 + 3] = p % 4 ? 255 : 0;
     check("RGB transparency key", &test, 1);
     if (depth == 8) {
         trns[0] = trns[2] = trns[4] = 0x80;
@@ -287,7 +317,8 @@ static void test_rgb(uint8_t depth, uint8_t interlace) {
     check("long RGB tRNS", &test, 0);
 }
 
-static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace) {
+static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace)
+{
     png_case test = new_case(type, depth, interlace);
     unsigned count = channels(type);
     unsigned values[] = {0, ((1u << depth) - 1) / 2, (1u << depth) - 1};
@@ -295,8 +326,10 @@ static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace) {
         for (unsigned c = 0; c < count; c++) {
             unsigned value = values[(p + c) % 3];
             test.samples[p * count + c] = (uint16_t)value;
-            if (type == 4 && c == 0) memset(test.expected + p * 4, scaled(value, depth), 3);
-            else test.expected[p * 4 + (c == count - 1 ? 3 : c)] = scaled(value, depth);
+            if (type == 4 && c == 0)
+                memset(test.expected + p * 4, scaled(value, depth), 3);
+            else
+                test.expected[p * 4 + (c == count - 1 ? 3 : c)] = scaled(value, depth);
         }
     }
     check("explicit alpha", &test, 1);
@@ -306,15 +339,14 @@ static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace) {
     check("tRNS forbidden with alpha", &test, 0);
 }
 
-static void test_mixed_blocks(void) {
+static void test_mixed_blocks(void)
+{
     /* A complete dynamic tree with a one-bit EOB and 15-bit unused codes,
        followed by a final stored block. Inflates to filter 0, pixels 1..9. */
-    static const uint8_t idat[] = {
-        0x78, 0x01, 0x04, 0xe0, 0x81, 0x92, 0x24, 0x49, 0x92, 0x24,
-        0xc9, 0x12, 0x8b, 0x9a, 0x47, 0x56, 0xcf, 0xde, 0x7b, 0xff,
-        0xff, 0xb9, 0x88, 0x09, 0x09, 0x00, 0xf6, 0xff, 0x01, 0x02,
-        0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0xaf, 0x00, 0x2e
-    };
+    static const uint8_t idat[] = {0x78, 0x01, 0x04, 0xe0, 0x81, 0x92, 0x24, 0x49, 0x92, 0x24, 0xc9,
+                                   0x12, 0x8b, 0x9a, 0x47, 0x56, 0xcf, 0xde, 0x7b, 0xff, 0xff, 0xb9,
+                                   0x88, 0x09, 0x09, 0x00, 0xf6, 0xff, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                   0x06, 0x07, 0x08, 0x09, 0x00, 0xaf, 0x00, 0x2e};
     png_case test = new_case(0, 8, 0);
     test.height = 1;
     test.idat = idat;
@@ -326,8 +358,8 @@ static void test_mixed_blocks(void) {
     check("dynamic Huffman to stored block", &test, 1);
 }
 
-
-static void check_stream(const char *name, const buffer *png, int accepted) {
+static void check_stream(const char *name, const buffer *png, int accepted)
+{
     cupidimage_image image = {0};
     char error[128] = {0};
     int ok = cupidimage_load_png(png->data, png->size, &image, error, sizeof(error));
@@ -339,70 +371,96 @@ static void check_stream(const char *name, const buffer *png, int accepted) {
     cupidimage_free(&image);
 }
 
-static void test_chunk_structure(void) {
+static void test_chunk_structure(void)
+{
     png_case sample = new_case(0, 8, 0);
     buffer good = make_png(&sample), altered;
     size_t first = 33;
-    uint32_t length = ((uint32_t)good.data[first] << 24) | ((uint32_t)good.data[first+1] << 16)
-                    | ((uint32_t)good.data[first+2] << 8) | good.data[first+3];
+    uint32_t length = ((uint32_t)good.data[first] << 24) | ((uint32_t)good.data[first + 1] << 16) |
+                      ((uint32_t)good.data[first + 2] << 8) | good.data[first + 3];
     size_t second = first + 12 + length;
     check_stream("original", &good, 1);
     for (size_t i = 8; i + 12 <= good.size;) {
         altered = good;
-        uint32_t n = ((uint32_t)good.data[i] << 24) | ((uint32_t)good.data[i+1] << 16)
-                   | ((uint32_t)good.data[i+2] << 8) | good.data[i+3];
+        uint32_t n = ((uint32_t)good.data[i] << 24) | ((uint32_t)good.data[i + 1] << 16) |
+                     ((uint32_t)good.data[i + 2] << 8) | good.data[i + 3];
         altered.data[i + 8 + n] ^= 1;
         check_stream("bad chunk CRC", &altered, 0);
         i += n + 12;
     }
-    altered = good; altered.size -= 12;
+    altered = good;
+    altered.size -= 12;
     check_stream("missing IEND", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, first);
-    append(&altered, good.data + 8, 25); append(&altered, good.data + first, good.size - first);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    append(&altered, good.data + 8, 25);
+    append(&altered, good.data + first, good.size - first);
     check_stream("duplicate IHDR", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, 8);
-    chunk(&altered, "teXT", NULL, 0); append(&altered, good.data + 8, good.size - 8);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, 8);
+    chunk(&altered, "teXT", NULL, 0);
+    append(&altered, good.data + 8, good.size - 8);
     check_stream("IHDR not first", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, first);
-    chunk(&altered, "ABCD", NULL, 0); append(&altered, good.data + first, good.size - first);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "ABCD", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
     check_stream("unknown critical chunk", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, first);
-    chunk(&altered, "abCD", NULL, 0); append(&altered, good.data + first, good.size - first);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "abCD", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
     check_stream("unknown ancillary chunk", &altered, 1);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, first);
-    chunk(&altered, "a1CD", NULL, 0); append(&altered, good.data + first, good.size - first);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "a1CD", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
     check_stream("nonletter chunk name", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, second);
-    chunk(&altered, "abCD", NULL, 0); append(&altered, good.data + second, good.size - second);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, second);
+    chunk(&altered, "abCD", NULL, 0);
+    append(&altered, good.data + second, good.size - second);
     check_stream("nonconsecutive IDAT", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, first);
-    chunk(&altered, "IDAT", NULL, 0); append(&altered, good.data + first, good.size - first);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "IDAT", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
     check_stream("empty IDAT before data", &altered, 1);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, good.size - 12);
-    chunk(&altered, "tRNS", (uint8_t[]){0, 0}, 2); chunk(&altered, "IEND", NULL, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, good.size - 12);
+    chunk(&altered, "tRNS", (uint8_t[]){0, 0}, 2);
+    chunk(&altered, "IEND", NULL, 0);
     check_stream("late transparency", &altered, 0);
-    altered = (buffer){{0}, 0}; append(&altered, good.data, good.size - 12);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, good.size - 12);
     chunk(&altered, "IEND", "x", 1);
     check_stream("nonempty IEND", &altered, 0);
     sample.palette_entries = 1;
     altered = make_png(&sample);
     check_stream("grayscale PLTE forbidden", &altered, 0);
-    sample.type = 3; sample.depth = 1; sample.palette_entries = 3;
+    sample.type = 3;
+    sample.depth = 1;
+    sample.palette_entries = 3;
     altered = make_png(&sample);
     check_stream("PLTE exceeds bit depth", &altered, 0);
-    sample.type = 0; sample.depth = 8; sample.palette_entries = 0;
+    sample.type = 0;
+    sample.depth = 8;
+    sample.palette_entries = 0;
     buffer raw = scanlines(&sample), compressed = stored_zlib(&raw);
     compressed.data[compressed.size - 1] ^= 1;
-    sample.idat = compressed.data; sample.idat_size = compressed.size;
+    sample.idat = compressed.data;
+    sample.idat_size = compressed.size;
     altered = make_png(&sample);
     check_stream("zlib checksum with valid chunk CRC", &altered, 0);
 }
 
-int main(void) {
+int main(void)
+{
     static const uint8_t depths[] = {1, 2, 4, 8, 16};
     for (uint8_t interlace = 0; interlace < 2; interlace++) {
         test_palette(interlace);
-        for (unsigned d = 0; d < sizeof(depths); d++) test_gray(depths[d], interlace);
+        for (unsigned d = 0; d < sizeof(depths); d++)
+            test_gray(depths[d], interlace);
         for (uint8_t depth = 8; depth <= 16; depth += 8) {
             test_rgb(depth, interlace);
             test_alpha(4, depth, interlace);
@@ -415,7 +473,8 @@ int main(void) {
         test.trns_size = 2;
         check("palette tRNS exceeds PLTE", &test, 0);
         test.trns_size = 0;
-        for (unsigned p = 0; p < WIDTH * HEIGHT; p++) test.expected[p * 4 + 3] = 255;
+        for (unsigned p = 0; p < WIDTH * HEIGHT; p++)
+            test.expected[p * 4 + 3] = 255;
         check("empty palette tRNS", &test, 1);
     }
     test_mixed_blocks();

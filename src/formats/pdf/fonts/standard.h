@@ -1,7 +1,10 @@
 #ifndef CUPIDIMAGE_PDF_STANDARD_H
 #define CUPIDIMAGE_PDF_STANDARD_H
 #include <stddef.h>
-typedef struct { const char *name; int width; } pdf_standard_metric;
+typedef struct {
+    const char *name;
+    int width;
+} pdf_standard_metric;
 typedef struct {
     const char *name;
     const pdf_standard_metric *metrics;
