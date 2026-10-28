@@ -176,10 +176,10 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
         char family[128];
         if (!pdf_color_name(view, pos, family))
             return 0;
-        if (!strcmp(family, "CalGray") || !strcmp(family, "CalRGB")) {
+        if (!strcmp(family, "CalGray") || !strcmp(family, "CalRGB") || !strcmp(family, "Lab")) {
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
-            int components = !strcmp(family, "CalGray") ? 1 : 3;
-            if (!cupidimage_pdf_calibrated_space(st, view, pos, components, colors))
+            int kind = !strcmp(family, "CalGray") ? 1 : !strcmp(family, "CalRGB") ? 2 : 3;
+            if (!cupidimage_pdf_calibrated_space(st, view, pos, kind, colors))
                 return 0;
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
             return *pos < view->len && view->data[(*pos)++] == ']';

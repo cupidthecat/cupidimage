@@ -40,7 +40,8 @@ static unsigned mesh_vertex_read(const pdf_mesh_context *mesh, const unsigned ch
     if (mesh->colors.indexed) {
         unsigned index = (unsigned)floor(fmin(mesh->colors.high, fmax(0, v->value[0])) + .5);
         for (int c = 0; c < mesh->colors.components; c++)
-            v->value[c] = mesh->colors.palette[index * mesh->colors.components + c] / 255.0;
+            v->value[c] = cupidimage_pdf_color_palette_value(
+                &mesh->colors, c, mesh->colors.palette[index * mesh->colors.components + c]);
     }
     return flag;
 }
@@ -59,7 +60,8 @@ void cupidimage_pdf_mesh_color(const pdf_image_colors *colors, const double valu
     if (colors->indexed && lookup) {
         unsigned index = (unsigned)floor(fmin(colors->high, fmax(0, values[0])) + .5);
         for (int c = 0; c < colors->components; c++)
-            sample->values[c] = colors->palette[index * colors->components + c] / 255.0;
+            sample->values[c] = cupidimage_pdf_color_palette_value(
+                colors, c, colors->palette[index * colors->components + c]);
     } else {
         for (int c = 0; c < colors->components; c++)
             sample->values[c] = values[c];

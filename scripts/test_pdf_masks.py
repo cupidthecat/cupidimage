@@ -69,6 +69,9 @@ def main():
         # Unblend in component space, after Decode, before converting to RGB.
         check('white-matte', bytes((255, 127, 127)), attrs,
               image_stream(b'\x80', gray_mask + ' /Matte [1 1 1]'), lambda x, y: (192, 64, 64))
+        check('indexed-rgb-white-matte', b'\0',
+              attrs.replace('/DeviceRGB', '[/Indexed /DeviceRGB 0 <ff7f7f>]'),
+              image_stream(b'\x80', gray_mask + ' /Matte [1 1 1]'), lambda x, y: (192, 64, 64))
         check('black-matte', bytes((128, 0, 0)), attrs,
               image_stream(b'\x80', gray_mask + ' /Matte [0 0 0]'), lambda x, y: (192, 64, 64))
         check('zero-alpha-matte', red, attrs, image_stream(b'\0', gray_mask + ' /Matte [1 1 1]'), lambda x, y: (128, 128, 128))

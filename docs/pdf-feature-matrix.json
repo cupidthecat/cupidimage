@@ -2049,10 +2049,11 @@
           "evidence": [
             "src/formats/pdf/pdf_calibrated.c",
             "scripts/test_pdf_calibrated.py",
-            "docs/pdf-colors.md"
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_lab.py"
           ],
           "limitations": [
-            "CalGray/CalRGB source colors target fixed sRGB with zero BlackPoint. Lab, ICC profiles, nonzero black-point mapping and calibrated group blending remain unfinished."
+            "CalGray/CalRGB/Lab source colors target fixed sRGB with zero BlackPoint. ICC profiles, nonzero black-point mapping and calibrated group blending remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2061,7 +2062,8 @@
           ],
           "audit": "Selected calibrated source equations and pipeline interactions tested; complete color-management audit pending",
           "standard_clauses": [
-            "ISO 32000-1:2008 8.6.5.2 and 8.6.5.3",
+            "ISO 32000-1:2008 8.6.5.2 through 8.6.5.4",
+            "ISO 32000-2:2020 Table 144",
             "ICC.1:2022 Annex E.3"
           ]
         },

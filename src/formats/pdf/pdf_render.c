@@ -534,8 +534,9 @@ static int pdf_expect_num(const pdf_operand *op) {
     return op && op->type == PDF_OPERAND_NUM;
 }
 
-static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, const pdf_operand *ops,
-                                int count) {
+static int pdf_set_source_color(pdf_render_state *st, int stroke, const pdf_image_colors *selected,
+                                const pdf_operand *ops, int count) {
+    int space = selected->components;
     if ((space != 1 && space != 3 && space != 4) || count != space)
         return 0;
     for (int i = 0; i < count; i++)
@@ -543,7 +544,7 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, con
             return 0;
     double *native = stroke ? st->gs.stroke_color : st->gs.fill_color;
     for (int i = 0; i < 4; i++)
-        native[i] = i < count ? fmin(1, fmax(0, ops[i].num)) : 0;
+        native[i] = i < count ? cupidimage_pdf_color_component(selected, i, ops[i].num) : 0;
     if (stroke) {
         st->gs.stroke_space.components = space;
         st->gs.stroke_space.indexed = 0;
@@ -758,11 +759,13 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             pdf_operand initial[4] = {{0}};
             for (int i = 0; i < colors.components; i++) {
                 initial[i].type = PDF_OPERAND_NUM;
-                initial[i].num = colors.indexed                     ? colors.palette[i] / 255.0
-                                 : colors.components == 4 && i == 3 ? 1
-                                                                    : 0;
+                initial[i].num =
+                    colors.indexed
+                        ? cupidimage_pdf_color_palette_value(&colors, i, colors.palette[i])
+                    : colors.components == 4 && i == 3 ? 1
+                                                       : 0;
             }
-            pdf_set_device_color(st, stroke, colors.components, initial, colors.components);
+            pdf_set_source_color(st, stroke, &colors, initial, colors.components);
             if (stroke) {
                 st->gs.stroke_space = colors;
                 st->gs.stroke_pattern = NULL;
@@ -798,14 +801,14 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
                     unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, ops[0].num)) + .5);
                     for (int i = 0; i < colors.components; i++) {
                         base[i].type = PDF_OPERAND_NUM;
-                        base[i].num = colors.palette[index * colors.components + i] / 255.0;
+                        base[i].num = cupidimage_pdf_color_palette_value(
+                            &colors, i, colors.palette[index * colors.components + i]);
                     }
                     values = base;
                 }
             }
             if (valid && colors.components)
-                valid =
-                    pdf_set_device_color(st, stroke, colors.components, values, colors.components);
+                valid = pdf_set_source_color(st, stroke, &colors, values, colors.components);
             if (stroke)
                 st->gs.stroke_space = colors;
             else
@@ -829,13 +832,14 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
                 unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, ops[0].num)) + .5);
                 for (int i = 0; i < colors.components; i++) {
                     converted[i].type = PDF_OPERAND_NUM;
-                    converted[i].num = colors.palette[index * colors.components + i] / 255.0;
+                    converted[i].num = cupidimage_pdf_color_palette_value(
+                        &colors, i, colors.palette[index * colors.components + i]);
                 }
                 values = converted;
                 count = colors.components;
             }
         }
-        if (!valid || !pdf_set_device_color(st, stroke, colors.components, values, count)) {
+        if (!valid || !pdf_set_source_color(st, stroke, &colors, values, count)) {
             cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid color operands");
             st->image_failed = 1;
         } else if (stroke)

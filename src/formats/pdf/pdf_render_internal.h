@@ -42,8 +42,8 @@ typedef struct {
 typedef struct {
     int components, indexed, high, pattern;
     unsigned char palette[1024];
-    int calibrated;
-    double white[3], gamma[3], matrix[9], adaptation[9];
+    int calibrated; /* 0: device; 1: CalGray; 2: CalRGB; 3: Lab. */
+    double white[3], gamma[3], matrix[9], adaptation[9], lab_range[4];
 } pdf_image_colors;
 
 typedef struct pdf_pattern {
@@ -209,6 +209,9 @@ void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
 int cupidimage_pdf_calibrated_space(const pdf_render_state *, const pdf_object_view *, size_t *,
                                     int, pdf_image_colors *);
+void cupidimage_pdf_color_range(const pdf_image_colors *, int, double *, double *);
+double cupidimage_pdf_color_component(const pdf_image_colors *, int, double);
+double cupidimage_pdf_color_palette_value(const pdf_image_colors *, int, unsigned char);
 void cupidimage_pdf_calibrated_color(const pdf_image_colors *, const double[4], int, double[3]);
 void cupidimage_pdf_composite_space(pdf_render_state *, int, int, const double[4],
                                     const pdf_image_colors *, double, double);

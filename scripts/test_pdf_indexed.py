@@ -89,8 +89,10 @@ def main():
         check('literal-line-continuation', '[/Indexed /DeviceRGB 0 (A\\\nBC)]', data, lambda x,y: (65,66,67))
         check('maximum-palette', '[/Indexed /DeviceGray 255 <'+bytes(range(256)).hex()+'>]', bytes((0,51,102,153,204,255)),
               lambda x,y: (((y//8)*3+x//8)*51,)*3)
-        check('indexed-matte-rejected', space, data, attrs='/SMask 8 0 R',
+        check('indexed-matte-wrong-component-count', space, data, attrs='/SMask 8 0 R',
               extra={8:image_stream(bytes([255]*6), '/Width 3 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray /Matte [1]')}, reject=True)
+        check('indexed-matte-base-components', space, data, expected, attrs='/SMask 8 0 R',
+              extra={8:image_stream(bytes([255]*6), '/Width 3 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray /Matte [1 1 1]')})
         for name, broken, extra in (
             ('negative-high', '[/Indexed /DeviceRGB -1 <>]', None),
             ('high-too-large', '[/Indexed /DeviceRGB 256 <>]', None),

@@ -152,7 +152,8 @@ static int pdf_image_type(const pdf_render_state *st, const pdf_object_view *vie
 }
 
 static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view *view, int soft,
-                               int width, int height, int components, pdf_image_mask *mask) {
+                               int width, int height, int components, const pdf_image_colors *space,
+                               pdf_image_mask *mask) {
     int stencil = 0;
     mask->soft = soft;
     mask->decode[0] = 0;
@@ -191,7 +192,7 @@ static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view
         if (!mask->soft || mask->width != width || mask->height != height)
             return 0;
         for (int c = 0; c < components; c++)
-            if (mask->matte[c] < 0 || mask->matte[c] > 1)
+            if (cupidimage_pdf_color_component(space, c, mask->matte[c]) != mask->matte[c])
                 return 0;
     }
     if (!pdf_image_samples(st, view, mask->width, mask->height, 1, mask->bits, &mask->samples))
@@ -253,6 +254,10 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     double decode[8] = {0, 1, 0, 1, 0, 1, 0, 1};
     if (colors.indexed)
         decode[1] = (double)((1u << bits) - 1u);
+    else if (!stencil)
+        for (int component = 0; component < components; component++)
+            cupidimage_pdf_color_range(&colors, component, &decode[2 * component],
+                                       &decode[2 * component + 1]);
     if (pdf_image_array(st, &image, "Decode", decode, 2 * components) < 0)
         goto done;
     if (stencil && !((decode[0] == 0 && decode[1] == 1) || (decode[0] == 1 && decode[1] == 0)))
@@ -285,12 +290,11 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
                 if ((i & 1) && color_key[i] < color_key[i - 1])
                     goto done;
             }
-        } else if (!pdf_load_image_mask(st, &mask_view, soft, width, height, components, &mask)) {
+        } else if (!pdf_load_image_mask(st, &mask_view, soft, width, height, colors.components,
+                                        &colors, &mask)) {
             goto done;
         }
     }
-    if (colors.indexed && mask.has_matte)
-        goto done;
     if (!pdf_image_samples(st, &image, width, height, components, bits, &samples))
         goto done;
     size_t sample_row = ((size_t)width * components * bits + 7u) / 8u;
@@ -350,10 +354,11 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             if (colors.indexed) {
                 unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, values[0])) + 0.5);
                 for (int c = 0; c < colors.components; c++)
-                    values[c] = colors.palette[index * colors.components + c] / 255.0;
+                    values[c] = cupidimage_pdf_color_palette_value(
+                        &colors, c, colors.palette[index * colors.components + c]);
             }
             if (mask.has_matte && alpha > 0) {
-                for (int c = 0; c < components; c++)
+                for (int c = 0; c < colors.components; c++)
                     values[c] = mask.matte[c] + (values[c] - mask.matte[c]) / alpha;
             }
             if (stencil)

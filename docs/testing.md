@@ -497,3 +497,7 @@ runs compare successful recovery with the unpadded rendering.
 images, patterns and shading meshes, including compressed object references
 and allocation-failure cleanup. See [PDF colors](pdf-colors.md) for the output
 profile assumptions and independent-comparison scope.
+
+`make test-pdf-lab` checks signed Lab components, default and restricted ranges,
+image and palette decoding, source-space matte removal, native text, patterns
+and meshes. Indexed matte arrays use the base color space component count.
