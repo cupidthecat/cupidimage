@@ -676,3 +676,11 @@ image path. Focused tests compare 60 independently encoded pairs, including
 restart intervals, odd image dimensions and subsampled color components. The
 8-bit extended sequential Huffman frame marker is also supported. This closes
 another image-decoding gap, but does not establish complete DCT or PDF coverage.
+
+
+Image and mask metadata now uses the shared indirect-value resolver. Optional
+null entries retain defaults, including a null SMask falling back to Mask.
+Decode, color-key and Matte arrays accept indirect numeric members. Shared
+dictionary lookup preserves both the document index and shading stream bodies.
+The former undefined-soft-mask rejection fixture now checks the required null
+semantics instead. The remaining optional-value audit is still tracked in #48.

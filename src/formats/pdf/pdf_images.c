@@ -9,25 +9,16 @@
  * view must stay alive until a borrowed result has been consumed. */
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,
                                     const char *key, pdf_object_view *result) {
-    size_t pos;
-    pdf_object_id object;
-    if (!cupidimage_pdf_page_value(parent, key, &pos))
+    pdf_object_view value = {0}, dictionary = {0};
+    size_t end;
+    if (cupidimage_pdf_optional_value(st->document, st->document_size, parent, key, &value) != 1)
         return 0;
-    if (cupidimage_pdf_page_reference(parent, pos, &object)) {
-        if (!cupidimage_pdf_state_object(st, object, result))
-            return 0;
-        pos = 0;
-        cupidimage_pdf_skip_ws_and_comments(result->data, result->len, &pos);
-        if (result->len - pos < 2 || result->data[pos] != '<' || result->data[pos + 1] != '<') {
-            cupidimage_pdf_object_view_release(result);
-            return 0;
-        }
-        return 1;
+    if (!cupidimage_pdf_dictionary_view(&value, 0, &dictionary, &end)) {
+        cupidimage_pdf_object_view_release(&value);
+        return 0;
     }
-    if (pos + 1 >= parent->len || parent->data[pos] != '<' || parent->data[pos + 1] != '<')
-        return 0;
-    result->data = parent->data + pos;
-    result->len = parent->len - pos;
+    /* Shading entries can be streams; retain the complete resolved object. */
+    *result = value;
     return 1;
 }
 
@@ -94,14 +85,15 @@ typedef struct {
     double decode[2], matte[4];
 } pdf_image_mask;
 
-static int pdf_image_array(const pdf_object_view *view, const char *key, double *values,
-                           int count) {
-    size_t pos;
-    if (!cupidimage_pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '[')
+static int pdf_image_numbers(const pdf_render_state *st, const pdf_object_view *view,
+                             double *values, int count) {
+    size_t pos = 0;
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    if (pos >= view->len || view->data[pos++] != '[')
         return 0;
     for (int i = 0; i < count; i++) {
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-        if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, &pos, &values[i]) ||
+        if (!cupidimage_pdf_resolved_number(st->document, st->document_size, view, &pos,
+                                            &values[i]) ||
             !isfinite(values[i]))
             return 0;
     }
@@ -109,80 +101,103 @@ static int pdf_image_array(const pdf_object_view *view, const char *key, double 
     return pos < view->len && view->data[pos] == ']';
 }
 
-static int pdf_image_boolean(const pdf_object_view *view, const char *key, int *value) {
-    size_t pos;
-    if (!cupidimage_pdf_page_value(view, key, &pos))
-        return 1;
+/* Missing and null optional entries keep the caller's defaults. */
+static int pdf_image_array(const pdf_render_state *st, const pdf_object_view *view, const char *key,
+                           double *values, int count) {
+    pdf_object_view array = {0};
+    int status = cupidimage_pdf_optional_value(st->document, st->document_size, view, key, &array);
+    if (status == 1 && !pdf_image_numbers(st, &array, values, count))
+        status = -1;
+    cupidimage_pdf_object_view_release(&array);
+    return status;
+}
+
+static int pdf_image_present(const pdf_render_state *st, const pdf_object_view *view,
+                             const char *key) {
+    pdf_object_view value = {0};
+    int status = cupidimage_pdf_optional_value(st->document, st->document_size, view, key, &value);
+    cupidimage_pdf_object_view_release(&value);
+    return status;
+}
+
+static int pdf_image_boolean(const pdf_render_state *st, const pdf_object_view *view,
+                             const char *key, int *value) {
+    pdf_object_view entry = {0};
+    int status = cupidimage_pdf_optional_value(st->document, st->document_size, view, key, &entry);
+    if (status <= 0)
+        return status == 0;
+    size_t pos = 0;
+    cupidimage_pdf_skip_ws_and_comments(entry.data, entry.len, &pos);
+    int ok = 0;
     for (int b = 0; b < 2; b++) {
         const char *word = b ? "true" : "false";
         size_t n = strlen(word);
-        if (n <= view->len - pos && memcmp(view->data + pos, word, n) == 0 &&
-            (pos + n == view->len || cupidimage_pdf_is_ws(view->data[pos + n]) ||
-             cupidimage_pdf_is_delim(view->data[pos + n]))) {
+        if (n <= entry.len - pos && memcmp(entry.data + pos, word, n) == 0 &&
+            (pos + n == entry.len || cupidimage_pdf_is_ws(entry.data[pos + n]) ||
+             cupidimage_pdf_is_delim(entry.data[pos + n]))) {
             *value = b;
-            return 1;
+            ok = 1;
+            break;
         }
     }
-    return 0;
+    cupidimage_pdf_object_view_release(&entry);
+    return ok;
 }
 
-static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view *parent,
-                               const char *key, int width, int height, int components,
-                               pdf_image_mask *mask) {
-    pdf_object_view view = {0};
-    pdf_object_id object;
-    int stencil = 0, ok = 0;
-    size_t pos;
-    mask->soft = strcmp(key, "SMask") == 0;
+static int pdf_image_type(const pdf_render_state *st, const pdf_object_view *view) {
+    int present = pdf_image_present(st, view, "Type");
+    return present == 0 ||
+           (present == 1 &&
+            cupidimage_pdf_entry_is_name(st->document, st->document_size, view, "Type", "XObject"));
+}
+
+static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view *view, int soft,
+                               int width, int height, int components, pdf_image_mask *mask) {
+    int stencil = 0;
+    mask->soft = soft;
     mask->decode[0] = 0;
     mask->decode[1] = 1;
-    if (!cupidimage_pdf_page_value(parent, key, &pos) ||
-        !cupidimage_pdf_page_reference(parent, pos, &object) ||
-        !cupidimage_pdf_state_object(st, object, &view))
-        goto done;
-    if (!cupidimage_pdf_image_name_is(&view, "Subtype", "Image") ||
-        (cupidimage_pdf_page_value(&view, "Type", &pos) &&
-         !cupidimage_pdf_image_name_is(&view, "Type", "XObject")) ||
-        !pdf_image_boolean(&view, "ImageMask", &stencil) || stencil == mask->soft ||
-        cupidimage_pdf_page_value(&view, "Mask", &pos) ||
-        cupidimage_pdf_page_value(&view, "SMask", &pos) ||
-        !cupidimage_pdf_image_integer(st, &view, "Width", &mask->width) ||
-        !cupidimage_pdf_image_integer(st, &view, "Height", &mask->height) || mask->width < 1 ||
+    if (!cupidimage_pdf_entry_is_name(st->document, st->document_size, view, "Subtype", "Image") ||
+        !pdf_image_type(st, view) || !pdf_image_boolean(st, view, "ImageMask", &stencil) ||
+        stencil == mask->soft || pdf_image_present(st, view, "Mask") != 0 ||
+        pdf_image_present(st, view, "SMask") != 0 ||
+        !cupidimage_pdf_image_integer(st, view, "Width", &mask->width) ||
+        !cupidimage_pdf_image_integer(st, view, "Height", &mask->height) || mask->width < 1 ||
         mask->height < 1 || (double)mask->width * mask->height > 64.0 * 1024 * 1024)
-        goto done;
+        return 0;
     mask->bits = 1;
-    if ((mask->soft || cupidimage_pdf_page_value(&view, "BitsPerComponent", &pos)) &&
-        !cupidimage_pdf_image_integer(st, &view, "BitsPerComponent", &mask->bits))
-        goto done;
+    int has_bits = pdf_image_present(st, view, "BitsPerComponent");
+    if (has_bits < 0 || ((mask->soft || has_bits) &&
+                         !cupidimage_pdf_image_integer(st, view, "BitsPerComponent", &mask->bits)))
+        return 0;
     if (mask->soft) {
-        if (!cupidimage_pdf_image_name_is(&view, "ColorSpace", "DeviceGray") ||
+        if (!cupidimage_pdf_entry_is_name(st->document, st->document_size, view, "ColorSpace",
+                                          "DeviceGray") ||
             (mask->bits != 1 && mask->bits != 2 && mask->bits != 4 && mask->bits != 8 &&
              mask->bits != 16))
-            goto done;
-    } else if (mask->bits != 1 || cupidimage_pdf_page_value(&view, "ColorSpace", &pos))
-        goto done;
-    if (cupidimage_pdf_page_value(&view, "Decode", &pos) &&
-        !pdf_image_array(&view, "Decode", mask->decode, 2))
-        goto done;
+            return 0;
+    } else if (mask->bits != 1 || pdf_image_present(st, view, "ColorSpace") != 0)
+        return 0;
+    if (pdf_image_array(st, view, "Decode", mask->decode, 2) < 0)
+        return 0;
     if (!mask->soft && !((mask->decode[0] == 0 && mask->decode[1] == 1) ||
                          (mask->decode[0] == 1 && mask->decode[1] == 0)))
-        goto done;
-    mask->has_matte = cupidimage_pdf_page_value(&view, "Matte", &pos);
+        return 0;
+    int matte = pdf_image_array(st, view, "Matte", mask->matte, components);
+    if (matte < 0)
+        return 0;
+    mask->has_matte = matte == 1;
     if (mask->has_matte) {
-        if (!mask->soft || mask->width != width || mask->height != height ||
-            !pdf_image_array(&view, "Matte", mask->matte, components))
-            goto done;
+        if (!mask->soft || mask->width != width || mask->height != height)
+            return 0;
         for (int c = 0; c < components; c++)
             if (mask->matte[c] < 0 || mask->matte[c] > 1)
-                goto done;
+                return 0;
     }
-    if (!pdf_image_samples(st, &view, mask->width, mask->height, 1, mask->bits, &mask->samples))
-        goto done;
+    if (!pdf_image_samples(st, view, mask->width, mask->height, 1, mask->bits, &mask->samples))
+        return 0;
     mask->row = ((size_t)mask->width * mask->bits + 7u) / 8u;
-    ok = 1;
-done:
-    cupidimage_pdf_object_view_release(&view);
-    return ok;
+    return 1;
 }
 
 static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double v) {
@@ -205,24 +220,18 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     image.owned = NULL; /* The caller retains the dictionary and stream. */
     unsigned char *samples = NULL;
     pdf_image_mask mask = {0};
+    pdf_object_view mask_view = {0};
     pdf_soft_mask *graphics_mask = st->gs.soft_mask;
     pdf_image_colors colors = {0};
     int width, height, bits, components, ok = 0;
     size_t pos;
-    if (!cupidimage_pdf_image_name_is(&image, "Subtype", "Image"))
+    if (!cupidimage_pdf_entry_is_name(st->document, st->document_size, &image, "Subtype",
+                                      "Image") ||
+        !pdf_image_type(st, &image))
         goto done;
     int stencil = 0;
-    if (cupidimage_pdf_page_value(&image, "ImageMask", &pos)) {
-        size_t n = image.len - pos;
-        if (n >= 4 && memcmp(image.data + pos, "true", 4) == 0 &&
-            (n == 4 || cupidimage_pdf_is_ws(image.data[pos + 4]) ||
-             cupidimage_pdf_is_delim(image.data[pos + 4])))
-            stencil = 1;
-        else if (!(n >= 5 && memcmp(image.data + pos, "false", 5) == 0 &&
-                   (n == 5 || cupidimage_pdf_is_ws(image.data[pos + 5]) ||
-                    cupidimage_pdf_is_delim(image.data[pos + 5]))))
-            goto done;
-    }
+    if (!pdf_image_boolean(st, &image, "ImageMask", &stencil))
+        goto done;
     if ((st->glyph_uncolored || st->pattern_uncolored) && !stencil)
         goto done;
     if (!stencil && (!cupidimage_pdf_page_value(&image, "ColorSpace", &pos) ||
@@ -232,64 +241,56 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         goto done;
     components = stencil || colors.indexed ? 1 : colors.components;
     bits = stencil ? 1 : 8;
-    if (!components || !cupidimage_pdf_image_integer(st, &image, "Width", &width) ||
+    int has_bits = pdf_image_present(st, &image, "BitsPerComponent");
+    if (has_bits < 0 || !components || !cupidimage_pdf_image_integer(st, &image, "Width", &width) ||
         !cupidimage_pdf_image_integer(st, &image, "Height", &height) ||
-        ((!stencil || cupidimage_pdf_page_value(&image, "BitsPerComponent", &pos)) &&
+        ((!stencil || has_bits) &&
          !cupidimage_pdf_image_integer(st, &image, "BitsPerComponent", &bits)) ||
         (bits != 1 && bits != 2 && bits != 4 && bits != 8 && bits != 16) ||
-        (stencil && (bits != 1 || cupidimage_pdf_page_value(&image, "ColorSpace", &pos))) ||
-        width < 1 || height < 1 || (double)width * height * components > 64.0 * 1024 * 1024)
+        (stencil && (bits != 1 || pdf_image_present(st, &image, "ColorSpace") != 0)) || width < 1 ||
+        height < 1 || (double)width * height * components > 64.0 * 1024 * 1024)
         goto done;
     double decode[8] = {0, 1, 0, 1, 0, 1, 0, 1};
     if (colors.indexed)
         decode[1] = (double)((1u << bits) - 1u);
-    if (cupidimage_pdf_page_value(&image, "Decode", &pos)) {
-        if (pos >= image.len || image.data[pos++] != '[')
-            goto done;
-        for (int i = 0; i < 2 * components; i++) {
-            cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-            if (!cupidimage_pdf_parse_pdf_number(image.data, image.len, &pos, &decode[i]))
-                goto done;
-        }
-        cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-        if (pos >= image.len || image.data[pos] != ']')
-            goto done;
-    }
+    if (pdf_image_array(st, &image, "Decode", decode, 2 * components) < 0)
+        goto done;
     if (stencil && !((decode[0] == 0 && decode[1] == 1) || (decode[0] == 1 && decode[1] == 0)))
         goto done;
     uint32_t color_key[8] = {0};
     uint32_t maximum = (1u << bits) - 1u;
     int has_color_key = 0;
-    if (cupidimage_pdf_page_value(&image, "SMask", &pos)) {
-        if (stencil || !pdf_load_image_mask(st, &image, "SMask", width, height, components, &mask))
+    int soft = 1;
+    int has_mask =
+        cupidimage_pdf_optional_value(st->document, st->document_size, &image, "SMask", &mask_view);
+    if (!has_mask) {
+        soft = 0;
+        has_mask = cupidimage_pdf_optional_value(st->document, st->document_size, &image, "Mask",
+                                                 &mask_view);
+    }
+    if (has_mask < 0 || (has_mask && stencil))
+        goto done;
+    if (has_mask) {
+        pos = 0;
+        cupidimage_pdf_skip_ws_and_comments(mask_view.data, mask_view.len, &pos);
+        has_color_key = !soft && pos < mask_view.len && mask_view.data[pos] == '[';
+        if (has_color_key) {
+            double keys[8];
+            if (!pdf_image_numbers(st, &mask_view, keys, 2 * components))
+                goto done;
+            for (int i = 0; i < components * 2; i++) {
+                if (keys[i] < 0 || keys[i] > maximum || floor(keys[i]) != keys[i])
+                    goto done;
+                color_key[i] = (uint32_t)keys[i];
+                if ((i & 1) && color_key[i] < color_key[i - 1])
+                    goto done;
+            }
+        } else if (!pdf_load_image_mask(st, &mask_view, soft, width, height, components, &mask)) {
             goto done;
-    } else if (cupidimage_pdf_page_value(&image, "Mask", &pos)) {
-        if (stencil)
-            goto done;
-        if (pos < image.len && image.data[pos] == '[')
-            has_color_key = 1;
-        else if (!pdf_load_image_mask(st, &image, "Mask", width, height, components, &mask))
-            goto done;
+        }
     }
     if (colors.indexed && mask.has_matte)
         goto done;
-    if (has_color_key) {
-        if (stencil || pos >= image.len || image.data[pos++] != '[')
-            goto done;
-        for (int i = 0; i < components * 2; i++) {
-            double value;
-            cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-            if (!cupidimage_pdf_parse_pdf_number(image.data, image.len, &pos, &value) ||
-                value < 0 || value > maximum || floor(value) != value)
-                goto done;
-            color_key[i] = (uint32_t)value;
-            if ((i & 1) && color_key[i] < color_key[i - 1])
-                goto done;
-        }
-        cupidimage_pdf_skip_ws_and_comments(image.data, image.len, &pos);
-        if (pos >= image.len || image.data[pos] != ']')
-            goto done;
-    }
     if (!pdf_image_samples(st, &image, width, height, components, bits, &samples))
         goto done;
     size_t sample_row = ((size_t)width * components * bits + 7u) / 8u;
@@ -370,6 +371,7 @@ done:
     cupidimage_pdf_patterns_end_paint(st);
     st->gs.soft_mask = graphics_mask;
     free(mask.samples);
+    cupidimage_pdf_object_view_release(&mask_view);
     free(samples);
     cupidimage_pdf_object_view_release(&image);
     if (!ok)
@@ -383,7 +385,8 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
     pdf_object_id object;
     int ok = 0;
     if (pdf_image_object(st, name, &object) && cupidimage_pdf_state_object(st, object, &image)) {
-        if (cupidimage_pdf_image_name_is(&image, "Subtype", "Form"))
+        if (cupidimage_pdf_entry_is_name(st->document, st->document_size, &image, "Subtype",
+                                         "Form"))
             ok = cupidimage_pdf_draw_form(st, object, &image);
         else
             ok = cupidimage_pdf_draw_image_view(st, &image);

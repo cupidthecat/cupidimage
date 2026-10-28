@@ -447,3 +447,10 @@ markers, progressive refinement, separate scans, conditioning selectors, filter
 chains, Decode inversion and allocation failures. The checked-in fixtures avoid
 an encoder dependency in CI. Use `--reference` with the script for independent
 paired-image comparisons; see [PDF images](pdf-images.md) for their scope.
+
+
+`make test-pdf-image-values` compares indirect image/mask metadata with direct
+values and optional null entries with omitted entries. It covers Decode and
+Matte members, color-key arrays, stencil defaults, escaped names, mask reference
+chains and soft-mask precedence. Required null/mistyped values and cycles are
+rejected. Successful cases run through complete-page allocation-failure checks.

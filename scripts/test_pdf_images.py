@@ -192,6 +192,7 @@ def main():
                              ("off-page", "18 0 0 12 1000000000000000000000000000 0"),
                              ("tiny-transform", ".000000000000000001 0 0 .000000000000000001 0 0")):
             check(name, fixture(content=matrix + " cm /Im0 Do"), lambda x, y: GRAY)
+        check("undefined-soft-mask-is-null", fixture(attrs=attrs + " /SMask 8 0 R"), quadrants)
         for name, change in (("zero-width", {"attrs": attrs.replace("/Width 2", "/Width 0")}),
                              ("negative-height", {"attrs": attrs.replace("/Height 2", "/Height -1")}),
                              ("fractional-width", {"attrs": attrs.replace("/Width 2", "/Width 2.5")}),
@@ -201,7 +202,6 @@ def main():
                              ("unsupported-space", {"attrs": attrs.replace("/DeviceRGB", "/Indexed")}),
                              ("unsupported-filter", {"attrs": attrs + " /Filter /JPXDecode"}),
                              ("invalid-stencil-color-space-and-depth", {"attrs": attrs + " /ImageMask true"}),
-                             ("soft-mask", {"attrs": attrs + " /SMask 8 0 R"}),
                              ("bad-decode", {"attrs": attrs + " /Decode [1 0]"}),
                              ("short-data", {"payload": RGB[:-1]}),
                              ("extra-data", {"payload": RGB + b"X"}),

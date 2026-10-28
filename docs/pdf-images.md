@@ -24,6 +24,29 @@ Image Decode arrays operate on native decoded samples. Color-space conversion,
 explicit masks, soft masks and compositing follow. This order matters for CMYK
 images and for reversed or extended Decode ranges.
 
+## Image dictionaries and masks
+
+Image and mask dictionaries resolve indirect values before interpreting them.
+This includes subtype names, dimensions, bit depth, ImageMask flags, Decode
+arrays, color-key Mask arrays and soft-mask Matte arrays. Numeric array members
+can also be indirect. Explicit and soft masks may be reached through reference
+chains; the resolved stream remains available during sample decoding.
+
+Missing, null and undefined optional entries keep their defaults. A null SMask
+does not hide a valid Mask entry. Stencil images may omit BitsPerComponent or
+set it to null, in which case it defaults to one. Null ColorSpace entries count
+as absent for stencils. Required values and array members still need the right
+types: a null element inside Decode is not a number, and cyclic references fail.
+
+Shared dictionary lookup retains the document index and complete stream body.
+Shading-pattern stream dictionaries therefore keep their encoded mesh data, while
+inline dictionaries keep the same object-resolution context as their parent.
+
+`make test-pdf-image-values` checks direct/indirect equivalence, null defaults,
+stencils, explicit and soft masks, Matte, escaped subtype names and required-value
+errors. The successful documents also run through allocation-failure injection.
+These rules follow ISO 32000-1 sections 7.3.7, 7.3.9 and 8.9, including Table 89.
+
 ## DCT color transforms
 
 The private JPEG sample decoder returns components rather than RGBA pixels.
