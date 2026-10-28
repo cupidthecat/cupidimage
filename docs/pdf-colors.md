@@ -78,7 +78,7 @@ input values as their oracle. The comparison renderer returns a different result
 for that case, so it is not used as the expected result there.
 
 Complete ICC profile handling, output intents, nonzero black points, calibrated
-blending spaces, general rendering-intent selection, Separation/DeviceN and
+blending spaces, general rendering-intent selection, DeviceN and
 overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
 
@@ -161,3 +161,49 @@ are distinguished from absent defaults, so allocation failures cannot silently
 change the output colors. Optional comparisons use:
 
     python3 scripts/test_pdf_default_colors.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+## Separation tint transforms
+
+Single-colorant Separation sources use their alternate device, calibrated or
+supported ICC space for the fixed additive output target. The tint is clipped to
+[0, 1] and passed to the supplied function before alternate-space conversion.
+Function types 0, 2, 3 and 4 use the existing bounded function evaluator. The
+initial tint is 1. PDF names and function references can be indirect, and function
+streams retain the cross-reference context needed for compressed metadata.
+
+The same source path serves text, fill/stroke, image XObjects, inline images,
+Indexed palettes, uncolored pattern bases, gradients and meshes. Saved graphics
+states retain the selected transform. New selections in a Form use that Form's
+resources; cached transforms distinguish different resolved alternates. Default
+spaces apply to ordinary Separation alternates, while a default-space replacement
+is not recursively remapped.
+
+None contributes no paint or shape, but does not suppress path or text clipping.
+Combined fill/stroke keeps the visible channel when the other uses None. All
+ignores its alternate and applies the complemented tint to every additive channel,
+as specified explicitly in ISO 32000-2:2020 section 8.6.6.4. The ignored alternate
+and function operands still need the appropriate object kinds. Their unused
+profile data and function programs are not executed.
+
+All has a deliberate specification-based oracle: some comparison rasters use its
+alternate tint transform instead. The owned All asset therefore checks the
+specified inverse-gray result rather than treating that reference behavior as
+correct. This difference remains relevant to visual comparison.
+
+Each page owns an immutable transform cache, limited to 256 definitions, 1 MiB
+per definition key and a 64 MiB budget charging keys, function data and compiled
+programs. Repeated identical definitions with the same resolved alternate reuse
+entries. Tint evaluation uses
+the shared shading-work budget. Cache storage is released after patterns and
+before ICC profiles on both success and failure.
+
+`make test-pdf-separation` covers tint clipping, initial colors, all four function
+types, images, text, patterns, meshes, resource scope, compressed metadata,
+allocation recovery and cache limits. Three owned assets have analytic references.
+The optional independent pass is:
+
+    python3 scripts/test_pdf_separation.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+This is alternate-space rendering for an additive target. DeviceN/NChannel,
+physical spot planes, overprint simulation and spot-aware transparency blending
+remain unfinished. Existing ICC and function limits also apply to tint transforms.

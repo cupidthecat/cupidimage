@@ -2103,10 +2103,11 @@
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_image_colors.c",
             "scripts/test_pdf_colors.py",
-            "docs/pdf-colors.md"
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_separation.py"
           ],
           "limitations": [
-            "Indexed and Pattern sources accept supported calibrated/ICC bases. Separation, DeviceN/NChannel and tint transforms remain unfinished."
+            "Indexed, Pattern and Separation source spaces are supported with the documented alternate-space limits. DeviceN/NChannel and physical spot-plane handling remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2119,20 +2120,25 @@
         {
           "id": "11.5",
           "requirement": "Tint transforms, spot-color components, All/None special colorants.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-colors.md",
+            "src/formats/pdf/pdf_separation.c",
+            "scripts/test_pdf_separation.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Single-colorant alternate tint transforms and All/None are implemented. DeviceN/NChannel, physical spot planes and spot-aware transparency remain unfinished."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.6.4",
+            "ISO 32000-2:2020 8.6.6.4"
+          ]
         },
         {
           "id": "11.6",
@@ -2144,7 +2150,7 @@
             "scripts/test_pdf_default_colors.py"
           ],
           "limitations": [
-            "Supported gray/RGB calibrated and ICC source replacements are tested; CMYK ICC, spot replacements and calibrated/ICC blending spaces remain unfinished."
+            "Supported gray/RGB calibrated, ICC and single-colorant replacements are tested. CMYK ICC, multi-component spot replacements and calibrated/ICC blending spaces remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2168,7 +2174,7 @@
             "scripts/test_pdf_default_colors.py"
           ],
           "limitations": [
-            "Calibrated and selected ICC source spaces, default substitution and empty initial Pattern colors are supported. Spot spaces, remaining ICC models and general color management are unfinished."
+            "Supported calibrated, ICC and Separation source spaces share color operators. DeviceN/NChannel, remaining ICC models and general color management are unfinished."
           ],
           "dependencies": [
             "1",

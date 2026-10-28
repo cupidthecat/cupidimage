@@ -28,6 +28,9 @@ int cupidimage_pdf_function_array(const pdf_render_state *st, const pdf_object_v
 int cupidimage_pdf_load_function(const pdf_render_state *st, const pdf_object_view *parent,
                                  const char *key, int inputs, int components,
                                  pdf_function_tree *tree);
+int cupidimage_pdf_load_function_value(const pdf_render_state *, const pdf_object_view *, size_t *,
+                                       int, int, pdf_function_tree *);
+size_t cupidimage_pdf_function_bytes(const pdf_function_tree *);
 int cupidimage_pdf_evaluate_function(const pdf_function_tree *tree, const double input[2],
                                      double output[4], size_t *budget);
 /* Initialize trees to zero and release them after use, including failed loads. */

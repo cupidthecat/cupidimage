@@ -246,14 +246,17 @@ static int content_aggregate(const unsigned char *data, size_t size, size_t *pos
     if (depth || p - start > CONTENT_TOKEN_LIMIT)
         return 0;
     size_t from = start + (dictionary ? 0 : 1), bytes = p - from - (dictionary ? 0 : 1);
-    char *copy = malloc(bytes + 1);
-    if (!copy)
-        return 0;
-    memcpy(copy, data + from, bytes);
-    copy[bytes] = 0;
+    if (out) {
+        char *copy = malloc(bytes + 1);
+        if (!copy)
+            return 0;
+        memcpy(copy, data + from, bytes);
+        copy[bytes] = 0;
+        *out = copy;
+    }
     *pos = p;
-    *out = copy;
-    *length = bytes;
+    if (length)
+        *length = bytes;
     return 1;
 }
 

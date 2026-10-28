@@ -171,7 +171,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
         if (!node->has_range)
             return -1;
         pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL,
-                                  NULL};
+                                  parent->xref};
         const unsigned char *raw;
         size_t length, decoded_length;
         unsigned char *decoded = NULL;
@@ -222,7 +222,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
             !cupidimage_pdf_function_array(st, &view, "Decode", node->decode, components * 2))
             return -1;
         pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL,
-                                  NULL};
+                                  parent->xref};
         const unsigned char *raw;
         size_t length, decoded_length;
         unsigned char *decoded = NULL;
@@ -288,6 +288,25 @@ int cupidimage_pdf_load_function(const pdf_render_state *st, const pdf_object_vi
         return 1;
     cupidimage_pdf_free_function(tree);
     return 0;
+}
+
+int cupidimage_pdf_load_function_value(const pdf_render_state *st, const pdf_object_view *view,
+                                       size_t *pos, int inputs, int components,
+                                       pdf_function_tree *tree) {
+    cupidimage_pdf_free_function(tree);
+    memset(tree, 0, sizeof(*tree));
+    if (inputs >= 1 && inputs <= 2 && components >= 1 && components <= 4 &&
+        pdf_function_value(st, view, pos, inputs, components, tree, 0, 0) == 0)
+        return 1;
+    cupidimage_pdf_free_function(tree);
+    return 0;
+}
+
+size_t cupidimage_pdf_function_bytes(const pdf_function_tree *tree) {
+    size_t bytes = sizeof(*tree) + tree->sample_bytes;
+    for (int i = 0; i < tree->count; i++)
+        bytes += cupidimage_pdf_calculator_bytes(tree->nodes[i].calculator);
+    return bytes;
 }
 
 void cupidimage_pdf_free_function(pdf_function_tree *tree) {

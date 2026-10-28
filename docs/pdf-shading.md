@@ -104,9 +104,10 @@ triangle bounding-box tests and function evaluation consume the shading-work
 budget; the final composite consumes pixel work. Failed decoding or evaluation
 releases temporary buffers before any shading pixels reach the parent surface.
 
-This is device-color rendering, not complete color management. Calibrated spaces,
-ICC profiles, Separation/DeviceN shading and default-space remapping still need
-work. Mesh AntiAlias requests do not enable a separate filtered sampler.
+Device, calibrated, selected ICC and Separation source spaces share the color
+conversion path, including supported default remapping. DeviceN, remaining ICC
+models and general color management are unfinished. See [PDF colors](pdf-colors.md).
+Mesh AntiAlias requests do not enable a separate filtered sampler.
 The renderer's pixel-center interpolation is not pixel-identical to the tested
 independent rasterizers.
 

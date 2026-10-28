@@ -156,9 +156,6 @@ static int pdf_image_palette(const pdf_render_state *st, const pdf_object_view *
     return pdf_palette_string(view, pos, palette, &length) && length == expected;
 }
 
-static int pdf_color_space_value(const pdf_render_state *, const pdf_object_view *, size_t *,
-                                 unsigned, pdf_image_colors *, int);
-
 /* Defaults replace a selected device space once; the replacement is not remapped again. */
 static int pdf_device_color_space(const pdf_render_state *st, int components, unsigned depth,
                                   pdf_image_colors *colors, int defaults) {
@@ -181,7 +178,7 @@ static int pdf_device_color_space(const pdf_render_state *st, int components, un
                      (value.len - pos == 4 || cupidimage_pdf_is_ws(value.data[pos + 4]) ||
                       cupidimage_pdf_is_delim(value.data[pos + 4]));
         if (!absent)
-            ok = ok && pdf_color_space_value(st, &value, &pos, depth + 1, colors, 0) &&
+            ok = ok && cupidimage_pdf_color_space_value(st, &value, &pos, depth + 1, colors, 0) &&
                  colors->components == components && !colors->indexed && !colors->pattern &&
                  colors->calibrated != 3;
         cupidimage_pdf_object_view_release(&value);
@@ -192,12 +189,13 @@ static int pdf_device_color_space(const pdf_render_state *st, int components, un
     colors->components = components;
     colors->calibrated = 0;
     colors->icc = NULL;
+    colors->separation = NULL;
     return 1;
 }
 
-static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
-                                 size_t *pos, unsigned depth, pdf_image_colors *colors,
-                                 int defaults) {
+int cupidimage_pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
+                                     size_t *pos, unsigned depth, pdf_image_colors *colors,
+                                     int defaults) {
     if (depth >= 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -207,15 +205,18 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
         if (!cupidimage_pdf_state_object(st, object, &indirect))
             return 0;
         size_t p = 0;
-        int ok = pdf_color_space_value(st, &indirect, &p, depth + 1, colors, defaults);
+        int ok = cupidimage_pdf_color_space_value(st, &indirect, &p, depth + 1, colors, defaults);
         cupidimage_pdf_object_view_release(&indirect);
         return ok;
     }
     if (*pos < view->len && view->data[*pos] == '[') {
-        (*pos)++;
+        size_t start = (*pos)++;
         char family[128];
         if (!pdf_color_name(view, pos, family))
             return 0;
+        if (!strcmp(family, "Separation"))
+            return cupidimage_pdf_separation_space(st, view, start, pos, depth + 1, colors,
+                                                   defaults);
         if (!strcmp(family, "ICCBased")) {
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
             pdf_object_id profile;
@@ -251,7 +252,7 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
                 colors->components = 0;
                 return 1;
             }
-            if (!pdf_color_space_value(st, view, pos, depth + 1, colors, defaults) ||
+            if (!cupidimage_pdf_color_space_value(st, view, pos, depth + 1, colors, defaults) ||
                 colors->pattern)
                 return 0;
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -262,8 +263,8 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
         }
         if (strcmp(family, "Indexed"))
             return 0;
-        if (!pdf_color_space_value(st, view, pos, depth + 1, colors, defaults) || colors->indexed ||
-            colors->pattern)
+        if (!cupidimage_pdf_color_space_value(st, view, pos, depth + 1, colors, defaults) ||
+            colors->indexed || colors->pattern)
             return 0;
         double high;
         cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -299,7 +300,7 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
 
 int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
                                      size_t *pos, unsigned depth, pdf_image_colors *colors) {
-    return pdf_color_space_value(st, view, pos, depth, colors, 1);
+    return cupidimage_pdf_color_space_value(st, view, pos, depth, colors, 1);
 }
 
 int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth,

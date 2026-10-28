@@ -73,6 +73,10 @@ struct pdf_calculator_program {
     calc_instruction code[PDF_CALC_CODE];
 };
 
+size_t cupidimage_pdf_calculator_bytes(const pdf_calculator_program *program) {
+    return program ? sizeof(*program) : 0;
+}
+
 typedef struct {
     const unsigned char *data;
     size_t length, pos;

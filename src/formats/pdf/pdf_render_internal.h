@@ -40,6 +40,13 @@ typedef struct {
 } pdf_clip_budget;
 
 typedef struct pdf_icc_profile pdf_icc_profile;
+typedef struct pdf_separation pdf_separation;
+
+typedef struct {
+    pdf_separation *head;
+    size_t bytes;
+    unsigned count;
+} pdf_separation_store;
 
 typedef struct {
     pdf_icc_profile *head;
@@ -50,6 +57,7 @@ typedef struct {
 typedef struct {
     int components, indexed, high, pattern;
     pdf_icc_profile *icc;
+    pdf_separation *separation;
     unsigned char palette[1024];
     int calibrated; /* 0: device; 1: CalGray; 2: CalRGB; 3: Lab. */
     double white[3], gamma[3], matrix[9], adaptation[9], lab_range[4];
@@ -144,6 +152,7 @@ typedef struct {
     pdf_graphics_state initial_gs;
     pdf_pattern_store *patterns;
     pdf_icc_store *icc_store;
+    pdf_separation_store *separations;
     unsigned pattern_depth;
     int pattern_uncolored, mask_rendering;
     pdf_graphics_state gs_stack[32];
@@ -217,6 +226,15 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name);
 uint8_t cupidimage_pdf_clamp_u8(double v);
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
                                   float *py);
+int cupidimage_pdf_color_space_value(const pdf_render_state *, const pdf_object_view *, size_t *,
+                                     unsigned, pdf_image_colors *, int);
+int cupidimage_pdf_separation_space(const pdf_render_state *, const pdf_object_view *, size_t,
+                                    size_t *, unsigned, pdf_image_colors *, int);
+int cupidimage_pdf_separation_none(const pdf_separation *);
+void cupidimage_pdf_separation_free(pdf_separation_store *);
+void cupidimage_pdf_separation_paint(pdf_render_state *, int, int, const double[4],
+                                     const pdf_separation *, double, double);
+int cupidimage_pdf_empty_color(const pdf_image_colors *, const pdf_pattern *);
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
 int cupidimage_pdf_calibrated_output(pdf_image_colors *);
 int cupidimage_pdf_icc_space(const pdf_render_state *, pdf_object_id, pdf_image_colors *);

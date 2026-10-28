@@ -60,6 +60,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
+#include "../src/formats/pdf/pdf_separation.c"
 #include "../src/formats/pdf/pdf_shading.c"
 #include "../src/formats/pdf/pdf_soft_masks.c"
 #include "../src/formats/pdf/pdf_standard_font.c"

@@ -217,6 +217,10 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
 
 void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const double values[4],
                                     const pdf_image_colors *space, double alpha, double shape) {
+    if (space->separation) {
+        cupidimage_pdf_separation_paint(st, x, y, values, space->separation, alpha, shape);
+        return;
+    }
     if (space->icc) {
         double converted[3];
         if (!cupidimage_pdf_icc_color(space->icc, values, st->group && st->group->gray,
@@ -366,8 +370,8 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
 /* Fill-and-stroke is one PDF object. Stroke-covered pixels use the original
  * backdrop, not a fill that has already been composited onto it. */
 static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
-    int empty_fill = st->gs.fill_space.pattern && !st->gs.fill_pattern;
-    int empty_stroke = st->gs.stroke_space.pattern && !st->gs.stroke_pattern;
+    int empty_fill = cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern);
+    int empty_stroke = cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern);
     if (empty_fill || empty_stroke) {
         if (!empty_fill)
             pdf_fill_path(st, even_odd);
@@ -780,8 +784,8 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
                 initial[i].num =
                     colors.indexed
                         ? cupidimage_pdf_color_palette_value(&colors, i, colors.palette[i])
-                    : colors.components == 4 && i == 3 ? 1
-                                                       : 0;
+                    : colors.separation || (colors.components == 4 && i == 3) ? 1
+                                                                              : 0;
             }
             pdf_set_source_color(st, stroke, &colors, initial, colors.components);
             if (stroke) {
@@ -1492,6 +1496,8 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
     st.patterns = &patterns;
     pdf_icc_store profiles = {0};
     st.icc_store = &profiles;
+    pdf_separation_store separations = {0};
+    st.separations = &separations;
     st.img = img;
     st.document = document;
     st.document_size = document_size;
@@ -1534,6 +1540,7 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
         ok = cupidimage_pdf_group_finish(&st, &page_group);
     cupidimage_pdf_group_free(&st, &page_group);
     cupidimage_pdf_patterns_free(&patterns);
+    cupidimage_pdf_separation_free(&separations);
     cupidimage_pdf_icc_free(&profiles);
     if (!ok && err && errcap && !err[0])
         cupidimage_set_err(err, errcap,

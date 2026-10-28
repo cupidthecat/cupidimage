@@ -751,6 +751,18 @@
       "sha256": "96284b146cfa75ecf9e5e98d408006cc4da5e83c9c430e7a4ae9aaa350cd5a41"
     },
     {
+      "path": "assets/pdf/reference/separation-all.pdf",
+      "sha256": "858e828bfcb5c663e475802005901a4e689bc2b9287389c64ed213686ed2ced1"
+    },
+    {
+      "path": "assets/pdf/reference/separation-none.pdf",
+      "sha256": "fc23eb42246d3c418cd7ddff56af76c6ffb6f2e5a5a94c07c5849ff431c9acd3"
+    },
+    {
+      "path": "assets/pdf/reference/separation-tint.pdf",
+      "sha256": "12338e6d5b60814093211ef5ac1546728f8c91cc63254cf0f03e0e5e866833fe"
+    },
+    {
       "path": "assets/pdf/reference/soft-mask-matte.pdf",
       "sha256": "9efc14da3e6430846c13a4d81d21201b4885e7ef38a96c2318a4c47c3c4cf6a8"
     },

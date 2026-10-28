@@ -406,6 +406,27 @@
       "height": 120,
       "rgba_zlib": "eJzt0cEJwDAAA7Hsv3S6Qqk/B5XA/wPfCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8dc6Z9vc+NvV/631s6v/W+9jU/633san/W+9jU/+33sem/m+9j03933ofm/q/9T429X/rfWzq/9b72NT/rfexqf9b72NT/7fex6b+b72PTf3feh+b+r/1Pjb1f+t9bOr/1vvY1P+t97Gp/1vvY1P/t97Hpv5vvY9N/d96HwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBbD5vG7fA=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/separation-tint.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/separation-all.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj43zCKR/EoHsWjeMRhAPAEvq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/separation-none.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxjYPj/n2EUj+JRPIpH8YjDAA3q/R8=",
+      "tolerance": 0
     }
   ]
 }

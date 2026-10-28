@@ -528,3 +528,9 @@ work bounds include zero-alpha shape and explicit backgrounds.
 advances, composite widths, all text modes and the page glyph-operation limit.
 Fault injection requires a failed width decode to fail the page, never silently
 move later characters by zero.
+
+`make test-pdf-separation` checks tint functions, All/None semantics, source-space
+interpolation, resource-scoped alternates, compressed function metadata and cache
+bounds. Regenerate its three owned color assets with
+`scripts/generate_pdf_separation_fixtures.py`. All uses the specification's
+additive-channel oracle; see [PDF colors](pdf-colors.md) for comparison differences.
