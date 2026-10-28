@@ -24,7 +24,7 @@ static void calibrated_multiply(const double matrix[9], const double value[3], d
 }
 
 /* ICC.1:2022 Annex E.3, linearized Bradford adaptation to the sRGB D65 white. */
-static int calibrated_adaptation(pdf_image_colors *space) {
+int cupidimage_pdf_calibrated_output(pdf_image_colors *space) {
     static const double bradford[9] = {.8951, .2664, -.1614, -.7502, 1.7135,
                                        .0367, .0389, -.0685, 1.0296};
     static const double d65[3] = {.95047, 1, 1.08883};
@@ -74,6 +74,7 @@ int cupidimage_pdf_calibrated_space(const pdf_render_state *st, const pdf_object
         return 0;
     size_t ignored;
     int ok = cupidimage_pdf_dictionary_view(&value, 0, &dictionary, &ignored);
+    space->icc = NULL;
     space->calibrated = kind;
     space->components = kind == 1 ? 1 : 3;
     space->gamma[0] = space->gamma[1] = space->gamma[2] = 1;
@@ -102,7 +103,7 @@ int cupidimage_pdf_calibrated_space(const pdf_render_state *st, const pdf_object
              space->lab_range[0] <= space->lab_range[1] &&
              space->lab_range[2] <= space->lab_range[3];
     }
-    ok = ok && calibrated_adaptation(space);
+    ok = ok && cupidimage_pdf_calibrated_output(space);
     cupidimage_pdf_object_view_release(&value);
     if (ok)
         *pos = end;

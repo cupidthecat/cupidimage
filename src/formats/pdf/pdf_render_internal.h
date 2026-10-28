@@ -39,8 +39,17 @@ typedef struct {
     unsigned calls_left;
 } pdf_clip_budget;
 
+typedef struct pdf_icc_profile pdf_icc_profile;
+
+typedef struct {
+    pdf_icc_profile *head;
+    size_t bytes;
+    unsigned count;
+} pdf_icc_store;
+
 typedef struct {
     int components, indexed, high, pattern;
+    pdf_icc_profile *icc;
     unsigned char palette[1024];
     int calibrated; /* 0: device; 1: CalGray; 2: CalRGB; 3: Lab. */
     double white[3], gamma[3], matrix[9], adaptation[9], lab_range[4];
@@ -134,6 +143,7 @@ typedef struct {
     pdf_graphics_state gs;
     pdf_graphics_state initial_gs;
     pdf_pattern_store *patterns;
+    pdf_icc_store *icc_store;
     unsigned pattern_depth;
     int pattern_uncolored, mask_rendering;
     pdf_graphics_state gs_stack[32];
@@ -207,6 +217,10 @@ uint8_t cupidimage_pdf_clamp_u8(double v);
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
                                   float *py);
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
+int cupidimage_pdf_calibrated_output(pdf_image_colors *);
+int cupidimage_pdf_icc_space(const pdf_render_state *, pdf_object_id, pdf_image_colors *);
+int cupidimage_pdf_icc_color(const pdf_icc_profile *, const double[4], int, double[3]);
+void cupidimage_pdf_icc_free(pdf_icc_store *);
 int cupidimage_pdf_calibrated_space(const pdf_render_state *, const pdf_object_view *, size_t *,
                                     int, pdf_image_colors *);
 void cupidimage_pdf_color_range(const pdf_image_colors *, int, double *, double *);

@@ -504,3 +504,8 @@ profile assumptions and independent-comparison scope.
 `make test-pdf-lab` checks signed Lab components, default and restricted ranges,
 image and palette decoding, source-space matte removal, native text, patterns
 and meshes. Indexed matte arrays use the base color space component count.
+
+`make test-pdf-icc` generates matrix/tone-curve profiles and tests profile tags,
+sampled/parametric curves, indirect and compressed metadata, cache lifetime,
+source-color pipelines and allocation-failure cleanup. Unsupported LUT profiles
+are rejected rather than interpreted as matrix profiles.

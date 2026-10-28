@@ -175,7 +175,7 @@ static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t 
     pdf_image_colors colors = {0};
     if (!cupidimage_pdf_color_space(st, name, 0, &colors))
         return 0;
-    if (colors.calibrated) {
+    if (colors.calibrated || colors.icc) {
         pdf_object_view resource = {0};
         if (!cupidimage_pdf_find_resource(st, "ColorSpace", name, &resource, NULL))
             return 0;

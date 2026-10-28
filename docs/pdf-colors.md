@@ -76,7 +76,57 @@ Out-of-range CalRGB inputs with fractional gamma use the specification's clipped
 input values as their oracle. The comparison renderer returns a different result
 for that case, so it is not used as the expected result there.
 
-ICCBased profiles, output intents, nonzero black points, calibrated blending
-spaces, general rendering-intent selection, Separation/DeviceN and overprint
-remain unfinished. This source-color support does not establish complete color
+Complete ICC profile handling, output intents, nonzero black points, calibrated
+blending spaces, general rendering-intent selection, Separation/DeviceN and
+overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
+
+## ICC matrix and tone-curve profiles
+
+ICCBased source spaces now decode supported version 2 and version 4 profiles
+instead of using their alternate device space. The current profile models are:
+
+- Three-component RGB input/display profiles with XYZ matrix columns and
+  per-channel tone-reproduction curves.
+- One-component gray input/display/output profiles with a gray tone curve.
+  Their profile connection space may be XYZ or Lab.
+
+The parser reads big-endian tag directories and signed fixed-point values.
+Identity curves, u8Fixed8 gamma curves, sampled 16-bit curves with linear
+interpolation, and parametric curve functions 0 through 4 are supported. Curve
+outputs are clipped to their specified [0, 1] range. Undefined/nonfinite curve
+results fail instead of entering the compositor. Source curves are evaluated
+forward; no inverse transform is inferred from a noninvertible curve.
+
+Transforms use the D50 profile connection space and then the fixed sRGB output
+conversion described above. The profile's header rendering intent is not used
+as a PDF graphics-state rendering intent. General intent selection, output
+profiles, black-point compensation and ICC blending spaces remain unfinished.
+Profiles containing higher-priority A2B or D2B transforms are rejected rather
+than silently replacing those LUT transforms with matrix tags.
+
+PDF N must match the supported profile's channel count. Range may be absent,
+null or an indirect array, but this implementation currently requires [0, 1]
+for each component. Profile references and metadata can pass through indirect
+or compressed objects. Unsupported profile models, CMYK/LUT profiles, unusual
+component ranges and fallback-to-Alternate policy remain open work.
+
+Decoded profile data are immutable and shared across saved graphics states,
+Forms, patterns and repeated selections within a page. The page owns the cache
+and releases it on success or failure. Limits are 16 MiB per decoded profile,
+32 MiB for the page cache, 256 cached profile resources, 4,096 directory entries
+and 65,536 samples per tone curve. Tag offsets, lengths, alignment, required
+rendering tags and shared curve storage are checked before use. This is bounded
+rendering support, not a complete ICC conformance validator.
+
+`make test-pdf-icc` generates owned profiles and compares them with calibrated
+source-color oracles. It covers all curve functions, XYZ/Lab gray profiles,
+state restoration, images, Indexed palettes, nested Forms, compressed metadata,
+reference cycles, malformed bounds, cache reuse and allocation failures.
+Optional independent comparisons allow two channel values of rounding:
+
+    python3 scripts/test_pdf_icc.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+The profile model and curve equations follow ISO 32000-1 section 8.6.5.5 and
+ICC.1:2022 sections 10.6/10.18 and Annex F. Support for one model does not establish
+full ICC handling or arbitrary-document visual fidelity.

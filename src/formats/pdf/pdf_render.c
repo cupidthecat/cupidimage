@@ -218,6 +218,16 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
 
 void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const double values[4],
                                     const pdf_image_colors *space, double alpha, double shape) {
+    if (space->icc) {
+        double converted[3];
+        if (!cupidimage_pdf_icc_color(space->icc, values, st->group && st->group->gray,
+                                      converted)) {
+            st->image_failed = 1;
+            return;
+        }
+        cupidimage_pdf_composite_color(st, x, y, converted, alpha, shape);
+        return;
+    }
     if (!space->calibrated) {
         cupidimage_pdf_composite_device(st, x, y, values, space->components, alpha, shape);
         return;
@@ -783,6 +793,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         int direct = op[0] != 's' && op[0] != 'S';
         if (direct) {
             colors.calibrated = 0;
+            colors.icc = NULL;
             colors.indexed = 0;
             colors.pattern = 0;
             colors.components = op[0] == 'g' || op[0] == 'G'   ? 1
@@ -1467,6 +1478,8 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
     st.form_budget = &form_budget;
     pdf_pattern_store patterns = {0};
     st.patterns = &patterns;
+    pdf_icc_store profiles = {0};
+    st.icc_store = &profiles;
     st.img = img;
     st.document = document;
     st.document_size = document_size;
@@ -1509,6 +1522,7 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
         ok = cupidimage_pdf_group_finish(&st, &page_group);
     cupidimage_pdf_group_free(&st, &page_group);
     cupidimage_pdf_patterns_free(&patterns);
+    cupidimage_pdf_icc_free(&profiles);
     if (!ok && err && errcap && !err[0])
         cupidimage_set_err(err, errcap,
                            "pdf: unsupported page group or transparency limit exceeded");

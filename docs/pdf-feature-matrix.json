@@ -2053,7 +2053,7 @@
             "scripts/test_pdf_lab.py"
           ],
           "limitations": [
-            "CalGray/CalRGB/Lab source colors target fixed sRGB with zero BlackPoint. ICC profiles, nonzero black-point mapping and calibrated group blending remain unfinished."
+            "CalGray/CalRGB/Lab source colors target fixed sRGB with zero BlackPoint. Nonzero black-point mapping, output intents and calibrated group blending remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2070,20 +2070,25 @@
         {
           "id": "11.3",
           "requirement": "ICCBased color spaces and ICC profile parsing/conversion/fallback.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "src/formats/pdf/pdf_icc.c",
+            "scripts/test_pdf_icc.py",
+            "docs/pdf-colors.md"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supported gray/RGB matrix and tone-curve profiles with unit component ranges are implemented. LUT/multiprocess profiles, CMYK, alternate fallback, general intent handling and ICC blending remain incomplete."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Selected native source-profile parsing, curve equations and ownership paths tested; full ICC audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.5",
+            "ICC.1:2022 10.6, 10.18 and Annex F"
+          ]
         },
         {
           "id": "11.4",

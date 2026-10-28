@@ -8,7 +8,7 @@ formats remain unfinished.
 ## Sample and filter pipeline
 
 The image path accepts packed 1-, 2- and 4-bit samples, 8-bit samples and
-big-endian 16-bit samples in the supported device, CalGray/CalRGB/Lab and indexed color spaces.
+big-endian 16-bit samples in the supported device, CalGray/CalRGB/Lab, supported ICC matrix/tone-curve and indexed color spaces.
 See [PDF colors](pdf-colors.md) for conversion order and remaining limits.
 Flate, LZW, ASCIIHex, ASCII85, RunLength and CCITT byte filters share the stream
 pipeline. DCTDecode can follow those filters instead of requiring a standalone

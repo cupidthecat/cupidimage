@@ -37,6 +37,7 @@
 #include "../src/formats/pdf/pdf_fonts.c"
 #include "../src/formats/pdf/pdf_functions.c"
 #include "../src/formats/pdf/pdf_groups.c"
+#include "../src/formats/pdf/pdf_icc.c"
 #include "../src/formats/pdf/pdf_image_colors.c"
 #include "../src/formats/pdf/pdf_images.c"
 #include "../src/formats/pdf/pdf_inline.c"
