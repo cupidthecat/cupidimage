@@ -80,16 +80,26 @@ static int object_parameter_append(object_parameters *out, const void *data, siz
     return 1;
 }
 
+static int object_parameter_resolve(const pdf_xref *xref, const pdf_image_stream_profile *profile,
+                                    const pdf_object_view *view, size_t pos, pdf_object_view *value,
+                                    unsigned depth, size_t *work, int uncompressed) {
+    if (xref)
+        return object_value(xref, view, pos, value, depth, work, uncompressed);
+    /* Standalone renderer fixtures have document bytes but no cross-reference index. */
+    return profile && depth < 16 &&
+           cupidimage_pdf_resolve_value(profile->document, profile->document_size, view, pos, value,
+                                        depth);
+}
+
 /* Resolve stream controls with the same recursion and work budget as their container.
  * Only decoder-defined dictionary entries affect decoding; extension keys are ignored. */
 static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *view, size_t *pos,
-                                  object_parameters *out, unsigned depth, size_t *work) {
-    static const char *keys[] = {"Predictor",   "Colors",
-                                 "Columns",     "BitsPerComponent",
-                                 "EarlyChange", "K",
-                                 "Rows",        "DamagedRowsBeforeError",
-                                 "EndOfLine",   "EncodedByteAlign",
-                                 "EndOfBlock",  "BlackIs1"};
+                                  object_parameters *out, unsigned depth, size_t *work,
+                                  const pdf_image_stream_profile *profile, const char *filter) {
+    static const char *keys[] = {
+        "Predictor",        "Colors",     "Columns", "BitsPerComponent",       "EarlyChange",
+        "ColorTransform",   "K",          "Rows",    "DamagedRowsBeforeError", "EndOfLine",
+        "EncodedByteAlign", "EndOfBlock", "BlackIs1"};
     if (depth >= PDF_OBJECT_DEPTH)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -99,8 +109,8 @@ static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *v
     if (cupidimage_pdf_page_reference(view, *pos, &reference)) {
         pdf_object_view value = {0};
         size_t at = 0;
-        int ok = object_value(xref, view, *pos, &value, depth, work, 0) &&
-                 object_parameter_value(xref, &value, &at, out, depth + 1, work);
+        int ok = object_parameter_resolve(xref, profile, view, *pos, &value, depth, work, 0) &&
+                 object_parameter_value(xref, &value, &at, out, depth + 1, work, profile, filter);
         cupidimage_pdf_object_view_release(&value);
         if (!ok || !cupidimage_pdf_parse_reference(view, pos, &reference))
             return 0;
@@ -116,7 +126,8 @@ static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *v
                 (*pos)++;
                 return object_parameter_append(out, "] ", 2);
             }
-            if (count == 8 || !object_parameter_value(xref, view, pos, out, depth + 1, work))
+            if (count == 8 ||
+                !object_parameter_value(xref, view, pos, out, depth + 1, work, profile, filter))
                 return 0;
         }
     }
@@ -128,12 +139,14 @@ static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *v
             return 0;
         for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
             size_t at;
-            if (!cupidimage_pdf_page_value(&dictionary, keys[i], &at))
+            if ((filter && !cupidimage_pdf_filter_parameter_applies(filter, keys[i])) ||
+                !cupidimage_pdf_page_value(&dictionary, keys[i], &at))
                 continue;
             if (!object_parameter_append(out, "/", 1) ||
                 !object_parameter_append(out, keys[i], strlen(keys[i])) ||
                 !object_parameter_append(out, " ", 1) ||
-                !object_parameter_value(xref, &dictionary, &at, out, depth + 1, work))
+                !object_parameter_value(xref, &dictionary, &at, out, depth + 1, work, profile,
+                                        filter))
                 return 0;
         }
         *pos = end;
@@ -170,33 +183,73 @@ static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *v
            object_parameter_append(out, " ", 1);
 }
 
+static int object_decode_parameters(const pdf_xref *xref, const pdf_object_view *view,
+                                    object_parameters *out, unsigned depth, size_t *work,
+                                    const pdf_image_stream_profile *profile, char filters[8][32],
+                                    int count) {
+    size_t pos = 0;
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    if (pos == view->len)
+        return 0;
+    if (view->data[pos] != '[') {
+        if (count != 1 && !object_word(view, pos, "null"))
+            return 0;
+        return object_parameter_value(xref, view, &pos, out, depth, work, profile,
+                                      count ? filters[0] : NULL);
+    }
+    pos++;
+    if (!object_parameter_append(out, "[ ", 2))
+        return 0;
+    for (int i = 0; i < count; i++)
+        if (!object_parameter_value(xref, view, &pos, out, depth + 1, work, profile, filters[i]))
+            return 0;
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
+    return pos < view->len && view->data[pos] == ']' && object_parameter_append(out, "] ", 2);
+}
+
 static int object_decode_stream(const pdf_object_view *view, const unsigned char *data,
                                 size_t length, unsigned char **decoded, size_t *decoded_length,
-                                unsigned depth, size_t *work, int uncompressed) {
+                                unsigned depth, size_t *work, int uncompressed,
+                                const pdf_image_stream_profile *profile) {
     object_parameters out = {malloc(PDF_STREAM_PARAMETERS_LIMIT), 0};
     *decoded = NULL;
     *decoded_length = 0;
     if (!out.data)
         return 0;
     int ok = object_parameter_append(&out, "<< ", 3);
-    const char *keys[] = {"Filter", "DecodeParms"};
-    for (unsigned i = 0; ok && i < 2; i++) {
-        size_t pos;
-        if (!cupidimage_pdf_page_value(view, keys[i], &pos))
-            continue;
+    size_t pos;
+    if (ok && cupidimage_pdf_page_value(view, "Filter", &pos)) {
         pdf_object_view value = {0};
         size_t at = 0;
-        ok = object_value(view->xref, view, pos, &value, depth, work, uncompressed) &&
-             object_parameter_append(&out, "/", 1) &&
-             object_parameter_append(&out, keys[i], strlen(keys[i])) &&
-             object_parameter_append(&out, " ", 1) &&
-             object_parameter_value(view->xref, &value, &at, &out, depth + 1, work);
+        ok = object_parameter_resolve(view->xref, profile, view, pos, &value, depth, work,
+                                      uncompressed) &&
+             object_parameter_append(&out, "/Filter ", 8) &&
+             object_parameter_value(view->xref, &value, &at, &out, depth + 1, work, profile, NULL);
+        cupidimage_pdf_object_view_release(&value);
+    }
+    char filters[8][32];
+    int count = 0;
+    ok = ok && object_parameter_append(&out, ">>", 2);
+    pdf_object_view filter_view = {out.data, out.length, NULL, NULL};
+    ok = ok && cupidimage_pdf_stream_filter_names(&filter_view, filters, &count);
+    if (ok)
+        out.length -= 2;
+    if (ok && cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {
+        pdf_object_view value = {0};
+        ok = object_parameter_resolve(view->xref, profile, view, pos, &value, depth, work,
+                                      uncompressed) &&
+             object_parameter_append(&out, "/DecodeParms ", 13) &&
+             object_decode_parameters(view->xref, &value, &out, depth + 1, work, profile, filters,
+                                      count);
         cupidimage_pdf_object_view_release(&value);
     }
     ok = ok && object_parameter_append(&out, ">>", 2);
     pdf_object_view direct = {out.data, out.length, NULL, NULL};
     if (ok)
-        ok = cupidimage_pdf_decode_direct_stream(&direct, data, length, decoded, decoded_length);
+        ok = profile ? cupidimage_pdf_decode_direct_image_stream(&direct, data, length, decoded,
+                                                                 decoded_length, profile)
+                     : cupidimage_pdf_decode_direct_stream(&direct, data, length, decoded,
+                                                           decoded_length);
     free(out.data);
     return ok;
 }
@@ -206,7 +259,16 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
     if (!view->xref)
         return cupidimage_pdf_decode_direct_stream(view, data, length, decoded, decoded_length);
     size_t work = PDF_OBJECT_WORK;
-    return object_decode_stream(view, data, length, decoded, decoded_length, 0, &work, 0);
+    return object_decode_stream(view, data, length, decoded, decoded_length, 0, &work, 0, NULL);
+}
+
+int cupidimage_pdf_decode_image_stream(const pdf_object_view *view, const unsigned char *data,
+                                       size_t length, unsigned char **decoded,
+                                       size_t *decoded_length,
+                                       const pdf_image_stream_profile *profile) {
+    size_t work = PDF_OBJECT_WORK;
+    return profile &&
+           object_decode_stream(view, data, length, decoded, decoded_length, 0, &work, 0, profile);
 }
 
 static int object_number_property(const pdf_xref *xref, const pdf_object_view *dictionary,
@@ -300,7 +362,7 @@ static int object_compressed(const pdf_xref *xref, pdf_object_id object,
              cupidimage_pdf_object_stream(xref->data, xref->size, &container, &raw, &raw_length) &&
              raw_length == checked_length &&
              object_decode_stream(&container, raw, raw_length, &decoded, &length, depth + 1, work,
-                                  1) &&
+                                  1, NULL) &&
              first < length && length <= *work;
     if (ok) {
         *work -= length;

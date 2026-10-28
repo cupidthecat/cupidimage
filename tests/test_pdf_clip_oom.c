@@ -5,6 +5,7 @@
 #define realloc fault_realloc
 #define free fault_free
 #include "../src/compression/ccitt.c"
+#include "../src/formats/jpeg/cupidimage_jpeg.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #include "../src/formats/pdf/fonts/bitmap.c"
 #include "../src/formats/pdf/fonts/cff.c"

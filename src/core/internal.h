@@ -22,6 +22,10 @@ int cupidimage_load_animation_file_via_memory(const char *path, cupidimage_anima
                                               char *err, size_t errcap,
                                               cupidimage_animation_loader_fn loader);
 
+/* Decode bounded DCT samples without converting native components to RGBA. */
+int cupidimage_jpeg_decode_samples(const unsigned char *data, size_t size, int width, int height,
+                                   int components, int color_transform, unsigned char **samples);
+
 /* Deflate compression for Kitty protocol (zlib format) */
 int cupidimage_deflate_compress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
                                 size_t *outlen);

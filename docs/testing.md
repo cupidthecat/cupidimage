@@ -422,3 +422,9 @@ complete-page allocation-failure injection. Direct/indirect Differences members
 also have equivalent-document cases for Type 1, compact and Type 3 fonts;
 malformed or cyclic required members are rejected. Use `--reference` with the script for
 the selected exact independent comparisons described in the font guide.
+
+`make test-pdf-dct` verifies native JPEG components and complete PDF filter chains,
+including marker precedence, indirect per-stage parameters, Decode arrays and
+soft masks. Allocation failures include the JPEG backend. Native-resolution
+reference probes are separate from scaled raw-sample-equivalence checks; see
+[PDF images](pdf-images.md).

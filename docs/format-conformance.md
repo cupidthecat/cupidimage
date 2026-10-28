@@ -640,3 +640,21 @@ instead of clearing the entire font table and reporting a successful fallback
 render. Optional extraction-map failures remain isolated from glyph programs.
 Focused equivalence and complete-loader allocation tests cover these paths; the
 broader audit of other optional rendering parameters remains open.
+
+## Native PDF DCT image samples
+
+The image filter pipeline now keeps JPEG components in their native color space
+until PDF Decode arrays, masks and color conversion are applied. It supports raw
+RGB, CMYK/YCCK, marker precedence, baseline/progressive images, indirect filter
+controls and byte-filter chains ending in DCT. The duplicate image-only Flate and
+predictor implementation has been removed.
+
+Authored native-sample tests and raw-image equivalents verify decoding separately
+from scaled-image raster behavior. Exact independent probes use native-resolution
+pages; CMYK comparisons do not conflate unmanaged and color-managed output. See
+[PDF images](pdf-images.md) for limits and test commands.
+
+DCT support is still incomplete: sampling factors above two, noninterleaved
+sequential color scans and other applicable coding modes remain under audit in
+[#49](https://github.com/cupidthecat/cupidimage/issues/49). The wider PDF work in
+#45 remains open.

@@ -133,7 +133,7 @@ static int pdf_filter_runlength(const unsigned char *data, size_t length, pdf_fi
 }
 
 typedef struct {
-    int predictor, colors, columns, bits, early;
+    int predictor, colors, columns, bits, early, color_transform;
     cupidimage_ccitt_options fax;
 } pdf_filter_params;
 
@@ -279,9 +279,24 @@ static int pdf_filter_null(const pdf_object_view *view, size_t *pos) {
            cupidimage_pdf_is_delim(view->data[*pos]);
 }
 
+int cupidimage_pdf_filter_parameter_applies(const char *filter, const char *key) {
+    int lzw = !strcmp(filter, "LZWDecode") || !strcmp(filter, "LZW");
+    int predict = lzw || !strcmp(filter, "FlateDecode") || !strcmp(filter, "Fl");
+    int fax = !strcmp(filter, "CCITTFaxDecode") || !strcmp(filter, "CCF");
+    if (!strcmp(key, "ColorTransform"))
+        return !strcmp(filter, "DCTDecode") || !strcmp(filter, "DCT");
+    if (!strcmp(key, "EarlyChange"))
+        return lzw;
+    if (!strcmp(key, "Columns"))
+        return predict || fax;
+    if (!strcmp(key, "Predictor") || !strcmp(key, "Colors") || !strcmp(key, "BitsPerComponent"))
+        return predict;
+    return fax;
+}
+
 /* Indexed streams resolve indirect parameters before entering this decoder. */
 static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
-                                 pdf_filter_params *params) {
+                                 pdf_filter_params *params, const char *filter) {
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     if (pdf_filter_null(view, pos))
         return 1;
@@ -289,17 +304,16 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
     size_t end;
     if (!cupidimage_pdf_dictionary_view(view, *pos, &dictionary, &end))
         return 0;
-    static const char *keys[] = {"Predictor",   "Colors",
-                                 "Columns",     "BitsPerComponent",
-                                 "EarlyChange", "K",
-                                 "Rows",        "DamagedRowsBeforeError",
-                                 "EndOfLine",   "EncodedByteAlign",
-                                 "EndOfBlock",  "BlackIs1"};
+    static const char *keys[] = {
+        "Predictor",        "Colors",     "Columns", "BitsPerComponent",       "EarlyChange",
+        "ColorTransform",   "K",          "Rows",    "DamagedRowsBeforeError", "EndOfLine",
+        "EncodedByteAlign", "EndOfBlock", "BlackIs1"};
     *pos = end;
     view = &dictionary;
     for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
         size_t at;
-        if (!cupidimage_pdf_page_value(view, keys[i], &at))
+        if (!cupidimage_pdf_filter_parameter_applies(filter, keys[i]) ||
+            !cupidimage_pdf_page_value(view, keys[i], &at))
             continue;
         size_t *pos = &at;
         const char *name = keys[i];
@@ -316,6 +330,8 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
             value = &params->bits;
         else if (n == 11 && !memcmp(name, "EarlyChange", n))
             value = &params->early;
+        else if (n == 14 && !memcmp(name, "ColorTransform", n))
+            value = &params->color_transform;
         else if (n == 1 && name[0] == 'K')
             value = &params->fax.k;
         else if (n == 4 && !memcmp(name, "Rows", n))
@@ -372,17 +388,10 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
     return 1;
 }
 
-int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsigned char *data,
-                                        size_t length, unsigned char **decoded,
-                                        size_t *decoded_length) {
-    char filters[8][32];
-    pdf_filter_params params[8];
-    for (int i = 0; i < 8; i++)
-        params[i] = (pdf_filter_params){1, 1, 1, 8, 1, {0, 1728, 0, 0, 0, 1, 0, 0}};
+int cupidimage_pdf_stream_filter_names(const pdf_object_view *view, char filters[8][32],
+                                       int *total) {
     int count = 0;
     size_t pos;
-    *decoded = NULL;
-    *decoded_length = 0;
     if (cupidimage_pdf_page_value(view, "Filter", &pos) && !pdf_filter_null(view, &pos)) {
         int array = pos < view->len && view->data[pos] == '[';
         if (array)
@@ -402,6 +411,23 @@ int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsig
                 break;
         }
     }
+    *total = count;
+    return 1;
+}
+
+static int pdf_decode_filters(const pdf_object_view *view, const unsigned char *data, size_t length,
+                              unsigned char **decoded, size_t *decoded_length,
+                              const pdf_image_stream_profile *profile) {
+    char filters[8][32];
+    pdf_filter_params params[8];
+    for (int i = 0; i < 8; i++)
+        params[i] = (pdf_filter_params){1, 1, 1, 8, 1, -1, {0, 1728, 0, 0, 0, 1, 0, 0}};
+    int count = 0;
+    size_t pos;
+    *decoded = NULL;
+    *decoded_length = 0;
+    if (!cupidimage_pdf_stream_filter_names(view, filters, &count))
+        return 0;
     if (cupidimage_pdf_page_value(view, "DecodeParms", &pos) && !pdf_filter_null(view, &pos)) {
         int array = pos < view->len && view->data[pos] == '[';
         if (array)
@@ -409,7 +435,7 @@ int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsig
         else if (count != 1)
             return 0;
         for (int i = 0; i < count; i++) {
-            if (!pdf_filter_parameters(view, &pos, &params[i]))
+            if (!pdf_filter_parameters(view, &pos, &params[i], filters[i]))
                 return 0;
         }
         if (array) {
@@ -436,11 +462,17 @@ int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsig
             ok = cupidimage_ccitt_decode(data, length, &params[i].fax, &out.data, &out.used);
         else if (!strcmp(name, "RunLengthDecode") || !strcmp(name, "RL"))
             ok = pdf_filter_runlength(data, length, &out);
+        else if (profile && (!strcmp(name, "DCTDecode") || !strcmp(name, "DCT"))) {
+            ok = profile->bits == 8 &&
+                 cupidimage_jpeg_decode_samples(data, length, profile->width, profile->height,
+                                                profile->components, params[i].color_transform,
+                                                &out.data);
+            if (ok)
+                out.used = (size_t)profile->width * profile->height * profile->components;
+        }
         if (ok && (!strcmp(name, "FlateDecode") || !strcmp(name, "Fl") ||
                    !strcmp(name, "LZWDecode") || !strcmp(name, "LZW")))
             ok = pdf_filter_predict(&out, &params[i]);
-        else if (ok && params[i].predictor != 1)
-            ok = 0;
         free(owned);
         if (!ok) {
             free(out.data);
@@ -462,4 +494,17 @@ int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsig
     *decoded = owned;
     *decoded_length = length;
     return 1;
+}
+
+int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsigned char *data,
+                                        size_t length, unsigned char **decoded,
+                                        size_t *decoded_length) {
+    return pdf_decode_filters(view, data, length, decoded, decoded_length, NULL);
+}
+
+int cupidimage_pdf_decode_direct_image_stream(const pdf_object_view *view,
+                                              const unsigned char *data, size_t length,
+                                              unsigned char **decoded, size_t *decoded_length,
+                                              const pdf_image_stream_profile *profile) {
+    return pdf_decode_filters(view, data, length, decoded, decoded_length, profile);
 }

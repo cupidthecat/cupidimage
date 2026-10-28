@@ -63,7 +63,11 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   `pdf_content_syntax.c` decodes names and text strings and scans bounded aggregate
   operands without executing their contents. The operator executor validates TJ
   element types and text-object context.
-  Byte filters and their bounded pipeline live in `pdf_filters.c`;
+  Byte filters and their bounded pipeline live in `pdf_filters.c`; image profiles
+  add DCT decoding without forcing native CMYK data through RGBA. The private
+  JPEG sample entry point shares the existing entropy and IDCT implementation.
+  `pdf_objects.c` resolves only the parameters applicable to each filter stage.
+  Byte-filter dispatch remains separate from image color conversion.
   ExtGState parsing and blend functions live in `pdf_transparency.c`, and
   function-based/axial/radial shading lives in `pdf_shading.c`. `pdf_mesh.c`
   decodes byte-aligned triangle streams, interpolates samples and composites each

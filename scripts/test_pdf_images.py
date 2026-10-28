@@ -132,18 +132,19 @@ def main():
         after_sof = sof + 2 + int.from_bytes(color_jpeg[sof + 2:sof + 4], "big")
         adobe_after_sof = color_jpeg[:after_sof] + segment(0xee, b"Adobe\0d\0\0\0\0\0") + color_jpeg[after_sof:]
         check("jpeg-adobe-override", fixture(adobe_jpeg,
-              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (129, 127, 129))
         check("jpeg-adobe-after-sof-override", fixture(adobe_after_sof,
-              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (129, 127, 129))
+        check("jpeg-adobe-raw-rgb", fixture(adobe_jpeg, attrs + " /Filter /DCTDecode"), lambda x, y: (129, 127, 129))
+        check("jpeg-adobe-raw-rgb-after-sof", fixture(adobe_after_sof, attrs + " /Filter /DCTDecode"), lambda x, y: (129, 127, 129))
+        check("jpeg-color-transform-0", fixture(color_jpeg, attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 0 >>"), lambda x, y: (129, 127, 129))
+        check("predictor-default-row", fixture(zlib.compress(RGB), attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 2 >>"), quadrants)
         for name, payload, image_attrs in (
                 ("wrong-jpeg-dimensions", jpeg(3, False, 16384, 16384) + scan((1, 2, 3)) + b"\x03" + EOI, attrs),
                 ("wrong-jpeg-components", color_jpeg, attrs.replace("DeviceRGB", "DeviceGray")),
                 ("truncated-jpeg", color_jpeg[:-4], attrs),
                 ("invalid-jpeg", b"not a JPEG", attrs),
-                ("unsupported-raw-rgb-jpeg", adobe_jpeg, attrs),
-                ("unsupported-raw-rgb-after-sof", adobe_after_sof, attrs),
-                ("unsupported-color-transform", color_jpeg, attrs + " /DecodeParms << /ColorTransform 0 >>"),
-                ("unsupported-filter-chain", zlib.compress(RGB), attrs + " /Filter [/FlateDecode /DCTDecode]")):
+                ("invalid-filter-chain-payload", zlib.compress(RGB), attrs + " /Filter [/FlateDecode /DCTDecode]")):
             if "Filter" not in image_attrs:
                 image_attrs += " /Filter /DCTDecode"
             check(name, fixture(payload, image_attrs), reject=True)
@@ -208,7 +209,6 @@ def main():
                              ("huge-length", {"length": 999999999999999999999999999}),
                              ("bad-flate", {"payload": b"bad", "attrs": attrs + " /Filter /FlateDecode"}),
                              ("wrong-predictor", {"payload": zlib.compress(RGB), "attrs": attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 9 >>"}),
-                             ("wrong-columns", {"payload": zlib.compress(RGB), "attrs": attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 2 >>"}),
                              ("bad-row-filter", {"payload": zlib.compress(bytes((5,)) + RGB[:6] + bytes((0,)) + RGB[6:]), "attrs": attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 15 /Columns 2 /Colors 3 >>"}),
                              ("missing-resource", {"resource": "missing"}),
                              ("shadowed-resource", {"resource": "shadowed"}),

@@ -730,12 +730,48 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size, jpeg_c
     return 1;
 }
 
+typedef struct {
+    int width, height, components, transform;
+    int *marker;
+} jpeg_sample_profile;
+
+static uint8_t jpeg_sample_clamp(int value) {
+    return (uint8_t)(value < 0 ? 0 : value > 255 ? 255 : value);
+}
+
+/* DCT stream samples remain in their native component space for the caller's
+ * Decode array and color-space conversion. Component order follows the frame. */
+static void jpeg_native_pixel(uint8_t *destination, uint8_t buffers[4][16 * 16],
+                              const int widths[4], const int heights[4], int components, int x,
+                              int y, int mcu_width, int mcu_height) {
+    for (int i = 0; i < components; i++) {
+        int sx = x * widths[i] / mcu_width, sy = y * heights[i] / mcu_height;
+        destination[i] = buffers[i][sy * widths[i] + sx];
+    }
+}
+
+static void jpeg_native_color(uint8_t *destination, int components) {
+    int yy = destination[0], cb = (int)destination[1] - 128, cr = (int)destination[2] - 128;
+    uint8_t rgb[3] = {jpeg_sample_clamp(yy + ((91881 * cr) >> 16)),
+                      jpeg_sample_clamp(yy - ((22554 * cb + 46802 * cr) >> 16)),
+                      jpeg_sample_clamp(yy + ((116130 * cb) >> 16))};
+    for (int i = 0; i < 3; i++)
+        destination[i] = components == 4 ? (uint8_t)(255 - rgb[i]) : rgb[i];
+}
+
+static int jpeg_sample_transform(const jpeg_sample_profile *profile, int marker) {
+    return marker >= 0               ? marker != 0
+           : profile->transform >= 0 ? profile->transform
+                                     : profile->components == 3;
+}
+
 static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, int height,
                                    int mcu_cols, int mcu_rows, int hmax, int vmax,
                                    int qtables[4][64], int adobe_transform, cupidimage_image *out,
-                                   char *err, size_t errcap) {
-    size_t rgba_size = (size_t)width * (size_t)height * 4u;
-    if (rgba_size / 4u != (size_t)width * (size_t)height) {
+                                   char *err, size_t errcap, const jpeg_sample_profile *profile) {
+    unsigned channels = profile ? (unsigned)num_comp : 4u;
+    size_t rgba_size = (size_t)width * (size_t)height * channels;
+    if (rgba_size / channels != (size_t)width * (size_t)height) {
         set_err(err, errcap, "image too large");
         return 0;
     }
@@ -807,6 +843,12 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, in
                         continue;
                     }
 
+                    if (profile) {
+                        size_t dst = ((size_t)out_y * width + out_x) * channels;
+                        jpeg_native_pixel(rgba + dst, comp_buf, comp_w, comp_h, num_comp, x, y,
+                                          mcu_w, mcu_h);
+                        continue;
+                    }
                     uint8_t r, g, b;
                     if (num_comp == 1) {
                         int yw = comp_w[idx_y];
@@ -956,7 +998,8 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
                             const int *scan_comp, int width, int height, int hmax, int vmax,
                             int qtables[4][64], const jpeg_huff dc_tables[4],
                             const jpeg_huff ac_tables[4], int restart_interval, int adobe_transform,
-                            size_t *consumed, cupidimage_image *out, char *err, size_t errcap) {
+                            size_t *consumed, cupidimage_image *out, char *err, size_t errcap,
+                            const jpeg_sample_profile *profile) {
     jpeg_bitstream bs;
     bs.data = data;
     bs.size = size;
@@ -973,8 +1016,9 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
         }
     }
 
-    size_t rgba_size = (size_t)width * (size_t)height * 4u;
-    if (rgba_size / 4u != (size_t)width * (size_t)height) {
+    unsigned channels = profile ? (unsigned)num_comp : 4u;
+    size_t rgba_size = (size_t)width * (size_t)height * channels;
+    if (rgba_size / channels != (size_t)width * (size_t)height) {
         set_err(err, errcap, "image too large");
         return 0;
     }
@@ -1053,6 +1097,12 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
                         continue;
                     }
 
+                    if (profile) {
+                        size_t dst = ((size_t)out_y * width + out_x) * channels;
+                        jpeg_native_pixel(rgba + dst, comp_buf, comp_w, comp_h, num_comp, x, y,
+                                          mcu_w, mcu_h);
+                        continue;
+                    }
                     uint8_t r, g, b;
                     if (num_comp == 1) {
                         int yw = comp_w[idx_y];
@@ -1218,8 +1268,8 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
     return 1;
 }
 
-int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                         size_t errcap) {
+static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                     size_t errcap, const jpeg_sample_profile *profile) {
     jpeg_huff dc_tables[4] = {0};
     jpeg_huff ac_tables[4] = {0};
     int qtables[4][64];
@@ -1233,13 +1283,13 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
     int vmax = 0;
     int restart_interval = 0;
     int progressive = 0;
-    int adobe_transform = 0;
+    int adobe_transform = -1;
     int coeffs_allocated = 0;
     int mcu_cols = 0;
     int mcu_rows = 0;
     size_t pos = 2;
     int saw_sof = 0;
-    int saw_sos = 0;
+    int saw_sos = 0, saw_eoi = 0;
 
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
@@ -1270,10 +1320,15 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
         uint8_t marker = data[pos++];
         JPEG_DEBUG("jpeg: marker 0x%02X at %zu\n", marker, pos - 1);
         if (marker == 0xD9) {
+            saw_eoi = 1;
             break;
         }
 
         if (marker == 0xDA) {
+            if (profile && saw_sos && !progressive) {
+                set_err(err, errcap, "multiple baseline scans are unsupported");
+                goto fail;
+            }
             if (pos + 2 > size) {
                 set_err(err, errcap, "truncated jpeg");
                 goto fail;
@@ -1346,6 +1401,11 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
 
             jpeg_apply_default_huffman(dc_tables, ac_tables);
 
+            if (profile && (adobe_transform > 2 || (num_comp == 3 && adobe_transform == 2) ||
+                            (num_comp == 4 && adobe_transform == 1))) {
+                set_err(err, errcap, "unsupported JPEG component transform");
+                goto fail;
+            }
             saw_sos = 1;
             size_t consumed = 0;
             if (!progressive) {
@@ -1356,11 +1416,14 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 if (!jpeg_decode_scan(data + pos, size - pos, comps, num_comp, scan_comp, width,
                                       height, hmax, vmax, qtables, dc_tables, ac_tables,
                                       restart_interval, adobe_transform, &consumed, out, err,
-                                      errcap)) {
+                                      errcap, profile)) {
                     goto fail;
                 }
                 JPEG_DEBUG("jpeg: baseline scan consumed %zu bytes\n", consumed);
-                return 1;
+                if (!profile)
+                    return 1;
+                pos += consumed;
+                continue;
             }
 
             if (ss > se || se > 63 || al > 13 || ah > 13 || (ah > 0 && al + 1 != ah)) {
@@ -1478,6 +1541,8 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 if (seg[0] == 'A' && seg[1] == 'd' && seg[2] == 'o' && seg[3] == 'b' &&
                     seg[4] == 'e') {
                     adobe_transform = seg[11];
+                    if (profile)
+                        *profile->marker = adobe_transform;
                     JPEG_DEBUG("jpeg: Adobe APP14 transform=%d\n", adobe_transform);
                 }
             }
@@ -1504,8 +1569,13 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 set_err(err, errcap, "only 8-bit JPEG supported");
                 goto fail;
             }
-            if (num_comp != 1 && num_comp != 3 && num_comp != 4) {
+            if (num_comp != 1 && num_comp != 3 && num_comp != 4 && !(profile && num_comp == 2)) {
                 set_err(err, errcap, "unsupported component count");
+                goto fail;
+            }
+            if (profile && (width != profile->width || height != profile->height ||
+                            num_comp != profile->components)) {
+                set_err(err, errcap, "JPEG dimensions or components do not match the image");
                 goto fail;
             }
             if (length != 8 + num_comp * 3) {
@@ -1573,9 +1643,15 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
         pos += length - 2;
     }
 
+    if (profile && !saw_eoi) {
+        set_err(err, errcap, "missing JPEG end marker");
+        goto fail;
+    }
+    if (profile && !progressive && saw_sos)
+        return 1;
     if (progressive && saw_sos) {
         if (!jpeg_progressive_finish(comps, num_comp, width, height, mcu_cols, mcu_rows, hmax, vmax,
-                                     qtables, adobe_transform, out, err, errcap)) {
+                                     qtables, adobe_transform, out, err, errcap, profile)) {
             goto fail;
         }
         if (coeffs_allocated) {
@@ -1593,6 +1669,33 @@ fail:
         jpeg_free_coeffs(comps, num_comp);
     }
     return 0;
+}
+
+int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap) {
+    return jpeg_load(data, size, out, err, errcap, NULL);
+}
+
+int cupidimage_jpeg_decode_samples(const unsigned char *data, size_t size, int width, int height,
+                                   int components, int color_transform, unsigned char **samples) {
+    *samples = NULL;
+    if (width <= 0 || height <= 0 || components < 1 || components > 4 || color_transform < -1 ||
+        color_transform > 1 ||
+        (size_t)width > (64u * 1024u * 1024u) / (unsigned)components / (unsigned)height)
+        return 0;
+    int marker = -1;
+    jpeg_sample_profile profile = {width, height, components, color_transform, &marker};
+    cupidimage_image image = {0};
+    if (!jpeg_load(data, size, &image, NULL, 0, &profile) || marker > 2 ||
+        (components == 3 && marker == 2) || (components == 4 && marker == 1)) {
+        free(image.rgba);
+        return 0;
+    }
+    if (components >= 3 && jpeg_sample_transform(&profile, marker))
+        for (size_t i = 0, count = (size_t)width * height; i < count; i++)
+            jpeg_native_color(image.rgba + i * components, components);
+    *samples = image.rgba;
+    return 1;
 }
 
 int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {

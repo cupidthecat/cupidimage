@@ -54,107 +54,6 @@ int cupidimage_pdf_image_stream(const pdf_render_state *st, const pdf_object_vie
     return cupidimage_pdf_object_stream(st->document, st->document_size, view, stream, length);
 }
 
-static unsigned char pdf_image_paeth(int a, int b, int c) {
-    int p = a + b - c, da = abs(p - a), db = abs(p - b), dc = abs(p - c);
-    return (unsigned char)(da <= db && da <= dc ? a : db <= dc ? b : c);
-}
-
-int cupidimage_pdf_image_filter_is(const pdf_object_view *view, const char *name) {
-    if (cupidimage_pdf_image_name_is(view, "Filter", name))
-        return 1;
-    size_t pos, length = strlen(name);
-    if (!cupidimage_pdf_page_value(view, "Filter", &pos) || pos >= view->len ||
-        view->data[pos++] != '[')
-        return 0;
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (pos >= view->len || view->data[pos++] != '/' || length > view->len - pos ||
-        memcmp(view->data + pos, name, length) != 0)
-        return 0;
-    pos += length;
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    return pos < view->len && view->data[pos] == ']';
-}
-
-/* Check the frame before invoking the decoder so a small image dictionary cannot
- * hide a JPEG frame with enormous dimensions or a different component count. */
-static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length, int width, int height,
-                                  int components, int transform) {
-    if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8)
-        return 0;
-    size_t pos = 2;
-    int have_frame = 0;
-    while (pos < length) {
-        if (stream[pos++] != 0xff)
-            return 0;
-        while (pos < length && stream[pos] == 0xff)
-            pos++;
-        if (pos >= length)
-            return 0;
-        unsigned marker = stream[pos++];
-        if (marker == 0xda)
-            return have_frame;
-        if (marker == 0xd9 || marker == 0)
-            return 0;
-        if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7))
-            continue;
-        if (length - pos < 2)
-            return 0;
-        size_t segment = (size_t)stream[pos] * 256u + stream[pos + 1];
-        if (segment < 2 || segment > length - pos)
-            return 0;
-        if (components == 3 && marker == 0xee && segment >= 14 &&
-            memcmp(stream + pos + 2, "Adobe", 5) == 0 && stream[pos + 13] == 0 && transform != 1)
-            return 0;
-        if (marker == 0xc0 || marker == 0xc2) {
-            if (have_frame || !(segment >= 8 && stream[pos + 2] == 8 &&
-                                (int)stream[pos + 3] * 256 + stream[pos + 4] == height &&
-                                (int)stream[pos + 5] * 256 + stream[pos + 6] == width &&
-                                stream[pos + 7] == components))
-                return 0;
-            have_frame = 1;
-        }
-        pos += segment;
-    }
-    return 0;
-}
-
-static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_view *view,
-                                  int width, int height, int components, unsigned char **samples) {
-    pdf_object_view params = {0};
-    size_t pos;
-    int transform = -1;
-    if (cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {
-        int ok = cupidimage_pdf_image_dictionary(st, view, "DecodeParms", &params) &&
-                 (!cupidimage_pdf_page_value(&params, "ColorTransform", &pos) ||
-                  cupidimage_pdf_image_integer(st, &params, "ColorTransform", &transform));
-        cupidimage_pdf_object_view_release(&params);
-        if (!ok || (transform != -1 && transform != 1))
-            return 0;
-    }
-    const unsigned char *stream;
-    size_t length;
-    if (!cupidimage_pdf_image_stream(st, view, &stream, &length) ||
-        !pdf_image_jpeg_matches(stream, length, width, height, components, transform))
-        return 0;
-    cupidimage_image image = {0};
-    if (!cupidimage_load_jpeg(stream, length, &image, NULL, 0))
-        return 0;
-    size_t count = (size_t)width * height;
-    unsigned char *decoded = (unsigned char *)malloc(count * components);
-    if (!decoded || image.width != (uint32_t)width || image.height != (uint32_t)height) {
-        free(decoded);
-        cupidimage_free(&image);
-        return 0;
-    }
-    for (size_t i = 0; i < count; i++) {
-        for (int c = 0; c < components; c++)
-            decoded[i * components + c] = image.rgba[i * 4 + c];
-    }
-    cupidimage_free(&image);
-    *samples = decoded;
-    return 1;
-}
-
 static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bits) {
     if (bits == 8)
         return row[index];
@@ -164,120 +63,26 @@ static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bi
     return (row[bit / 8] >> (8 - bits - (int)(bit & 7))) & ((1u << bits) - 1u);
 }
 
-static void pdf_store_packed_sample(unsigned char *row, size_t index, int bits, uint32_t value) {
-    if (bits == 8) {
-        row[index] = (unsigned char)value;
-        return;
-    }
-    if (bits == 16) {
-        row[index * 2] = (unsigned char)(value >> 8);
-        row[index * 2 + 1] = (unsigned char)value;
-        return;
-    }
-    size_t bit = index * (unsigned)bits;
-    unsigned shift = 8u - (unsigned)bits - (unsigned)(bit & 7);
-    unsigned mask = ((1u << bits) - 1u) << shift;
-    row[bit / 8] = (unsigned char)((row[bit / 8] & ~mask) | ((value << shift) & mask));
-}
-
 static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view, int width,
                              int height, int components, int image_bits, unsigned char **samples) {
     const unsigned char *stream;
     size_t length, row = ((size_t)width * components * image_bits + 7u) / 8u;
-    size_t bytes = row * height, pos;
+    size_t bytes = row * height, decoded_length = 0;
     if (bytes > 64u * 1024u * 1024u)
         return 0;
-    if (cupidimage_pdf_image_filter_is(view, "DCTDecode"))
-        return image_bits == 8 && (components == 1 || components == 3) &&
-               pdf_image_jpeg_samples(st, view, width, height, components, samples);
-    int predictor = 1, flate = cupidimage_pdf_image_filter_is(view, "FlateDecode");
-    if (cupidimage_pdf_page_value(view, "Filter", &pos) && !flate) {
-        unsigned char *decoded = NULL;
-        size_t decoded_length = 0;
-        if (!cupidimage_pdf_image_stream(st, view, &stream, &length) ||
-            !cupidimage_pdf_decode_stream(view, stream, length, &decoded, &decoded_length))
-            return 0;
-        if (decoded_length != bytes) {
-            free(decoded);
-            return 0;
-        }
-        *samples = decoded;
-        return 1;
-    }
-    pdf_object_view params = {0};
-    if (cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {
-        if (!flate || !cupidimage_pdf_image_dictionary(st, view, "DecodeParms", &params))
-            return 0;
-        int columns = 1, colors = 1, bits = 8;
-        int ok = (!cupidimage_pdf_page_value(&params, "Predictor", &pos) ||
-                  cupidimage_pdf_image_integer(st, &params, "Predictor", &predictor)) &&
-                 (!cupidimage_pdf_page_value(&params, "Columns", &pos) ||
-                  cupidimage_pdf_image_integer(st, &params, "Columns", &columns)) &&
-                 (!cupidimage_pdf_page_value(&params, "Colors", &pos) ||
-                  cupidimage_pdf_image_integer(st, &params, "Colors", &colors)) &&
-                 (!cupidimage_pdf_page_value(&params, "BitsPerComponent", &pos) ||
-                  cupidimage_pdf_image_integer(st, &params, "BitsPerComponent", &bits));
-        cupidimage_pdf_object_view_release(&params);
-        if (!ok ||
-            (predictor != 1 && (columns != width || colors != components || bits != image_bits)))
-            return 0;
-    }
-    if (predictor != 1 && predictor != 2 && (predictor < 10 || predictor > 15))
+    pdf_image_stream_profile profile = {width,      height,       components,
+                                        image_bits, st->document, st->document_size};
+    unsigned char *decoded = NULL;
+    if (!cupidimage_pdf_image_stream(st, view, &stream, &length) ||
+        !cupidimage_pdf_decode_image_stream(view, stream, length, &decoded, &decoded_length,
+                                            &profile))
         return 0;
-    if (!cupidimage_pdf_image_stream(st, view, &stream, &length))
+    if (decoded_length != bytes) {
+        free(decoded);
         return 0;
-    size_t encoded_row = row + (predictor >= 10 ? 1u : 0u);
-    size_t expected = encoded_row * height;
-    if (expected > 64u * 1024u * 1024u)
-        return 0;
-    unsigned char *decoded = (unsigned char *)malloc(expected);
-    if (!decoded)
-        return 0;
-    size_t actual = 0;
-    if (flate) {
-        if (!cupidimage_inflate_zlib(stream, length, decoded, expected, &actual) ||
-            actual != expected)
-            goto fail;
-    } else {
-        if (length != bytes)
-            goto fail;
-        memcpy(decoded, stream, bytes);
-    }
-    size_t bpp = ((unsigned)components * (unsigned)image_bits + 7u) / 8u;
-    uint32_t maximum = (1u << image_bits) - 1u;
-    for (int y = 0; y < height; y++) {
-        unsigned char *scan = decoded + (size_t)y * encoded_row;
-        int filter = predictor >= 10 ? *scan++ : 0;
-        if (filter > 4)
-            goto fail;
-        if (predictor == 2) {
-            for (size_t sample = (size_t)components; sample < (size_t)width * components;
-                 sample++) {
-                uint32_t value = pdf_packed_sample(scan, sample, image_bits) +
-                                 pdf_packed_sample(scan, sample - components, image_bits);
-                pdf_store_packed_sample(scan, sample, image_bits, value & maximum);
-            }
-        } else
-            for (size_t x = 0; x < row; x++) {
-                int left = x >= bpp ? scan[x - bpp] : 0;
-                int up = y ? decoded[(size_t)(y - 1) * row + x] : 0;
-                int upper_left = y && x >= bpp ? decoded[(size_t)(y - 1) * row + x - bpp] : 0;
-                if (filter == 1)
-                    scan[x] = (unsigned char)(scan[x] + left);
-                else if (filter == 2)
-                    scan[x] = (unsigned char)(scan[x] + up);
-                else if (filter == 3)
-                    scan[x] = (unsigned char)(scan[x] + (left + up) / 2);
-                else if (filter == 4)
-                    scan[x] = (unsigned char)(scan[x] + pdf_image_paeth(left, up, upper_left));
-            }
-        memmove(decoded + (size_t)y * row, scan, row);
     }
     *samples = decoded;
     return 1;
-fail:
-    free(decoded);
-    return 0;
 }
 
 /* Image masks share the parent image's unit square, not its sample grid.

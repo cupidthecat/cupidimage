@@ -71,11 +71,11 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 ## PDF
 
 basic text, raw, FlateDecode, ASCIIHexDecode, ASCII85Decode, RunLengthDecode, and LZWDecode page streams, gray/RGB/CMYK paint, line and cubic Bezier paths,
-nonzero/even-odd fills, and path clipping. Type 3 text executes PDF glyph programs; other fonts still use bitmap fallback
-glyphs. Image XObjects
+nonzero/even-odd fills, and path clipping. Type 3 text executes PDF glyph programs;
+supported TrueType, CFF and Type 1 programs render unhinted outlines. Image XObjects
 support 1/2/4/8/16-bit DeviceRGB, DeviceGray, and DeviceCMYK samples in raw or
-FlateDecode streams. Baseline and progressive grayscale/YCbCr JPEG images use
-DCTDecode. Images also support TIFF/PNG predictors, Decode
+FlateDecode streams. Baseline and progressive grayscale, RGB/YCbCr and CMYK/YCCK
+JPEG images use DCTDecode. Images also support TIFF/PNG predictors, Decode
 arrays, and affine placement. Form XObjects render nested content with local resources,
 transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
 nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType, CFF/Type 2 and Type 1 outlines are supported; complete font fidelity, color management, general transparency and annotations remain incomplete.
@@ -95,16 +95,18 @@ Run the generated PDF page regressions with Python 3:
 PDF image XObjects use the page's Resources dictionary, including inherited and
 indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
 images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 1/2/4/8/16-bit samples.
-Predictor Colors and Columns must match the image when prediction is enabled.
+Prediction follows each filter stage's declared row layout and defaults.
 The decoded sample data is limited to 64 MiB per image.
 
-JPEG images support DCTDecode as a name or a single-filter array, including
-ColorTransform 1 and Decode array inversion. Their frame dimensions, bit depth,
-and component count must match the image dictionary. FlateDecode also accepts a
-single-filter array. Non-JPEG images also accept ASCIIHexDecode, ASCII85Decode,
-RunLengthDecode, LZWDecode, CCITTFaxDecode, and chains of these filters with FlateDecode.
-LZW supports both EarlyChange values. Flate/LZW stages accept direct predictor
-dictionaries, including packed and 16-bit TIFF/PNG prediction. Raw RGB JPEG images, ColorTransform 0, and JPX are outside the supported subset.
+DCTDecode accepts standalone names and filter chains. Native JPEG samples preserve
+ColorTransform 0/1, Adobe marker precedence and PDF Decode arrays without losing
+CMYK channels. Frame dimensions, bit depth and component count must match the
+image dictionary. Flate/LZW stages accept indirect predictor dictionaries and
+packed/16-bit prediction; each filter reads only its own parameters. The current
+DCT subset uses Huffman-coded 8-bit baseline/progressive frames, with sampling
+factors at most two. Noninterleaved sequential color scans, other applicable DCT
+modes and JPX remain unfinished. See [PDF images](pdf-images.md) for the pipeline,
+checks and limits.
 Drawing an invalid or unsupported XObject returns a load error.
 
 Type 1 Form XObjects accept raw streams and the same byte filters as page content. Their Matrix transforms
@@ -200,9 +202,8 @@ Run `make test-pdf-masks` for exact-pixel and malformed-input coverage. The opti
 successful fixtures against an installed independent rasterizer, with vector
 antialiasing disabled to match pixel-center clipping.
 
-DeviceCMYK images
-use the same unmanaged conversion as device-color paint; DCT-compressed CMYK
-images and color-managed conversion remain outside this subset.
+DeviceCMYK images, including DCT-compressed CMYK and YCCK, use the same unmanaged
+conversion as device-color paint. Color-managed conversion remains unfinished.
 
 ## Deferred formats
 
