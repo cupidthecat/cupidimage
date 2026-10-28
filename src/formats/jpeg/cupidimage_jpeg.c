@@ -2,6 +2,7 @@
 #include "cupidimage.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -117,6 +118,17 @@ static const int16_t idct_tab[8][8] = {{11585, 11585, 11585, 11585, 11585, 11585
                                        {6270, -15137, 15137, -6270, -6270, 15137, -15137, 6270},
                                        {3196, -9102, 13623, -16069, 16069, -13623, 9102, -3196}};
 
+/* Bound every term so all 64 fixed-point IDCT products and rounding fit int64_t. */
+#define JPEG_DEQUANT_LIMIT ((INT64_C(1) << 29) - 1)
+
+static int jpeg_dequantize(int32_t coefficient, int quantizer, int32_t *result) {
+    int64_t value = (int64_t)coefficient * quantizer;
+    if (value < -JPEG_DEQUANT_LIMIT || value > JPEG_DEQUANT_LIMIT)
+        return 0;
+    *result = (int32_t)value;
+    return 1;
+}
+
 static void idct_8x8(const int32_t *block, uint8_t *out, int stride) {
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
@@ -127,7 +139,7 @@ static void idct_8x8(const int32_t *block, uint8_t *out, int stride) {
                     sum += (int64_t)block[v * 8 + u] * (int64_t)idct_tab[u][x] * (int64_t)tv;
                 }
             }
-            int val = (int)((sum + ((int64_t)1 << (IDCT_SHIFT - 1))) >> IDCT_SHIFT);
+            int64_t val = (sum + ((int64_t)1 << (IDCT_SHIFT - 1))) >> IDCT_SHIFT;
             val += 128;
             if (val < 0)
                 val = 0;
@@ -319,8 +331,11 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
     if (!ok) {
         return 0;
     }
-    *dc_pred += diff;
-    block[0] = (int32_t)(*dc_pred) * (int32_t)qt[0];
+    int64_t predicted = (int64_t)*dc_pred + diff;
+    if (predicted < INT_MIN || predicted > INT_MAX ||
+        !jpeg_dequantize((int32_t)predicted, qt[0], &block[0]))
+        return 0;
+    *dc_pred = (int)predicted;
 
     int k = 1;
     while (k < 64) {
@@ -331,6 +346,8 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
             break;
         }
         if (sym == 0xF0) {
+            if (64 - k < 16)
+                return 0;
             k += 16;
             continue;
         }
@@ -346,7 +363,8 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
         if (!ok) {
             return 0;
         }
-        block[zigzag[k]] = (int32_t)coeff * (int32_t)qt[zigzag[k]];
+        if (!jpeg_dequantize(coeff, qt[zigzag[k]], &block[zigzag[k]]))
+            return 0;
         k++;
     }
 
@@ -392,8 +410,12 @@ static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc
     if (!ok) {
         return 0;
     }
-    c->dc_pred += diff;
-    block[0] = (int32_t)(c->dc_pred * (1 << al));
+    int64_t predicted = (int64_t)c->dc_pred + diff;
+    int64_t scaled = predicted * (INT64_C(1) << al);
+    if (predicted < INT_MIN || predicted > INT_MAX || scaled < INT32_MIN || scaled > INT32_MAX)
+        return 0;
+    c->dc_pred = (int)predicted;
+    block[0] = (int32_t)scaled;
     return 1;
 }
 
@@ -464,7 +486,10 @@ static int refine_coeff(jpeg_bitstream *bs, int32_t *coef, int p1) {
         return 0;
     }
     if (bit) {
-        *coef += (*coef >= 0) ? p1 : -p1;
+        int64_t refined = (int64_t)*coef + ((*coef >= 0) ? p1 : -p1);
+        if (refined < INT32_MIN || refined > INT32_MAX)
+            return 0;
+        *coef = (int32_t)refined;
     }
     return 1;
 }
@@ -822,7 +847,11 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, in
                         int block_y = my * c->v + by;
                         int32_t *block = c->coeffs + ((block_y * c->blocks_w + block_x) * 64);
                         for (int i = 0; i < 64; i++) {
-                            deq[i] = block[i] * qtables[c->tq][i];
+                            if (!jpeg_dequantize(block[i], qtables[c->tq][i], &deq[i])) {
+                                free(rgba);
+                                set_err(err, errcap, "JPEG coefficient exceeds transform bounds");
+                                return 0;
+                            }
                         }
                         idct_8x8(deq, block_out, 8);
                         for (int y = 0; y < 8; y++) {

@@ -428,3 +428,7 @@ including marker precedence, indirect per-stage parameters, Decode arrays and
 soft masks. Allocation failures include the JPEG backend. Native-resolution
 reference probes are separate from scaled raw-sample-equivalence checks; see
 [PDF images](pdf-images.md).
+
+`make test-jpeg-math` checks coefficient and refinement bounds, dense inverse
+transform inputs, and sequential zero-run boundaries. These tests protect the
+shared JPEG decoder used by PDF DCT streams.

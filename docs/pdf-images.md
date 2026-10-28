@@ -55,7 +55,11 @@ The decoded sample buffer is limited to 64 MiB. Image dimensions, component coun
 and bit depth are checked against the JPEG frame before decoding its samples.
 Progressive coefficients need additional working memory; allocation failures
 release partial coefficient and output buffers. Every filter stage retains its
-own decoded-size bounds.
+own decoded-size bounds. Coefficient prediction, refinement and dequantization
+use checked arithmetic. A dequantized coefficient is limited to an absolute
+value of 536,870,911 so the complete fixed-point inverse transform fits in a
+signed 64-bit accumulator. Values outside that implementation bound fail rather
+than wrapping. Sample clipping happens before narrowing the accumulator result.
 
 The current DCT path supports 8-bit, Huffman-coded baseline and progressive
 frames. Sampling factors above two and noninterleaved sequential color scans are
