@@ -2,8 +2,7 @@
 #include "cmap_data.inc"
 #include <string.h>
 
-const pdf_predefined_cmap *cupidimage_pdf_predefined_cmap(const char *name)
-{
+const pdf_predefined_cmap *cupidimage_pdf_predefined_cmap(const char *name) {
     size_t lo = 0, hi = sizeof(cmap_resources) / sizeof(*cmap_resources);
     while (lo < hi) {
         size_t mid = lo + (hi - lo) / 2;

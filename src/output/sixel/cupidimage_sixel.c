@@ -16,8 +16,7 @@
 #include <unistd.h>
 #endif
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap > 0) {
         strncpy(err, msg, errcap - 1);
         err[errcap - 1] = '\0';
@@ -42,8 +41,7 @@ typedef struct {
     uint32_t max_colors;
 } octree_quantizer;
 
-static octree_node *octree_create_node(int level, int is_leaf)
-{
+static octree_node *octree_create_node(int level, int is_leaf) {
     (void)level; /* Unused but kept for API consistency */
     octree_node *node = (octree_node *)calloc(1, sizeof(octree_node));
     if (!node)
@@ -52,8 +50,7 @@ static octree_node *octree_create_node(int level, int is_leaf)
     return node;
 }
 
-static void octree_free(octree_node *node)
-{
+static void octree_free(octree_node *node) {
     if (!node)
         return;
     for (int i = 0; i < 8; i++) {
@@ -63,8 +60,7 @@ static void octree_free(octree_node *node)
 }
 
 static int octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_t r, uint8_t g,
-                            uint8_t b, int level)
-{
+                            uint8_t b, int level) {
     if (!*node_ptr) {
         int is_leaf = (level == 8);
         *node_ptr = octree_create_node(level, is_leaf);
@@ -96,8 +92,7 @@ static int octree_add_color(octree_quantizer *qt, octree_node **node_ptr, uint8_
     return 1;
 }
 
-static void octree_reduce(octree_quantizer *qt)
-{
+static void octree_reduce(octree_quantizer *qt) {
     /* Find deepest level with reducible nodes */
     int level = 7;
     while (level >= 0 && !qt->reducible[level]) {
@@ -139,8 +134,7 @@ static void octree_reduce(octree_quantizer *qt)
     qt->leaf_count++;
 }
 
-static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, int *index)
-{
+static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, int *index) {
     if (!node)
         return;
 
@@ -160,8 +154,7 @@ static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, in
 
 static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height, uint8_t *palette,
                            uint32_t max_colors, uint32_t *palette_size, int use_transparency,
-                           uint8_t *indexed)
-{
+                           uint8_t *indexed) {
     octree_quantizer qt;
     memset(&qt, 0, sizeof(qt));
     qt.max_colors = max_colors;
@@ -238,8 +231,7 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
 
 static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                          const uint8_t *palette, uint32_t palette_size,
-                                         int use_transparency, uint8_t *indexed)
-{
+                                         int use_transparency, uint8_t *indexed) {
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -325,8 +317,7 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
 
 static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                   const uint8_t *palette, uint32_t palette_size,
-                                  int use_transparency, uint8_t *indexed)
-{
+                                  int use_transparency, uint8_t *indexed) {
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -398,8 +389,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
 
 static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
                                  const uint8_t *palette, uint32_t palette_size,
-                                 int use_transparency, uint8_t *indexed)
-{
+                                 int use_transparency, uint8_t *indexed) {
     /* 4x4 Bayer matrix */
     static const int bayer4x4[4][4] = {
         {0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
@@ -443,8 +433,7 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
 
 static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint32_t height,
                         const uint8_t *palette, uint32_t palette_size, float pixel_aspect_ratio,
-                        int use_transparency)
-{
+                        int use_transparency) {
     (void)pixel_aspect_ratio; /* Reserved for future use */
 
     /* Start Sixel sequence: DCS P1 ; P2 ; P3 q
@@ -571,8 +560,7 @@ static int encode_sixel(FILE *out, const uint8_t *indexed, uint32_t width, uint3
     return !ferror(out);
 }
 
-int cupidimage_is_sixel_terminal(void)
-{
+int cupidimage_is_sixel_terminal(void) {
     /* Windows Terminal */
     const char *wt = getenv("WT_SESSION");
     if (wt && *wt) {
@@ -612,8 +600,7 @@ int cupidimage_is_sixel_terminal(void)
 int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
                                          uint32_t term_width, uint32_t term_height,
                                          const cupidimage_sixel_options *opts, char *err,
-                                         size_t errcap)
-{
+                                         size_t errcap) {
     (void)term_width;  /* Reserved for future scaling */
     (void)term_height; /* Reserved for future scaling */
     if (!img || !img->rgba || !out) {
@@ -721,14 +708,12 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
 }
 
 int cupidimage_render_sixel(const cupidimage_image *img, FILE *out, uint32_t term_width,
-                            uint32_t term_height, char *err, size_t errcap)
-{
+                            uint32_t term_height, char *err, size_t errcap) {
     return cupidimage_render_sixel_with_options(img, out, term_width, term_height, NULL, err,
                                                 errcap);
 }
 
-static void sleep_ms(unsigned ms)
-{
+static void sleep_ms(unsigned ms) {
 #ifdef _WIN32
     Sleep(ms);
 #else
@@ -742,8 +727,7 @@ static void sleep_ms(unsigned ms)
 int cupidimage_render_sixel_animation_with_options(const cupidimage_animation *anim, FILE *out,
                                                    uint32_t term_width, uint32_t term_height,
                                                    const cupidimage_sixel_options *opts, char *err,
-                                                   size_t errcap)
-{
+                                                   size_t errcap) {
     if (!anim || !anim->frames || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -795,8 +779,7 @@ int cupidimage_render_sixel_animation_with_options(const cupidimage_animation *a
 
 int cupidimage_render_sixel_animation(const cupidimage_animation *anim, FILE *out,
                                       uint32_t term_width, uint32_t term_height, char *err,
-                                      size_t errcap)
-{
+                                      size_t errcap) {
     return cupidimage_render_sixel_animation_with_options(anim, out, term_width, term_height, NULL,
                                                           err, errcap);
 }

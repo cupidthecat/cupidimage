@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
 typedef struct {
     const pdf_type1_font *font;
     pdf_cff_outline *outline;
@@ -11,22 +12,22 @@ typedef struct {
     unsigned count, other_count, flex_count, work;
     int started, open, flex;
 } t1_state;
-static int t1_cs_int(double n, int low, int high, int *out)
-{
+
+static int t1_cs_int(double n, int low, int high, int *out) {
     if (!isfinite(n) || n < low || n > high || floor(n) != n)
         return 0;
     *out = (int)n;
     return 1;
 }
-static int t1_cs_push(t1_state *st, double value)
-{
+
+static int t1_cs_push(t1_state *st, double value) {
     if (st->count == 24 || !isfinite(value) || fabs(value) > 1e30)
         return 0;
     st->stack[st->count++] = value;
     return 1;
 }
-static int t1_cs_emit(t1_state *st, unsigned kind, const double points[6])
-{
+
+static int t1_cs_emit(t1_state *st, unsigned kind, const double points[6]) {
     pdf_cff_outline *out = st->outline;
     if (out->count == 65536)
         return 0;
@@ -46,16 +47,16 @@ static int t1_cs_emit(t1_state *st, unsigned kind, const double points[6])
     memcpy(segment->points, points, sizeof(segment->points));
     return 1;
 }
-static int t1_cs_close(t1_state *st, int explicit)
-{
+
+static int t1_cs_close(t1_state *st, int explicit) {
     if (!st->open)
         return 1;
     double p[6] = {st->start_x, st->start_y};
     st->open = 0;
     return t1_cs_emit(st, explicit ? PDF_CFF_CLOSE : PDF_CFF_END, p);
 }
-static int t1_cs_move(t1_state *st, double x, double y)
-{
+
+static int t1_cs_move(t1_state *st, double x, double y) {
     if (!st->started)
         return 0;
     if (!st->flex && !t1_cs_close(st, 0))
@@ -72,8 +73,8 @@ static int t1_cs_move(t1_state *st, double x, double y)
     double p[6] = {st->x, st->y};
     return t1_cs_emit(st, PDF_CFF_MOVE, p);
 }
-static int t1_cs_line(t1_state *st, double x, double y)
-{
+
+static int t1_cs_line(t1_state *st, double x, double y) {
     if (!st->open || st->flex)
         return 0;
     st->x += x;
@@ -81,8 +82,8 @@ static int t1_cs_line(t1_state *st, double x, double y)
     double p[6] = {st->x, st->y};
     return t1_cs_emit(st, PDF_CFF_LINE, p);
 }
-static int t1_cs_curve(t1_state *st, const double delta[6])
-{
+
+static int t1_cs_curve(t1_state *st, const double delta[6]) {
     if (!st->open || st->flex)
         return 0;
     double p[6];
@@ -94,8 +95,8 @@ static int t1_cs_curve(t1_state *st, const double delta[6])
     }
     return t1_cs_emit(st, PDF_CFF_CURVE, p);
 }
-static int t1_other(t1_state *st)
-{
+
+static int t1_other(t1_state *st) {
     if (st->count < 2 || st->other_count)
         return 0;
     int id, args;
@@ -145,8 +146,8 @@ static int t1_other(t1_state *st)
     }
     return 1;
 }
-static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth)
-{
+
+static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth) {
     if (depth > 10 || code.length > 65535 || !code.data)
         return 0;
     size_t pos = 0;
@@ -290,9 +291,9 @@ static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth)
     }
     return 0;
 }
+
 static int t1_glyph(const pdf_type1_font *font, unsigned glyph, pdf_cff_outline *outline,
-                    unsigned depth)
-{
+                    unsigned depth) {
     memset(outline, 0, sizeof(*outline));
     if (glyph >= font->glyph_count || depth > 1)
         return 0;
@@ -349,8 +350,8 @@ fail:
     cupidimage_pdf_type2_free(outline);
     return 0;
 }
+
 int cupidimage_pdf_type1_outline(const pdf_type1_font *font, unsigned glyph,
-                                 pdf_cff_outline *outline)
-{
+                                 pdf_cff_outline *outline) {
     return t1_glyph(font, glyph, outline, 0);
 }

@@ -51,6 +51,7 @@ typedef struct pdf_pattern {
     float initial_ctm[6];
     double page_x0, page_top;
 } pdf_pattern;
+
 typedef struct {
     pdf_pattern *head;
     size_t bytes_used;
@@ -142,6 +143,7 @@ typedef struct {
 } pdf_render_state;
 
 #define PDF_TRANSPARENCY_MEMORY_LIMIT (256u * 1024u * 1024u)
+
 struct pdf_transparency_group {
     cupidimage_image image;
     double *alpha, *color, *shape;
@@ -150,6 +152,7 @@ struct pdf_transparency_group {
     int isolated, gray, knockout;
     size_t bytes;
 };
+
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
                                 double alpha, double shape, int blend_mode);
 int cupidimage_pdf_dictionary_boolean(const pdf_render_state *st, const pdf_object_view *view,

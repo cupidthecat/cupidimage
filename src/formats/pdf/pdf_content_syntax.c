@@ -11,8 +11,7 @@ typedef struct {
     int keep;
 } content_bytes;
 
-static int content_put(content_bytes *bytes, unsigned char c)
-{
+static int content_put(content_bytes *bytes, unsigned char c) {
     if (bytes->length == CONTENT_TOKEN_LIMIT)
         return 0;
     if (bytes->keep) {
@@ -32,8 +31,7 @@ static int content_put(content_bytes *bytes, unsigned char c)
     return 1;
 }
 
-static int content_finish(content_bytes *bytes, char **out, size_t *length)
-{
+static int content_finish(content_bytes *bytes, char **out, size_t *length) {
     if (!bytes->keep)
         return 1;
     if (!bytes->data) {
@@ -47,16 +45,15 @@ static int content_finish(content_bytes *bytes, char **out, size_t *length)
     return 1;
 }
 
-static int content_hex_digit(unsigned char c)
-{
+static int content_hex_digit(unsigned char c) {
     return c >= '0' && c <= '9'   ? c - '0'
            : c >= 'a' && c <= 'f' ? c - 'a' + 10
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
                                   : -1;
 }
 
-int cupidimage_pdf_content_number(const unsigned char *data, size_t size, size_t *pos, double *out)
-{
+int cupidimage_pdf_content_number(const unsigned char *data, size_t size, size_t *pos,
+                                  double *out) {
     size_t p = *pos;
     if (!cupidimage_pdf_parse_pdf_number(data, size, &p, out) ||
         (p < size && !cupidimage_pdf_is_ws(data[p]) && !cupidimage_pdf_is_delim(data[p])))
@@ -66,8 +63,7 @@ int cupidimage_pdf_content_number(const unsigned char *data, size_t size, size_t
 }
 
 int cupidimage_pdf_content_name(const unsigned char *data, size_t size, size_t *pos, char **out,
-                                size_t *length)
-{
+                                size_t *length) {
     size_t p = *pos;
     content_bytes bytes = {NULL, 0, 0, out != NULL};
     if (p >= size || data[p++] != '/')
@@ -98,8 +94,7 @@ fail:
 }
 
 int cupidimage_pdf_content_literal(const unsigned char *data, size_t size, size_t *pos, char **out,
-                                   size_t *length)
-{
+                                   size_t *length) {
     size_t p = *pos;
     unsigned depth = 1;
     content_bytes bytes = {NULL, 0, 0, out != NULL};
@@ -155,8 +150,7 @@ fail:
 }
 
 int cupidimage_pdf_content_hex(const unsigned char *data, size_t size, size_t *pos, char **out,
-                               size_t *length)
-{
+                               size_t *length) {
     size_t p = *pos;
     int high = -1;
     content_bytes bytes = {NULL, 0, 0, out != NULL};
@@ -192,8 +186,7 @@ fail:
 
 /* Preserve aggregate operands without interpreting their contained operators. */
 static int content_aggregate(const unsigned char *data, size_t size, size_t *pos, char **out,
-                             size_t *length, int dictionary)
-{
+                             size_t *length, int dictionary) {
     size_t start = *pos, p = start;
     unsigned char stack[64];
     unsigned depth = 1;
@@ -265,12 +258,11 @@ static int content_aggregate(const unsigned char *data, size_t size, size_t *pos
 }
 
 int cupidimage_pdf_content_array(const unsigned char *data, size_t size, size_t *pos, char **out,
-                                 size_t *length)
-{
+                                 size_t *length) {
     return content_aggregate(data, size, pos, out, length, 0);
 }
+
 int cupidimage_pdf_content_dictionary(const unsigned char *data, size_t size, size_t *pos,
-                                      char **out, size_t *length)
-{
+                                      char **out, size_t *length) {
     return content_aggregate(data, size, pos, out, length, 1);
 }

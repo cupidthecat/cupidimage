@@ -3,16 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int pdf_color_hex(unsigned char c)
-{
+static int pdf_color_hex(unsigned char c) {
     return c >= '0' && c <= '9'   ? c - '0'
            : c >= 'a' && c <= 'f' ? c - 'a' + 10
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
                                   : -1;
 }
 
-static int pdf_color_name(const pdf_object_view *view, size_t *pos, char name[128])
-{
+static int pdf_color_name(const pdf_object_view *view, size_t *pos, char name[128]) {
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     if (*pos == view->len || view->data[(*pos)++] != '/')
         return 0;
@@ -37,8 +35,7 @@ static int pdf_color_name(const pdf_object_view *view, size_t *pos, char name[12
     return used != 0;
 }
 
-static int pdf_color_reference(const pdf_object_view *view, size_t *pos, int *object)
-{
+static int pdf_color_reference(const pdf_object_view *view, size_t *pos, int *object) {
     if (!cupidimage_pdf_page_reference(view, *pos, object))
         return 0;
     double ignored;
@@ -52,8 +49,7 @@ static int pdf_color_reference(const pdf_object_view *view, size_t *pos, int *ob
 
 /* Palette strings are bounded by 256 entries of at most four components. */
 static int pdf_palette_string(const pdf_object_view *view, size_t *pos, unsigned char *out,
-                              size_t *size)
-{
+                              size_t *size) {
     if (*pos >= view->len)
         return 0;
     int hex = view->data[*pos] == '<', depth = 1, high = -1;
@@ -129,8 +125,7 @@ static int pdf_palette_string(const pdf_object_view *view, size_t *pos, unsigned
 }
 
 static int pdf_image_palette(const pdf_render_state *st, const pdf_object_view *view, size_t *pos,
-                             unsigned char *palette, size_t expected, unsigned depth)
-{
+                             unsigned char *palette, size_t expected, unsigned depth) {
     if (depth >= 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -162,8 +157,7 @@ static int pdf_image_palette(const pdf_render_state *st, const pdf_object_view *
 }
 
 int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
-                                     size_t *pos, unsigned depth, pdf_image_colors *colors)
-{
+                                     size_t *pos, unsigned depth, pdf_image_colors *colors) {
     if (depth >= 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -248,8 +242,7 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
 }
 
 int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth,
-                               pdf_image_colors *colors)
-{
+                               pdf_image_colors *colors) {
     if (!strcmp(name, "Pattern")) {
         colors->pattern = 1;
         colors->components = 0;

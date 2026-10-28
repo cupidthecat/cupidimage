@@ -1,7 +1,7 @@
 #include "cupidimage.h"
 #include <stdlib.h>
-int main(int argc, char **argv)
-{
+
+int main(int argc, char **argv) {
     cupidimage_image image = {0};
     char error[256] = {0};
     if (argc != 4)

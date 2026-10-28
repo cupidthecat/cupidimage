@@ -5,8 +5,7 @@
 #include <string.h>
 
 static int type3_array(const unsigned char *data, size_t size, const pdf_object_view *view,
-                       const char *name, double *numbers, int count)
-{
+                       const char *name, double *numbers, int count) {
     pdf_object_view array = {0};
     size_t pos = 0;
     int ok = cupidimage_pdf_dictionary_value(data, size, view, name, &array);
@@ -22,8 +21,8 @@ static int type3_array(const unsigned char *data, size_t size, const pdf_object_
     cupidimage_pdf_object_view_release(&array);
     return ok;
 }
-static unsigned type3_named_glyph(const void *context, const char *name)
-{
+
+static unsigned type3_named_glyph(const void *context, const char *name) {
     const pdf_object_view *procs = context;
     size_t pos;
     int object;
@@ -32,9 +31,9 @@ static unsigned type3_named_glyph(const void *context, const char *name)
     return cupidimage_pdf_page_reference(procs, pos, &object) && object > 0 ? (unsigned)object
                                                                             : UINT_MAX;
 }
+
 int cupidimage_pdf_parse_type3_font(const unsigned char *data, size_t size,
-                                    const pdf_object_view *view, pdf_font_map *font)
-{
+                                    const pdf_object_view *view, pdf_font_map *font) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, "Subtype", &pos))
         return 1;

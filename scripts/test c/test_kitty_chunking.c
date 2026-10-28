@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(void)
-{
+int main(void) {
     cupidimage_image img = {0};
     img.width = 100;
     img.height = 100;

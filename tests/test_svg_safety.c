@@ -13,15 +13,13 @@ static int checks, failures;
         }                                                                                          \
     } while (0)
 
-static uint32_t hash(uint32_t x, uint32_t y, uint32_t seed)
-{
+static uint32_t hash(uint32_t x, uint32_t y, uint32_t seed) {
     uint32_t h = (x * 374761393u + y * 668265263u) ^ seed;
     h = (h ^ (h >> 13)) * 1274126177u;
     return h ^ (h >> 16);
 }
 
-static void noise(void)
-{
+static void noise(void) {
     const char *svg =
         "<svg width='16' height='16'><defs>"
         "<filter id='n' filterUnits='userSpaceOnUse' x='0' y='0' width='16' height='16'>"
@@ -58,8 +56,7 @@ static void noise(void)
     cupidimage_free(&image);
 }
 
-static void text_paths(void)
-{
+static void text_paths(void) {
     const char *parts[] = {
         "<svg width='96' height='32'><defs><path id='p' d='M0 24 L96 24'/></defs>"
         "<text font-size='16' fill='green'><textPath href='#p'>A</textPath>"
@@ -84,8 +81,7 @@ static void text_paths(void)
     }
 }
 
-int main(void)
-{
+int main(void) {
     noise();
     text_paths();
     printf("SVG safety: %d checks, %d failures\n", checks, failures);

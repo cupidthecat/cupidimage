@@ -4,8 +4,7 @@ static int tiff_load_page(const unsigned char *data, size_t size, int page_index
                           cupidimage_image *out, char *err, size_t errcap);
 
 static int tiff_load_page(const unsigned char *data, size_t size, int page_index,
-                          cupidimage_image *out, char *err, size_t errcap)
-{
+                          cupidimage_image *out, char *err, size_t errcap) {
     tiff_context ctx;
     if (!cupidimage_tiff_parse_header(data, size, &ctx, err, errcap)) {
         return 0;
@@ -383,8 +382,7 @@ static int tiff_load_page(const unsigned char *data, size_t size, int page_index
 }
 
 int cupidimage_load_tiff_page(const unsigned char *data, size_t size, cupidimage_image *out,
-                              int page_index, char *err, size_t errcap)
-{
+                              int page_index, char *err, size_t errcap) {
     if (!data || !out) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -395,14 +393,12 @@ int cupidimage_load_tiff_page(const unsigned char *data, size_t size, cupidimage
 }
 
 int cupidimage_load_tiff(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                         size_t errcap)
-{
+                         size_t errcap) {
     return cupidimage_load_tiff_page(data, size, out, 0, err, errcap);
 }
 
 int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size, int *count, char *err,
-                                   size_t errcap)
-{
+                                   size_t errcap) {
     if (!data || !count) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -460,7 +456,6 @@ int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size, int *
     return 1;
 }
 
-int cupidimage_load_tiff_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_tiff_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_tiff);
 }

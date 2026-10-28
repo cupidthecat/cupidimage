@@ -54,8 +54,7 @@
 #undef realloc
 #undef free
 
-int main(void)
-{
+int main(void) {
     static const struct {
         const char *content;
         int valid;
@@ -93,6 +92,7 @@ int main(void)
                      "AAAAAAAAAAAAAAAAAAAA) Tj ET",
                      1},
                     {"BT /F#00 6 Tf (A) Tj ET", 0}};
+
     const char *form_content = "q 0 0 18 6 re W n 1 0 0 rg 0 0 18 12 re f q";
     const char *font_content = "BT /F1 6 Tf 0 6 Td (Z) Tj ET";
     const char *cmap = "1 beginbfchar <5A> <0041> endbfchar";

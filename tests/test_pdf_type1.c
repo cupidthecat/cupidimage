@@ -1,8 +1,8 @@
 #include "formats/pdf/fonts/type1.h"
 #include <stdio.h>
 #include <stdlib.h>
-int main(int argc, char **argv)
-{
+
+int main(int argc, char **argv) {
     if (argc != 4 && argc != 5)
         return 1;
     FILE *file = fopen(argv[1], "rb");

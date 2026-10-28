@@ -12,16 +12,14 @@ typedef struct {
     size_t size;
 } test_pdf_buffer;
 
-static void test_pdf_append(test_pdf_buffer *pdf, const void *data, size_t size)
-{
+static void test_pdf_append(test_pdf_buffer *pdf, const void *data, size_t size) {
     assert(size <= sizeof(pdf->data) - pdf->size);
     if (size)
         memcpy(pdf->data + pdf->size, data, size);
     pdf->size += size;
 }
 
-static void test_pdf_format(test_pdf_buffer *pdf, const char *format, ...)
-{
+static void test_pdf_format(test_pdf_buffer *pdf, const char *format, ...) {
     va_list args;
     va_start(args, format);
     int size =
@@ -31,8 +29,7 @@ static void test_pdf_format(test_pdf_buffer *pdf, const char *format, ...)
     pdf->size += (size_t)size;
 }
 
-static test_pdf_buffer test_make_pdf(const void *content, size_t size, int flate)
-{
+static test_pdf_buffer test_make_pdf(const void *content, size_t size, int flate) {
     test_pdf_buffer pdf = {{0}, 0};
     size_t offsets[5] = {0};
     test_pdf_format(&pdf, "%%PDF-1.4\n");

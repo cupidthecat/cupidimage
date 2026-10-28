@@ -13,8 +13,7 @@ typedef struct {
     size_t used, capacity;
 } pdf_filter_buffer;
 
-static int pdf_filter_append(pdf_filter_buffer *out, const unsigned char *data, size_t count)
-{
+static int pdf_filter_append(pdf_filter_buffer *out, const unsigned char *data, size_t count) {
     if (count > PDF_FILTER_LIMIT - out->used)
         return 0;
     size_t needed = out->used + count;
@@ -35,8 +34,7 @@ static int pdf_filter_append(pdf_filter_buffer *out, const unsigned char *data, 
 }
 
 /* ISO 32000-1, 7.4.2: ignore whitespace and pad an odd final nibble. */
-static int pdf_filter_hex(const unsigned char *data, size_t length, pdf_filter_buffer *out)
-{
+static int pdf_filter_hex(const unsigned char *data, size_t length, pdf_filter_buffer *out) {
     int high = -1;
     for (size_t i = 0; i < length; i++) {
         unsigned char c = data[i];
@@ -65,8 +63,7 @@ static int pdf_filter_hex(const unsigned char *data, size_t length, pdf_filter_b
 }
 
 /* ISO 32000-1, 7.4.3: z is valid only between tuples; ~> terminates. */
-static int pdf_filter_ascii85(const unsigned char *data, size_t length, pdf_filter_buffer *out)
-{
+static int pdf_filter_ascii85(const unsigned char *data, size_t length, pdf_filter_buffer *out) {
     uint64_t tuple = 0;
     int digits = 0;
     for (size_t i = 0; i < length; i++) {
@@ -112,8 +109,7 @@ static int pdf_filter_ascii85(const unsigned char *data, size_t length, pdf_filt
     return 0;
 }
 
-static int pdf_filter_runlength(const unsigned char *data, size_t length, pdf_filter_buffer *out)
-{
+static int pdf_filter_runlength(const unsigned char *data, size_t length, pdf_filter_buffer *out) {
     size_t pos = 0;
     while (pos < length) {
         unsigned code = data[pos++];
@@ -142,8 +138,7 @@ typedef struct {
 } pdf_filter_params;
 
 static int pdf_filter_lzw(const unsigned char *data, size_t length, int early,
-                          pdf_filter_buffer *out)
-{
+                          pdf_filter_buffer *out) {
     uint16_t prefix[4096];
     unsigned char suffix[4096], reverse[4096], phrase[4096];
     unsigned width = 9, next = 258, buffered = 0;
@@ -200,16 +195,14 @@ static int pdf_filter_lzw(const unsigned char *data, size_t length, int early,
     }
 }
 
-static uint32_t pdf_filter_sample(const unsigned char *row, size_t sample, unsigned bits)
-{
+static uint32_t pdf_filter_sample(const unsigned char *row, size_t sample, unsigned bits) {
     if (bits == 16)
         return (uint32_t)row[sample * 2] * 256 + row[sample * 2 + 1];
     size_t bit = sample * bits;
     return (row[bit / 8] >> (8 - bits - (bit % 8))) & ((1u << bits) - 1);
 }
 
-static void pdf_filter_store(unsigned char *row, size_t sample, unsigned bits, uint32_t value)
-{
+static void pdf_filter_store(unsigned char *row, size_t sample, unsigned bits, uint32_t value) {
     if (bits == 16) {
         row[sample * 2] = (unsigned char)(value >> 8);
         row[sample * 2 + 1] = (unsigned char)value;
@@ -220,8 +213,7 @@ static void pdf_filter_store(unsigned char *row, size_t sample, unsigned bits, u
     row[bit / 8] = (unsigned char)((row[bit / 8] & ~mask) | ((value << shift) & mask));
 }
 
-static int pdf_filter_predict(pdf_filter_buffer *out, const pdf_filter_params *params)
-{
+static int pdf_filter_predict(pdf_filter_buffer *out, const pdf_filter_params *params) {
     if (params->predictor == 1)
         return 1;
     if (params->predictor != 2 && (params->predictor < 10 || params->predictor > 15))
@@ -279,8 +271,7 @@ static int pdf_filter_predict(pdf_filter_buffer *out, const pdf_filter_params *p
     return 1;
 }
 
-static int pdf_filter_null(const pdf_object_view *view, size_t *pos)
-{
+static int pdf_filter_null(const pdf_object_view *view, size_t *pos) {
     if (view->len - *pos < 4 || memcmp(view->data + *pos, "null", 4))
         return 0;
     *pos += 4;
@@ -291,8 +282,7 @@ static int pdf_filter_null(const pdf_object_view *view, size_t *pos)
 /* Direct parameter dictionaries contain integer filter controls. Indirect
  * parameter objects are still handled only by the single-Flate image path. */
 static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
-                                 pdf_filter_params *params)
-{
+                                 pdf_filter_params *params) {
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     if (pdf_filter_null(view, pos))
         return 1;
@@ -374,8 +364,7 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
 }
 
 int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned char *data,
-                                 size_t length, unsigned char **decoded, size_t *decoded_length)
-{
+                                 size_t length, unsigned char **decoded, size_t *decoded_length) {
     char filters[8][32];
     pdf_filter_params params[8];
     for (int i = 0; i < 8; i++)

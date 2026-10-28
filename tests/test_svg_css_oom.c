@@ -25,8 +25,7 @@
 #undef realloc
 #undef free
 
-int main(void)
-{
+int main(void) {
     static const char *fixtures[] = {
         "g.layer#root[data-mode='bright'][enabled] > rect.a.b + path[data-x=1] ~ circle,"
         "svg > g.item { fill: red; stroke: blue; opacity: 0.5; }",

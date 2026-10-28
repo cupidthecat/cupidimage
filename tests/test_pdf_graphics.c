@@ -7,8 +7,7 @@ typedef struct {
     unsigned char rgb[3];
 } probe;
 
-int main(void)
-{
+int main(void) {
     static const probe probes[] = {
         {"c stroke", "3 w 12 12 m 12 60 60 60 60 12 c S", 36, 48, {0, 0, 0}},
         {"c leaves chord open", "3 w 12 12 m 12 60 60 60 60 12 c S", 36, 12, {255, 255, 255}},

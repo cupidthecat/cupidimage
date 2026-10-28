@@ -6,16 +6,14 @@
 /* Forward declaration */
 int kitty_base64_encode(const uint8_t *data, size_t size, char *out, size_t outcap);
 
-void test_base64_empty(void)
-{
+void test_base64_empty(void) {
     char out[16] = {0};
     int ret = kitty_base64_encode(NULL, 0, out, sizeof(out));
     assert(ret == 0);       /* 0 bytes encoded */
     assert(out[0] == '\0'); /* empty string */
 }
 
-void test_base64_standard(void)
-{
+void test_base64_standard(void) {
     char out[64] = {0};
 
     /* "Man" -> "TWFu" */
@@ -37,8 +35,7 @@ void test_base64_standard(void)
     assert(strcmp(out, "TQ==") == 0);
 }
 
-int main(void)
-{
+int main(void) {
     test_base64_empty();
     test_base64_standard();
     printf("All base64 tests: PASS\n");

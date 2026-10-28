@@ -14,8 +14,7 @@ static int checks, failures;
         }                                                                                          \
     } while (0)
 
-static void validation(void)
-{
+static void validation(void) {
     uint8_t pixel[4] = {19, 92, 165, 238};
     cupidimage_image image = {1, 1, pixel, 0, 0};
     cupidimage_kitty_options opts = {42, 7, 0, 0};
@@ -99,8 +98,7 @@ static void validation(void)
     }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if (argc == 1) {
         validation();
         printf("Terminal API: %d checks, %d failures\n", checks, failures);

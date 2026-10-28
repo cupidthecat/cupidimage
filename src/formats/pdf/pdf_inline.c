@@ -5,33 +5,33 @@
 
 #define INLINE_DICT_LIMIT 65536u
 #define INLINE_DATA_LIMIT (64u * 1024u * 1024u)
+
 typedef struct {
     const unsigned char *data;
     size_t size, pos, used;
     char *output;
 } inline_parser;
 
-static int inline_append(inline_parser *p, const void *bytes, size_t size)
-{
+static int inline_append(inline_parser *p, const void *bytes, size_t size) {
     if (size > INLINE_DICT_LIMIT - p->used)
         return 0;
     memcpy(p->output + p->used, bytes, size);
     p->used += size;
     return 1;
 }
-static int inline_text(inline_parser *p, const char *text)
-{
+
+static int inline_text(inline_parser *p, const char *text) {
     return inline_append(p, text, strlen(text));
 }
-static int inline_hex(unsigned char c)
-{
+
+static int inline_hex(unsigned char c) {
     return c >= '0' && c <= '9'   ? c - '0'
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
            : c >= 'a' && c <= 'f' ? c - 'a' + 10
                                   : -1;
 }
-static int inline_name(inline_parser *p, char name[128])
-{
+
+static int inline_name(inline_parser *p, char name[128]) {
     if (p->pos == p->size || p->data[p->pos++] != '/')
         return 0;
     size_t n = 0;
@@ -54,8 +54,8 @@ static int inline_name(inline_parser *p, char name[128])
     name[n] = 0;
     return n != 0;
 }
-static const char *inline_key(const char *name)
-{
+
+static const char *inline_key(const char *name) {
     static const char *keys[][2] = {
         {"BPC", "BitsPerComponent"}, {"CS", "ColorSpace"}, {"D", "Decode"},
         {"DP", "DecodeParms"},       {"F", "Filter"},      {"H", "Height"},
@@ -66,8 +66,8 @@ static const char *inline_key(const char *name)
             return keys[i][1];
     return NULL;
 }
-static const char *inline_alias(const char *name, int kind)
-{
+
+static const char *inline_alias(const char *name, int kind) {
     static const char *colors[][2] = {
         {"G", "DeviceGray"}, {"RGB", "DeviceRGB"}, {"CMYK", "DeviceCMYK"}, {"I", "Indexed"}};
     static const char *filters[][2] = {{"AHx", "ASCIIHexDecode"}, {"A85", "ASCII85Decode"},
@@ -84,10 +84,10 @@ static const char *inline_alias(const char *name, int kind)
                 return filters[i][1];
     return name;
 }
+
 /* Copy one direct PDF value. Strings remain opaque, so binary palettes cannot
    be mistaken for delimiters or have their contents expanded as names. */
-static int inline_value(inline_parser *p, unsigned depth, int aliases)
-{
+static int inline_value(inline_parser *p, unsigned depth, int aliases) {
     if (depth > 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(p->data, p->size, &p->pos);
@@ -162,8 +162,7 @@ static int inline_value(inline_parser *p, unsigned depth, int aliases)
 
 /* Resource names are legal for inline ColorSpace entries, but are not
    inherited by image XObjects. Resolve only this inline dictionary value. */
-static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t start)
-{
+static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t start) {
     inline_parser value = {(const unsigned char *)p->output, p->used, start, 0, NULL};
     if (value.pos == value.size || value.data[value.pos] != '/')
         return 1;
@@ -197,8 +196,7 @@ static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t 
     return inline_text(p, ">] ");
 }
 
-static int inline_raw_size(pdf_render_state *st, const pdf_object_view *view, size_t *bytes)
-{
+static int inline_raw_size(pdf_render_state *st, const pdf_object_view *view, size_t *bytes) {
     int width, height, bits = 1, stencil = 0;
     size_t pos;
     if (cupidimage_pdf_page_value(view, "ImageMask", &pos)) {
@@ -230,8 +228,7 @@ static int inline_raw_size(pdf_render_state *st, const pdf_object_view *view, si
 
 /* Walk JPEG segments and entropy escapes; marker-looking bytes inside APP or
    comment payloads are data, not an image boundary. */
-static int inline_jpeg_end(const unsigned char *data, size_t size, size_t *end)
-{
+static int inline_jpeg_end(const unsigned char *data, size_t size, size_t *end) {
     if (size < 2 || data[0] != 255 || data[1] != 216)
         return 0;
     size_t pos = 2;
@@ -281,8 +278,7 @@ static int inline_jpeg_end(const unsigned char *data, size_t size, size_t *end)
 }
 
 int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *data, size_t length,
-                                     size_t *position)
-{
+                                     size_t *position) {
     char *dictionary = malloc(INLINE_DICT_LIMIT);
     unsigned char *object = NULL;
     int ok = 0;

@@ -6,8 +6,7 @@ static int tiff_read_entry(const tiff_context *ctx, const uint8_t *entry_ptr, ti
 static int tiff_entry_get_u64(const tiff_context *ctx, const tiff_entry *entry, uint64_t index,
                               uint64_t *out);
 
-int cupidimage_tiff_mul_overflow_size_t(size_t a, size_t b, size_t *out)
-{
+int cupidimage_tiff_mul_overflow_size_t(size_t a, size_t b, size_t *out) {
     if (a == 0 || b == 0) {
         *out = 0;
         return 0;
@@ -19,21 +18,18 @@ int cupidimage_tiff_mul_overflow_size_t(size_t a, size_t b, size_t *out)
     return 0;
 }
 
-int cupidimage_tiff_range_valid(const tiff_context *ctx, uint64_t offset, uint64_t length)
-{
+int cupidimage_tiff_range_valid(const tiff_context *ctx, uint64_t offset, uint64_t length) {
     return offset <= ctx->size && length <= ctx->size - offset;
 }
 
-uint16_t cupidimage_tiff_read_u16(const tiff_context *ctx, const uint8_t *p)
-{
+uint16_t cupidimage_tiff_read_u16(const tiff_context *ctx, const uint8_t *p) {
     if (ctx->big_endian) {
         return (uint16_t)((p[0] << 8) | p[1]);
     }
     return (uint16_t)(p[0] | (p[1] << 8));
 }
 
-void cupidimage_tiff_write_u16(const tiff_context *ctx, uint8_t *p, uint16_t v)
-{
+void cupidimage_tiff_write_u16(const tiff_context *ctx, uint8_t *p, uint16_t v) {
     if (ctx->big_endian) {
         p[0] = (uint8_t)(v >> 8);
         p[1] = (uint8_t)(v & 0xFFu);
@@ -43,8 +39,7 @@ void cupidimage_tiff_write_u16(const tiff_context *ctx, uint8_t *p, uint16_t v)
     }
 }
 
-uint32_t cupidimage_tiff_read_u32(const tiff_context *ctx, const uint8_t *p)
-{
+uint32_t cupidimage_tiff_read_u32(const tiff_context *ctx, const uint8_t *p) {
     if (ctx->big_endian) {
         return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) |
                (uint32_t)p[3];
@@ -52,8 +47,7 @@ uint32_t cupidimage_tiff_read_u32(const tiff_context *ctx, const uint8_t *p)
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
-uint64_t cupidimage_tiff_read_u64(const tiff_context *ctx, const uint8_t *p)
-{
+uint64_t cupidimage_tiff_read_u64(const tiff_context *ctx, const uint8_t *p) {
     if (ctx->big_endian) {
         return ((uint64_t)p[0] << 56) | ((uint64_t)p[1] << 48) | ((uint64_t)p[2] << 40) |
                ((uint64_t)p[3] << 32) | ((uint64_t)p[4] << 24) | ((uint64_t)p[5] << 16) |
@@ -64,8 +58,7 @@ uint64_t cupidimage_tiff_read_u64(const tiff_context *ctx, const uint8_t *p)
            ((uint64_t)p[6] << 48) | ((uint64_t)p[7] << 56);
 }
 
-static size_t tiff_type_size(uint16_t type)
-{
+static size_t tiff_type_size(uint16_t type) {
     switch (type) {
         case 1: /* BYTE */
         case 2: /* ASCII */
@@ -92,8 +85,7 @@ static size_t tiff_type_size(uint16_t type)
 }
 
 static int tiff_read_entry(const tiff_context *ctx, const uint8_t *entry_ptr, tiff_entry *entry,
-                           char *err, size_t errcap)
-{
+                           char *err, size_t errcap) {
     entry->tag = cupidimage_tiff_read_u16(ctx, entry_ptr);
     entry->type = cupidimage_tiff_read_u16(ctx, entry_ptr + 2);
     if (ctx->big_tiff) {
@@ -136,8 +128,7 @@ static int tiff_read_entry(const tiff_context *ctx, const uint8_t *entry_ptr, ti
 }
 
 static int tiff_entry_get_u64(const tiff_context *ctx, const tiff_entry *entry, uint64_t index,
-                              uint64_t *out)
-{
+                              uint64_t *out) {
     if (!entry->value_ptr || index >= entry->count) {
         return 0;
     }
@@ -187,8 +178,7 @@ static int tiff_entry_get_u64(const tiff_context *ctx, const tiff_entry *entry, 
     }
 }
 
-void cupidimage_tiff_info_init(tiff_image_info *info)
-{
+void cupidimage_tiff_info_init(tiff_image_info *info) {
     memset(info, 0, sizeof(*info));
     info->samples_per_pixel = 1;
     info->compression = TIFF_COMPRESSION_NONE;
@@ -203,8 +193,7 @@ void cupidimage_tiff_info_init(tiff_image_info *info)
     info->ycbcr_positioning = 1;
 }
 
-void cupidimage_tiff_info_free(tiff_image_info *info)
-{
+void cupidimage_tiff_info_free(tiff_image_info *info) {
     free(info->strip_offsets);
     free(info->strip_byte_counts);
     free(info->tile_offsets);
@@ -218,8 +207,7 @@ void cupidimage_tiff_info_free(tiff_image_info *info)
 }
 
 int cupidimage_tiff_parse_header(const unsigned char *data, size_t size, tiff_context *ctx,
-                                 char *err, size_t errcap)
-{
+                                 char *err, size_t errcap) {
     if (size < 8) {
         cupidimage_set_err(err, errcap, "truncated TIFF header");
         return 0;
@@ -279,8 +267,7 @@ int cupidimage_tiff_parse_header(const unsigned char *data, size_t size, tiff_co
 }
 
 int cupidimage_tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset, uint64_t *entry_count,
-                                    uint64_t *next_ifd, char *err, size_t errcap)
-{
+                                    uint64_t *next_ifd, char *err, size_t errcap) {
     if (offset >= ctx->size) {
         cupidimage_set_err(err, errcap, "invalid TIFF IFD offset");
         return 0;
@@ -331,8 +318,7 @@ int cupidimage_tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset, ui
     return 1;
 }
 
-int cupidimage_tiff_ifd_list_append(uint64_t **list, size_t *count, size_t *cap, uint64_t off)
-{
+int cupidimage_tiff_ifd_list_append(uint64_t **list, size_t *count, size_t *cap, uint64_t off) {
     if (*count >= *cap) {
         size_t next_cap = (*cap == 0) ? 8 : (*cap * 2u);
         uint64_t *next = (uint64_t *)realloc(*list, next_cap * sizeof(uint64_t));
@@ -347,8 +333,7 @@ int cupidimage_tiff_ifd_list_append(uint64_t **list, size_t *count, size_t *cap,
 }
 
 int cupidimage_tiff_collect_subifds(const tiff_context *ctx, uint64_t ifd_offset, uint64_t **list,
-                                    size_t *count, size_t *cap, char *err, size_t errcap)
-{
+                                    size_t *count, size_t *cap, char *err, size_t errcap) {
     uint64_t entry_count = 0;
     uint64_t next_ifd = 0;
     if (!cupidimage_tiff_read_ifd_header(ctx, ifd_offset, &entry_count, &next_ifd, err, errcap)) {
@@ -390,8 +375,7 @@ int cupidimage_tiff_collect_subifds(const tiff_context *ctx, uint64_t ifd_offset
 }
 
 int cupidimage_tiff_parse_image_info(const tiff_context *ctx, uint64_t ifd_offset,
-                                     tiff_image_info *info, char *err, size_t errcap)
-{
+                                     tiff_image_info *info, char *err, size_t errcap) {
     uint64_t entry_count = 0;
     uint64_t next_ifd = 0;
     if (!cupidimage_tiff_read_ifd_header(ctx, ifd_offset, &entry_count, &next_ifd, err, errcap)) {

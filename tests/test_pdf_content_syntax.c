@@ -5,9 +5,9 @@
 
 typedef int (*reader)(const unsigned char *, size_t, size_t *, char **, size_t *);
 static unsigned checks, failures;
+
 static void check(reader read, const char *input, size_t size, const char *expected, size_t length,
-                  size_t consumed, int valid)
-{
+                  size_t consumed, int valid) {
     size_t pos = 0, bytes = 0;
     char *output = NULL;
     int ok = read((const unsigned char *)input, size, &pos, &output, &bytes);
@@ -22,12 +22,13 @@ static void check(reader read, const char *input, size_t size, const char *expec
     }
     free(output);
 }
+
 #define READ(fn, input, want)                                                                      \
     check(cupidimage_pdf_content_##fn, input, sizeof(input) - 1, want, sizeof(want) - 1,           \
           sizeof(input) - 1, 1)
 #define BAD(fn, input) check(cupidimage_pdf_content_##fn, input, sizeof(input) - 1, NULL, 0, 0, 0)
-int main(void)
-{
+
+int main(void) {
     READ(literal, "()", "");
     READ(literal, "(a\rb\r\nc\nd)", "a\nb\nc\nd");
     READ(literal, "(a\\\rb\\\r\nc\\\nd)", "abcd");

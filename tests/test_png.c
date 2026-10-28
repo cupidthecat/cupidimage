@@ -28,23 +28,20 @@ typedef struct {
 
 static unsigned checks, failures;
 
-static void append(buffer *buf, const void *data, size_t size)
-{
+static void append(buffer *buf, const void *data, size_t size) {
     assert(size <= sizeof(buf->data) - buf->size);
     if (size)
         memcpy(buf->data + buf->size, data, size);
     buf->size += size;
 }
 
-static void put_be32(buffer *buf, uint32_t value)
-{
+static void put_be32(buffer *buf, uint32_t value) {
     uint8_t bytes[4] = {(uint8_t)(value >> 24), (uint8_t)(value >> 16), (uint8_t)(value >> 8),
                         (uint8_t)value};
     append(buf, bytes, sizeof(bytes));
 }
 
-static void chunk(buffer *png, const char *type, const void *data, size_t size)
-{
+static void chunk(buffer *png, const char *type, const void *data, size_t size) {
     put_be32(png, (uint32_t)size);
     size_t start = png->size;
     append(png, type, 4);
@@ -59,8 +56,7 @@ static void chunk(buffer *png, const char *type, const void *data, size_t size)
     put_be32(png, ~crc);
 }
 
-static unsigned channels(uint8_t type)
-{
+static unsigned channels(uint8_t type) {
     switch (type) {
         case 0:
         case 3:
@@ -77,8 +73,7 @@ static unsigned channels(uint8_t type)
     }
 }
 
-static buffer scanlines(const png_case *test)
-{
+static buffer scanlines(const png_case *test) {
     static const unsigned xs[7] = {0, 4, 0, 2, 0, 1, 0};
     static const unsigned ys[7] = {0, 0, 4, 0, 2, 0, 1};
     static const unsigned dx[7] = {8, 8, 4, 4, 2, 2, 1};
@@ -111,8 +106,7 @@ static buffer scanlines(const png_case *test)
     return raw;
 }
 
-static buffer stored_zlib(const buffer *raw)
-{
+static buffer stored_zlib(const buffer *raw) {
     buffer compressed = {{0}, 0};
     unsigned length = (unsigned)raw->size;
     uint8_t header[] = {0x78,
@@ -133,8 +127,7 @@ static buffer stored_zlib(const buffer *raw)
     return compressed;
 }
 
-static buffer make_png(const png_case *test)
-{
+static buffer make_png(const png_case *test) {
     static const uint8_t signature[] = {137, 80, 78, 71, 13, 10, 26, 10};
     buffer png = {{0}, 0}, ihdr = {{0}, 0};
     append(&png, signature, sizeof(signature));
@@ -159,8 +152,7 @@ static buffer make_png(const png_case *test)
     return png;
 }
 
-static void check(const char *name, const png_case *test, int expected_ok)
-{
+static void check(const char *name, const png_case *test, int expected_ok) {
     buffer png = make_png(test);
     cupidimage_image image = {0};
     char err[128] = {0};
@@ -182,8 +174,7 @@ static void check(const char *name, const png_case *test, int expected_ok)
     cupidimage_free(&image);
 }
 
-static png_case new_case(uint8_t type, uint8_t depth, uint8_t interlace)
-{
+static png_case new_case(uint8_t type, uint8_t depth, uint8_t interlace) {
     png_case test = {0};
     test.width = WIDTH;
     test.height = HEIGHT;
@@ -193,14 +184,12 @@ static png_case new_case(uint8_t type, uint8_t depth, uint8_t interlace)
     return test;
 }
 
-static uint8_t scaled(unsigned sample, uint8_t depth)
-{
+static uint8_t scaled(unsigned sample, uint8_t depth) {
     unsigned max = (1u << depth) - 1;
     return (uint8_t)((sample * 255u + max / 2) / max);
 }
 
-static void test_palette(uint8_t interlace)
-{
+static void test_palette(uint8_t interlace) {
     static const unsigned entries[] = {1, 2, 4, 16, 255, 256};
     uint8_t alpha[256];
     for (unsigned i = 0; i < 256; i++)
@@ -247,8 +236,7 @@ static void test_palette(uint8_t interlace)
     }
 }
 
-static void test_gray(uint8_t depth, uint8_t interlace)
-{
+static void test_gray(uint8_t depth, uint8_t interlace) {
     png_case test = new_case(0, depth, interlace);
     unsigned max = (1u << depth) - 1;
     unsigned key = depth == 16 ? 0x1234 : max / 2;
@@ -279,8 +267,7 @@ static void test_gray(uint8_t depth, uint8_t interlace)
     check("empty grayscale tRNS", &test, 0);
 }
 
-static void test_rgb(uint8_t depth, uint8_t interlace)
-{
+static void test_rgb(uint8_t depth, uint8_t interlace) {
     png_case test = new_case(2, depth, interlace);
     unsigned key[] = {0x1234, 0x5678, 0x9abc};
     if (depth == 8) {
@@ -317,8 +304,7 @@ static void test_rgb(uint8_t depth, uint8_t interlace)
     check("long RGB tRNS", &test, 0);
 }
 
-static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace)
-{
+static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace) {
     png_case test = new_case(type, depth, interlace);
     unsigned count = channels(type);
     unsigned values[] = {0, ((1u << depth) - 1) / 2, (1u << depth) - 1};
@@ -339,8 +325,7 @@ static void test_alpha(uint8_t type, uint8_t depth, uint8_t interlace)
     check("tRNS forbidden with alpha", &test, 0);
 }
 
-static void test_mixed_blocks(void)
-{
+static void test_mixed_blocks(void) {
     /* A complete dynamic tree with a one-bit EOB and 15-bit unused codes,
        followed by a final stored block. Inflates to filter 0, pixels 1..9. */
     static const uint8_t idat[] = {0x78, 0x01, 0x04, 0xe0, 0x81, 0x92, 0x24, 0x49, 0x92, 0x24, 0xc9,
@@ -358,8 +343,7 @@ static void test_mixed_blocks(void)
     check("dynamic Huffman to stored block", &test, 1);
 }
 
-static void check_stream(const char *name, const buffer *png, int accepted)
-{
+static void check_stream(const char *name, const buffer *png, int accepted) {
     cupidimage_image image = {0};
     char error[128] = {0};
     int ok = cupidimage_load_png(png->data, png->size, &image, error, sizeof(error));
@@ -371,8 +355,7 @@ static void check_stream(const char *name, const buffer *png, int accepted)
     cupidimage_free(&image);
 }
 
-static void test_chunk_structure(void)
-{
+static void test_chunk_structure(void) {
     png_case sample = new_case(0, 8, 0);
     buffer good = make_png(&sample), altered;
     size_t first = 33;
@@ -454,8 +437,7 @@ static void test_chunk_structure(void)
     check_stream("zlib checksum with valid chunk CRC", &altered, 0);
 }
 
-int main(void)
-{
+int main(void) {
     static const uint8_t depths[] = {1, 2, 4, 8, 16};
     for (uint8_t interlace = 0; interlace < 2; interlace++) {
         test_palette(interlace);

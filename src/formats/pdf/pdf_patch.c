@@ -7,10 +7,12 @@
 typedef struct {
     double x, y;
 } patch_point;
+
 typedef struct {
     patch_point p[4][4];
     double u0, u1, v0, v1;
 } patch_cell;
+
 typedef struct {
     pdf_mesh_context *mesh;
     uint32_t *stamp, serial;
@@ -18,30 +20,29 @@ typedef struct {
     double colors[4][4];
 } patch_target;
 
-static patch_point patch_mid(patch_point a, patch_point b)
-{
+static patch_point patch_mid(patch_point a, patch_point b) {
     patch_point p = {(a.x + b.x) * .5, (a.y + b.y) * .5};
     return p;
 }
-static double patch_cross(patch_point a, patch_point b)
-{
+
+static double patch_cross(patch_point a, patch_point b) {
     return a.x * b.y - a.y * b.x;
 }
-static patch_point patch_sub(patch_point a, patch_point b)
-{
+
+static patch_point patch_sub(patch_point a, patch_point b) {
     patch_point p = {a.x - b.x, a.y - b.y};
     return p;
 }
-static int patch_charge(patch_target *target, size_t work)
-{
+
+static int patch_charge(patch_target *target, size_t work) {
     size_t *left = &target->mesh->state->form_budget->shade_evaluations_left;
     if (work > *left)
         return 0;
     *left -= work;
     return 1;
 }
-static patch_point patch_bilinear(const patch_cell *cell, double u, double v)
-{
+
+static patch_point patch_bilinear(const patch_cell *cell, double u, double v) {
     double w[4] = {(1 - u) * (1 - v), (1 - u) * v, u * v, u * (1 - v)};
     patch_point p = {0, 0};
     const patch_point corners[4] = {cell->p[0][0], cell->p[3][0], cell->p[3][3], cell->p[0][3]};
@@ -51,8 +52,8 @@ static patch_point patch_bilinear(const patch_cell *cell, double u, double v)
     }
     return p;
 }
-static void patch_curve_split(const patch_point p[4], patch_point low[4], patch_point high[4])
-{
+
+static void patch_curve_split(const patch_point p[4], patch_point low[4], patch_point high[4]) {
     patch_point a = patch_mid(p[0], p[1]), b = patch_mid(p[1], p[2]), c = patch_mid(p[2], p[3]);
     patch_point d = patch_mid(a, b), e = patch_mid(b, c), f = patch_mid(d, e);
     low[0] = p[0];
@@ -64,8 +65,8 @@ static void patch_curve_split(const patch_point p[4], patch_point low[4], patch_
     high[2] = c;
     high[3] = p[3];
 }
-static void patch_split(const patch_cell *cell, int vertical, patch_cell *low, patch_cell *high)
-{
+
+static void patch_split(const patch_cell *cell, int vertical, patch_cell *low, patch_cell *high) {
     *low = *cell;
     *high = *cell;
     for (unsigned i = 0; i < 4; i++) {
@@ -88,10 +89,10 @@ static void patch_split(const patch_cell *cell, int vertical, patch_cell *low, p
     else
         low->u1 = high->u0 = (cell->u0 + cell->u1) * .5;
 }
+
 /* Derivatives are convex combinations of control-net differences. A common
  * cross-product sign excludes an interior fold; mixed signs require subdivision. */
-static int patch_orientation(const patch_cell *cell)
-{
+static int patch_orientation(const patch_cell *cell) {
     patch_point du[12], dv[12];
     unsigned n = 0;
     for (unsigned j = 0; j < 4; j++)
@@ -113,8 +114,8 @@ static int patch_orientation(const patch_cell *cell)
         }
     return sign ? 1 : 2;
 }
-static double patch_flatness(const patch_cell *cell)
-{
+
+static double patch_flatness(const patch_cell *cell) {
     double error = 0;
     for (unsigned j = 0; j < 4; j++)
         for (unsigned i = 0; i < 4; i++) {
@@ -125,9 +126,9 @@ static double patch_flatness(const patch_cell *cell)
                          cell->p[0][0].y - cell->p[3][0].y + cell->p[3][3].y - cell->p[0][3].y};
     return error + .25 * hypot(cross.x, cross.y);
 }
+
 static int patch_evaluate(patch_target *target, const patch_cell *cell, double u, double v,
-                          patch_point *point, patch_point *du, patch_point *dv)
-{
+                          patch_point *point, patch_point *du, patch_point *dv) {
     if (!patch_charge(target, 16))
         return 0;
     double a = 1 - u, b = 1 - v;
@@ -150,11 +151,11 @@ static int patch_evaluate(patch_target *target, const patch_cell *cell, double u
     return isfinite(point->x) && isfinite(point->y) && isfinite(du->x) && isfinite(du->y) &&
            isfinite(dv->x) && isfinite(dv->y);
 }
+
 /* Return -1 for a work/numeric failure, 0 when subdivision is needed, or 1
  * with an inverse parameter pair. Geometry is evaluated at the actual sample. */
 static int patch_inverse(patch_target *target, const patch_cell *cell, double x, double y,
-                         double tolerance, double *u, double *v)
-{
+                         double tolerance, double *u, double *v) {
     *u = *v = .5;
     for (unsigned step = 0; step < 24; step++) {
         patch_point point, du, dv;
@@ -183,12 +184,12 @@ static int patch_inverse(patch_target *target, const patch_cell *cell, double x,
     }
     return 0;
 }
-static double patch_turn(patch_point a, patch_point b, patch_point c)
-{
+
+static double patch_turn(patch_point a, patch_point b, patch_point c) {
     return patch_cross(patch_sub(b, a), patch_sub(c, a));
 }
-static unsigned patch_hull(const patch_cell *cell, patch_point hull[32])
-{
+
+static unsigned patch_hull(const patch_cell *cell, patch_point hull[32]) {
     patch_point points[16];
     unsigned n = 0;
     for (unsigned j = 0; j < 4; j++)
@@ -221,8 +222,8 @@ static unsigned patch_hull(const patch_cell *cell, patch_point hull[32])
     }
     return count ? count - 1 : 0;
 }
-static int patch_sample(patch_target *target, unsigned x, unsigned y, double u, double v)
-{
+
+static int patch_sample(patch_target *target, unsigned x, unsigned y, double u, double v) {
     pdf_mesh_context *mesh = target->mesh;
     size_t pixel = (size_t)y * mesh->state->img->width + x;
     if (target->stamp[pixel] == target->serial) {
@@ -252,8 +253,8 @@ static int patch_sample(patch_target *target, unsigned x, unsigned y, double u, 
     target->stamp[pixel] = target->serial;
     return 1;
 }
-static int patch_walk(patch_target *target, const patch_cell *cell, unsigned depth)
-{
+
+static int patch_walk(patch_target *target, const patch_cell *cell, unsigned depth) {
     if (!patch_charge(target, 16))
         return 0;
     double xmin = cell->p[0][0].x, xmax = xmin, ymin = cell->p[0][0].y, ymax = ymin;
@@ -326,8 +327,7 @@ static int patch_walk(patch_target *target, const patch_cell *cell, unsigned dep
 }
 
 int cupidimage_pdf_paint_patches(pdf_mesh_context *mesh, const unsigned char *data, size_t length,
-                                 int type, int draw)
-{
+                                 int type, int draw) {
     if ((type != 6 && type != 7) || !length)
         return 0;
     patch_target target = {0};

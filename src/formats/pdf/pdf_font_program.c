@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static unsigned tt_named_glyph(const pdf_tt_font *f, const char *name)
-{
+static unsigned tt_named_glyph(const pdf_tt_font *f, const char *name) {
     uint32_t scalar = 0;
     int mapped = cupidimage_pdf_glyph_scalar(name, &scalar);
     unsigned glyph = 0;
@@ -26,10 +25,10 @@ static unsigned tt_named_glyph(const pdf_tt_font *f, const char *name)
         glyph = cupidimage_pdf_tt_name(f, name);
     return glyph;
 }
+
 static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
                                   const pdf_object_view *view, const pdf_object_view *descriptor,
-                                  pdf_font_program *program)
-{
+                                  pdf_font_program *program) {
     pdf_object_view encoding = {0}, differences = {0};
     size_t p;
     double flags = 0;
@@ -119,26 +118,26 @@ static int tt_pdf_simple_encoding(const unsigned char *data, size_t size,
     cupidimage_pdf_object_view_release(&encoding);
     return ok;
 }
-static unsigned ps_named_glyph(const void *context, const char *name)
-{
+
+static unsigned ps_named_glyph(const void *context, const char *name) {
     const pdf_font_program *program = context;
     return program->is_type1 ? cupidimage_pdf_type1_name(&program->type1, name)
                              : cupidimage_pdf_cff_name(&program->cff, name);
 }
+
 static int ps_pdf_encoding(const unsigned char *data, size_t size, const pdf_object_view *view,
-                           pdf_font_program *program)
-{
+                           pdf_font_program *program) {
     memcpy(program->glyphs, program->is_type1 ? program->type1.encoding : program->cff.encoding,
            sizeof(program->glyphs));
     return cupidimage_pdf_simple_encoding(data, size, view, program->glyphs, program,
                                           ps_named_glyph);
 }
-static uint32_t cff_sfnt_uint(const unsigned char *p)
-{
+
+static uint32_t cff_sfnt_uint(const unsigned char *p) {
     return (uint32_t)p[0] * 16777216u + (uint32_t)p[1] * 65536u + (unsigned)p[2] * 256u + p[3];
 }
-static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table)
-{
+
+static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table) {
     if (length < 12 || memcmp(data, "OTTO", 4))
         return 0;
     unsigned count = (unsigned)data[4] * 256 + data[5];
@@ -156,8 +155,8 @@ static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slic
     }
     return 0;
 }
-size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program)
-{
+
+size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
     return program
                ? sizeof(*program) + program->length + program->gid_length +
                      (program->is_cff ? 65536 * sizeof(uint16_t) +
@@ -171,8 +170,8 @@ size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program)
                           : 0)
                : 0;
 }
-void cupidimage_pdf_font_program_free(pdf_font_program *program)
-{
+
+void cupidimage_pdf_font_program_free(pdf_font_program *program) {
     if (program) {
         cupidimage_pdf_cff_free(&program->cff);
         cupidimage_pdf_type1_free(&program->type1);
@@ -181,8 +180,8 @@ void cupidimage_pdf_font_program_free(pdf_font_program *program)
         free(program);
     }
 }
-unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code)
-{
+
+unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code) {
     if (!program->cid)
         return code < 256 ? program->glyphs[code] : 0;
     if (program->is_cff)
@@ -194,8 +193,8 @@ unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsi
                     : 0;
     return glyph < program->font.glyphs ? glyph : 0;
 }
-int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code)
-{
+
+int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code) {
     if (program->is_type1)
         return code < 256 && program->glyphs[code] < program->type1.glyph_count;
     if (program->is_cff)
@@ -213,8 +212,8 @@ int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsig
     }
     return glyph > 0 && glyph < program->font.glyphs;
 }
-double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsigned glyph)
-{
+
+double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsigned glyph) {
     if (program->is_type1) {
         pdf_cff_outline outline;
         if (!cupidimage_pdf_type1_outline(&program->type1, glyph, &outline))
@@ -235,10 +234,10 @@ double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsi
     }
     return (double)cupidimage_pdf_tt_advance(&program->font, glyph) / program->font.units;
 }
+
 int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                       const pdf_object_view *view, pdf_font_map *font,
-                                      size_t *budget)
-{
+                                      size_t *budget) {
     int type1 = cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type1") ||
                 cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "MMType1");
     if (!font->cid && !cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "TrueType") &&

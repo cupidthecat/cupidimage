@@ -18,17 +18,18 @@ static unsigned checks, failures;
             failures++;                                                                            \
         }                                                                                          \
     } while (0)
+
 typedef struct {
     uint8_t bytes[2048];
     size_t size;
 } buffer;
-static void le32(uint8_t *p, size_t n)
-{
+
+static void le32(uint8_t *p, size_t n) {
     for (unsigned i = 0; i < 4; i++)
         p[i] = (uint8_t)(n >> (8 * i));
 }
-static void chunk(buffer *b, const char *tag, const uint8_t *p, size_t n)
-{
+
+static void chunk(buffer *b, const char *tag, const uint8_t *p, size_t n) {
     memcpy(b->bytes + b->size, tag, 4);
     le32(b->bytes + b->size + 4, n);
     b->size += 8;
@@ -38,8 +39,8 @@ static void chunk(buffer *b, const char *tag, const uint8_t *p, size_t n)
     if (n & 1)
         b->bytes[b->size++] = 0;
 }
-static buffer image(const uint8_t *alpha, size_t size, int extended)
-{
+
+static buffer image(const uint8_t *alpha, size_t size, int extended) {
     buffer b = {{0}, 12};
     memcpy(b.bytes, "RIFF", 4);
     memcpy(b.bytes + 8, "WEBP", 4);
@@ -56,8 +57,8 @@ static buffer image(const uint8_t *alpha, size_t size, int extended)
     le32(b.bytes + 4, b.size - 8);
     return b;
 }
-static void decode(const buffer *b, const uint8_t *alpha, int accepted)
-{
+
+static void decode(const buffer *b, const uint8_t *alpha, int accepted) {
     cupidimage_image out = {0};
     char error[128] = {0};
     int ok = cupidimage_load_webp(b->bytes, b->size, &out, error, sizeof(error));
@@ -74,21 +75,22 @@ static void decode(const buffer *b, const uint8_t *alpha, int accepted)
     }
     cupidimage_free(&out);
 }
+
 static unsigned bitpos;
-static void bits(uint8_t *p, unsigned value, unsigned n)
-{
+
+static void bits(uint8_t *p, unsigned value, unsigned n) {
     for (unsigned i = 0; i < n; i++, bitpos++)
         p[bitpos / 8] |= ((value >> i) & 1u) << (bitpos % 8);
 }
-static void single(uint8_t *p, unsigned v)
-{
+
+static void single(uint8_t *p, unsigned v) {
     bits(p, 1, 1);
     bits(p, 0, 1);
     bits(p, v > 1, 1);
     bits(p, v, v > 1 ? 8 : 1);
 }
-int main(void)
-{
+
+int main(void) {
     buffer b = image(NULL, 0, 0);
     decode(&b, NULL, 1);
     b = image(NULL, 0, 1);

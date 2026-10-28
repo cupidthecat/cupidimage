@@ -3,8 +3,7 @@
 
 static unsigned checks, failures;
 
-static size_t zlib_stream(unsigned char *out, const unsigned char *data, size_t size, int mixed)
-{
+static size_t zlib_stream(unsigned char *out, const unsigned char *data, size_t size, int mixed) {
     /* Complete dynamic tree: one-bit EOB and 15-bit unused symbols.
        Outputs a zero byte, then starts a final stored block. */
     static const unsigned char prefix[] = {0x78, 0x01, 0x04, 0xe0, 0x81, 0x92, 0x24, 0x49,
@@ -36,8 +35,7 @@ static size_t zlib_stream(unsigned char *out, const unsigned char *data, size_t 
     return pos;
 }
 
-static void test_pdf(int compressed, int mixed, int corrupt)
-{
+static void test_pdf(int compressed, int mixed, int corrupt) {
     static const unsigned char content[] = "0 g 10 10 20 20 re f\n";
     unsigned char idat[512];
     size_t size = zlib_stream(idat, content, sizeof(content) - 1, mixed);
@@ -66,20 +64,17 @@ static void test_pdf(int compressed, int mixed, int corrupt)
     cupidimage_free(&image);
 }
 
-static void le16(unsigned char *out, unsigned value)
-{
+static void le16(unsigned char *out, unsigned value) {
     out[0] = (unsigned char)value;
     out[1] = (unsigned char)(value >> 8);
 }
 
-static void le32(unsigned char *out, uint32_t value)
-{
+static void le32(unsigned char *out, uint32_t value) {
     for (unsigned i = 0; i < 4; i++)
         out[i] = (unsigned char)(value >> (i * 8));
 }
 
-static void test_tiff(unsigned compression, int mixed, int corrupt)
-{
+static void test_tiff(unsigned compression, int mixed, int corrupt) {
     unsigned char data[512] = {'I', 'I', 42, 0, 8};
     unsigned char raw[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     unsigned char idat[128];
@@ -124,8 +119,7 @@ static void test_tiff(unsigned compression, int mixed, int corrupt)
     cupidimage_free(&image);
 }
 
-int main(void)
-{
+int main(void) {
     test_pdf(0, 0, 0);
     test_pdf(1, 0, 0);
     test_pdf(1, 1, 0);

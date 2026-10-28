@@ -3,17 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int group_keyword(const pdf_object_view *view, const char *word)
-{
+static int group_keyword(const pdf_object_view *view, const char *word) {
     size_t pos = 0, length = strlen(word);
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
     return view->len - pos >= length && !memcmp(view->data + pos, word, length) &&
            (view->len - pos == length || cupidimage_pdf_is_ws(view->data[pos + length]) ||
             cupidimage_pdf_is_delim(view->data[pos + length]));
 }
+
 int cupidimage_pdf_dictionary_boolean(const pdf_render_state *st, const pdf_object_view *view,
-                                      const char *key, int *value)
-{
+                                      const char *key, int *value) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, key, &pos))
         return 1;
@@ -28,8 +27,8 @@ int cupidimage_pdf_dictionary_boolean(const pdf_render_state *st, const pdf_obje
     cupidimage_pdf_object_view_release(&entry);
     return ok;
 }
-static double group_initial_alpha(const pdf_transparency_group *group, size_t pixel)
-{
+
+static double group_initial_alpha(const pdf_transparency_group *group, size_t pixel) {
     if (group->isolated)
         return 0;
     if (group->parent) {
@@ -39,8 +38,8 @@ static double group_initial_alpha(const pdf_transparency_group *group, size_t pi
     }
     return group->backdrop->rgba[pixel * 4 + 3] / 255.0;
 }
-static void group_initial_color(const pdf_transparency_group *group, size_t pixel, double out[3])
-{
+
+static void group_initial_color(const pdf_transparency_group *group, size_t pixel, double out[3]) {
     if (!group->isolated && group->parent && group->parent->knockout) {
         group_initial_color(group->parent, pixel, out);
         return;
@@ -50,11 +49,11 @@ static void group_initial_color(const pdf_transparency_group *group, size_t pixe
                  : group->parent ? group->parent->color[pixel * 3 + i]
                                  : group->backdrop->rgba[pixel * 4 + i] / 255.0;
 }
+
 /* ISO 32000-1 11.4.8: shape controls replacement separately from opacity.
  * A knockout member uses the group's initial backdrop, not earlier members. */
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
-                                double alpha, double shape, int blend_mode)
-{
+                                double alpha, double shape, int blend_mode) {
     double a0 = group_initial_alpha(group, pixel), ag = group->alpha[pixel];
     double previous_alpha = ag + a0 * (1 - ag);
     double base_group_alpha = group->knockout ? 0 : ag;
@@ -87,9 +86,9 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
     group->shape[pixel] = shape + group->shape[pixel] * (1 - shape);
     group->image.rgba[pixel * 4 + 3] = cupidimage_pdf_clamp_u8(ar);
 }
+
 int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
-                                 int isolated, const double background[3])
-{
+                                 int isolated, const double background[3]) {
     if (background)
         for (unsigned i = 0; i < 3; i++)
             if (!isfinite(background[i]))
@@ -144,9 +143,9 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
     }
     return 1;
 }
+
 int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
-                               int required, int *gray)
-{
+                               int required, int *gray) {
     size_t pos;
     if (cupidimage_pdf_page_value(attributes, "CS", &pos)) {
         pdf_object_view space = {0};
@@ -178,9 +177,9 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
     }
     return 1;
 }
+
 int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
-                               const pdf_object_view *form, pdf_transparency_group *group)
-{
+                               const pdf_object_view *form, pdf_transparency_group *group) {
     size_t pos;
     if (!cupidimage_pdf_page_value(form, "Group", &pos))
         return 1;
@@ -220,9 +219,9 @@ done:
     cupidimage_pdf_object_view_release(&attributes);
     return ok;
 }
+
 /* A displayed page is an isolated group, even when I is false or omitted. */
-int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group *group)
-{
+int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group *group) {
     pdf_object_view page = {0}, attributes = {0};
     size_t pos;
     int ok = 0, gray = 0, ignored_isolation = 0, knockout = 0;
@@ -254,8 +253,7 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group)
-{
+int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group) {
     if (!group->image.rgba)
         return 1;
     size_t pixels = (size_t)group->image.width * group->image.height;
@@ -283,8 +281,8 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
         }
     return !parent->image_failed;
 }
-void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group)
-{
+
+void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group) {
     if (group->image.rgba) {
         parent->form_budget->transparency_bytes_live -= group->bytes;
         free(group->image.rgba);

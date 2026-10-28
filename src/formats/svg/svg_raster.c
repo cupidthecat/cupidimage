@@ -23,8 +23,7 @@
 
 void cupidimage_svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style,
                                       const svg_matrix *m, float x, float y, float w, float h,
-                                      float rx, float ry)
-{
+                                      float rx, float ry) {
     if (w <= 0.0f || h <= 0.0f) {
         return;
     }
@@ -254,8 +253,7 @@ void cupidimage_svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *styl
 
 void cupidimage_svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style,
                                          const svg_matrix *m, float cx, float cy, float rx,
-                                         float ry)
-{
+                                         float ry) {
     if (rx <= 0.0f || ry <= 0.0f) {
         return;
     }
@@ -422,8 +420,7 @@ void cupidimage_svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *s
 }
 
 void cupidimage_svg_draw_samples_line(svg_render_ctx *ctx, const svg_style *style,
-                                      const svg_matrix *m, float x0, float y0, float x1, float y1)
-{
+                                      const svg_matrix *m, float x0, float y0, float x1, float y1) {
     if (style->stroke_type == SVG_PAINT_NONE || style->stroke_width <= 0.0f) {
         return;
     }
@@ -437,8 +434,7 @@ void cupidimage_svg_draw_samples_line(svg_render_ctx *ctx, const svg_style *styl
 void cupidimage_svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style,
                                        const svg_matrix *m, const cupidimage_image *img, float x,
                                        float y, float w, float h, int preserve_none, float align_x,
-                                       float align_y)
-{
+                                       float align_y) {
     if (!ctx || !style || !m || !img || !img->rgba || img->width == 0 || img->height == 0) {
         return;
     }
@@ -545,8 +541,7 @@ void cupidimage_svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *sty
 }
 
 void cupidimage_svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style,
-                                          const svg_matrix *m, const svg_segments *segs)
-{
+                                          const svg_matrix *m, const svg_segments *segs) {
     if (segs->stroke_count == 0 && segs->fill_count == 0) {
         return;
     }

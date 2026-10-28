@@ -3,29 +3,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int mask_null(const pdf_object_view *view)
-{
+static int mask_null(const pdf_object_view *view) {
     size_t p = 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &p);
     return view->len - p >= 4 && !memcmp(view->data + p, "null", 4) &&
            (view->len - p == 4 || cupidimage_pdf_is_ws(view->data[p + 4]) ||
             cupidimage_pdf_is_delim(view->data[p + 4]));
 }
-void cupidimage_pdf_soft_mask_retain(pdf_soft_mask *mask)
-{
+
+void cupidimage_pdf_soft_mask_retain(pdf_soft_mask *mask) {
     if (mask)
         mask->references++;
 }
-void cupidimage_pdf_soft_mask_release(pdf_render_state *st, pdf_soft_mask *mask)
-{
+
+void cupidimage_pdf_soft_mask_release(pdf_render_state *st, pdf_soft_mask *mask) {
     if (mask && --mask->references == 0) {
         st->form_budget->transparency_bytes_live -= mask->bytes;
         free(mask);
     }
 }
+
 int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state *graphics,
-                                  const pdf_object_view *view, pdf_soft_mask **out, int *replace)
-{
+                                  const pdf_object_view *view, pdf_soft_mask **out, int *replace) {
     pdf_object_view dictionary = {0}, form = {0}, attributes = {0}, transfer = {0};
     pdf_render_state *temporary = NULL;
     pdf_function_tree *function = NULL;

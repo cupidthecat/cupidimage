@@ -3,8 +3,7 @@
 #include <string.h>
 
 int cupidimage_pdf_shading_colors(const pdf_render_state *st, const pdf_object_view *view,
-                                  pdf_image_colors *colors)
-{
+                                  pdf_image_colors *colors) {
     pdf_object_view value = {0};
     size_t pos = 0;
     int ok = cupidimage_pdf_dictionary_value(st->document, st->document_size, view, "ColorSpace",
@@ -15,8 +14,7 @@ int cupidimage_pdf_shading_colors(const pdf_render_state *st, const pdf_object_v
     return ok;
 }
 
-static int pdf_shading_extend(const pdf_object_view *view, int extend[2])
-{
+static int pdf_shading_extend(const pdf_object_view *view, int extend[2]) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, "Extend", &pos))
         return 1;
@@ -40,8 +38,7 @@ static int pdf_shading_extend(const pdf_object_view *view, int extend[2])
 }
 
 static int pdf_radial_parameter(const double coords[6], const int extend[2], double x, double y,
-                                double *parameter)
-{
+                                double *parameter) {
     double dx = coords[3] - coords[0], dy = coords[4] - coords[1], dr = coords[5] - coords[2];
     double px = x - coords[0], py = y - coords[1];
     double a = dx * dx + dy * dy - dr * dr, b = -2 * (px * dx + py * dy + coords[2] * dr),
@@ -83,8 +80,7 @@ static int pdf_radial_parameter(const double coords[6], const int extend[2], dou
 }
 
 static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view *view,
-                                    pdf_function_tree *function, int background)
-{
+                                    pdf_function_tree *function, int background) {
     int type;
     size_t pos;
     pdf_image_colors colors = {0};
@@ -214,8 +210,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
 }
 
 int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_view *view,
-                                      int background)
-{
+                                      int background) {
     int type;
     if (!cupidimage_pdf_image_integer(st, view, "ShadingType", &type))
         return 0;
@@ -227,8 +222,7 @@ int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_vie
     return ok;
 }
 
-int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name)
-{
+int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name) {
     if (!st->form_budget->calls_left)
         return 0;
     st->form_budget->calls_left--;

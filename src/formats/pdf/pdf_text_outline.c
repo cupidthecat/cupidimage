@@ -7,17 +7,18 @@
 typedef struct {
     double x, y;
 } outline_point;
+
 typedef struct {
     outline_point a, control, b;
     int quadratic;
     outline_point control2;
 } outline_edge;
-static outline_point outline_mid(outline_point a, outline_point b)
-{
+
+static outline_point outline_mid(outline_point a, outline_point b) {
     return (outline_point){(a.x + b.x) * .5, (a.y + b.y) * .5};
 }
-static int outline_line(pdf_path *path, outline_point a, outline_point b, int first)
-{
+
+static int outline_line(pdf_path *path, outline_point a, outline_point b, int first) {
     if (path->seg_count == 4096)
         return 0;
     if (!isfinite(a.x) || !isfinite(a.y) || !isfinite(b.x) || !isfinite(b.y) || fabs(a.x) > 1e30 ||
@@ -27,9 +28,9 @@ static int outline_line(pdf_path *path, outline_point a, outline_point b, int fi
         (pdf_seg){(float)a.x, (float)a.y, (float)b.x, (float)b.y, first, 0};
     return 1;
 }
+
 static int outline_quad(pdf_path *path, outline_point a, outline_point control, outline_point b,
-                        int first, unsigned depth)
-{
+                        int first, unsigned depth) {
     double vx = b.x - a.x, vy = b.y - a.y, dx = control.x - a.x, dy = control.y - a.y;
     double length = vx * vx + vy * vy,
            t = length ? fmax(0, fmin(1, (dx * vx + dy * vy) / length)) : 0;
@@ -44,17 +45,17 @@ static int outline_quad(pdf_path *path, outline_point a, outline_point control, 
     return outline_quad(path, a, ac, mid, first, depth + 1) &&
            outline_quad(path, mid, cb, b, 0, depth + 1);
 }
-static double outline_distance(outline_point a, outline_point b, outline_point p)
-{
+
+static double outline_distance(outline_point a, outline_point b, outline_point p) {
     double x = b.x - a.x, y = b.y - a.y, dx = p.x - a.x, dy = p.y - a.y, length = x * x + y * y;
     double t = length ? fmax(0, fmin(1, (dx * x + dy * y) / length)) : 0;
     dx -= t * x;
     dy -= t * y;
     return dx * dx + dy * dy;
 }
+
 static int outline_cubic(pdf_path *path, outline_point a, outline_point c1, outline_point c2,
-                         outline_point b, int first, unsigned depth)
-{
+                         outline_point b, int first, unsigned depth) {
     if (fmax(outline_distance(a, b, c1), outline_distance(a, b, c2)) <= .015625)
         return outline_line(path, a, b, first);
     if (depth == 16)
@@ -65,9 +66,9 @@ static int outline_cubic(pdf_path *path, outline_point a, outline_point c1, outl
     return outline_cubic(path, a, ac, left, mid, first, depth + 1) &&
            outline_cubic(path, mid, right, cb, b, 0, depth + 1);
 }
+
 static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outline_edge *edges,
-                            unsigned *count, const double m[6])
-{
+                            unsigned *count, const double m[6]) {
     outline_point current = {0};
     int first = 1;
     for (unsigned i = 0; i < outline->count; i++) {
@@ -107,9 +108,9 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
     }
     return 1;
 }
+
 static int outline_path(pdf_tt_outline *outline, pdf_path *path, outline_edge *edges,
-                        unsigned *edge_count, const double m[6])
-{
+                        unsigned *edge_count, const double m[6]) {
     for (unsigned i = 0; i < outline->count; i++) {
         double x = outline->points[i].x, y = outline->points[i].y;
         outline->points[i].x = m[0] * x + m[2] * y + m[4];
@@ -170,17 +171,17 @@ static int outline_path(pdf_tt_outline *outline, pdf_path *path, outline_edge *e
     }
     return 1;
 }
-static double outline_bezier(double a, double c, double b, double t)
-{
+
+static double outline_bezier(double a, double c, double b, double t) {
     double ac = a + (c - a) * t, cb = c + (b - c) * t;
     return ac + (cb - ac) * t;
 }
-static double outline_bezier3(double a, double c1, double c2, double b, double t)
-{
+
+static double outline_bezier3(double a, double c1, double c2, double b, double t) {
     return outline_bezier(a + (c1 - a) * t, c1 + (c2 - c1) * t, c2 + (b - c2) * t, t);
 }
-static int outline_cubic_winding(const outline_edge *e, double x, double y)
-{
+
+static int outline_cubic_winding(const outline_edge *e, double x, double y) {
     double a = -e->a.y + 3 * e->control.y - 3 * e->control2.y + e->b.y,
            b = 2 * (e->a.y - 2 * e->control.y + e->control2.y), c = e->control.y - e->a.y;
     double roots[2], cuts[4] = {0, 1, 1, 1};
@@ -228,10 +229,10 @@ static int outline_cubic_winding(const outline_edge *e, double x, double y)
     }
     return winding;
 }
+
 /* Intersect the original quadratic, not its display-scale stroke tessellation.
    Splitting at the Y extremum gives the same half-open edge rule as lines. */
-static int outline_winding(const outline_edge *edges, unsigned count, double x, double y)
-{
+static int outline_winding(const outline_edge *edges, unsigned count, double x, double y) {
     int winding = 0;
     for (unsigned i = 0; i < count; i++) {
         const outline_edge *e = edges + i;
@@ -291,9 +292,9 @@ static int outline_winding(const outline_edge *edges, unsigned count, double x, 
     }
     return winding;
 }
+
 int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_program *program,
-                                           unsigned glyph)
-{
+                                           unsigned glyph) {
     if (st->gs.text_mode == 3 || st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0)
         return 1;
     if (!st->form_budget->glyph_calls_left)

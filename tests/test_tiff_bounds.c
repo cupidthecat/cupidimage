@@ -8,14 +8,12 @@ static unsigned checks, failures;
 static unsigned expected_height = 1;
 static unsigned char data[512];
 
-static void put64(size_t offset, uint64_t value)
-{
+static void put64(size_t offset, uint64_t value) {
     for (unsigned i = 0; i < 8; i++)
         data[offset + i] = (unsigned char)(value >> (i * 8));
 }
 
-static void tag(unsigned index, unsigned number, unsigned type, uint64_t count, uint64_t value)
-{
+static void tag(unsigned index, unsigned number, unsigned type, uint64_t count, uint64_t value) {
     size_t offset = 24 + index * 20;
     data[offset] = (unsigned char)number;
     data[offset + 1] = (unsigned char)(number >> 8);
@@ -24,8 +22,7 @@ static void tag(unsigned index, unsigned number, unsigned type, uint64_t count, 
     put64(offset + 12, value);
 }
 
-static void fixture(unsigned compression, int tiled)
-{
+static void fixture(unsigned compression, int tiled) {
     expected_height = 1;
     memset(data, 0, sizeof(data));
     data[0] = data[1] = 'I';
@@ -49,8 +46,7 @@ static void fixture(unsigned compression, int tiled)
     data[400] = 73;
 }
 
-static void check(const char *name, size_t size, int expected)
-{
+static void check(const char *name, size_t size, int expected) {
     cupidimage_image image = {0};
     char error[128] = {0};
     int ok = cupidimage_load_tiff(data, size, &image, error, sizeof(error));
@@ -71,8 +67,7 @@ static void check(const char *name, size_t size, int expected)
     cupidimage_free(&image);
 }
 
-int main(void)
-{
+int main(void) {
     fixture(1, 0);
     check("valid BigTIFF strip", sizeof(data), 1);
     fixture(1, 1);

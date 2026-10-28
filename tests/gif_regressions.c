@@ -7,14 +7,14 @@
 /* Compile only the GIF decoder with these allocator names. Always move a
  * successful realloc so stale cleanup pointers are caught under ASan. */
 static size_t allocation_count, fail_at;
+
 typedef union allocation_header {
     size_t size;
     long double alignment;
     void *pointer_alignment;
 } allocation_header;
 
-void *gif_test_malloc(size_t size)
-{
+void *gif_test_malloc(size_t size) {
     allocation_header *h;
     if (++allocation_count == fail_at)
         return NULL;
@@ -26,14 +26,12 @@ void *gif_test_malloc(size_t size)
     return h + 1;
 }
 
-void gif_test_free(void *p)
-{
+void gif_test_free(void *p) {
     if (p)
         free((allocation_header *)p - 1);
 }
 
-void *gif_test_realloc(void *p, size_t size)
-{
+void *gif_test_realloc(void *p, size_t size) {
     void *next = gif_test_malloc(size);
     if (!next)
         return NULL;
@@ -58,18 +56,16 @@ static int failures, checks;
         }                                                                                          \
     } while (0)
 
-static void byte(unsigned v)
-{
+static void byte(unsigned v) {
     fixture[fixture_size++] = (unsigned char)v;
 }
-static void le16(unsigned v)
-{
+
+static void le16(unsigned v) {
     byte(v);
     byte(v >> 8);
 }
 
-static void header(int full_palette)
-{
+static void header(int full_palette) {
     fixture_size = 0;
     memcpy(fixture, "GIF89a", 6);
     fixture_size = 6;
@@ -85,8 +81,7 @@ static void header(int full_palette)
     }
 }
 
-static void frame(unsigned w, unsigned h, unsigned left, unsigned disposal)
-{
+static void frame(unsigned w, unsigned h, unsigned left, unsigned disposal) {
     byte(0x21);
     byte(0xf9);
     byte(4);
@@ -107,8 +102,7 @@ static void frame(unsigned w, unsigned h, unsigned left, unsigned disposal)
     byte(0); /* clear, 0, end */
 }
 
-static void test_pixels(void)
-{
+static void test_pixels(void) {
     char err[128];
     for (int full = 0; full < 2; full++) {
         cupidimage_image img = {0};
@@ -134,8 +128,7 @@ static void test_pixels(void)
     }
 }
 
-static void test_invalid_dimensions(void)
-{
+static void test_invalid_dimensions(void) {
     char err[128];
     for (int which = 0; which < 3; which++) {
         cupidimage_image img = {0};
@@ -150,8 +143,7 @@ static void test_invalid_dimensions(void)
     }
 }
 
-static void test_allocation_failures(void)
-{
+static void test_allocation_failures(void) {
     char err[128];
     cupidimage_animation anim = {0};
     header(0);
@@ -173,8 +165,7 @@ static void test_allocation_failures(void)
     fail_at = 0;
 }
 
-static void test_truncation(void)
-{
+static void test_truncation(void) {
     char err[128];
     header(0);
     frame(1, 1, 0, 0);
@@ -189,8 +180,7 @@ static void test_truncation(void)
     }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     /* Individual modes also allow baseline crash reproduction. */
     if (argc == 1 || strcmp(argv[1], "pixels") == 0)
         test_pixels();

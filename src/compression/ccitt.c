@@ -4,12 +4,13 @@
 #include <string.h>
 
 #define FAX_LIMIT (64u * 1024u * 1024u)
+
 typedef struct {
     const unsigned char *data;
     size_t length, bit, work;
 } fax_bits;
-static int fax_bit(fax_bits *bits, int *value)
-{
+
+static int fax_bit(fax_bits *bits, int *value) {
     if (bits->bit / 8 >= bits->length || !bits->work)
         return 0;
     bits->work--;
@@ -17,8 +18,8 @@ static int fax_bit(fax_bits *bits, int *value)
     bits->bit++;
     return 1;
 }
-static int fax_eol(fax_bits *bits)
-{
+
+static int fax_eol(fax_bits *bits) {
     size_t save = bits->bit;
     int bit, zeros = 0;
     while (zeros < 4096 && fax_bit(bits, &bit)) {
@@ -32,8 +33,8 @@ static int fax_eol(fax_bits *bits)
     bits->bit = save;
     return 0;
 }
-static int fax_end(fax_bits *bits, int k)
-{
+
+static int fax_end(fax_bits *bits, int k) {
     size_t save = bits->bit;
     int count = k < 0 ? 2 : 6;
     for (int i = 0; i < count; i++) {
@@ -51,8 +52,8 @@ static int fax_end(fax_bits *bits, int k)
     }
     return 1;
 }
-static int fax_run(fax_bits *bits, int black, uint32_t remaining, uint32_t *result)
-{
+
+static int fax_run(fax_bits *bits, int black, uint32_t remaining, uint32_t *result) {
     const ccitt_code *term = black ? ccitt_black_term : ccitt_white_term;
     const ccitt_code *makeup = black ? ccitt_black_makeup : ccitt_white_makeup;
     size_t makeup_count = black ? sizeof(ccitt_black_makeup) / sizeof(*makeup)
@@ -88,15 +89,15 @@ static int fax_run(fax_bits *bits, int black, uint32_t remaining, uint32_t *resu
         }
     }
 }
-static void fax_paint(unsigned char *row, uint32_t start, uint32_t end, int black)
-{
+
+static void fax_paint(unsigned char *row, uint32_t start, uint32_t end, int black) {
     if (!black)
         return;
     for (uint32_t x = start; x < end; x++)
         row[x / 8] |= (unsigned char)(128u >> (x % 8));
 }
-static int fax_1d(fax_bits *bits, unsigned char *row, uint32_t width)
-{
+
+static int fax_1d(fax_bits *bits, unsigned char *row, uint32_t width) {
     uint32_t x = 0, steps = 0;
     int black = 0;
     while (x < width) {
@@ -109,10 +110,10 @@ static int fax_1d(fax_bits *bits, unsigned char *row, uint32_t width)
     }
     return 1;
 }
+
 /* Reference transitions alternate white-to-black and black-to-white; sentinels
    at Columns supply both imaginary transitions beyond the reference line. */
-static size_t fax_transitions(const unsigned char *row, uint32_t width, uint32_t *edges)
-{
+static size_t fax_transitions(const unsigned char *row, uint32_t width, uint32_t *edges) {
     size_t count = 0;
     int black = 0;
     for (uint32_t x = 0; x < width; x++) {
@@ -126,9 +127,9 @@ static size_t fax_transitions(const unsigned char *row, uint32_t width, uint32_t
     edges[count++] = width;
     return count;
 }
+
 static int fax_2d(fax_bits *bits, unsigned char *row, uint32_t width, const uint32_t *edges,
-                  size_t edge_count)
-{
+                  size_t edge_count) {
     uint32_t x = 0, steps = 0;
     int black = 0, initial = 1;
     while (x < width) {
@@ -195,8 +196,8 @@ static int fax_2d(fax_bits *bits, unsigned char *row, uint32_t width, const uint
     }
     return 1;
 }
-static int fax_empty_tail(const fax_bits *bits)
-{
+
+static int fax_empty_tail(const fax_bits *bits) {
     size_t remaining = bits->length * 8 - bits->bit;
     if (remaining > 7)
         return 0;
@@ -205,10 +206,10 @@ static int fax_empty_tail(const fax_bits *bits)
             return 0;
     return 1;
 }
+
 /* Find the next row boundary without consuming it. Re-reading a malformed
    row still spends the shared work budget, so recovery cannot loop forever. */
-static int fax_resync(fax_bits *bits, size_t start)
-{
+static int fax_resync(fax_bits *bits, size_t start) {
     bits->bit = start;
     size_t zero_start = start;
     unsigned zeros = 0;
@@ -229,10 +230,10 @@ static int fax_resync(fax_bits *bits, size_t start)
     }
     return 0;
 }
+
 int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
                             const cupidimage_ccitt_options *o, unsigned char **output,
-                            size_t *output_length)
-{
+                            size_t *output_length) {
     if (!output || !output_length)
         return 0;
     *output = NULL;

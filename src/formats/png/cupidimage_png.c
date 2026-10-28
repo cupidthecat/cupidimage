@@ -4,20 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
 }
 
-static uint32_t read_be32(const unsigned char *p)
-{
+static uint32_t read_be32(const unsigned char *p) {
     return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
 }
 
-static uint8_t paeth(uint8_t a, uint8_t b, uint8_t c)
-{
+static uint8_t paeth(uint8_t a, uint8_t b, uint8_t c) {
     int p = (int)a + (int)b - (int)c;
     int pa = abs(p - (int)a);
     int pb = abs(p - (int)b);
@@ -32,8 +29,7 @@ static uint8_t paeth(uint8_t a, uint8_t b, uint8_t c)
 }
 
 static int unfilter(const uint8_t *raw, size_t raw_size, uint8_t *recon, size_t rowbytes,
-                    uint32_t height, int bpp)
-{
+                    uint32_t height, int bpp) {
     size_t expected = (rowbytes + 1) * (size_t)height;
     if (raw_size < expected) {
         return 0;
@@ -86,8 +82,7 @@ static int unfilter(const uint8_t *raw, size_t raw_size, uint8_t *recon, size_t 
 }
 
 static int calc_rowbytes(uint32_t width, uint8_t color_type, uint8_t bit_depth, int channels,
-                         size_t *rowbytes_out, int *bpp_out)
-{
+                         size_t *rowbytes_out, int *bpp_out) {
     if (color_type == 3 || (color_type == 0 && bit_depth < 8)) {
         size_t bits_per_row = (size_t)width * (size_t)bit_depth;
         if (width > 0 && bits_per_row / (size_t)bit_depth != (size_t)width) {
@@ -111,8 +106,7 @@ static int calc_rowbytes(uint32_t width, uint8_t color_type, uint8_t bit_depth, 
     return 1;
 }
 
-static uint8_t palette_index_at(const uint8_t *row, uint32_t x, uint8_t bit_depth)
-{
+static uint8_t palette_index_at(const uint8_t *row, uint32_t x, uint8_t bit_depth) {
     if (bit_depth == 8) {
         return row[x];
     }
@@ -130,8 +124,7 @@ static uint8_t palette_index_at(const uint8_t *row, uint32_t x, uint8_t bit_dept
     return (uint8_t)(((uint32_t)byte >> shift) & 0x01u);
 }
 
-static uint8_t gray_sample_at(const uint8_t *row, uint32_t x, uint8_t bit_depth)
-{
+static uint8_t gray_sample_at(const uint8_t *row, uint32_t x, uint8_t bit_depth) {
     if (bit_depth == 8) {
         return row[x];
     }
@@ -149,19 +142,16 @@ static uint8_t gray_sample_at(const uint8_t *row, uint32_t x, uint8_t bit_depth)
     return (uint8_t)(((uint32_t)byte >> shift) & 0x01u);
 }
 
-static uint8_t sample16_to_8(uint16_t v)
-{
+static uint8_t sample16_to_8(uint16_t v) {
     return (uint8_t)((v + 128u) / 257u);
 }
 
-static uint16_t read_be16(const uint8_t *p)
-{
+static uint16_t read_be16(const uint8_t *p) {
     return (uint16_t)(((uint16_t)p[0] << 8) | p[1]);
 }
 
 static uint8_t transparency_alpha(const uint8_t *row, uint32_t x, uint8_t bit_depth,
-                                  uint8_t color_type, const uint8_t *trns)
-{
+                                  uint8_t color_type, const uint8_t *trns) {
     unsigned mask = (1u << bit_depth) - 1u;
     if (color_type == 0) {
         uint16_t sample =
@@ -178,8 +168,7 @@ static uint8_t transparency_alpha(const uint8_t *row, uint32_t x, uint8_t bit_de
 }
 
 int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                        size_t errcap)
-{
+                        size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -782,7 +771,6 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
     return 1;
 }
 
-int cupidimage_load_png_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_png_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_png);
 }

@@ -3,15 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-static uint32_t cff_uint(const unsigned char *p, unsigned n)
-{
+static uint32_t cff_uint(const unsigned char *p, unsigned n) {
     uint32_t value = 0;
     for (unsigned i = 0; i < n; i++)
         value = value * 256 + p[i];
     return value;
 }
-int cupidimage_pdf_cff_index(pdf_cff_slice source, size_t *position, pdf_cff_index *index)
-{
+
+int cupidimage_pdf_cff_index(pdf_cff_slice source, size_t *position, pdf_cff_index *index) {
     memset(index, 0, sizeof(*index));
     size_t pos = *position;
     if (pos > source.length || source.length - pos < 2)
@@ -44,8 +43,8 @@ int cupidimage_pdf_cff_index(pdf_cff_slice source, size_t *position, pdf_cff_ind
     *position = pos + previous - 1;
     return 1;
 }
-int cupidimage_pdf_cff_item(const pdf_cff_index *index, unsigned item, pdf_cff_slice *slice)
-{
+
+int cupidimage_pdf_cff_item(const pdf_cff_index *index, unsigned item, pdf_cff_slice *slice) {
     *slice = (pdf_cff_slice){0};
     if (item >= index->count || !index->offset_size || index->offset_size > 4 ||
         index->offsets.length < ((size_t)item + 2) * index->offset_size)
@@ -58,8 +57,8 @@ int cupidimage_pdf_cff_item(const pdf_cff_index *index, unsigned item, pdf_cff_s
     *slice = (pdf_cff_slice){index->objects.data + start - 1, end - start};
     return 1;
 }
-static int cff_number(pdf_cff_slice source, size_t *position, double *value)
-{
+
+static int cff_number(pdf_cff_slice source, size_t *position, double *value) {
     size_t pos = *position;
     if (pos >= source.length)
         return 0;
@@ -116,16 +115,16 @@ static int cff_number(pdf_cff_slice source, size_t *position, double *value)
     *position = pos;
     return 1;
 }
-static int cff_offset(double value, size_t *offset)
-{
+
+static int cff_offset(double value, size_t *offset) {
     /* PDF font programs have a 16 MiB outer bound; this also avoids unsafe casts. */
     if (!isfinite(value) || value < 0 || value > 16u * 1024u * 1024u || floor(value) != value)
         return 0;
     *offset = (size_t)value;
     return 1;
 }
-int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int private_dict)
-{
+
+int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int private_dict) {
     memset(dict, 0, sizeof(*dict));
     dict->matrix[0] = dict->matrix[3] = .001;
     double operands[48];
@@ -203,23 +202,23 @@ int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int privat
 }
 
 #include "cff_tables.inc"
-static int cff_slice(pdf_cff_slice source, size_t start, size_t length, pdf_cff_slice *out)
-{
+
+static int cff_slice(pdf_cff_slice source, size_t start, size_t length, pdf_cff_slice *out) {
     if (start > source.length || length > source.length - start)
         return 0;
     *out = (pdf_cff_slice){source.data + start, length};
     return 1;
 }
-static int cff_selector(pdf_cff_font *font, unsigned gid, unsigned sid)
-{
+
+static int cff_selector(pdf_cff_font *font, unsigned gid, unsigned sid) {
     if (!sid || sid > 65535 || font->selectors[sid] ||
         (!font->top.cid && (sid >= 65000 || sid >= 391 + font->strings.count)))
         return 0;
     font->selectors[sid] = (uint16_t)gid;
     return 1;
 }
-static int cff_charset(pdf_cff_font *font)
-{
+
+static int cff_charset(pdf_cff_font *font) {
     size_t pos = font->top.charset;
     unsigned count = font->chars.count;
     if (pos <= 2) {
@@ -257,8 +256,8 @@ static int cff_charset(pdf_cff_font *font)
     }
     return 1;
 }
-static int cff_encoding(pdf_cff_font *font)
-{
+
+static int cff_encoding(pdf_cff_font *font) {
     if (font->top.cid)
         return 1;
     size_t pos = font->top.encoding;
@@ -303,8 +302,8 @@ static int cff_encoding(pdf_cff_font *font)
     }
     return 1;
 }
-static int cff_private(pdf_cff_font *font, const pdf_cff_dict *owner, pdf_cff_private *result)
-{
+
+static int cff_private(pdf_cff_font *font, const pdf_cff_dict *owner, pdf_cff_private *result) {
     pdf_cff_slice data;
     pdf_cff_dict dict;
     if (!cff_slice(font->source, owner->private_offset, owner->private_size, &data) ||
@@ -324,8 +323,8 @@ static int cff_private(pdf_cff_font *font, const pdf_cff_dict *owner, pdf_cff_pr
     memcpy(result->matrix, owner->matrix, sizeof(result->matrix));
     return 1;
 }
-static int cff_fdselect(pdf_cff_font *font)
-{
+
+static int cff_fdselect(pdf_cff_font *font) {
     size_t pos = font->top.fdselect;
     if (!pos || pos >= font->source.length)
         return 0;
@@ -358,15 +357,15 @@ static int cff_fdselect(pdf_cff_font *font)
     }
     return 1;
 }
-void cupidimage_pdf_cff_free(pdf_cff_font *font)
-{
+
+void cupidimage_pdf_cff_free(pdf_cff_font *font) {
     free(font->selectors);
     free(font->fdselect);
     free(font->private_dicts);
     memset(font, 0, sizeof(*font));
 }
-int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_t length)
-{
+
+int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_t length) {
     memset(font, 0, sizeof(*font));
     if (length < 4 || length > 16u * 1024u * 1024u || data[0] != 1 || data[1] != 0 || data[2] < 4 ||
         data[2] > length || data[3] < 1 || data[3] > 4)
@@ -437,8 +436,8 @@ fail:
     cupidimage_pdf_cff_free(font);
     return 0;
 }
-unsigned cupidimage_pdf_cff_name(const pdf_cff_font *font, const char *name)
-{
+
+unsigned cupidimage_pdf_cff_name(const pdf_cff_font *font, const char *name) {
     for (unsigned i = 0; i < 391; i++)
         if (!strcmp(name, cff_strings[i]))
             return font->selectors[i];
@@ -452,7 +451,6 @@ unsigned cupidimage_pdf_cff_name(const pdf_cff_font *font, const char *name)
     return 0;
 }
 
-unsigned cupidimage_pdf_cff_standard_glyph(const pdf_cff_font *font, unsigned code)
-{
+unsigned cupidimage_pdf_cff_standard_glyph(const pdf_cff_font *font, unsigned code) {
     return code < 256 ? font->selectors[cff_standard_encoding[code]] : 0;
 }

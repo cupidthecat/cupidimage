@@ -35,8 +35,7 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
                           float anim_time, const svg_defs *defs, svg_bbox *out_bbox);
 
 static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *content,
-                                          const svg_matrix *gm, float dpi)
-{
+                                          const svg_matrix *gm, float dpi) {
     if (!ctx || !content || !*content || !gm) {
         return 0;
     }
@@ -95,16 +94,14 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
     return 1;
 }
 
-static float svg_segment_angle_deg(const svg_segment *seg)
-{
+static float svg_segment_angle_deg(const svg_segment *seg) {
     if (!seg) {
         return 0.0f;
     }
     return atan2f(seg->y1 - seg->y0, seg->x1 - seg->x0) * (180.0f / (float)M_PI);
 }
 
-static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next)
-{
+static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next) {
     if (!prev || !next) {
         return 0.0f;
     }
@@ -135,8 +132,7 @@ static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next
 
 static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, const svg_matrix *m,
                                      float px, float py, float angle_deg, float stroke_width,
-                                     float dpi)
-{
+                                     float dpi) {
     if (!ctx || !mk || !m || !mk->content || !*mk->content) {
         return;
     }
@@ -203,8 +199,8 @@ static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, 
 }
 
 static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style,
-                                          const svg_matrix *m, const svg_segments *segs, float dpi)
-{
+                                          const svg_matrix *m, const svg_segments *segs,
+                                          float dpi) {
     if (!ctx || !style || !m || !segs || segs->stroke_count == 0) {
         return;
     }
@@ -244,8 +240,7 @@ static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *
 
 static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
                           const svg_tag *tag, const char *local, float dpi, char *child_start,
-                          float anim_time, const svg_defs *defs, svg_bbox *out_bbox)
-{
+                          float anim_time, const svg_defs *defs, svg_bbox *out_bbox) {
     if (!ctx || !style || !m || !tag || !local) {
         return 0;
     }
@@ -635,8 +630,7 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
 }
 
 int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err,
-                          size_t errcap, const cupidimage_svg_options *opts)
-{
+                          size_t errcap, const cupidimage_svg_options *opts) {
     float dpi = opts ? opts->dpi : 96.0f;
     float anim_time = opts ? opts->animation_time : 0.0f;
     if (dpi <= 0.0f) {
@@ -1108,8 +1102,7 @@ int cupidimage_svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t
 }
 
 int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size, uint32_t *width,
-                                  uint32_t *height, char *err, size_t errcap)
-{
+                                  uint32_t *height, char *err, size_t errcap) {
     if (!data || !width || !height) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;

@@ -6,8 +6,7 @@
 
 int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
                                        const pdf_object_view *view, pdf_font_map *font,
-                                       size_t *budget)
-{
+                                       size_t *budget) {
     if (font->program || font->cid || font->type3 ||
         !cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type1"))
         return 1;

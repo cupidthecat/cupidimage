@@ -1,15 +1,14 @@
 #include "truetype.h"
 
-static unsigned cmap_u16(const unsigned char *p)
-{
+static unsigned cmap_u16(const unsigned char *p) {
     return (unsigned)p[0] * 256 + p[1];
 }
-static uint32_t cmap_u32(const unsigned char *p)
-{
+
+static uint32_t cmap_u32(const unsigned char *p) {
     return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
 }
-static unsigned tt_cmap(const unsigned char *p, size_t length, uint32_t code)
-{
+
+static unsigned tt_cmap(const unsigned char *p, size_t length, uint32_t code) {
     if (length < 4)
         return 0;
     unsigned format = cmap_u16(p);
@@ -124,8 +123,8 @@ static unsigned tt_cmap(const unsigned char *p, size_t length, uint32_t code)
     }
     return 0;
 }
-unsigned cupidimage_pdf_tt_map(const pdf_tt_font *f, uint32_t code, int platform, int encoding)
-{
+
+unsigned cupidimage_pdf_tt_map(const pdf_tt_font *f, uint32_t code, int platform, int encoding) {
     const unsigned char *p = f->cmap.data;
     size_t length = f->cmap.length;
     if (length < 4 || cmap_u16(p))

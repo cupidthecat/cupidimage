@@ -9,8 +9,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-int svg_strcasecmp(const char *a, const char *b)
-{
+int svg_strcasecmp(const char *a, const char *b) {
     if (!a || !b) {
         return a ? 1 : (b ? -1 : 0);
     }
@@ -26,8 +25,7 @@ int svg_strcasecmp(const char *a, const char *b)
     return tolower((unsigned char)*a) - tolower((unsigned char)*b);
 }
 
-int svg_strncasecmp(const char *a, const char *b, size_t n)
-{
+int svg_strncasecmp(const char *a, const char *b, size_t n) {
     if (!a || !b) {
         return a ? 1 : (b ? -1 : 0);
     }
@@ -41,8 +39,7 @@ int svg_strncasecmp(const char *a, const char *b, size_t n)
     return 0;
 }
 
-int svg_strcasestr_simple(const char *haystack, const char *needle)
-{
+int svg_strcasestr_simple(const char *haystack, const char *needle) {
     if (!haystack || !needle || !*needle) {
         return 0;
     }
@@ -55,8 +52,7 @@ int svg_strcasestr_simple(const char *haystack, const char *needle)
     return 0;
 }
 
-char *svg_strdup(const char *s)
-{
+char *svg_strdup(const char *s) {
     if (!s) {
         return NULL;
     }
@@ -70,8 +66,7 @@ char *svg_strdup(const char *s)
     return out;
 }
 
-char *svg_strndup(const char *s, size_t len)
-{
+char *svg_strndup(const char *s, size_t len) {
     if (!s) {
         return NULL;
     }
@@ -84,8 +79,7 @@ char *svg_strndup(const char *s, size_t len)
     return out;
 }
 
-void svg_matrix_identity(svg_matrix *m)
-{
+void svg_matrix_identity(svg_matrix *m) {
     m->a = 1.0f;
     m->b = 0.0f;
     m->c = 0.0f;
@@ -94,8 +88,7 @@ void svg_matrix_identity(svg_matrix *m)
     m->f = 0.0f;
 }
 
-void svg_matrix_multiply(const svg_matrix *a, const svg_matrix *b, svg_matrix *out)
-{
+void svg_matrix_multiply(const svg_matrix *a, const svg_matrix *b, svg_matrix *out) {
     svg_matrix r;
     r.a = a->a * b->a + a->c * b->b;
     r.b = a->b * b->a + a->d * b->b;
@@ -106,8 +99,7 @@ void svg_matrix_multiply(const svg_matrix *a, const svg_matrix *b, svg_matrix *o
     *out = r;
 }
 
-void svg_matrix_translate(svg_matrix *m, float tx, float ty)
-{
+void svg_matrix_translate(svg_matrix *m, float tx, float ty) {
     svg_matrix t;
     svg_matrix_identity(&t);
     t.e = tx;
@@ -115,8 +107,7 @@ void svg_matrix_translate(svg_matrix *m, float tx, float ty)
     svg_matrix_multiply(&t, m, m);
 }
 
-void svg_matrix_scale(svg_matrix *m, float sx, float sy)
-{
+void svg_matrix_scale(svg_matrix *m, float sx, float sy) {
     svg_matrix s;
     svg_matrix_identity(&s);
     s.a = sx;
@@ -124,8 +115,7 @@ void svg_matrix_scale(svg_matrix *m, float sx, float sy)
     svg_matrix_multiply(&s, m, m);
 }
 
-void svg_matrix_rotate(svg_matrix *m, float angle_deg)
-{
+void svg_matrix_rotate(svg_matrix *m, float angle_deg) {
     float r = angle_deg * (float)M_PI / 180.0f;
     float c = cosf(r);
     float s = sinf(r);
@@ -138,8 +128,7 @@ void svg_matrix_rotate(svg_matrix *m, float angle_deg)
     svg_matrix_multiply(&rot, m, m);
 }
 
-void svg_matrix_skewx(svg_matrix *m, float angle_deg)
-{
+void svg_matrix_skewx(svg_matrix *m, float angle_deg) {
     float r = angle_deg * (float)M_PI / 180.0f;
     svg_matrix t;
     svg_matrix_identity(&t);
@@ -147,8 +136,7 @@ void svg_matrix_skewx(svg_matrix *m, float angle_deg)
     svg_matrix_multiply(&t, m, m);
 }
 
-void svg_matrix_skewy(svg_matrix *m, float angle_deg)
-{
+void svg_matrix_skewy(svg_matrix *m, float angle_deg) {
     float r = angle_deg * (float)M_PI / 180.0f;
     svg_matrix t;
     svg_matrix_identity(&t);
@@ -156,8 +144,7 @@ void svg_matrix_skewy(svg_matrix *m, float angle_deg)
     svg_matrix_multiply(&t, m, m);
 }
 
-int svg_matrix_invert(const svg_matrix *m, svg_matrix *out)
-{
+int svg_matrix_invert(const svg_matrix *m, svg_matrix *out) {
     float det = m->a * m->d - m->b * m->c;
     if (fabsf(det) < 1e-12f) {
         return 0;
@@ -174,21 +161,18 @@ int svg_matrix_invert(const svg_matrix *m, svg_matrix *out)
     return 1;
 }
 
-void svg_matrix_transform_point(const svg_matrix *m, float *x, float *y)
-{
+void svg_matrix_transform_point(const svg_matrix *m, float *x, float *y) {
     float nx = m->a * (*x) + m->c * (*y) + m->e;
     float ny = m->b * (*x) + m->d * (*y) + m->f;
     *x = nx;
     *y = ny;
 }
 
-int svg_is_name_char(int c)
-{
+int svg_is_name_char(int c) {
     return isalnum(c) || c == ':' || c == '-' || c == '_';
 }
 
-void svg_lowercase(char *s)
-{
+void svg_lowercase(char *s) {
     if (!s) {
         return;
     }
@@ -197,8 +181,7 @@ void svg_lowercase(char *s)
     }
 }
 
-const char *svg_local_name(const char *name)
-{
+const char *svg_local_name(const char *name) {
     const char *colon = name ? strrchr(name, ':') : NULL;
     return colon ? colon + 1 : name;
 }

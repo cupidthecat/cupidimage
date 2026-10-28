@@ -7,8 +7,7 @@
    document and override bytes remain borrowed. The override supports font-local
    and inline scopes. */
 int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category, const char *name,
-                                 pdf_object_view *value, int *reference)
-{
+                                 pdf_object_view *value, int *reference) {
     if (value)
         memset(value, 0, sizeof(*value));
     if (reference)

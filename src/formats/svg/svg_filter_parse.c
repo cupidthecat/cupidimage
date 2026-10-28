@@ -35,8 +35,7 @@ static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op,
 static void svg_transfer_func_init(svg_transfer_func *func);
 static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func);
 
-static int svg_find_filter_result(const char *name, char **names, int name_count)
-{
+static int svg_find_filter_result(const char *name, char **names, int name_count) {
     if (!name || !*name || !names) {
         return -1;
     }
@@ -48,16 +47,14 @@ static int svg_find_filter_result(const char *name, char **names, int name_count
     return -1;
 }
 
-svg_filter_ref cupidimage_svg_make_filter_ref(int type, int index)
-{
+svg_filter_ref cupidimage_svg_make_filter_ref(int type, int index) {
     svg_filter_ref ref;
     ref.type = type;
     ref.index = index;
     return ref;
 }
 
-static svg_filter_ref svg_parse_filter_ref(const char *s, char **names, int name_count)
-{
+static svg_filter_ref svg_parse_filter_ref(const char *s, char **names, int name_count) {
     if (!s || !*s) {
         return cupidimage_svg_make_filter_ref(SVG_FILTER_IN_CURRENT, -1);
     }
@@ -86,8 +83,7 @@ static svg_filter_ref svg_parse_filter_ref(const char *s, char **names, int name
     return cupidimage_svg_make_filter_ref(SVG_FILTER_IN_CURRENT, -1);
 }
 
-static void svg_filter_op_init(svg_filter_op *op)
-{
+static void svg_filter_op_init(svg_filter_op *op) {
     if (!op) {
         return;
     }
@@ -133,8 +129,7 @@ static void svg_filter_op_init(svg_filter_op *op)
     op->has_image_geom = 0;
 }
 
-void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count)
-{
+void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count) {
     if (!ops || count <= 0) {
         return;
     }
@@ -147,8 +142,7 @@ void cupidimage_svg_filter_ops_cleanup(svg_filter_op *ops, int count)
     }
 }
 
-static void svg_color_matrix_identity(float *m)
-{
+static void svg_color_matrix_identity(float *m) {
     for (int i = 0; i < 20; i++) {
         m[i] = 0.0f;
     }
@@ -158,8 +152,7 @@ static void svg_color_matrix_identity(float *m)
     m[18] = 1.0f;
 }
 
-static void svg_color_matrix_saturate(float s, float *m)
-{
+static void svg_color_matrix_saturate(float s, float *m) {
     float ir = 0.213f;
     float ig = 0.715f;
     float ib = 0.072f;
@@ -175,8 +168,7 @@ static void svg_color_matrix_saturate(float s, float *m)
     m[12] = ib + s * (1.0f - ib);
 }
 
-static void svg_color_matrix_huerotate(float angle_deg, float *m)
-{
+static void svg_color_matrix_huerotate(float angle_deg, float *m) {
     float ir = 0.213f;
     float ig = 0.715f;
     float ib = 0.072f;
@@ -195,8 +187,7 @@ static void svg_color_matrix_huerotate(float angle_deg, float *m)
     m[12] = ib + c * (1.0f - ib) + s * ib;
 }
 
-static void svg_color_matrix_luminance_to_alpha(float *m)
-{
+static void svg_color_matrix_luminance_to_alpha(float *m) {
     for (int i = 0; i < 20; i++) {
         m[i] = 0.0f;
     }
@@ -206,8 +197,7 @@ static void svg_color_matrix_luminance_to_alpha(float *m)
 }
 
 static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op, char ***names,
-                                     int *name_count, int *name_cap)
-{
+                                     int *name_count, int *name_cap) {
     if (!op) {
         return;
     }
@@ -240,8 +230,8 @@ static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op, char
     op->result_id = idx;
 }
 
-static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_gradient_units units)
-{
+static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op,
+                                    svg_gradient_units units) {
     if (!tag || !op) {
         return;
     }
@@ -263,8 +253,7 @@ static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_g
     }
 }
 
-static void svg_transfer_func_init(svg_transfer_func *func)
-{
+static void svg_transfer_func_init(svg_transfer_func *func) {
     if (!func) {
         return;
     }
@@ -280,8 +269,7 @@ static void svg_transfer_func_init(svg_transfer_func *func)
     }
 }
 
-float cupidimage_svg_transfer_apply(const svg_transfer_func *func, float v)
-{
+float cupidimage_svg_transfer_apply(const svg_transfer_func *func, float v) {
     if (!func) {
         return v;
     }
@@ -334,8 +322,7 @@ float cupidimage_svg_transfer_apply(const svg_transfer_func *func, float v)
     return out;
 }
 
-static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
-{
+static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func) {
     if (!tag || !func) {
         return;
     }
@@ -411,8 +398,7 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
 
 int cupidimage_svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, int *out_count,
                                     int *out_result_count, float base_len, float dpi,
-                                    svg_gradient_units units)
-{
+                                    svg_gradient_units units) {
     if (!content || !out_ops || !out_count) {
         return 0;
     }

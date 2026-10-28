@@ -12,8 +12,7 @@
 /* RFC 9649 section 2.7.1.2: alpha uses the lossless green channel and
    then reverses the optional byte-wise spatial filter. */
 static uint8_t *decode_alpha(const uint8_t *data, size_t size, unsigned width, unsigned height,
-                             char *err, size_t errcap)
-{
+                             char *err, size_t errcap) {
     if (!size || !width || !height || (size_t)width > SIZE_MAX / height / 4u) {
         set_err(err, errcap, "invalid ALPH dimensions or header");
         return NULL;
@@ -77,8 +76,7 @@ static uint8_t *decode_alpha(const uint8_t *data, size_t size, unsigned width, u
 }
 
 int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                         size_t errcap)
-{
+                         size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -205,7 +203,6 @@ int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_imag
     return ok;
 }
 
-int cupidimage_load_webp_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_webp_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_webp);
 }

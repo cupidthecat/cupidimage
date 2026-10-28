@@ -51,8 +51,7 @@ static int svg_selector_part_matches(const svg_selector_part *part, const svg_el
 static int svg_selector_matches(const svg_selector *sel, const svg_elem_info *stack, int depth,
                                 const svg_elem_info *siblings, int sibling_count);
 
-void cupidimage_svg_css_init(svg_css *css)
-{
+void cupidimage_svg_css_init(svg_css *css) {
     if (!css) {
         return;
     }
@@ -67,8 +66,7 @@ void cupidimage_svg_css_init(svg_css *css)
     css->animation_cap = 0;
 }
 
-static void svg_selector_part_free(svg_selector_part *part)
-{
+static void svg_selector_part_free(svg_selector_part *part) {
     free(part->tag);
     free(part->id);
     for (int c = 0; c < part->class_count; c++)
@@ -84,8 +82,7 @@ static void svg_selector_part_free(svg_selector_part *part)
     memset(part, 0, sizeof(*part));
 }
 
-static void svg_selector_free(svg_selector *sel)
-{
+static void svg_selector_free(svg_selector *sel) {
     for (int p = 0; p < sel->part_count; p++)
         svg_selector_part_free(&sel->parts[p]);
     free(sel->parts);
@@ -93,8 +90,7 @@ static void svg_selector_free(svg_selector *sel)
     memset(sel, 0, sizeof(*sel));
 }
 
-static void svg_css_rule_free(svg_css_rule *rule)
-{
+static void svg_css_rule_free(svg_css_rule *rule) {
     for (int s = 0; s < rule->selector_count; s++)
         svg_selector_free(&rule->selectors[s]);
     free(rule->selectors);
@@ -104,8 +100,7 @@ static void svg_css_rule_free(svg_css_rule *rule)
     memset(rule, 0, sizeof(*rule));
 }
 
-static void svg_css_keyframes_free(svg_css_keyframes *kf)
-{
+static void svg_css_keyframes_free(svg_css_keyframes *kf) {
     free(kf->name);
     for (int k = 0; k < kf->step_count; k++)
         free(kf->steps[k].transform);
@@ -113,8 +108,7 @@ static void svg_css_keyframes_free(svg_css_keyframes *kf)
     memset(kf, 0, sizeof(*kf));
 }
 
-void cupidimage_svg_css_free(svg_css *css)
-{
+void cupidimage_svg_css_free(svg_css *css) {
     if (!css) {
         return;
     }
@@ -142,8 +136,7 @@ void cupidimage_svg_css_free(svg_css *css)
     css->animation_cap = 0;
 }
 
-static char *svg_css_strip_comments(const char *text)
-{
+static char *svg_css_strip_comments(const char *text) {
     if (!text) {
         return NULL;
     }
@@ -178,8 +171,7 @@ static char *svg_css_strip_comments(const char *text)
     return out;
 }
 
-static void svg_css_trim_span(const char **start, const char **end)
-{
+static void svg_css_trim_span(const char **start, const char **end) {
     if (!start || !end || !*start || !*end) {
         return;
     }
@@ -191,16 +183,14 @@ static void svg_css_trim_span(const char **start, const char **end)
     }
 }
 
-static char *svg_css_span_dup(const char *start, const char *end)
-{
+static char *svg_css_span_dup(const char *start, const char *end) {
     if (!start || !end || end <= start) {
         return NULL;
     }
     return svg_strndup(start, (size_t)(end - start));
 }
 
-static const char *svg_css_find_matching_brace(const char *p)
-{
+static const char *svg_css_find_matching_brace(const char *p) {
     if (!p || *p != '{') {
         return NULL;
     }
@@ -233,8 +223,7 @@ static const char *svg_css_find_matching_brace(const char *p)
     return NULL;
 }
 
-static int svg_css_parse_label_offset(const char *s, float *out)
-{
+static int svg_css_parse_label_offset(const char *s, float *out) {
     if (!s || !out) {
         return 0;
     }
@@ -280,8 +269,7 @@ static int svg_css_parse_label_offset(const char *s, float *out)
 }
 
 static int svg_css_extract_decl_value_span(const char *decls_start, const char *decls_end,
-                                           const char *name, char **out_value)
-{
+                                           const char *name, char **out_value) {
     if (!decls_start || !decls_end || decls_end <= decls_start || !name || !out_value) {
         return 0;
     }
@@ -358,8 +346,7 @@ static int svg_css_extract_decl_value_span(const char *decls_start, const char *
     return 0;
 }
 
-static int svg_css_add_keyframe_step(svg_css_keyframes *kf, const svg_css_keyframe_step *step)
-{
+static int svg_css_add_keyframe_step(svg_css_keyframes *kf, const svg_css_keyframe_step *step) {
     if (!kf || !step) {
         return 0;
     }
@@ -377,8 +364,7 @@ static int svg_css_add_keyframe_step(svg_css_keyframes *kf, const svg_css_keyfra
     return 1;
 }
 
-static int svg_css_add_keyframes(svg_css *css, svg_css_keyframes *kf)
-{
+static int svg_css_add_keyframes(svg_css *css, svg_css_keyframes *kf) {
     if (!css || !kf || !kf->name || kf->step_count <= 0) {
         return 0;
     }
@@ -396,8 +382,7 @@ static int svg_css_add_keyframes(svg_css *css, svg_css_keyframes *kf)
     return 1;
 }
 
-static int svg_css_add_animation_binding(svg_css *css, svg_css_animation_binding *anim)
-{
+static int svg_css_add_animation_binding(svg_css *css, svg_css_animation_binding *anim) {
     if (!css || !anim || !anim->target_id || !anim->name || anim->duration <= 0.0f) {
         return 0;
     }
@@ -415,8 +400,7 @@ static int svg_css_add_animation_binding(svg_css *css, svg_css_animation_binding
     return 1;
 }
 
-static int svg_css_parse_animation_shorthand(const char *value, svg_css_animation_binding *anim)
-{
+static int svg_css_parse_animation_shorthand(const char *value, svg_css_animation_binding *anim) {
     if (!value || !anim) {
         return 0;
     }
@@ -546,8 +530,7 @@ static int svg_css_parse_animation_shorthand(const char *value, svg_css_animatio
     return 1;
 }
 
-static int svg_css_parse_target_id(const char *selector, char *out, size_t out_cap)
-{
+static int svg_css_parse_target_id(const char *selector, char *out, size_t out_cap) {
     if (!selector || !out || out_cap == 0) {
         return 0;
     }
@@ -577,8 +560,7 @@ static int svg_css_parse_target_id(const char *selector, char *out, size_t out_c
 
 static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_start,
                                          const char *selector_end, const char *body_start,
-                                         const char *body_end)
-{
+                                         const char *body_end) {
     if (!css || !selector_start || !selector_end || !body_start || !body_end) {
         return 0;
     }
@@ -724,8 +706,7 @@ static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_star
 
 static void svg_css_parse_animation_bindings(svg_css *css, const char *selector_start,
                                              const char *selector_end, const char *decl_start,
-                                             const char *decl_end)
-{
+                                             const char *decl_end) {
     if (!css || !selector_start || !selector_end || !decl_start || !decl_end) {
         return;
     }
@@ -764,8 +745,7 @@ static void svg_css_parse_animation_bindings(svg_css *css, const char *selector_
     free(anim_value);
 }
 
-static int svg_css_parse_selector(const char *s, svg_selector *out)
-{
+static int svg_css_parse_selector(const char *s, svg_selector *out) {
     if (!s || !out) {
         return 0;
     }
@@ -970,8 +950,7 @@ fail:
     return 0;
 }
 
-static int svg_css_parse_decls(svg_css_rule *rule, const char *s)
-{
+static int svg_css_parse_decls(svg_css_rule *rule, const char *s) {
     if (!rule || !s) {
         return 0;
     }
@@ -1037,8 +1016,7 @@ static int svg_css_parse_decls(svg_css_rule *rule, const char *s)
     return rule->decl_count > 0;
 }
 
-static int svg_css_add_rule(svg_css *css, svg_css_rule *rule)
-{
+static int svg_css_add_rule(svg_css *css, svg_css_rule *rule) {
     if (!css || !rule) {
         return 0;
     }
@@ -1056,8 +1034,7 @@ static int svg_css_add_rule(svg_css *css, svg_css_rule *rule)
     return 1;
 }
 
-int cupidimage_svg_css_parse(svg_css *css, const char *text)
-{
+int cupidimage_svg_css_parse(svg_css *css, const char *text) {
     if (!css || !text) {
         return 0;
     }
@@ -1155,8 +1132,7 @@ int cupidimage_svg_css_parse(svg_css *css, const char *text)
     return 1;
 }
 
-static int svg_class_match(const char *class_attr, const char *class_name)
-{
+static int svg_class_match(const char *class_attr, const char *class_name) {
     if (!class_attr || !class_name) {
         return 0;
     }
@@ -1180,8 +1156,7 @@ static int svg_class_match(const char *class_attr, const char *class_name)
     return 0;
 }
 
-static int svg_selector_part_matches(const svg_selector_part *part, const svg_elem_info *info)
-{
+static int svg_selector_part_matches(const svg_selector_part *part, const svg_elem_info *info) {
     if (!part || !info) {
         return 0;
     }
@@ -1220,8 +1195,7 @@ static int svg_selector_part_matches(const svg_selector_part *part, const svg_el
 }
 
 static int svg_selector_matches(const svg_selector *sel, const svg_elem_info *stack, int depth,
-                                const svg_elem_info *siblings, int sibling_count)
-{
+                                const svg_elem_info *siblings, int sibling_count) {
     if (!sel || !stack || depth <= 0) {
         return 0;
     }
@@ -1286,8 +1260,7 @@ static int svg_selector_matches(const svg_selector *sel, const svg_elem_info *st
 
 void cupidimage_svg_css_apply(svg_style *style, const svg_css *css, const svg_defs *defs,
                               const svg_elem_info *stack, int depth, const svg_elem_info *siblings,
-                              int sibling_count, float base_len, float dpi)
-{
+                              int sibling_count, float base_len, float dpi) {
     if (!style || !css || css->rule_count == 0 || !stack || depth <= 0) {
         return;
     }

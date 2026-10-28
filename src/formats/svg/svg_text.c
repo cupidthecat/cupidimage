@@ -170,8 +170,7 @@ static const uint8_t svg_font8x8_basic[128][8] = {{0x00, 0x00, 0x00, 0x00, 0x00,
                                                   {0x6E, 0x3B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
                                                   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
-static void svg_text_path_clear(svg_text_path_state *tp)
-{
+static void svg_text_path_clear(svg_text_path_state *tp) {
     if (!tp) {
         return;
     }
@@ -185,8 +184,7 @@ static void svg_text_path_clear(svg_text_path_state *tp)
 }
 
 static int svg_text_path_point(const svg_text_path_state *tp, float dist, float *out_x,
-                               float *out_y, float *out_angle)
-{
+                               float *out_y, float *out_angle) {
     if (!tp || !out_x || !out_y || !out_angle || tp->seg_count == 0 || tp->total_len <= 0.0f) {
         return 0;
     }
@@ -219,8 +217,7 @@ static int svg_text_path_point(const svg_text_path_state *tp, float dist, float 
 }
 
 static float svg_textpath_measure_range(const char *start, const char *end, int preserve,
-                                        const svg_style *style)
-{
+                                        const svg_style *style) {
     if (!start || !end || !style || end <= start) {
         return 0.0f;
     }
@@ -253,16 +250,14 @@ static float svg_textpath_measure_range(const char *start, const char *end, int 
     return width;
 }
 
-static const uint8_t *svg_get_glyph(unsigned char c)
-{
+static const uint8_t *svg_get_glyph(unsigned char c) {
     if (c < 128) {
         return svg_font8x8_basic[c];
     }
     return svg_font8x8_basic['?'];
 }
 
-static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len)
-{
+static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len) {
     if (!s || !*s || !cp || !len) {
         return 0;
     }
@@ -306,8 +301,7 @@ static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len)
 
 static const uint8_t svg_glyph_bullet[8] = {0x00, 0x00, 0x18, 0x3C, 0x3C, 0x18, 0x00, 0x00};
 
-static const uint8_t *svg_get_glyph_codepoint(uint32_t cp)
-{
+static const uint8_t *svg_get_glyph_codepoint(uint32_t cp) {
     if (cp < 128u) {
         return svg_get_glyph((unsigned char)cp);
     }
@@ -317,8 +311,7 @@ static const uint8_t *svg_get_glyph_codepoint(uint32_t cp)
     return svg_font8x8_basic['?'];
 }
 
-static float svg_text_advance(const svg_style *style, uint32_t cp)
-{
+static float svg_text_advance(const svg_style *style, uint32_t cp) {
     float base_w = style->font_size * 0.6f;
     float adv = base_w + style->letter_spacing;
     if (cp == (uint32_t)' ') {
@@ -327,8 +320,7 @@ static float svg_text_advance(const svg_style *style, uint32_t cp)
     return adv;
 }
 
-static float svg_text_baseline_offset(const svg_style *style)
-{
+static float svg_text_baseline_offset(const svg_style *style) {
     if (!style) {
         return 0.0f;
     }
@@ -341,8 +333,7 @@ static float svg_text_baseline_offset(const svg_style *style)
     return 0.0f;
 }
 
-static float svg_measure_line(const svg_style *style, const char *text, size_t len)
-{
+static float svg_measure_line(const svg_style *style, const char *text, size_t len) {
     if (!style || !text) {
         return 0.0f;
     }
@@ -369,8 +360,7 @@ static float svg_measure_line(const svg_style *style, const char *text, size_t l
 
 static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
                            const svg_bbox *bbox, const uint8_t *glyph, float x, float y,
-                           float scale_x, float scale_y)
-{
+                           float scale_x, float scale_y) {
     if (!ctx || !style || !m || !glyph || !bbox) {
         return;
     }
@@ -482,8 +472,7 @@ static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const sv
 }
 
 static void svg_render_text_run(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                const char *text, float *pen_x, float *pen_y, svg_bbox *bbox_out)
-{
+                                const char *text, float *pen_x, float *pen_y, svg_bbox *bbox_out) {
     if (!ctx || !style || !m || !text || !pen_x || !pen_y) {
         return;
     }
@@ -548,8 +537,7 @@ static void svg_render_text_run(svg_render_ctx *ctx, const svg_style *style, con
 
 static void svg_render_text_run_path(svg_render_ctx *ctx, const svg_style *style,
                                      const svg_matrix *m, const char *text, svg_text_path_state *tp,
-                                     svg_bbox *bbox_out)
-{
+                                     svg_bbox *bbox_out) {
     if (!ctx || !style || !m || !text || !tp || !tp->active) {
         return;
     }
@@ -605,8 +593,7 @@ void cupidimage_svg_render_text_element(svg_render_ctx *ctx, const svg_style *st
                                         const svg_matrix *m, const svg_tag *text_tag, char **p,
                                         const svg_defs *defs, const svg_css *css,
                                         const svg_elem_info *stack_info, int stack_depth,
-                                        float base_len, float dpi, svg_bbox *out_bbox)
-{
+                                        float base_len, float dpi, svg_bbox *out_bbox) {
     if (!ctx || !style || !m || !text_tag || !p || !defs || !css || !stack_info) {
         return;
     }

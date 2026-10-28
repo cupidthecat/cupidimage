@@ -47,6 +47,7 @@ typedef struct {
     unsigned flags;
 } pdf_cid_metric;
 typedef struct pdf_cmap pdf_cmap;
+
 typedef struct {
     pdf_cmap *encoding;
     int vertical;

@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static int test_svg(void)
-{
+static int test_svg(void) {
     static const char *begins[] = {"bad;1s", "1s;2s", "indefinite;1s", "bad", "0s"};
     for (unsigned i = 0; i < sizeof(begins) / sizeof(begins[0]); i++) {
         char svg[512], err[128] = {0};
@@ -31,8 +30,7 @@ static int test_svg(void)
     return 1;
 }
 
-static int test_ico(void)
-{
+static int test_ico(void) {
     unsigned char ico[70] = {0};
     ico[2] = 1;
     ico[4] = 1; /* One icon. */
@@ -82,8 +80,7 @@ static int test_ico(void)
     return 1;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     int ok = argc > 1 && strcmp(argv[1], "ico") == 0 ? test_ico() : test_svg() && test_ico();
     if (ok)
         puts("Decoder safety regressions passed");

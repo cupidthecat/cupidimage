@@ -17,22 +17,19 @@
 int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len);
 
-static void pdf_clip_retain(pdf_clip_mask *clip)
-{
+static void pdf_clip_retain(pdf_clip_mask *clip) {
     if (clip)
         clip->references++;
 }
 
-static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip)
-{
+static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
     if (clip && --clip->references == 0) {
         st->clip_budget->bytes_used -= clip->bytes;
         free(clip);
     }
 }
 
-static void pdf_render_state_release(pdf_render_state *st)
-{
+static void pdf_render_state_release(pdf_render_state *st) {
     cupidimage_pdf_text_group_discard(st);
     pdf_clip_release(st, st->gs.clip);
     cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
@@ -47,8 +44,7 @@ static void pdf_render_state_release(pdf_render_state *st)
     }
 }
 
-unsigned char cupidimage_pdf_clamp_u8(double v)
-{
+unsigned char cupidimage_pdf_clamp_u8(double v) {
     if (v < 0.0)
         v = 0.0;
     if (v > 1.0)
@@ -57,8 +53,7 @@ unsigned char cupidimage_pdf_clamp_u8(double v)
     return (unsigned char)nextafter(v * 255.0 + 0.5, INFINITY);
 }
 
-static int pdf_pixel_visible(const pdf_render_state *st, int x, int y)
-{
+static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
     const cupidimage_image *img = st->img;
     if (!img || !img->rgba)
         return 0;
@@ -82,8 +77,7 @@ static int pdf_pixel_visible(const pdf_render_state *st, int x, int y)
 }
 
 void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g,
-                                    uint8_t b, double alpha, double shape)
-{
+                                    uint8_t b, double alpha, double shape) {
     if (shape <= 0 || !pdf_pixel_visible(st, x, y))
         return;
     cupidimage_image *img = st->img;
@@ -152,8 +146,7 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
 }
 
 void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const double source[3],
-                                    double alpha, double shape)
-{
+                                    double alpha, double shape) {
     if (shape <= 0 || !pdf_pixel_visible(st, x, y))
         return;
     size_t pixel = (size_t)y * st->img->width + (size_t)x;
@@ -192,8 +185,7 @@ void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const do
     p[3] = cupidimage_pdf_clamp_u8(ar);
 }
 
-void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage)
-{
+void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage) {
     pdf_pattern *pattern = stroke ? st->gs.stroke_pattern : st->gs.fill_pattern;
     const pdf_image_colors *space = stroke ? &st->gs.stroke_space : &st->gs.fill_space;
     uint8_t rgb[4] = {stroke ? st->gs.stroke_r : st->gs.fill_r,
@@ -220,8 +212,7 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
     cupidimage_pdf_composite_pixel(st, x, y, rgb[0], rgb[1], rgb[2], alpha, shape);
 }
 
-void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b)
-{
+void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     if (st->gs.fill_space.pattern)
         cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
     else
@@ -229,8 +220,7 @@ void cupidimage_pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uin
                                        st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
 }
 
-static void pdf_matrix_identity(float m[6])
-{
+static void pdf_matrix_identity(float m[6]) {
     m[0] = 1.0f;
     m[1] = 0.0f;
     m[2] = 0.0f;
@@ -239,8 +229,7 @@ static void pdf_matrix_identity(float m[6])
     m[5] = 0.0f;
 }
 
-static void pdf_matrix_concat(float dst[6], const float left[6])
-{
+static void pdf_matrix_concat(float dst[6], const float left[6]) {
     float a = dst[0] * left[0] + dst[2] * left[1];
     float b = dst[1] * left[0] + dst[3] * left[1];
     float c = dst[0] * left[2] + dst[2] * left[3];
@@ -256,8 +245,7 @@ static void pdf_matrix_concat(float dst[6], const float left[6])
 }
 
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
-                                  float *py)
-{
+                                  float *py) {
     float tx = st->gs.ctm[0] * ux + st->gs.ctm[2] * uy + st->gs.ctm[4];
     float ty = st->gs.ctm[1] * ux + st->gs.ctm[3] * uy + st->gs.ctm[5];
     float s = 96.0f / 72.0f;
@@ -265,8 +253,7 @@ void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy
     *py = (st->page_top_pts - ty) * s;
 }
 
-static void pdf_path_clear(pdf_path *p)
-{
+static void pdf_path_clear(pdf_path *p) {
     if (!p)
         return;
     p->seg_count = 0;
@@ -280,8 +267,7 @@ static void pdf_path_clear(pdf_path *p)
     p->subpath_start_y = 0.0f;
 }
 
-static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1)
-{
+static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1) {
     if (!p)
         return;
     if (p->seg_count >= (int)(sizeof(p->segs) / sizeof(p->segs[0]))) {
@@ -297,8 +283,7 @@ static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1
     p->seg_count++;
 }
 
-static void pdf_path_move_to(pdf_path *p, float x, float y)
-{
+static void pdf_path_move_to(pdf_path *p, float x, float y) {
     if (!p)
         return;
     p->subpath_first_seg = p->seg_count;
@@ -310,8 +295,7 @@ static void pdf_path_move_to(pdf_path *p, float x, float y)
     p->has_subpath = 1;
 }
 
-static void pdf_path_line_to(pdf_path *p, float x, float y)
-{
+static void pdf_path_line_to(pdf_path *p, float x, float y) {
     if (!p)
         return;
     if (!p->has_current) {
@@ -323,8 +307,7 @@ static void pdf_path_line_to(pdf_path *p, float x, float y)
     p->current_y = y;
 }
 
-static void pdf_path_close(pdf_path *p)
-{
+static void pdf_path_close(pdf_path *p) {
     if (!p || !p->has_current || !p->has_subpath)
         return;
     if (fabsf(p->current_x - p->subpath_start_x) > 1e-4f ||
@@ -338,23 +321,20 @@ static void pdf_path_close(pdf_path *p)
 }
 
 /* Paths retain device coordinates when cm or q/Q changes the graphics state. */
-static void pdf_path_move_user(pdf_render_state *st, float x, float y)
-{
+static void pdf_path_move_user(pdf_render_state *st, float x, float y) {
     float px, py;
     cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
     pdf_path_move_to(&st->path, px, py);
 }
 
-static void pdf_path_line_user(pdf_render_state *st, float x, float y)
-{
+static void pdf_path_line_user(pdf_render_state *st, float x, float y) {
     float px, py;
     cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
     pdf_path_line_to(&st->path, px, py);
 }
 
 static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0, float x1,
-                                          float y1)
-{
+                                          float y1) {
     float vx = x1 - x0;
     float vy = y1 - y0;
     float wx = px - x0;
@@ -385,8 +365,7 @@ static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0
 }
 
 static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1, float y1,
-                              float x2, float y2, float x3, float y3, unsigned depth)
-{
+                              float x2, float y2, float x3, float y3, unsigned depth) {
     if (st->path.seg_count >= 4096) {
         st->path.overflow = 1;
         return;
@@ -408,8 +387,7 @@ static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1
 }
 
 static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1, float x2, float y2,
-                              float x3, float y3, int first_is_current)
-{
+                              float x3, float y3, int first_is_current) {
     if (!st->path.has_current)
         return;
     if (first_is_current) {
@@ -428,8 +406,7 @@ static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1, float x2
     pdf_flatten_curve(st, st->path.current_x, st->path.current_y, x1, y1, x2, y2, x3, y3, 0);
 }
 
-static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg)
-{
+static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
     float y0 = seg->y0;
     float y1 = seg->y1;
     if ((y0 <= y && y1 > y) || (y1 <= y && y0 > y)) {
@@ -444,8 +421,7 @@ static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg)
     return 0;
 }
 
-static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char *mask)
-{
+static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char *mask) {
     if (st->path.seg_count <= 0)
         return 1;
 
@@ -507,15 +483,13 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
     return 1;
 }
 
-static void pdf_fill_path(pdf_render_state *st, int even_odd)
-{
+static void pdf_fill_path(pdf_render_state *st, int even_odd) {
     pdf_rasterize_path(st, even_odd, NULL);
 }
 
 /* Fill-and-stroke is one PDF object. Stroke-covered pixels use the original
  * backdrop, not a fill that has already been composited onto it. */
-static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd)
-{
+static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
     if (st->gs.fill_alpha == 1 && st->gs.stroke_alpha == 1 && !st->gs.blend_mode &&
         !st->gs.soft_mask && !st->gs.fill_space.pattern && !st->gs.stroke_space.pattern) {
         pdf_fill_path(st, even_odd);
@@ -548,8 +522,7 @@ static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd)
     free(masks);
 }
 
-static int pdf_apply_clip(pdf_render_state *st)
-{
+static int pdf_apply_clip(pdf_render_state *st) {
     size_t bytes = ((size_t)st->img->width * st->img->height + 7) / 8;
     if (st->path.overflow || !st->clip_budget->calls_left ||
         bytes > 64u * 1024u * 1024u - st->clip_budget->bytes_used)
@@ -574,8 +547,7 @@ static int pdf_apply_clip(pdf_render_state *st)
     return 1;
 }
 
-int cupidimage_pdf_text_clip_prepare(pdf_render_state *st)
-{
+int cupidimage_pdf_text_clip_prepare(pdf_render_state *st) {
     if (st->text_clip)
         return 1;
     size_t pixels = (size_t)st->img->width * st->img->height, bytes = (pixels + 7) / 8;
@@ -601,8 +573,7 @@ int cupidimage_pdf_text_clip_prepare(pdf_render_state *st)
     return 1;
 }
 
-void cupidimage_pdf_text_end(pdf_render_state *st)
-{
+void cupidimage_pdf_text_end(pdf_render_state *st) {
     if (!cupidimage_pdf_text_group_end(st))
         st->image_failed = 1;
     if (st->text_clip) {
@@ -620,8 +591,7 @@ void cupidimage_pdf_text_end(pdf_render_state *st)
     st->in_text = 0;
 }
 
-static void pdf_path_end(pdf_render_state *st)
-{
+static void pdf_path_end(pdf_render_state *st) {
     if (st->pending_clip && !pdf_apply_clip(st)) {
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: clipping path exceeds limits or is invalid");
@@ -631,8 +601,7 @@ static void pdf_path_end(pdf_render_state *st)
     pdf_path_clear(&st->path);
 }
 
-static int pdf_render_tj_array(pdf_render_state *st, const char *array, size_t length)
-{
+static int pdf_render_tj_array(pdf_render_state *st, const char *array, size_t length) {
     const unsigned char *data = (const unsigned char *)array;
     size_t pos = 0;
     while (pos < length) {
@@ -679,8 +648,7 @@ typedef struct {
     size_t len;
 } pdf_operand;
 
-static void pdf_clear_operands(pdf_operand *ops, int *count)
-{
+static void pdf_clear_operands(pdf_operand *ops, int *count) {
     if (!ops || !count) {
         return;
     }
@@ -693,14 +661,12 @@ static void pdf_clear_operands(pdf_operand *ops, int *count)
     *count = 0;
 }
 
-static int pdf_expect_num(const pdf_operand *op)
-{
+static int pdf_expect_num(const pdf_operand *op) {
     return op && op->type == PDF_OPERAND_NUM;
 }
 
 static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, const pdf_operand *ops,
-                                int count)
-{
+                                int count) {
     if ((space != 1 && space != 3 && space != 4) || count != space)
         return 0;
     for (int i = 0; i < count; i++)
@@ -742,8 +708,8 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, con
     return 1;
 }
 
-static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops, int *count)
-{
+static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops,
+                                 int *count) {
     int n = *count;
     if (st->glyph_active && !st->glyph_seen_metrics && strcmp(op, "d0") && strcmp(op, "d1")) {
         st->image_failed = 1;
@@ -1126,8 +1092,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
     pdf_clear_operands(ops, count);
 }
 
-static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len)
-{
+static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t stream_len) {
     char *err = st->error;
     size_t errcap = st->error_capacity;
     pdf_operand ops[64];
@@ -1311,8 +1276,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
                                        const unsigned char *stream, size_t length,
                                        cupidimage_image *image, double *shape, double sx, double sy,
                                        double ox, double oy, const double bbox[4], int uncolored,
-                                       const uint8_t color[3])
-{
+                                       const uint8_t color[3]) {
     if (!parent->form_budget->calls_left || length > parent->form_budget->bytes_left)
         return 0;
     parent->form_budget->calls_left--;
@@ -1388,8 +1352,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     return ok;
 }
 
-static void pdf_double_concat(double m[6], const double n[6])
-{
+static void pdf_double_concat(double m[6], const double n[6]) {
     double r[6] = {m[0] * n[0] + m[2] * n[1],        m[1] * n[0] + m[3] * n[1],
                    m[0] * n[2] + m[2] * n[3],        m[1] * n[2] + m[3] * n[3],
                    m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]};
@@ -1398,8 +1361,7 @@ static void pdf_double_concat(double m[6], const double n[6])
 
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
                                           const double matrix[6], cupidimage_image *image,
-                                          double *shape)
-{
+                                          double *shape) {
     if (!parent->form_budget->calls_left)
         return 0;
     parent->form_budget->calls_left--;
@@ -1457,8 +1419,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     return ok;
 }
 
-int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *font, unsigned code)
-{
+int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *font, unsigned code) {
     const pdf_type3_font *type = font->type3;
     int object = type->glyphs[code], ok = 0;
     if (!object || st->gs.text_mode == 3 || st->gs.font_size_pts == 0 ||
@@ -1552,8 +1513,7 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form)
-{
+int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form) {
     size_t pos, length;
     int type = 1, ok = 0;
     const unsigned char *stream;
@@ -1687,8 +1647,7 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
                                          const unsigned char *document, size_t document_size,
                                          int page_object, const pdf_font_table *font_table,
                                          cupidimage_image *img, const pdf_page_geometry *geometry,
-                                         char *err, size_t errcap)
-{
+                                         char *err, size_t errcap) {
     pdf_render_state st = {0};
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;

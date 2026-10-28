@@ -6,21 +6,21 @@
 typedef struct {
     double x, y, value[4];
 } mesh_vertex;
-uint32_t cupidimage_pdf_mesh_bits(const unsigned char *record, unsigned *pos, unsigned count)
-{
+
+uint32_t cupidimage_pdf_mesh_bits(const unsigned char *record, unsigned *pos, unsigned count) {
     uint32_t value = 0;
     for (unsigned i = 0; i < count; i++, (*pos)++)
         value = (value << 1) | ((record[*pos / 8] >> (7 - *pos % 8)) & 1u);
     return value;
 }
-double cupidimage_pdf_mesh_decode(uint32_t value, unsigned bits, const double *range)
-{
+
+double cupidimage_pdf_mesh_decode(uint32_t value, unsigned bits, const double *range) {
     double fraction = value / (double)((UINT64_C(1) << bits) - 1);
     return range[0] + fraction * (range[1] - range[0]);
 }
+
 static unsigned mesh_vertex_read(const pdf_mesh_context *mesh, const unsigned char *record,
-                                 mesh_vertex *v)
-{
+                                 mesh_vertex *v) {
     unsigned pos = 0, flag = mesh->flag_bits
                                  ? cupidimage_pdf_mesh_bits(record, &pos, mesh->flag_bits) & 3u
                                  : 0;
@@ -44,8 +44,8 @@ static unsigned mesh_vertex_read(const pdf_mesh_context *mesh, const unsigned ch
     }
     return flag;
 }
-int cupidimage_pdf_mesh_inside_box(const pdf_mesh_context *mesh, unsigned x, unsigned y)
-{
+
+int cupidimage_pdf_mesh_inside_box(const pdf_mesh_context *mesh, unsigned x, unsigned y) {
     if (!mesh->has_box)
         return 1;
     double px = x + .5, py = y + .5;
@@ -53,9 +53,9 @@ int cupidimage_pdf_mesh_inside_box(const pdf_mesh_context *mesh, unsigned x, uns
     double u = m[0] * px + m[2] * py + m[4], v = m[1] * px + m[3] * py + m[5];
     return u >= mesh->box[0] && u < mesh->box[2] && v >= mesh->box[1] && v < mesh->box[3];
 }
+
 void cupidimage_pdf_mesh_rgb(const pdf_image_colors *colors, const double values[4],
-                             unsigned char rgb[3], int lookup)
-{
+                             unsigned char rgb[3], int lookup) {
     double palette[4];
     if (colors->indexed && lookup) {
         unsigned index = (unsigned)floor(fmin(colors->high, fmax(0, values[0])) + .5);
@@ -71,13 +71,13 @@ void cupidimage_pdf_mesh_rgb(const pdf_image_colors *colors, const double values
         for (int c = 0; c < 3; c++)
             rgb[c] = cupidimage_pdf_clamp_u8(values[colors->components == 1 ? 0 : c]);
 }
-static double mesh_edge(const mesh_vertex *a, const mesh_vertex *b, double x, double y)
-{
+
+static double mesh_edge(const mesh_vertex *a, const mesh_vertex *b, double x, double y) {
     return (b->x - a->x) * (y - a->y) - (b->y - a->y) * (x - a->x);
 }
+
 static int mesh_triangle(pdf_mesh_context *mesh, const mesh_vertex *a, const mesh_vertex *b,
-                         const mesh_vertex *c)
-{
+                         const mesh_vertex *c) {
     double area = mesh_edge(a, b, c->x, c->y);
     if (!isfinite(area))
         return 0;
@@ -119,9 +119,9 @@ static int mesh_triangle(pdf_mesh_context *mesh, const mesh_vertex *a, const mes
         }
     return 1;
 }
+
 static int mesh_optional(const pdf_render_state *st, const pdf_object_view *view, const char *key,
-                         int *present)
-{
+                         int *present) {
     size_t pos;
     *present = 0;
     if (!cupidimage_pdf_page_value(view, key, &pos))
@@ -137,15 +137,14 @@ static int mesh_optional(const pdf_render_state *st, const pdf_object_view *view
     cupidimage_pdf_object_view_release(&value);
     return 1;
 }
-static int mesh_width(int value, int coordinate)
-{
+
+static int mesh_width(int value, int coordinate) {
     return value == 1 || value == 2 || value == 4 || value == 8 || value == 12 || value == 16 ||
            (coordinate && (value == 24 || value == 32));
 }
 
 int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view, int type,
-                              int background)
-{
+                              int background) {
     if (type < 4 || type > 7)
         return 0;
     pdf_mesh_context mesh = {0};

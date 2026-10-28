@@ -2,16 +2,15 @@
 #include "truetype.h"
 #include <string.h>
 
-static unsigned post_u16(const unsigned char *p)
-{
+static unsigned post_u16(const unsigned char *p) {
     return (unsigned)p[0] * 256 + p[1];
 }
-static uint32_t post_u32(const unsigned char *p)
-{
+
+static uint32_t post_u32(const unsigned char *p) {
     return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
 }
-unsigned cupidimage_pdf_tt_name(const pdf_tt_font *font, const char *name)
-{
+
+unsigned cupidimage_pdf_tt_name(const pdf_tt_font *font, const char *name) {
     const unsigned char *p = font->post.data;
     size_t length = font->post.length;
     if (length < 32)

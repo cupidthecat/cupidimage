@@ -5,8 +5,7 @@
 #include <string.h>
 
 int cupidimage_pdf_function_array(const pdf_render_state *st, const pdf_object_view *parent,
-                                  const char *key, double *values, int count)
-{
+                                  const char *key, double *values, int count) {
     size_t pos;
     if (!cupidimage_pdf_page_value(parent, key, &pos))
         return 0;
@@ -53,8 +52,7 @@ static int pdf_function_value(const pdf_render_state *, const pdf_object_view *,
 
 static int pdf_function_parts(const pdf_render_state *st, const pdf_object_view *view, size_t *pos,
                               int inputs, int components, pdf_function_tree *tree, unsigned depth,
-                              pdf_function_node *node, int joining)
-{
+                              pdf_function_node *node, int joining) {
     if (*pos == view->len || view->data[(*pos)++] != '[')
         return 0;
     for (;;) {
@@ -75,8 +73,7 @@ static int pdf_function_parts(const pdf_render_state *st, const pdf_object_view 
 }
 
 static int pdf_stitching_parts(const pdf_render_state *st, const pdf_object_view *parent,
-                               pdf_function_tree *tree, unsigned depth, pdf_function_node *node)
-{
+                               pdf_function_tree *tree, unsigned depth, pdf_function_node *node) {
     size_t pos;
     if (!cupidimage_pdf_page_value(parent, "Functions", &pos))
         return 0;
@@ -103,8 +100,7 @@ done:
 
 static int pdf_function_value(const pdf_render_state *st, const pdf_object_view *parent,
                               size_t *pos, int inputs, int components, pdf_function_tree *tree,
-                              unsigned depth, int allow_array)
-{
+                              unsigned depth, int allow_array) {
     if (depth >= 16 || tree->count == PDF_FUNCTION_NODES)
         return -1;
     cupidimage_pdf_skip_ws_and_comments(parent->data, parent->len, pos);
@@ -277,8 +273,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
 
 int cupidimage_pdf_load_function(const pdf_render_state *st, const pdf_object_view *parent,
                                  const char *key, int inputs, int components,
-                                 pdf_function_tree *tree)
-{
+                                 pdf_function_tree *tree) {
     size_t pos;
     cupidimage_pdf_free_function(tree);
     memset(tree, 0, sizeof(*tree));
@@ -291,8 +286,7 @@ int cupidimage_pdf_load_function(const pdf_render_state *st, const pdf_object_vi
     return 0;
 }
 
-void cupidimage_pdf_free_function(pdf_function_tree *tree)
-{
+void cupidimage_pdf_free_function(pdf_function_tree *tree) {
     for (int i = 0; i < tree->count; i++) {
         free(tree->nodes[i].samples);
         tree->nodes[i].samples = NULL;
@@ -303,8 +297,7 @@ void cupidimage_pdf_free_function(pdf_function_tree *tree)
     tree->sample_bytes = 0;
 }
 
-static double pdf_function_sample(const pdf_function_node *node, size_t index)
-{
+static double pdf_function_sample(const pdf_function_node *node, size_t index) {
     size_t bit = index * (unsigned)node->bits, start = bit / 8;
     unsigned leading = (unsigned)(bit % 8), bytes = (leading + (unsigned)node->bits + 7) / 8;
     uint64_t value = 0;
@@ -315,8 +308,7 @@ static double pdf_function_sample(const pdf_function_node *node, size_t index)
 }
 
 static int pdf_sampled_evaluate(const pdf_function_node *node, const double input[2], double out[4],
-                                size_t *budget)
-{
+                                size_t *budget) {
     unsigned corners = 1u << node->inputs;
     size_t cost = (size_t)corners * node->components;
     if (cost > *budget)
@@ -361,8 +353,7 @@ static int pdf_sampled_evaluate(const pdf_function_node *node, const double inpu
 }
 
 static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index,
-                                      const double input[2], double out[4], size_t *budget)
-{
+                                      const double input[2], double out[4], size_t *budget) {
     if (!*budget || index < 0 || index >= tree->count)
         return 0;
     (*budget)--;
@@ -417,7 +408,6 @@ static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index,
 }
 
 int cupidimage_pdf_evaluate_function(const pdf_function_tree *tree, const double input[2],
-                                     double output[4], size_t *budget)
-{
+                                     double output[4], size_t *budget) {
     return tree->count && pdf_function_evaluate_node(tree, 0, input, output, budget);
 }

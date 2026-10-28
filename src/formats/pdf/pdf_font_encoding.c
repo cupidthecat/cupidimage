@@ -6,8 +6,7 @@
 int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
                                    const pdf_object_view *view, unsigned glyphs[256],
                                    const void *context,
-                                   unsigned (*lookup)(const void *, const char *))
-{
+                                   unsigned (*lookup)(const void *, const char *)) {
     pdf_object_view encoding = {0}, differences = {0};
     size_t pos;
     if (!cupidimage_pdf_page_value(view, "Encoding", &pos))
@@ -75,8 +74,7 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
     return ok;
 }
 
-static int pdf_font_reference_end(const pdf_object_view *view, size_t *pos)
-{
+static int pdf_font_reference_end(const pdf_object_view *view, size_t *pos) {
     double ignored;
     if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &ignored))
         return 0;
@@ -86,9 +84,9 @@ static int pdf_font_reference_end(const pdf_object_view *view, size_t *pos)
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     return *pos < view->len && view->data[(*pos)++] == 'R';
 }
+
 int cupidimage_pdf_graphics_font(const unsigned char *data, size_t size,
-                                 const pdf_object_view *state, int *object, double *font_size)
-{
+                                 const pdf_object_view *state, int *object, double *font_size) {
     pdf_object_view array = {0}, scalar = {0};
     size_t pos = 0, at = 0;
     int ok = cupidimage_pdf_dictionary_value(data, size, state, "Font", &array);

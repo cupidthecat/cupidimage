@@ -3,8 +3,8 @@
 #include "formats/pdf/pdf_internal.h"
 #include <stdio.h>
 #include <string.h>
-int main(int argc, char **argv)
-{
+
+int main(int argc, char **argv) {
     if (argc != 2 && argc != 3)
         return 2;
     const pdf_standard_font *font = cupidimage_pdf_standard_font(argv[1]);
@@ -27,6 +27,7 @@ int main(int argc, char **argv)
                      {"/Encoding << /Differences [65.5 /A] >>", 0},
                      {"/Encoding << /Differences [65 /#00] >>", 0},
                      {"/Encoding << /Differences [255 /A /B] >>", 0}};
+
         for (size_t i = 0; i < sizeof(cases) / sizeof(*cases); i++) {
             char text[512];
             int length = snprintf(text, sizeof(text),

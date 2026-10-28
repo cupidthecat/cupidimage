@@ -42,8 +42,7 @@ static uint8_t *svg_filter_resolve_input(const svg_filter_ref *ref, uint8_t *cur
                                          uint8_t *source, uint8_t *source_alpha,
                                          uint8_t *background, uint8_t *background_alpha,
                                          uint8_t *fill_paint, uint8_t *stroke_paint,
-                                         uint8_t **results, int result_count)
-{
+                                         uint8_t **results, int result_count) {
     if (!ref) {
         return current;
     }
@@ -75,8 +74,7 @@ static uint8_t *svg_filter_resolve_input(const svg_filter_ref *ref, uint8_t *cur
 }
 
 static void svg_filter_clip_region(uint8_t *buf, uint32_t w, uint32_t h,
-                                   const svg_filter_region *region)
-{
+                                   const svg_filter_region *region) {
     if (!buf || !region || !region->valid) {
         return;
     }
@@ -107,8 +105,7 @@ static void svg_filter_clip_region(uint8_t *buf, uint32_t w, uint32_t h,
     }
 }
 
-static uint8_t svg_clamp_u8(float v)
-{
+static uint8_t svg_clamp_u8(float v) {
     if (v < 0.0f)
         return 0;
     if (v > 255.0f)
@@ -116,8 +113,7 @@ static uint8_t svg_clamp_u8(float v)
     return (uint8_t)lroundf(v);
 }
 
-static float svg_channel_value(const uint8_t *buf, size_t idx, int channel)
-{
+static float svg_channel_value(const uint8_t *buf, size_t idx, int channel) {
     float a = buf[idx + 3] / 255.0f;
     if (channel == SVG_DISPLACE_A) {
         return a;
@@ -134,8 +130,7 @@ static float svg_channel_value(const uint8_t *buf, size_t idx, int channel)
     return (buf[idx + 0] / 255.0f) / a;
 }
 
-static float svg_alpha_sample_clamped(const uint8_t *buf, uint32_t w, uint32_t h, int x, int y)
-{
+static float svg_alpha_sample_clamped(const uint8_t *buf, uint32_t w, uint32_t h, int x, int y) {
     if (!buf || w == 0 || h == 0) {
         return 0.0f;
     }
@@ -151,15 +146,13 @@ static float svg_alpha_sample_clamped(const uint8_t *buf, uint32_t w, uint32_t h
     return buf[idx + 3] / 255.0f;
 }
 
-static uint32_t svg_noise_hash(uint32_t x, uint32_t y, uint32_t seed)
-{
+static uint32_t svg_noise_hash(uint32_t x, uint32_t y, uint32_t seed) {
     uint32_t h = (x * 374761393u + y * 668265263u) ^ seed;
     h = (h ^ (h >> 13)) * 1274126177u;
     return h ^ (h >> 16);
 }
 
-static float svg_noise2(float x, float y, uint32_t seed)
-{
+static float svg_noise2(float x, float y, uint32_t seed) {
     if (!isfinite(x) || !isfinite(y))
         return 0.0f;
     double ix = floor((double)x), iy = floor((double)y);
@@ -186,8 +179,7 @@ static float svg_noise2(float x, float y, uint32_t seed)
 
 void cupidimage_svg_compute_filter_region(const svg_filter *filter, const svg_render_ctx *ctx,
                                           const svg_bbox *bbox, const svg_matrix *m,
-                                          svg_filter_region *out)
-{
+                                          svg_filter_region *out) {
     if (!out) {
         return;
     }
@@ -246,8 +238,7 @@ void cupidimage_svg_compute_filter_region(const svg_filter *filter, const svg_re
 static void svg_compute_filter_op_region(const svg_filter_op *op, const svg_filter *filter,
                                          const svg_render_ctx *ctx, const svg_bbox *bbox,
                                          const svg_matrix *m, const svg_filter_region *parent,
-                                         svg_filter_region *out)
-{
+                                         svg_filter_region *out) {
     if (!out || !parent) {
         return;
     }
@@ -319,8 +310,7 @@ void cupidimage_svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *c
                                      float base_len, const svg_filter_region *region,
                                      const svg_bbox *bbox, const svg_matrix *m, uint8_t *background,
                                      uint8_t *background_alpha, uint8_t *fill_paint,
-                                     uint8_t *stroke_paint)
-{
+                                     uint8_t *stroke_paint) {
     if (!filter || !ctx || !buf || !filter->content || !*filter->content) {
         return;
     }

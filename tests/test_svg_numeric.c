@@ -15,8 +15,7 @@ static unsigned checks, failures;
         }                                                                                          \
     } while (0)
 
-static void dimensions(void)
-{
+static void dimensions(void) {
     const char *values[] = {"nan", "inf", "-inf", "1e50", "4294967296", "-1", "0"};
     for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
         char svg[128], error[128] = {0};
@@ -38,8 +37,7 @@ static void dimensions(void)
     }
 }
 
-static void options(void)
-{
+static void options(void) {
     const char *svg = "<svg width='16' height='16'/>";
     for (int option = 0; option < 7; option++) {
         cupidimage_svg_options opts = {0};
@@ -69,8 +67,7 @@ static void options(void)
     }
 }
 
-static void clipped_shapes(void)
-{
+static void clipped_shapes(void) {
     const char *shapes[] = {"<rect x='-1e15' y='-1e15' width='2e15' height='2e15' fill='red'/>",
                             "<ellipse cx='0' cy='0' rx='1e15' ry='1e15' fill='red'/>",
                             "<path d='M-1e15 -1e15 H1e15 V1e15 H-1e15 Z' fill='red'/>",
@@ -97,8 +94,7 @@ static void clipped_shapes(void)
     }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "shapes") == 0)
         clipped_shapes();
     else if (argc > 1 && strcmp(argv[1], "dimensions") == 0)

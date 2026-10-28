@@ -9,6 +9,7 @@ typedef struct {
     unsigned cid;
     unsigned char length, notdef;
 } cmap_range;
+
 struct pdf_cmap {
     cmap_range spaces[256], *ranges;
     unsigned space_count, count, capacity;
@@ -16,6 +17,7 @@ struct pdf_cmap {
     char name[128];
     pdf_cmap *base;
 };
+
 typedef struct {
     int type;
     char text[128];
@@ -23,16 +25,18 @@ typedef struct {
     unsigned length;
     double number;
 } cmap_token;
+
 enum { CM_END, CM_WORD, CM_NAME, CM_NUMBER, CM_HEX, CM_OTHER, CM_ERROR };
-static int cmap_hex(unsigned char c)
-{
+
+static int cmap_hex(unsigned char c) {
     return c >= '0' && c <= '9'   ? c - '0'
            : c >= 'a' && c <= 'f' ? c - 'a' + 10
            : c >= 'A' && c <= 'F' ? c - 'A' + 10
                                   : -1;
 }
-static cmap_token cmap_lex(const unsigned char *data, size_t length, size_t *pos, unsigned nesting)
-{
+
+static cmap_token cmap_lex(const unsigned char *data, size_t length, size_t *pos,
+                           unsigned nesting) {
     cmap_token t = {0};
     if (nesting == 64) {
         t.type = CM_ERROR;
@@ -153,26 +157,26 @@ static cmap_token cmap_lex(const unsigned char *data, size_t length, size_t *pos
     }
     return t;
 }
-void cupidimage_pdf_cmap_free(pdf_cmap *map)
-{
+
+void cupidimage_pdf_cmap_free(pdf_cmap *map) {
     if (map) {
         cupidimage_pdf_cmap_free(map->base);
         free(map->ranges);
         free(map);
     }
 }
-size_t cupidimage_pdf_cmap_bytes(const pdf_cmap *map)
-{
+
+size_t cupidimage_pdf_cmap_bytes(const pdf_cmap *map) {
     return map ? sizeof(*map) + (size_t)map->capacity * sizeof(*map->ranges) +
                      cupidimage_pdf_cmap_bytes(map->base)
                : 0;
 }
-int cupidimage_pdf_cmap_vertical(const pdf_cmap *map)
-{
+
+int cupidimage_pdf_cmap_vertical(const pdf_cmap *map) {
     return map->vertical;
 }
-static int cmap_append(pdf_cmap *map, cmap_range range)
-{
+
+static int cmap_append(pdf_cmap *map, cmap_range range) {
     if (map->count == 65536)
         return 0;
     if (map->count == map->capacity) {
@@ -186,8 +190,8 @@ static int cmap_append(pdf_cmap *map, cmap_range range)
     map->ranges[map->count++] = range;
     return 1;
 }
-static int cmap_space(pdf_cmap *map, cmap_range range)
-{
+
+static int cmap_space(pdf_cmap *map, cmap_range range) {
     for (unsigned b = 0; b < range.length; b++) {
         unsigned shift = (range.length - b - 1) * 8;
         if (((range.low >> shift) & 255) > ((range.high >> shift) & 255))
@@ -214,8 +218,8 @@ static int cmap_space(pdf_cmap *map, cmap_range range)
     map->spaces[map->space_count++] = range;
     return 1;
 }
-static int cmap_unambiguous(uint32_t low, uint32_t high, unsigned length)
-{
+
+static int cmap_unambiguous(uint32_t low, uint32_t high, unsigned length) {
     int different = 0;
     for (unsigned b = 0; b < length; b++) {
         unsigned shift = (length - b - 1) * 8, lo = (low >> shift) & 255,
@@ -227,8 +231,8 @@ static int cmap_unambiguous(uint32_t low, uint32_t high, unsigned length)
     }
     return low <= high;
 }
-static int cmap_compare(const void *a, const void *b)
-{
+
+static int cmap_compare(const void *a, const void *b) {
     const cmap_range *x = a, *y = b;
     unsigned xc = x->length * 2 + x->notdef, yc = y->length * 2 + y->notdef;
     if (xc != yc)
@@ -237,8 +241,8 @@ static int cmap_compare(const void *a, const void *b)
         return x->low < y->low ? -1 : 1;
     return x->high < y->high ? -1 : x->high > y->high;
 }
-static int cmap_index(pdf_cmap *map)
-{
+
+static int cmap_index(pdf_cmap *map) {
     if (!map->count) {
         map->sorted = 1;
         return 1;
@@ -262,9 +266,9 @@ static int cmap_index(pdf_cmap *map)
         free(sorted);
     return 1;
 }
+
 static int cmap_block(pdf_cmap *map, const unsigned char *data, size_t length, size_t *pos,
-                      const char *kind, unsigned count)
-{
+                      const char *kind, unsigned count) {
     int space = !strcmp(kind, "begincodespacerange"),
         single = !strcmp(kind, "begincidchar") || !strcmp(kind, "beginnotdefchar"),
         notdef = strstr(kind, "notdef") != NULL;
@@ -295,8 +299,8 @@ static int cmap_block(pdf_cmap *map, const unsigned char *data, size_t length, s
     cmap_token end = cmap_lex(data, length, pos, 0);
     return end.type == CM_WORD && !strncmp(end.text, "end", 3) && !strcmp(end.text + 3, kind + 5);
 }
-static int cmap_program(pdf_cmap *map, const unsigned char *data, size_t length, int dict_mode)
-{
+
+static int cmap_program(pdf_cmap *map, const unsigned char *data, size_t length, int dict_mode) {
     size_t pos = 0;
     cmap_token older = {0}, previous = {0};
     int scope = 0, active = 0, literal = 0, local_mode = -1;
@@ -378,9 +382,9 @@ static int cmap_program(pdf_cmap *map, const unsigned char *data, size_t length,
         map->vertical = dict_mode;
     return map->space_count && cmap_index(map);
 }
+
 static int cmap_value(const unsigned char *doc, size_t size, const pdf_object_view *view, size_t p,
-                      pdf_object_view *out, int *object)
-{
+                      pdf_object_view *out, int *object) {
     *object = 0;
     if (cupidimage_pdf_page_reference(view, p, object))
         return cupidimage_pdf_get_object_content(doc, size, *object, out);
@@ -388,9 +392,9 @@ static int cmap_value(const unsigned char *doc, size_t size, const pdf_object_vi
     out->len = view->len - p;
     return 1;
 }
+
 static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_view *view,
-                     pdf_cmap **result, int chain[5], unsigned depth, size_t *decoded_bytes)
-{
+                     pdf_cmap **result, int chain[5], unsigned depth, size_t *decoded_bytes) {
     if (depth == 5)
         return 0;
     pdf_cmap *map = calloc(1, sizeof(*map));
@@ -490,17 +494,17 @@ done:
     cupidimage_pdf_cmap_free(map);
     return 0;
 }
+
 int cupidimage_pdf_cmap_load(const unsigned char *doc, size_t size, const pdf_object_view *view,
-                             pdf_cmap **result)
-{
+                             pdf_cmap **result) {
     int chain[5] = {0};
     size_t decoded = 0;
     *result = NULL;
     return cmap_load(doc, size, view, result, chain, 0, &decoded);
 }
+
 static int cmap_lookup(const pdf_cmap *map, uint32_t source, unsigned length, int notdef,
-                       unsigned *cid, size_t *work)
-{
+                       unsigned *cid, size_t *work) {
     for (; map; map = map->base) {
         if (map->sorted) {
             unsigned lo = 0, hi = map->count, category = length * 2 + (unsigned)notdef;
@@ -539,10 +543,10 @@ static int cmap_lookup(const pdf_cmap *map, uint32_t source, unsigned length, in
     }
     return 0;
 }
+
 int cupidimage_pdf_cmap_next(const pdf_cmap *map, const unsigned char *text, size_t length,
                              size_t *used, uint32_t *source, unsigned *cid, unsigned *notdef,
-                             int *valid, size_t *work)
-{
+                             int *valid, size_t *work) {
     if (!length)
         return 0;
     *source = 0;

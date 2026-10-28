@@ -13,12 +13,12 @@ static unsigned checks, failures;
             fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #expr);                                \
         }                                                                                          \
     } while (0)
-static int dictionary(const unsigned char *data, size_t n, pdf_cff_dict *dict, int priv)
-{
+
+static int dictionary(const unsigned char *data, size_t n, pdf_cff_dict *dict, int priv) {
     return cupidimage_pdf_cff_dict((pdf_cff_slice){data, n}, dict, priv);
 }
-int main(int argc, char **argv)
-{
+
+int main(int argc, char **argv) {
     if (argc > 1) {
         FILE *file = fopen(argv[1], "rb");
         if (!file)

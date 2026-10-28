@@ -3,8 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 
-static int is_svg_data(const unsigned char *data, size_t size)
-{
+static int is_svg_data(const unsigned char *data, size_t size) {
     if (!data || size < 4) {
         return 0;
     }
@@ -33,8 +32,7 @@ static int is_svg_data(const unsigned char *data, size_t size)
 }
 
 int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                          size_t errcap)
-{
+                          size_t errcap) {
     if (!data || !out) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -98,7 +96,6 @@ int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_ima
     return 0;
 }
 
-int cupidimage_load_image_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_image_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_image);
 }

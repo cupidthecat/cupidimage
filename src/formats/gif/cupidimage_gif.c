@@ -5,15 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
 }
 
-static uint16_t read_le16(const unsigned char *p)
-{
+static uint16_t read_le16(const unsigned char *p) {
     return (uint16_t)(p[0] | (p[1] << 8));
 }
 
@@ -25,8 +23,7 @@ typedef struct gif_bitstream {
     int bitcount;
 } gif_bitstream;
 
-static int gif_bs_read(gif_bitstream *bs, int bits, int *out)
-{
+static int gif_bs_read(gif_bitstream *bs, int bits, int *out) {
     while (bs->bitcount < bits) {
         if (bs->pos >= bs->size) {
             return 0;
@@ -41,8 +38,7 @@ static int gif_bs_read(gif_bitstream *bs, int bits, int *out)
 }
 
 static int gif_read_color_table(const uint8_t *data, size_t size, size_t *off, int entries,
-                                uint8_t *palette, char *err, size_t errcap)
-{
+                                uint8_t *palette, char *err, size_t errcap) {
     size_t bytes = (size_t)entries * 3u;
     if (*off + bytes > size) {
         set_err(err, errcap, "truncated GIF");
@@ -54,8 +50,7 @@ static int gif_read_color_table(const uint8_t *data, size_t size, size_t *off, i
 }
 
 static int gif_skip_subblocks(const uint8_t *data, size_t size, size_t *off, char *err,
-                              size_t errcap)
-{
+                              size_t errcap) {
     while (1) {
         if (*off >= size) {
             set_err(err, errcap, "truncated GIF");
@@ -75,8 +70,7 @@ static int gif_skip_subblocks(const uint8_t *data, size_t size, size_t *off, cha
 }
 
 static int gif_read_subblocks(const uint8_t *data, size_t size, size_t *off, uint8_t **out,
-                              size_t *out_size, char *err, size_t errcap)
-{
+                              size_t *out_size, char *err, size_t errcap) {
     size_t pos = *off;
     size_t total = 0;
     while (1) {
@@ -128,8 +122,7 @@ static int gif_read_subblocks(const uint8_t *data, size_t size, size_t *off, uin
 }
 
 static int gif_lzw_decode(const uint8_t *data, size_t size, int min_code_size, uint8_t *out,
-                          size_t outcap, size_t *outlen)
-{
+                          size_t outcap, size_t *outlen) {
     if (min_code_size < 2 || min_code_size > 8) {
         return 0;
     }
@@ -229,8 +222,7 @@ static int gif_lzw_decode(const uint8_t *data, size_t size, int min_code_size, u
     return 1;
 }
 
-static int gif_deinterlace(uint8_t *out, const uint8_t *in, uint32_t w, uint32_t h)
-{
+static int gif_deinterlace(uint8_t *out, const uint8_t *in, uint32_t w, uint32_t h) {
     static const int offsets[4] = {0, 4, 2, 1};
     static const int steps[4] = {8, 8, 4, 2};
     size_t src = 0;
@@ -248,8 +240,7 @@ static int gif_deinterlace(uint8_t *out, const uint8_t *in, uint32_t w, uint32_t
 }
 
 static void gif_fill_rect(uint8_t *canvas, uint32_t canvas_w, uint32_t left, uint32_t top,
-                          uint32_t w, uint32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
+                          uint32_t w, uint32_t h, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     for (uint32_t y = 0; y < h; y++) {
         uint8_t *row = canvas + ((size_t)(top + y) * (size_t)canvas_w + (size_t)left) * 4u;
         for (uint32_t x = 0; x < w; x++) {
@@ -263,8 +254,7 @@ static void gif_fill_rect(uint8_t *canvas, uint32_t canvas_w, uint32_t left, uin
 
 static int gif_blit_indices(uint8_t *canvas, uint32_t canvas_w, uint32_t left, uint32_t top,
                             uint32_t w, uint32_t h, const uint8_t *indices, const uint8_t *palette,
-                            int palette_entries, int transparent, uint8_t transparent_index)
-{
+                            int palette_entries, int transparent, uint8_t transparent_index) {
     for (uint32_t y = 0; y < h; y++) {
         uint8_t *row = canvas + ((size_t)(top + y) * (size_t)canvas_w + (size_t)left) * 4u;
         const uint8_t *src = indices + (size_t)y * (size_t)w;
@@ -287,8 +277,7 @@ static int gif_blit_indices(uint8_t *canvas, uint32_t canvas_w, uint32_t left, u
 
 static void gif_apply_disposal(uint8_t *canvas, const uint8_t *restore, uint32_t canvas_w,
                                uint32_t left, uint32_t top, uint32_t w, uint32_t h, int disposal,
-                               uint8_t bg_r, uint8_t bg_g, uint8_t bg_b, uint8_t bg_a)
-{
+                               uint8_t bg_r, uint8_t bg_g, uint8_t bg_b, uint8_t bg_a) {
     /* Method 0: no disposal specified (leave pixels) */
     /* Method 1: do not dispose (leave pixels) */
     /* Method 2: restore to background color */
@@ -305,8 +294,7 @@ static void gif_apply_disposal(uint8_t *canvas, const uint8_t *restore, uint32_t
 }
 
 int cupidimage_load_gif(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                        size_t errcap)
-{
+                        size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -572,13 +560,11 @@ int cupidimage_load_gif(const unsigned char *data, size_t size, cupidimage_image
     return 1;
 }
 
-int cupidimage_load_gif_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_gif_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_gif);
 }
 
-void cupidimage_free_animation(cupidimage_animation *anim)
-{
+void cupidimage_free_animation(cupidimage_animation *anim) {
     if (!anim) {
         return;
     }
@@ -602,8 +588,7 @@ void cupidimage_free_animation(cupidimage_animation *anim)
 }
 
 int cupidimage_load_gif_animation(const unsigned char *data, size_t size, cupidimage_animation *out,
-                                  char *err, size_t errcap)
-{
+                                  char *err, size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -956,8 +941,7 @@ fail:
 }
 
 int cupidimage_load_gif_animation_file(const char *path, cupidimage_animation *out, char *err,
-                                       size_t errcap)
-{
+                                       size_t errcap) {
     return cupidimage_load_animation_file_via_memory(path, out, err, errcap,
                                                      cupidimage_load_gif_animation);
 }

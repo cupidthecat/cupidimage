@@ -8,8 +8,7 @@
 /* Borrow an inline dictionary or own a resolved indirect dictionary. The parent
  * view must stay alive until a borrowed result has been consumed. */
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,
-                                    const char *key, pdf_object_view *result)
-{
+                                    const char *key, pdf_object_view *result) {
     size_t pos;
     int object;
     if (!cupidimage_pdf_page_value(parent, key, &pos))
@@ -32,19 +31,16 @@ int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object
     return 1;
 }
 
-static int pdf_image_object(const pdf_render_state *st, const char *name, int *object)
-{
+static int pdf_image_object(const pdf_render_state *st, const char *name, int *object) {
     return cupidimage_pdf_find_resource(st, "XObject", name, NULL, object) && *object > 0;
 }
 
 int cupidimage_pdf_image_integer(const pdf_render_state *st, const pdf_object_view *view,
-                                 const char *key, int *value)
-{
+                                 const char *key, int *value) {
     return cupidimage_pdf_dictionary_integer(st->document, st->document_size, view, key, value);
 }
 
-int cupidimage_pdf_image_name_is(const pdf_object_view *view, const char *key, const char *name)
-{
+int cupidimage_pdf_image_name_is(const pdf_object_view *view, const char *key, const char *name) {
     size_t pos, length = strlen(name);
     if (!cupidimage_pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '/')
         return 0;
@@ -54,19 +50,16 @@ int cupidimage_pdf_image_name_is(const pdf_object_view *view, const char *key, c
 }
 
 int cupidimage_pdf_image_stream(const pdf_render_state *st, const pdf_object_view *view,
-                                const unsigned char **stream, size_t *length)
-{
+                                const unsigned char **stream, size_t *length) {
     return cupidimage_pdf_object_stream(st->document, st->document_size, view, stream, length);
 }
 
-static unsigned char pdf_image_paeth(int a, int b, int c)
-{
+static unsigned char pdf_image_paeth(int a, int b, int c) {
     int p = a + b - c, da = abs(p - a), db = abs(p - b), dc = abs(p - c);
     return (unsigned char)(da <= db && da <= dc ? a : db <= dc ? b : c);
 }
 
-int cupidimage_pdf_image_filter_is(const pdf_object_view *view, const char *name)
-{
+int cupidimage_pdf_image_filter_is(const pdf_object_view *view, const char *name) {
     if (cupidimage_pdf_image_name_is(view, "Filter", name))
         return 1;
     size_t pos, length = strlen(name);
@@ -85,8 +78,7 @@ int cupidimage_pdf_image_filter_is(const pdf_object_view *view, const char *name
 /* Check the frame before invoking the decoder so a small image dictionary cannot
  * hide a JPEG frame with enormous dimensions or a different component count. */
 static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length, int width, int height,
-                                  int components, int transform)
-{
+                                  int components, int transform) {
     if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8)
         return 0;
     size_t pos = 2;
@@ -127,8 +119,7 @@ static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length, in
 }
 
 static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_view *view,
-                                  int width, int height, int components, unsigned char **samples)
-{
+                                  int width, int height, int components, unsigned char **samples) {
     pdf_object_view params = {0};
     size_t pos;
     int transform = -1;
@@ -164,8 +155,7 @@ static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_v
     return 1;
 }
 
-static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bits)
-{
+static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bits) {
     if (bits == 8)
         return row[index];
     if (bits == 16)
@@ -174,8 +164,7 @@ static uint32_t pdf_packed_sample(const unsigned char *row, size_t index, int bi
     return (row[bit / 8] >> (8 - bits - (int)(bit & 7))) & ((1u << bits) - 1u);
 }
 
-static void pdf_store_packed_sample(unsigned char *row, size_t index, int bits, uint32_t value)
-{
+static void pdf_store_packed_sample(unsigned char *row, size_t index, int bits, uint32_t value) {
     if (bits == 8) {
         row[index] = (unsigned char)value;
         return;
@@ -192,8 +181,7 @@ static void pdf_store_packed_sample(unsigned char *row, size_t index, int bits, 
 }
 
 static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view, int width,
-                             int height, int components, int image_bits, unsigned char **samples)
-{
+                             int height, int components, int image_bits, unsigned char **samples) {
     const unsigned char *stream;
     size_t length, row = ((size_t)width * components * image_bits + 7u) / 8u;
     size_t bytes = row * height, pos;
@@ -301,8 +289,8 @@ typedef struct {
     double decode[2], matte[4];
 } pdf_image_mask;
 
-static int pdf_image_array(const pdf_object_view *view, const char *key, double *values, int count)
-{
+static int pdf_image_array(const pdf_object_view *view, const char *key, double *values,
+                           int count) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '[')
         return 0;
@@ -316,8 +304,7 @@ static int pdf_image_array(const pdf_object_view *view, const char *key, double 
     return pos < view->len && view->data[pos] == ']';
 }
 
-static int pdf_image_boolean(const pdf_object_view *view, const char *key, int *value)
-{
+static int pdf_image_boolean(const pdf_object_view *view, const char *key, int *value) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, key, &pos))
         return 1;
@@ -336,8 +323,7 @@ static int pdf_image_boolean(const pdf_object_view *view, const char *key, int *
 
 static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view *parent,
                                const char *key, int width, int height, int components,
-                               pdf_image_mask *mask)
-{
+                               pdf_image_mask *mask) {
     pdf_object_view view = {0};
     int object, stencil = 0, ok = 0;
     size_t pos;
@@ -393,8 +379,7 @@ done:
     return ok;
 }
 
-static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double v)
-{
+static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double v) {
     if (!mask->samples)
         return 1;
     int x = (int)(u * mask->width), y = (int)((1 - v) * mask->height);
@@ -408,8 +393,7 @@ static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double 
     return mask->soft ? alpha : 1 - alpha;
 }
 
-int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view)
-{
+int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view) {
     pdf_object_view image = *view;
     image.owned = NULL; /* The caller retains the dictionary and stream. */
     unsigned char *samples = NULL;
@@ -599,8 +583,7 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name)
-{
+int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
     pdf_object_view image = {0};
     int object, ok = 0;
     if (pdf_image_object(st, name, &object) &&

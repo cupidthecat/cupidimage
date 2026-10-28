@@ -5,16 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-void cupidimage_set_err(char *err, size_t errcap, const char *msg)
-{
+void cupidimage_set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg ? msg : "error");
     }
 }
 
 int cupidimage_read_file_bytes(const char *path, unsigned char **data, size_t *size, char *err,
-                               size_t errcap)
-{
+                               size_t errcap) {
     if (!path || !data || !size) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -68,8 +66,7 @@ int cupidimage_read_file_bytes(const char *path, unsigned char **data, size_t *s
 }
 
 int cupidimage_load_image_file_via_memory(const char *path, cupidimage_image *out, char *err,
-                                          size_t errcap, cupidimage_image_loader_fn loader)
-{
+                                          size_t errcap, cupidimage_image_loader_fn loader) {
     if (!path || !out || !loader) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;
@@ -88,8 +85,7 @@ int cupidimage_load_image_file_via_memory(const char *path, cupidimage_image *ou
 
 int cupidimage_load_animation_file_via_memory(const char *path, cupidimage_animation *out,
                                               char *err, size_t errcap,
-                                              cupidimage_animation_loader_fn loader)
-{
+                                              cupidimage_animation_loader_fn loader) {
     if (!path || !out || !loader) {
         cupidimage_set_err(err, errcap, "invalid arguments");
         return 0;

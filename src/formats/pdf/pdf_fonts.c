@@ -11,8 +11,7 @@
 
 #include "pdf_internal.h"
 
-void cupidimage_pdf_font_table_init(pdf_font_table *table)
-{
+void cupidimage_pdf_font_table_init(pdf_font_table *table) {
     if (!table)
         return;
     table->cid_bytes = table->program_bytes = 0;
@@ -21,8 +20,7 @@ void cupidimage_pdf_font_table_init(pdf_font_table *table)
     table->cap = 0;
 }
 
-void cupidimage_pdf_font_table_free(pdf_font_table *table)
-{
+void cupidimage_pdf_font_table_free(pdf_font_table *table) {
     if (!table)
         return;
     for (int i = 0; i < table->count; i++) {
@@ -48,8 +46,7 @@ void cupidimage_pdf_font_table_free(pdf_font_table *table)
     table->cap = 0;
 }
 
-static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name, int object)
-{
+static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name, int object) {
     size_t name_length = name ? strlen(name) : 0;
     if (!table || (!object && !name_length) || name_length >= 32) {
         return NULL;
@@ -104,8 +101,7 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name,
     return font;
 }
 
-const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, const char *name)
-{
+const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, const char *name) {
     if (!table || !name || !*name) {
         return NULL;
     }
@@ -117,8 +113,7 @@ const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, 
     return NULL;
 }
 
-const pdf_font_map *cupidimage_pdf_font_table_object(const pdf_font_table *table, int object)
-{
+const pdf_font_map *cupidimage_pdf_font_table_object(const pdf_font_table *table, int object) {
     if (!table || object <= 0)
         return NULL;
     for (int i = 0; i < table->count; i++)
@@ -128,8 +123,7 @@ const pdf_font_map *cupidimage_pdf_font_table_object(const pdf_font_table *table
 }
 
 static int pdf_font_add_tounicode(pdf_font_map *font, uint32_t src_code, uint8_t src_len,
-                                  uint32_t dst_codepoint)
-{
+                                  uint32_t dst_codepoint) {
     if (!font || src_len == 0) {
         return 0;
     }
@@ -165,8 +159,7 @@ typedef enum {
 } pdf_cmap_tok_type;
 
 static pdf_cmap_tok_type pdf_cmap_next_token(const unsigned char *data, size_t len, size_t *pos,
-                                             char *tok, size_t tok_cap)
-{
+                                             char *tok, size_t tok_cap) {
     if (!data || !pos || !tok || tok_cap == 0) {
         return PDF_CMAP_TOK_EOF;
     }
@@ -232,8 +225,7 @@ static pdf_cmap_tok_type pdf_cmap_next_token(const unsigned char *data, size_t l
     return (n > 0) ? PDF_CMAP_TOK_WORD : PDF_CMAP_TOK_EOF;
 }
 
-static int pdf_hex_value(char c)
-{
+static int pdf_hex_value(char c) {
     if (c >= '0' && c <= '9')
         return c - '0';
     if (c >= 'a' && c <= 'f')
@@ -244,8 +236,7 @@ static int pdf_hex_value(char c)
 }
 
 static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_len,
-                                uint32_t *first_u16)
-{
+                                uint32_t *first_u16) {
     if (!hex || !*hex || !code || !code_len || !first_u16) {
         return 0;
     }
@@ -286,8 +277,7 @@ static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_l
 }
 
 static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream_len,
-                                      pdf_font_map *font)
-{
+                                      pdf_font_map *font) {
     if (!stream || !font) {
         return 0;
     }
@@ -411,8 +401,7 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
     return 1;
 }
 
-static int pdf_font_entry_compare(const void *left, const void *right)
-{
+static int pdf_font_entry_compare(const void *left, const void *right) {
     const pdf_tounicode_entry *a = (const pdf_tounicode_entry *)left;
     const pdf_tounicode_entry *b = (const pdf_tounicode_entry *)right;
     if (a->src_len != b->src_len)
@@ -424,8 +413,7 @@ static int pdf_font_entry_compare(const void *left, const void *right)
 
 /* Sort once rather than searching the whole map for every insertion. Preserve
  * last-definition wins when the same source code appears more than once. */
-static void pdf_font_sort_map(pdf_font_map *font)
-{
+static void pdf_font_sort_map(pdf_font_map *font) {
     if (!font->count)
         return;
     qsort(font->entries, (size_t)font->count, sizeof(*font->entries), pdf_font_entry_compare);
@@ -442,8 +430,7 @@ static void pdf_font_sort_map(pdf_font_map *font)
 
 static int pdf_parse_font_tounicode(const unsigned char *data, size_t size,
                                     const pdf_object_view *font_view, pdf_font_map *font, char *err,
-                                    size_t errcap)
-{
+                                    size_t errcap) {
     int tounicode_obj = 0;
     size_t value_pos;
     if (!cupidimage_pdf_page_value(font_view, "ToUnicode", &value_pos)) {
@@ -487,8 +474,7 @@ static int pdf_parse_font_tounicode(const unsigned char *data, size_t size,
 /* Resolve only the named outer dictionary entry, preserving resource scope. */
 int cupidimage_pdf_font_dictionary_at(const unsigned char *data, size_t size,
                                       const pdf_object_view *parent, size_t pos,
-                                      pdf_object_view *out)
-{
+                                      pdf_object_view *out) {
     int object;
     if (cupidimage_pdf_page_reference(parent, pos, &object)) {
         if (!cupidimage_pdf_get_object_content(data, size, object, out))
@@ -549,8 +535,8 @@ fail:
 }
 
 static int pdf_font_dictionary(const unsigned char *data, size_t size,
-                               const pdf_object_view *parent, const char *key, pdf_object_view *out)
-{
+                               const pdf_object_view *parent, const char *key,
+                               pdf_object_view *out) {
     size_t pos;
     return cupidimage_pdf_page_value(parent, key, &pos) &&
            cupidimage_pdf_font_dictionary_at(data, size, parent, pos, out);
@@ -558,8 +544,7 @@ static int pdf_font_dictionary(const unsigned char *data, size_t size,
 
 /* Simple-font widths use character codes before ToUnicode mapping. */
 static int pdf_parse_font_widths(const unsigned char *data, size_t size,
-                                 const pdf_object_view *view, pdf_font_map *font)
-{
+                                 const pdf_object_view *view, pdf_font_map *font) {
     size_t pos;
     if (cupidimage_pdf_entry_is_name(data, size, view, "Subtype", "Type0"))
         return 1;
@@ -627,8 +612,7 @@ static int pdf_parse_font_widths(const unsigned char *data, size_t size,
 static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
                                        const unsigned char *dict_data, size_t dict_start,
                                        size_t dict_end, pdf_font_table *table, int graphics,
-                                       char *err, size_t errcap)
-{
+                                       char *err, size_t errcap) {
     pdf_object_view dictionary = {dict_data, dict_end + 2, NULL};
     size_t pos = dict_start;
     while (pos < dict_end) {
@@ -717,8 +701,7 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
 
 static int pdf_collect_graphics_fonts(const unsigned char *data, size_t size,
                                       const pdf_object_view *resources, pdf_font_table *table,
-                                      char *err, size_t errcap)
-{
+                                      char *err, size_t errcap) {
     size_t pos;
     if (!cupidimage_pdf_page_value(resources, "ExtGState", &pos))
         return 1;
@@ -732,8 +715,7 @@ static int pdf_collect_graphics_fonts(const unsigned char *data, size_t size,
 
 int cupidimage_pdf_collect_resource_fonts(const unsigned char *data, size_t size,
                                           const pdf_object_view *owner, pdf_font_table *table,
-                                          char *err, size_t errcap)
-{
+                                          char *err, size_t errcap) {
     pdf_object_view resources = {0}, fonts = {0};
     int ok = pdf_font_dictionary(data, size, owner, "Resources", &resources);
     size_t pos;
@@ -749,8 +731,7 @@ int cupidimage_pdf_collect_resource_fonts(const unsigned char *data, size_t size
 }
 
 int cupidimage_pdf_collect_page_fonts(const unsigned char *data, size_t size, int page_obj,
-                                      pdf_font_table *table, char *err, size_t errcap)
-{
+                                      pdf_font_table *table, char *err, size_t errcap) {
     if (!table) {
         cupidimage_set_err(err, errcap, "pdf: null font table");
         return 0;

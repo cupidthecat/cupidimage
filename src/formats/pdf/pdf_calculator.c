@@ -9,7 +9,9 @@
 #define PDF_CALC_CODE 4096
 #define PDF_CALC_STACK 256
 #define PDF_CALC_DEPTH 16
+
 enum { REAL, INTEGER, BOOLEAN };
+
 enum {
     PUSH,
     JFALSE,
@@ -55,34 +57,39 @@ enum {
     POP,
     ROLL
 };
+
 typedef struct {
     double number;
     int type;
 } calc_value;
+
 typedef struct {
     int op, target;
     calc_value value;
 } calc_instruction;
+
 struct pdf_calculator_program {
     int count;
     calc_instruction code[PDF_CALC_CODE];
 };
+
 typedef struct {
     const unsigned char *data;
     size_t length, pos;
     pdf_calculator_program *program;
 } calc_parser;
+
 static const char *const operators[] = {
     "abs",      "add", "atan",     "ceiling", "cos",   "cvi", "cvr",   "div",   "exp",  "floor",
     "idiv",     "ln",  "log",      "mod",     "mul",   "neg", "round", "sin",   "sqrt", "sub",
     "truncate", "and", "bitshift", "eq",      "false", "ge",  "gt",    "le",    "lt",   "ne",
     "not",      "or",  "true",     "xor",     "copy",  "dup", "exch",  "index", "pop",  "roll"};
-static int whitespace(unsigned char c)
-{
+
+static int whitespace(unsigned char c) {
     return c == 0 || c == 9 || c == 10 || c == 12 || c == 13 || c == 32;
 }
-static void skip(calc_parser *p)
-{
+
+static void skip(calc_parser *p) {
     for (;;) {
         while (p->pos < p->length && whitespace(p->data[p->pos]))
             p->pos++;
@@ -92,8 +99,8 @@ static void skip(calc_parser *p)
             p->pos++;
     }
 }
-static size_t token(calc_parser *p, const unsigned char **start)
-{
+
+static size_t token(calc_parser *p, const unsigned char **start) {
     skip(p);
     size_t begin = p->pos;
     while (p->pos < p->length && !whitespace(p->data[p->pos]) &&
@@ -102,22 +109,22 @@ static size_t token(calc_parser *p, const unsigned char **start)
     *start = p->data + begin;
     return p->pos - begin;
 }
-static int word(calc_parser *p, const char *name)
-{
+
+static int word(calc_parser *p, const char *name) {
     const unsigned char *start;
     size_t n = token(p, &start);
     return n == strlen(name) && !memcmp(start, name, n);
 }
-static int emit(calc_parser *p, int op)
-{
+
+static int emit(calc_parser *p, int op) {
     if (p->program->count == PDF_CALC_CODE)
         return -1;
     int i = p->program->count++;
     p->program->code[i].op = op;
     return i;
 }
-static int block(calc_parser *p, unsigned depth)
-{
+
+static int block(calc_parser *p, unsigned depth) {
     if (depth == PDF_CALC_DEPTH || p->pos == p->length || p->data[p->pos++] != '{')
         return 0;
     for (;;) {
@@ -197,8 +204,9 @@ static int block(calc_parser *p, unsigned depth)
             value, !point && value >= INT32_MIN && value <= INT32_MAX ? INTEGER : REAL};
     }
 }
-pdf_calculator_program *cupidimage_pdf_calculator_compile(const unsigned char *data, size_t length)
-{
+
+pdf_calculator_program *cupidimage_pdf_calculator_compile(const unsigned char *data,
+                                                          size_t length) {
     pdf_calculator_program *program = calloc(1, sizeof(*program));
     if (!program)
         return NULL;
@@ -215,18 +223,18 @@ pdf_calculator_program *cupidimage_pdf_calculator_compile(const unsigned char *d
     }
     return program;
 }
-static int numeric(calc_value v)
-{
+
+static int numeric(calc_value v) {
     return v.type != BOOLEAN;
 }
-static calc_value integer_bits(uint32_t bits)
-{
+
+static calc_value integer_bits(uint32_t bits) {
     double value = bits <= INT32_MAX ? (double)bits : (double)bits - 4294967296.0;
     return (calc_value){value, INTEGER};
 }
+
 int cupidimage_pdf_calculator_evaluate(const pdf_calculator_program *program, const double *input,
-                                       int inputs, double *output, int outputs, size_t *budget)
-{
+                                       int inputs, double *output, int outputs, size_t *budget) {
     calc_value stack[PDF_CALC_STACK];
     int count = 0;
     if (inputs < 0 || inputs > PDF_CALC_STACK || outputs < 0 || outputs > PDF_CALC_STACK)

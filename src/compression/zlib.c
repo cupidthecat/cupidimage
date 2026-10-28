@@ -12,8 +12,7 @@ typedef struct {
     int overflow;
 } deflate_writer;
 
-static void deflate_put_bits(deflate_writer *w, uint32_t bits, int nbits)
-{
+static void deflate_put_bits(deflate_writer *w, uint32_t bits, int nbits) {
     w->bitbuf |= bits << w->bitcount;
     w->bitcount += nbits;
 
@@ -28,8 +27,7 @@ static void deflate_put_bits(deflate_writer *w, uint32_t bits, int nbits)
     }
 }
 
-static void deflate_flush_bits(deflate_writer *w)
-{
+static void deflate_flush_bits(deflate_writer *w) {
     if (w->bitcount > 0) {
         if (w->pos >= w->outcap) {
             w->overflow = 1;
@@ -85,8 +83,7 @@ static const uint8_t static_lit_lens[288] = {
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8};
 
 /* Reverse bits for Huffman coding */
-static uint32_t reverse_bits(uint32_t val, int nbits)
-{
+static uint32_t reverse_bits(uint32_t val, int nbits) {
     uint32_t result = 0;
     for (int i = 0; i < nbits; i++) {
         result = (result << 1) | (val & 1);
@@ -96,8 +93,7 @@ static uint32_t reverse_bits(uint32_t val, int nbits)
 }
 
 /* Calculate Adler-32 checksum */
-static uint32_t adler32(const uint8_t *data, size_t len)
-{
+static uint32_t adler32(const uint8_t *data, size_t len) {
     uint32_t a = 1, b = 0;
     const uint32_t MOD_ADLER = 65521;
 
@@ -110,8 +106,7 @@ static uint32_t adler32(const uint8_t *data, size_t len)
 }
 
 int cupidimage_deflate_compress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
-                                size_t *outlen)
-{
+                                size_t *outlen) {
     if (outcap < 6) {
         return 0;
     }
@@ -174,8 +169,7 @@ struct bitstream {
     size_t window;
 };
 
-static int bs_fill(struct bitstream *bs, int need)
-{
+static int bs_fill(struct bitstream *bs, int need) {
     while (bs->bitcount < need && bs->pos < bs->size) {
         bs->bitbuf |= (uint32_t)bs->data[bs->pos++] << bs->bitcount;
         bs->bitcount += 8;
@@ -183,8 +177,7 @@ static int bs_fill(struct bitstream *bs, int need)
     return bs->bitcount >= need;
 }
 
-static uint32_t bs_read(struct bitstream *bs, int bits)
-{
+static uint32_t bs_read(struct bitstream *bs, int bits) {
     if (!bs_fill(bs, bits)) {
         bs->failed = 1;
         return 0;
@@ -195,8 +188,7 @@ static uint32_t bs_read(struct bitstream *bs, int bits)
     return val;
 }
 
-static void bs_align(struct bitstream *bs)
-{
+static void bs_align(struct bitstream *bs) {
     /* Return complete lookahead bytes to the byte reader; discard only padding. */
     bs->pos -= (size_t)(bs->bitcount / 8);
     bs->bitbuf = 0;
@@ -208,15 +200,13 @@ typedef struct huff_table {
     uint16_t *table;
 } huff_table;
 
-static void huff_free(huff_table *ht)
-{
+static void huff_free(huff_table *ht) {
     free(ht->table);
     ht->table = NULL;
     ht->maxbits = 0;
 }
 
-static int huff_build(huff_table *ht, const uint8_t *lengths, int num, int maxbits, int kind)
-{
+static int huff_build(huff_table *ht, const uint8_t *lengths, int num, int maxbits, int kind) {
     int count[16] = {0};
     int maxlen = 0;
     for (int i = 0; i < num; i++) {
@@ -278,8 +268,7 @@ static int huff_build(huff_table *ht, const uint8_t *lengths, int num, int maxbi
     return 1;
 }
 
-static int huff_decode(struct bitstream *bs, const huff_table *ht, int *sym)
-{
+static int huff_decode(struct bitstream *bs, const huff_table *ht, int *sym) {
     if (!ht->table || bs->failed)
         return 0;
     /* A final short code need not have maxbits of lookahead remaining. */
@@ -298,8 +287,7 @@ static int huff_decode(struct bitstream *bs, const huff_table *ht, int *sym)
     return 1;
 }
 
-static int build_fixed_tables(huff_table *litlen, huff_table *dist)
-{
+static int build_fixed_tables(huff_table *litlen, huff_table *dist) {
     uint8_t litlen_lengths[288];
     uint8_t dist_lengths[32];
 
@@ -329,8 +317,7 @@ static int build_fixed_tables(huff_table *litlen, huff_table *dist)
     return 1;
 }
 
-static int build_dynamic_tables(struct bitstream *bs, huff_table *litlen, huff_table *dist)
-{
+static int build_dynamic_tables(struct bitstream *bs, huff_table *litlen, huff_table *dist) {
     int hlit = (int)bs_read(bs, 5) + 257;
     int hdist = (int)bs_read(bs, 5) + 1;
     int hclen = (int)bs_read(bs, 4) + 4;
@@ -418,8 +405,7 @@ static int build_dynamic_tables(struct bitstream *bs, huff_table *litlen, huff_t
     return 1;
 }
 
-static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, size_t *outlen)
-{
+static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, size_t *outlen) {
     static const int length_base[29] = {3,  4,  5,  6,   7,   8,   9,   10,  11, 13,
                                         15, 17, 19, 23,  27,  31,  35,  43,  51, 59,
                                         67, 83, 99, 115, 131, 163, 195, 227, 258};
@@ -550,8 +536,7 @@ static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, siz
 }
 
 int cupidimage_inflate_zlib_prefix(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
-                                   size_t *outlen, size_t *consumed)
-{
+                                   size_t *outlen, size_t *consumed) {
     if (!outlen || !consumed)
         return 0;
     *outlen = 0;
@@ -586,8 +571,7 @@ int cupidimage_inflate_zlib_prefix(const uint8_t *data, size_t size, uint8_t *ou
 /* Container decoders retain strict whole-stream validation. Inline PDF images
    use the prefix form to locate binary data without looking for text tokens. */
 int cupidimage_inflate_zlib(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
-                            size_t *outlen)
-{
+                            size_t *outlen) {
     size_t consumed = 0;
     if (!outlen)
         return 0;

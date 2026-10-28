@@ -5,27 +5,29 @@
 #include <string.h>
 
 enum { T1_EOF, T1_WORD, T1_NAME, T1_NUMBER, T1_PROC, T1_OTHER, T1_ERROR };
+
 typedef struct {
     unsigned type;
     double number;
     char text[128];
     pdf_cff_slice body;
 } t1_token;
+
 typedef struct {
     char readers[16][128];
     unsigned reader_count;
 } t1_syntax;
-static int t1_space(unsigned char c)
-{
+
+static int t1_space(unsigned char c) {
     return c == 0 || c == 9 || c == 10 || c == 12 || c == 13 || c == 32;
 }
-static int t1_delimiter(unsigned char c)
-{
+
+static int t1_delimiter(unsigned char c) {
     return t1_space(c) || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
            c == '/' || c == '<' || c == '>' || c == '%';
 }
-static t1_token t1_lex(pdf_cff_slice source, size_t *position, unsigned depth)
-{
+
+static t1_token t1_lex(pdf_cff_slice source, size_t *position, unsigned depth) {
     t1_token token = {0};
     if (depth == 64) {
         token.type = T1_ERROR;
@@ -114,20 +116,20 @@ static t1_token t1_lex(pdf_cff_slice source, size_t *position, unsigned depth)
     *position = pos;
     return token;
 }
-static int t1_int(t1_token token, int low, int high, int *result)
-{
+
+static int t1_int(t1_token token, int low, int high, int *result) {
     if (token.type != T1_NUMBER || token.number < low || token.number > high ||
         floor(token.number) != token.number)
         return 0;
     *result = (int)token.number;
     return 1;
 }
-static int t1_word(t1_token token, const char *word)
-{
+
+static int t1_word(t1_token token, const char *word) {
     return token.type == T1_WORD && !strcmp(token.text, word);
 }
-static int t1_reader(const t1_syntax *syntax, t1_token token)
-{
+
+static int t1_reader(const t1_syntax *syntax, t1_token token) {
     if (token.type != T1_WORD)
         return 0;
     for (unsigned i = 0; i < syntax->reader_count; i++)
@@ -135,8 +137,8 @@ static int t1_reader(const t1_syntax *syntax, t1_token token)
             return 1;
     return 0;
 }
-static int t1_reader_proc(t1_token token)
-{
+
+static int t1_reader_proc(t1_token token) {
     static const char *const words[] = {"string", "currentfile", "exch", "readstring", "pop"};
     if (token.type != T1_PROC)
         return 0;
@@ -146,8 +148,8 @@ static int t1_reader_proc(t1_token token)
             return 0;
     return t1_lex(token.body, &pos, 0).type == T1_EOF;
 }
-static int t1_binary(pdf_cff_slice source, size_t *pos, int length, pdf_cff_slice *out)
-{
+
+static int t1_binary(pdf_cff_slice source, size_t *pos, int length, pdf_cff_slice *out) {
     if (*pos >= source.length || !t1_space(source.data[*pos]))
         return 0;
     /* RD consumes the delimiter before readstring starts reading binary bytes. */
@@ -158,8 +160,8 @@ static int t1_binary(pdf_cff_slice source, size_t *pos, int length, pdf_cff_slic
     *pos += (size_t)length;
     return 1;
 }
-static void t1_decrypt(unsigned char *data, size_t length, unsigned seed)
-{
+
+static void t1_decrypt(unsigned char *data, size_t length, unsigned seed) {
     uint32_t state = seed;
     for (size_t i = 0; i < length; i++) {
         unsigned cipher = data[i];
@@ -167,8 +169,8 @@ static void t1_decrypt(unsigned char *data, size_t length, unsigned seed)
         state = ((state + cipher) * 52845u + 22719u) & 65535u;
     }
 }
-static int t1_matrix(pdf_cff_slice source, size_t *pos, double matrix[6])
-{
+
+static int t1_matrix(pdf_cff_slice source, size_t *pos, double matrix[6]) {
     t1_token open = t1_lex(source, pos, 0);
     if (open.type != T1_OTHER || open.text[0] != '[')
         return 0;
@@ -181,9 +183,9 @@ static int t1_matrix(pdf_cff_slice source, size_t *pos, double matrix[6])
     t1_token close = t1_lex(source, pos, 0);
     return close.type == T1_OTHER && close.text[0] == ']';
 }
+
 static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][128], int plain,
-                    size_t *private_start)
-{
+                    size_t *private_start) {
     size_t pos = 0;
     int scope = 0, font_scope = 0, encoding = 0, found_type = 0, found_eexec = 0;
     while (pos < source.length) {
@@ -245,9 +247,9 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
     }
     return found_type && found_eexec;
 }
+
 static int t1_subrs(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
-                    const t1_syntax *syntax)
-{
+                    const t1_syntax *syntax) {
     int count;
     if (!t1_int(t1_lex(source, pos, 0), 0, 65536, &count) ||
         !t1_word(t1_lex(source, pos, 0), "array"))
@@ -283,8 +285,8 @@ static int t1_subrs(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
     }
     return 1;
 }
-static int t1_add_glyph(pdf_type1_font *font, const char *name, pdf_cff_slice code)
-{
+
+static int t1_add_glyph(pdf_type1_font *font, const char *name, pdf_cff_slice code) {
     if (font->glyph_count == 65535)
         return 0;
     if (font->glyph_count == font->glyph_capacity) {
@@ -303,9 +305,9 @@ static int t1_add_glyph(pdf_type1_font *font, const char *name, pdf_cff_slice co
     glyph->order = font->glyph_count - 1;
     return 1;
 }
+
 static int t1_charstrings(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
-                          const t1_syntax *syntax)
-{
+                          const t1_syntax *syntax) {
     int count;
     if (!t1_int(t1_lex(source, pos, 0), 1, 65535, &count) ||
         !t1_word(t1_lex(source, pos, 0), "dict"))
@@ -335,8 +337,8 @@ static int t1_charstrings(pdf_type1_font *font, pdf_cff_slice source, size_t *po
     }
     return 0;
 }
-static int t1_private(pdf_type1_font *font)
-{
+
+static int t1_private(pdf_type1_font *font) {
     pdf_cff_slice source = {font->private_data + 4, font->private_length - 4};
     size_t pos = 0;
     t1_syntax syntax = {{{"RD"}, {"-|"}}, 2};
@@ -370,23 +372,23 @@ static int t1_private(pdf_type1_font *font)
     }
     return font->glyph_count != 0;
 }
-void cupidimage_pdf_type1_free(pdf_type1_font *font)
-{
+
+void cupidimage_pdf_type1_free(pdf_type1_font *font) {
     free(font->private_data);
     free(font->glyphs);
     free(font->subrs);
     memset(font, 0, sizeof(*font));
 }
-static int t1_glyph_compare(const void *left, const void *right)
-{
+
+static int t1_glyph_compare(const void *left, const void *right) {
     const pdf_type1_glyph *a = left, *b = right;
     int name = strcmp(a->name, b->name);
     if (name)
         return name;
     return a->order < b->order ? -1 : a->order > b->order;
 }
-unsigned cupidimage_pdf_type1_name(const pdf_type1_font *font, const char *name)
-{
+
+unsigned cupidimage_pdf_type1_name(const pdf_type1_font *font, const char *name) {
     unsigned lo = 0, hi = font->glyph_count;
     while (lo < hi) {
         unsigned mid = lo + (hi - lo) / 2;
@@ -401,8 +403,8 @@ unsigned cupidimage_pdf_type1_name(const pdf_type1_font *font, const char *name)
     }
     return 0;
 }
-static int t1_char_decrypt(pdf_type1_font *font, pdf_cff_slice *code)
-{
+
+static int t1_char_decrypt(pdf_type1_font *font, pdf_cff_slice *code) {
     if (!code->data)
         return 1;
     if (font->len_iv < 0)
@@ -414,9 +416,9 @@ static int t1_char_decrypt(pdf_type1_font *font, pdf_cff_slice *code)
     code->length -= (unsigned)font->len_iv;
     return 1;
 }
+
 int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, size_t length,
-                              size_t clear_length, size_t encrypted_length)
-{
+                              size_t clear_length, size_t encrypted_length) {
     memset(font, 0, sizeof(*font));
     font->len_iv = 4;
     font->matrix[0] = font->matrix[3] = .001;

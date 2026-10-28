@@ -3,7 +3,7 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ColumnLimit: 100
-BreakBeforeBraces: Linux
+BreakBeforeBraces: Attach
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
@@ -11,3 +11,4 @@ PointerAlignment: Right
 DerivePointerAlignment: false
 SortIncludes: CaseSensitive
 IndentCaseLabels: true
+SeparateDefinitionBlocks: Always

@@ -5,8 +5,8 @@
 #include <string.h>
 
 static int checks, failures;
-static void check(const char *source, int valid, double expected)
-{
+
+static void check(const char *source, int valid, double expected) {
     pdf_calculator_program *p =
         cupidimage_pdf_calculator_compile((const unsigned char *)source, strlen(source));
     double result = 0;
@@ -20,8 +20,8 @@ static void check(const char *source, int valid, double expected)
     }
     free(p);
 }
-int main(void)
-{
+
+int main(void) {
     static const struct {
         const char *source;
         double expected;
@@ -89,6 +89,7 @@ int main(void)
                 {"{ 2147483648 }", 2147483648.0},
                 {"{% comment\r\n +.5 -0.25 add % trailing\n} % end", .25},
                 {"{ 1. ceiling 1 eq { 5 } { 0 } ifelse }", 5}};
+
     for (size_t i = 0; i < sizeof(good) / sizeof(*good); i++)
         check(good[i].source, 1, good[i].expected);
     static const char *bad[] = {"",

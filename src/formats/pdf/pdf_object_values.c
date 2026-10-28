@@ -3,8 +3,7 @@
 
 int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, size_t p, pdf_object_view *out,
-                                 unsigned depth)
-{
+                                 unsigned depth) {
     if (depth == 16)
         return 0;
     int object;
@@ -27,16 +26,16 @@ int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
     out->len = view->len - p;
     return 1;
 }
+
 int cupidimage_pdf_dictionary_value(const unsigned char *data, size_t size,
                                     const pdf_object_view *view, const char *key,
-                                    pdf_object_view *out)
-{
+                                    pdf_object_view *out) {
     size_t p;
     return cupidimage_pdf_page_value(view, key, &p) &&
            cupidimage_pdf_resolve_value(data, size, view, p, out, 0);
 }
-int cupidimage_pdf_read_name(const pdf_object_view *v, size_t *p, char name[128])
-{
+
+int cupidimage_pdf_read_name(const pdf_object_view *v, size_t *p, char name[128]) {
     cupidimage_pdf_skip_ws_and_comments(v->data, v->len, p);
     if (*p == v->len || v->data[(*p)++] != '/')
         return 0;
@@ -67,9 +66,10 @@ int cupidimage_pdf_read_name(const pdf_object_view *v, size_t *p, char name[128]
     name[count] = 0;
     return count != 0;
 }
+
 int cupidimage_pdf_entry_is_name(const unsigned char *data, size_t size,
-                                 const pdf_object_view *view, const char *key, const char *expected)
-{
+                                 const pdf_object_view *view, const char *key,
+                                 const char *expected) {
     pdf_object_view value = {0};
     size_t pos = 0;
     char name[128];

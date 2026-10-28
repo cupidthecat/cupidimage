@@ -7,8 +7,7 @@
 
 #define VP8L_MAX_CODE_LENGTH 15
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
@@ -23,8 +22,7 @@ typedef struct vp8l_bit_reader {
     int failed;
 } vp8l_bit_reader;
 
-static void vp8l_br_init(vp8l_bit_reader *br, const uint8_t *data, size_t size)
-{
+static void vp8l_br_init(vp8l_bit_reader *br, const uint8_t *data, size_t size) {
     br->data = data;
     br->size = size;
     br->pos = 0;
@@ -33,8 +31,7 @@ static void vp8l_br_init(vp8l_bit_reader *br, const uint8_t *data, size_t size)
     br->failed = 0;
 }
 
-static int vp8l_br_fill(vp8l_bit_reader *br, int bits)
-{
+static int vp8l_br_fill(vp8l_bit_reader *br, int bits) {
     while (br->bitcount < bits && br->pos < br->size) {
         br->bitbuf |= (uint64_t)br->data[br->pos++] << br->bitcount;
         br->bitcount += 8;
@@ -42,8 +39,7 @@ static int vp8l_br_fill(vp8l_bit_reader *br, int bits)
     return br->bitcount >= bits;
 }
 
-static uint32_t vp8l_br_read(vp8l_bit_reader *br, int bits)
-{
+static uint32_t vp8l_br_read(vp8l_bit_reader *br, int bits) {
     if (bits == 0) {
         return 0;
     }
@@ -57,14 +53,12 @@ static uint32_t vp8l_br_read(vp8l_bit_reader *br, int bits)
     return val;
 }
 
-static void vp8l_br_drop(vp8l_bit_reader *br, int bits)
-{
+static void vp8l_br_drop(vp8l_bit_reader *br, int bits) {
     br->bitbuf >>= bits;
     br->bitcount -= bits;
 }
 
-static unsigned reverse_bits(unsigned v, int bits)
-{
+static unsigned reverse_bits(unsigned v, int bits) {
     unsigned r = 0;
     for (int i = 0; i < bits; i++) {
         r = (r << 1) | (v & 1u);
@@ -78,15 +72,13 @@ typedef struct vp8l_huff {
     uint32_t *table;
 } vp8l_huff;
 
-static void huff_free(vp8l_huff *h)
-{
+static void huff_free(vp8l_huff *h) {
     free(h->table);
     h->table = NULL;
     h->maxbits = 0;
 }
 
-static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits)
-{
+static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits) {
     int count[VP8L_MAX_CODE_LENGTH + 1] = {0};
     int maxlen = 0, symbols = 0, only_symbol = 0;
     for (int i = 0; i < num; i++) {
@@ -158,8 +150,7 @@ static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits
     return 1;
 }
 
-static int huff_decode(vp8l_bit_reader *br, const vp8l_huff *h, int *sym)
-{
+static int huff_decode(vp8l_bit_reader *br, const vp8l_huff *h, int *sym) {
     if (br->failed || !h->table)
         return 0;
     if (h->maxbits == 0) {
@@ -185,8 +176,7 @@ static const uint8_t k_code_length_code_order[19] = {17, 18, 0, 1,  2,  3,  4,  
                                                      7,  8,  9, 10, 11, 12, 13, 14, 15};
 
 static int read_code_lengths(vp8l_bit_reader *br, vp8l_huff *code_len_table, int max_symbol,
-                             uint8_t *lengths)
-{
+                             uint8_t *lengths) {
     int idx = 0;
     int last_nonzero = 8;
     while (idx < max_symbol) {
@@ -222,8 +212,7 @@ static int read_code_lengths(vp8l_bit_reader *br, vp8l_huff *code_len_table, int
     return 1;
 }
 
-static int read_prefix_code(vp8l_bit_reader *br, int alphabet_size, vp8l_huff *out)
-{
+static int read_prefix_code(vp8l_bit_reader *br, int alphabet_size, vp8l_huff *out) {
     uint8_t *lengths = (uint8_t *)calloc((size_t)alphabet_size, 1);
     if (!lengths) {
         return 0;
@@ -300,8 +289,7 @@ static const int8_t k_distance_map[120][2] = {
     {-7, 4}, {8, 1},  {8, 2},  {6, 6},  {-6, 6}, {8, 3},  {5, 7},  {-5, 7}, {7, 5},  {-7, 5},
     {8, 4},  {6, 7},  {-6, 7}, {7, 6},  {-7, 6}, {8, 5},  {7, 7},  {-7, 7}, {8, 6},  {8, 7}};
 
-static int prefix_code_value(vp8l_bit_reader *br, int code)
-{
+static int prefix_code_value(vp8l_bit_reader *br, int code) {
     if (code < 4) {
         return code + 1;
     }
@@ -311,8 +299,7 @@ static int prefix_code_value(vp8l_bit_reader *br, int code)
     return val;
 }
 
-static int distance_to_offset(int distance_code, int width)
-{
+static int distance_to_offset(int distance_code, int width) {
     if (distance_code <= 0) {
         return 1;
     }
@@ -327,8 +314,7 @@ static int distance_to_offset(int distance_code, int width)
     return distance_code - 120;
 }
 
-static uint32_t color_cache_hash(uint32_t argb, int bits)
-{
+static uint32_t color_cache_hash(uint32_t argb, int bits) {
     if (bits <= 0) {
         return 0;
     }
@@ -339,8 +325,7 @@ typedef struct vp8l_prefix_group {
     vp8l_huff codes[5];
 } vp8l_prefix_group;
 
-static void prefix_group_free(vp8l_prefix_group *g)
-{
+static void prefix_group_free(vp8l_prefix_group *g) {
     for (int i = 0; i < 5; i++) {
         huff_free(&g->codes[i]);
     }
@@ -350,8 +335,7 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
                              uint32_t **out_pixels, char *err, size_t errcap);
 
 static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use_meta_prefix,
-                             uint32_t **out_pixels, char *err, size_t errcap)
-{
+                             uint32_t **out_pixels, char *err, size_t errcap) {
     if (width <= 0 || height <= 0) {
         set_err(err, errcap, "invalid VP8L dimensions");
         return 0;
@@ -617,8 +601,7 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
     return 1;
 }
 
-static uint8_t clamp_u8(int v)
-{
+static uint8_t clamp_u8(int v) {
     if (v < 0)
         return 0;
     if (v > 255)
@@ -626,8 +609,7 @@ static uint8_t clamp_u8(int v)
     return (uint8_t)v;
 }
 
-static uint32_t avg2_color(uint32_t a, uint32_t b)
-{
+static uint32_t avg2_color(uint32_t a, uint32_t b) {
     uint8_t aA = (a >> 24) & 0xFF;
     uint8_t aR = (a >> 16) & 0xFF;
     uint8_t aG = (a >> 8) & 0xFF;
@@ -640,8 +622,7 @@ static uint32_t avg2_color(uint32_t a, uint32_t b)
            ((uint32_t)((aG + bG) >> 1) << 8) | ((uint32_t)((aB + bB) >> 1));
 }
 
-static uint32_t add_argb(uint32_t a, uint32_t b)
-{
+static uint32_t add_argb(uint32_t a, uint32_t b) {
     uint8_t aA = (a >> 24) & 0xFF;
     uint8_t aR = (a >> 16) & 0xFF;
     uint8_t aG = (a >> 8) & 0xFF;
@@ -654,8 +635,7 @@ static uint32_t add_argb(uint32_t a, uint32_t b)
            ((uint32_t)((aG + bG) & 0xFF) << 8) | ((uint32_t)((aB + bB) & 0xFF));
 }
 
-static uint32_t clamp_add_sub(uint32_t a, uint32_t b, uint32_t c)
-{
+static uint32_t clamp_add_sub(uint32_t a, uint32_t b, uint32_t c) {
     int aA = (a >> 24) & 0xFF;
     int aR = (a >> 16) & 0xFF;
     int aG = (a >> 8) & 0xFF;
@@ -672,8 +652,7 @@ static uint32_t clamp_add_sub(uint32_t a, uint32_t b, uint32_t c)
            ((uint32_t)clamp_u8(aG + bG - cG) << 8) | ((uint32_t)clamp_u8(aB + bB - cB));
 }
 
-static uint32_t clamp_add_sub_half(uint32_t a, uint32_t b)
-{
+static uint32_t clamp_add_sub_half(uint32_t a, uint32_t b) {
     int aA = (a >> 24) & 0xFF;
     int aR = (a >> 16) & 0xFF;
     int aG = (a >> 8) & 0xFF;
@@ -688,8 +667,7 @@ static uint32_t clamp_add_sub_half(uint32_t a, uint32_t b)
            ((uint32_t)clamp_u8(aB + ((aB - bB) >> 1)));
 }
 
-static uint32_t select_color(uint32_t a, uint32_t b, uint32_t c)
-{
+static uint32_t select_color(uint32_t a, uint32_t b, uint32_t c) {
     int aA = (a >> 24) & 0xFF;
     int aR = (a >> 16) & 0xFF;
     int aG = (a >> 8) & 0xFF;
@@ -714,8 +692,7 @@ static uint32_t select_color(uint32_t a, uint32_t b, uint32_t c)
     return (dA <= dB) ? a : b;
 }
 
-static uint32_t predictor_value(int mode, uint32_t L, uint32_t T, uint32_t TL, uint32_t TR)
-{
+static uint32_t predictor_value(int mode, uint32_t L, uint32_t T, uint32_t TL, uint32_t TR) {
     switch (mode) {
         case 0: /* black */
             return 0xFF000000u;
@@ -751,8 +728,7 @@ static uint32_t predictor_value(int mode, uint32_t L, uint32_t T, uint32_t TL, u
 }
 
 static void apply_predictor_transform(uint32_t *pixels, int width, int height,
-                                      const uint32_t *pred_image, int size_bits, int pred_width)
-{
+                                      const uint32_t *pred_image, int size_bits, int pred_width) {
     if (!pred_image) {
         return;
     }
@@ -791,8 +767,7 @@ static void apply_predictor_transform(uint32_t *pixels, int width, int height,
 }
 
 static void apply_color_transform(uint32_t *pixels, int width, int height,
-                                  const uint32_t *transform, int size_bits, int trans_width)
-{
+                                  const uint32_t *transform, int size_bits, int trans_width) {
     if (!transform) {
         return;
     }
@@ -826,8 +801,7 @@ static void apply_color_transform(uint32_t *pixels, int width, int height,
     }
 }
 
-static void apply_subtract_green(uint32_t *pixels, int width, int height)
-{
+static void apply_subtract_green(uint32_t *pixels, int width, int height) {
     size_t count = (size_t)width * (size_t)height;
     for (size_t i = 0; i < count; i++) {
         uint32_t c = pixels[i];
@@ -843,8 +817,7 @@ static void apply_subtract_green(uint32_t *pixels, int width, int height)
 
 static int apply_color_indexing(uint32_t **pixels, int *width, int height,
                                 const uint32_t *color_table, int color_table_size, int width_bits,
-                                int orig_width, char *err, size_t errcap)
-{
+                                int orig_width, char *err, size_t errcap) {
     int packed_width = *width;
     int scale = 1 << width_bits;
     int new_width = orig_width;
@@ -906,8 +879,7 @@ typedef struct vp8l_transform {
     int orig_width;
 } vp8l_transform;
 
-static void transform_free(vp8l_transform *t)
-{
+static void transform_free(vp8l_transform *t) {
     free(t->data);
     t->data = NULL;
     free(t->color_table);
@@ -915,8 +887,7 @@ static void transform_free(vp8l_transform *t)
 }
 
 int cupidimage_decode_vp8l(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                           size_t errcap)
-{
+                           size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;

@@ -11,19 +11,16 @@
 
 #include "pdf_internal.h"
 
-int cupidimage_pdf_is_ws(unsigned char c)
-{
+int cupidimage_pdf_is_ws(unsigned char c) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\0';
 }
 
-int cupidimage_pdf_is_delim(unsigned char c)
-{
+int cupidimage_pdf_is_delim(unsigned char c) {
     return c == '(' || c == ')' || c == '<' || c == '>' || c == '[' || c == ']' || c == '{' ||
            c == '}' || c == '/' || c == '%';
 }
 
-void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos)
-{
+void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos) {
     while (*pos < size) {
         if (cupidimage_pdf_is_ws(data[*pos])) {
             (*pos)++;
@@ -41,8 +38,7 @@ void cupidimage_pdf_skip_ws_and_comments(const unsigned char *data, size_t size,
 
 /* Return a bounded borrowed dictionary, respecting strings and comments. */
 int cupidimage_pdf_dictionary_view(const pdf_object_view *parent, size_t start,
-                                   pdf_object_view *view, size_t *end)
-{
+                                   pdf_object_view *view, size_t *end) {
     size_t pos = start;
     memset(view, 0, sizeof(*view));
     cupidimage_pdf_skip_ws_and_comments(parent->data, parent->len, &pos);
@@ -95,8 +91,7 @@ int cupidimage_pdf_dictionary_view(const pdf_object_view *parent, size_t start,
 }
 
 int cupidimage_pdf_dictionary_integer(const unsigned char *document, size_t document_size,
-                                      const pdf_object_view *view, const char *key, int *value)
-{
+                                      const pdf_object_view *view, const char *key, int *value) {
     size_t pos;
     if (!cupidimage_pdf_page_value(view, key, &pos))
         return 0;
@@ -137,8 +132,7 @@ done:
 /* Find the end of the outer dictionary without matching text inside a string. */
 int cupidimage_pdf_object_stream(const unsigned char *document, size_t document_size,
                                  const pdf_object_view *view, const unsigned char **stream,
-                                 size_t *length)
-{
+                                 size_t *length) {
     size_t pos = 0;
     int depth = 0, declared;
     if (!cupidimage_pdf_dictionary_integer(document, document_size, view, "Length", &declared))
@@ -202,8 +196,7 @@ static int extract_stream(const unsigned char *data, size_t obj_start, size_t ob
                           size_t *stream_keyword_pos);
 
 int cupidimage_pdf_parse_decimal(const unsigned char *data, size_t end, size_t *pos, size_t limit,
-                                 size_t *out)
-{
+                                 size_t *out) {
     size_t p = *pos, value = 0;
     if (p >= end || data[p] < '0' || data[p] > '9')
         return 0;
@@ -218,8 +211,7 @@ int cupidimage_pdf_parse_decimal(const unsigned char *data, size_t end, size_t *
     return 1;
 }
 
-int cupidimage_pdf_find_eof_marker(const unsigned char *data, size_t size, size_t *eof_pos)
-{
+int cupidimage_pdf_find_eof_marker(const unsigned char *data, size_t size, size_t *eof_pos) {
     if (size < 5)
         return 0;
     size_t i = size - 5;
@@ -232,8 +224,7 @@ int cupidimage_pdf_find_eof_marker(const unsigned char *data, size_t size, size_
     return 0;
 }
 
-int cupidimage_pdf_find_startxref(const unsigned char *data, size_t eof_pos, size_t *xref_offset)
-{
+int cupidimage_pdf_find_startxref(const unsigned char *data, size_t eof_pos, size_t *xref_offset) {
     if (eof_pos < 9)
         return 0;
     size_t i = eof_pos - 9;
@@ -254,8 +245,7 @@ int cupidimage_pdf_find_startxref(const unsigned char *data, size_t eof_pos, siz
     return 0;
 }
 
-int cupidimage_pdf_check_header(const unsigned char *data, size_t size)
-{
+int cupidimage_pdf_check_header(const unsigned char *data, size_t size) {
     if (size < 8)
         return 0;
     if (memcmp(data, "%PDF-", 5) != 0)
@@ -264,8 +254,7 @@ int cupidimage_pdf_check_header(const unsigned char *data, size_t size)
 }
 
 int cupidimage_pdf_parse_xref_table(const unsigned char *data, size_t size, size_t xref_pos,
-                                    pdf_xref *xref, char *err, size_t errcap)
-{
+                                    pdf_xref *xref, char *err, size_t errcap) {
     if (xref_pos > size || size - xref_pos < 4) {
         cupidimage_set_err(err, errcap, "pdf: xref offset out of bounds");
         return 0;
@@ -359,8 +348,7 @@ invalid_entry:
 }
 
 int cupidimage_pdf_parse_trailer(const unsigned char *data, size_t size, size_t xref_pos,
-                                 pdf_xref *xref, char *err, size_t errcap)
-{
+                                 pdf_xref *xref, char *err, size_t errcap) {
     size_t pos = xref_pos;
     size_t trailer_pos = 0;
     size_t search_limit = xref_pos + (size - xref_pos < 10000 ? size - xref_pos : 10000);
@@ -404,8 +392,7 @@ int cupidimage_pdf_parse_trailer(const unsigned char *data, size_t size, size_t 
     return 1;
 }
 
-void cupidimage_pdf_object_view_release(pdf_object_view *view)
-{
+void cupidimage_pdf_object_view_release(pdf_object_view *view) {
     if (!view)
         return;
     free(view->owned);
@@ -415,8 +402,7 @@ void cupidimage_pdf_object_view_release(pdf_object_view *view)
 }
 
 static int parse_obj_header_at(const unsigned char *data, size_t size, size_t pos, int *obj_num,
-                               size_t *header_end)
-{
+                               size_t *header_end) {
     size_t p = pos, number, generation;
     if (p >= size || (p && !cupidimage_pdf_is_ws(data[p - 1])))
         return 0;
@@ -438,8 +424,7 @@ static int parse_obj_header_at(const unsigned char *data, size_t size, size_t po
     return 1;
 }
 
-static int find_endobj(const unsigned char *data, size_t size, size_t from, size_t *endobj_pos)
-{
+static int find_endobj(const unsigned char *data, size_t size, size_t from, size_t *endobj_pos) {
     size_t p = from;
     while (p + 6 <= size) {
         if (data[p] == '%') {
@@ -524,8 +509,7 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
 }
 
 static int extract_dict_int(const unsigned char *data, size_t start, size_t end, const char *key,
-                            int *value)
-{
+                            int *value) {
     if (end <= start || !key || key[0] != '/')
         return 0;
     pdf_object_view dictionary = {data + start, end - start, NULL};
@@ -543,8 +527,7 @@ static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
     return 1;
 }
 
-static int parse_int_token(const unsigned char *data, size_t size, size_t *pos, int *out)
-{
+static int parse_int_token(const unsigned char *data, size_t size, size_t *pos, int *out) {
     cupidimage_pdf_skip_ws_and_comments(data, size, pos);
     if (*pos >= size || data[*pos] < '0' || data[*pos] > '9') {
         return 0;
@@ -562,8 +545,7 @@ static int parse_int_token(const unsigned char *data, size_t size, size_t *pos, 
 
 int cupidimage_pdf_extract_stream_from_object(const unsigned char *obj_data, size_t obj_len,
                                               const unsigned char **stream_data, size_t *stream_len,
-                                              size_t *stream_keyword_pos)
-{
+                                              size_t *stream_keyword_pos) {
     size_t pos = 0;
     while (pos + 6 <= obj_len && memcmp(&obj_data[pos], "stream", 6) != 0)
         pos++;
@@ -600,8 +582,7 @@ int cupidimage_pdf_extract_stream_from_object(const unsigned char *obj_data, siz
 }
 
 static int extract_object_from_objstm(const unsigned char *data, size_t size, int target_obj,
-                                      pdf_object_view *view)
-{
+                                      pdf_object_view *view) {
     for (size_t pos = 0; pos < size; pos++) {
         if (data[pos] == '%') {
             while (pos < size && data[pos] != '\r' && data[pos] != '\n')
@@ -735,8 +716,7 @@ static int extract_object_from_objstm(const unsigned char *data, size_t size, in
 }
 
 int cupidimage_pdf_get_object_content(const unsigned char *data, size_t size, int obj_num,
-                                      pdf_object_view *view)
-{
+                                      pdf_object_view *view) {
     view->data = NULL;
     view->len = 0;
     view->owned = NULL;
@@ -770,8 +750,7 @@ int cupidimage_pdf_get_object_content(const unsigned char *data, size_t size, in
 }
 
 int cupidimage_pdf_extract_dict_ref(const unsigned char *data, size_t start, size_t end,
-                                    const char *key, int *obj_num)
-{
+                                    const char *key, int *obj_num) {
     size_t key_len = strlen(key);
     if (end <= start || end - start <= key_len) {
         return 0;
@@ -799,8 +778,7 @@ int cupidimage_pdf_extract_dict_ref(const unsigned char *data, size_t start, siz
 }
 
 static int extract_dict_refs(const unsigned char *data, size_t start, size_t end, const char *key,
-                             int *objs, int max_objs, int *out_count)
-{
+                             int *objs, int max_objs, int *out_count) {
     if (!objs || max_objs <= 0 || !out_count || end <= start || key[0] != '/')
         return 0;
     pdf_object_view view = {data + start, end - start, NULL};
@@ -835,8 +813,7 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
 }
 
 int cupidimage_pdf_get_pages_obj(const unsigned char *data, size_t size, pdf_xref *xref,
-                                 int *pages_obj, char *err, size_t errcap)
-{
+                                 int *pages_obj, char *err, size_t errcap) {
     (void)xref;
     pdf_object_view catalog = {0};
     if (!cupidimage_pdf_get_object_content(data, size, xref->root_obj, &catalog)) {
@@ -857,8 +834,7 @@ int cupidimage_pdf_get_pages_obj(const unsigned char *data, size_t size, pdf_xre
 }
 
 int cupidimage_pdf_get_pages_count_from_obj(const unsigned char *data, size_t size, int pages_obj,
-                                            int *count, char *err, size_t errcap)
-{
+                                            int *count, char *err, size_t errcap) {
     if (!count) {
         cupidimage_set_err(err, errcap, "pdf: invalid pages count output");
         return 0;
@@ -884,8 +860,7 @@ int cupidimage_pdf_get_pages_count_from_obj(const unsigned char *data, size_t si
 }
 
 static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num, int target_index,
-                             int *scan_index, int *page_obj, int depth, char *err, size_t errcap)
-{
+                             int *scan_index, int *page_obj, int depth, char *err, size_t errcap) {
     if (depth > 64) {
         cupidimage_set_err(err, errcap, "pdf: pages tree too deep");
         return 0;
@@ -936,8 +911,7 @@ static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num
 
 int cupidimage_pdf_get_page_obj_by_index(const unsigned char *data, size_t size, pdf_xref *xref,
                                          int pages_obj, int page_index, int *page_obj, char *err,
-                                         size_t errcap)
-{
+                                         size_t errcap) {
     (void)xref;
     if (page_index < 0) {
         cupidimage_set_err(err, errcap, "pdf: invalid page index");
@@ -968,8 +942,8 @@ int cupidimage_pdf_get_page_obj_by_index(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_pdf_parse_pdf_number(const unsigned char *data, size_t end, size_t *pos, double *out)
-{
+int cupidimage_pdf_parse_pdf_number(const unsigned char *data, size_t end, size_t *pos,
+                                    double *out) {
     size_t p = *pos;
     int saw_digit = 0;
     int saw_dot = 0;
@@ -1006,8 +980,7 @@ int cupidimage_pdf_parse_pdf_number(const unsigned char *data, size_t end, size_
 }
 
 /* Only inspect entries in the outer dictionary, not names in nested values. */
-static int pdf_dictionary_name_matches(const unsigned char *data, size_t size, const char *key)
-{
+static int pdf_dictionary_name_matches(const unsigned char *data, size_t size, const char *key) {
     size_t i = 0, k = 0;
     while (i < size) {
         unsigned char c = data[i++];
@@ -1033,8 +1006,7 @@ static int pdf_dictionary_name_matches(const unsigned char *data, size_t size, c
     return key[k] == 0;
 }
 
-int cupidimage_pdf_page_value(const pdf_object_view *view, const char *key, size_t *value_pos)
-{
+int cupidimage_pdf_page_value(const pdf_object_view *view, const char *key, size_t *value_pos) {
     size_t pos = 0;
     int depth = 0, arrays = 0, expect_key = 1;
     while (pos < view->len) {
@@ -1101,8 +1073,7 @@ int cupidimage_pdf_page_value(const pdf_object_view *view, const char *key, size
     return 0;
 }
 
-int cupidimage_pdf_page_reference(const pdf_object_view *view, size_t pos, int *object)
-{
+int cupidimage_pdf_page_reference(const pdf_object_view *view, size_t pos, int *object) {
     double number, generation;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
     if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, &pos, &number) || number < 1 ||
@@ -1120,8 +1091,7 @@ int cupidimage_pdf_page_reference(const pdf_object_view *view, size_t pos, int *
 }
 
 int cupidimage_pdf_page_rectangle(const unsigned char *data, size_t size,
-                                  const pdf_object_view *view, size_t pos, double box[4])
-{
+                                  const pdf_object_view *view, size_t pos, double box[4]) {
     pdf_object_view indirect = {0};
     int object = 0;
     if (pos < view->len && view->data[pos] != '[') {
@@ -1151,8 +1121,7 @@ int cupidimage_pdf_page_rectangle(const unsigned char *data, size_t size,
 }
 
 int cupidimage_pdf_get_page_geometry(const unsigned char *data, size_t size, int page_obj,
-                                     pdf_page_geometry *geometry, char *err, size_t errcap)
-{
+                                     pdf_page_geometry *geometry, char *err, size_t errcap) {
     double media[4] = {0, 0, 612, 792}, crop[4] = {0};
     int have_media = 0, have_crop = 0, have_rotation = 0;
     int visited[64], depth = 0;
@@ -1227,8 +1196,7 @@ invalid:
 
 static int extract_stream(const unsigned char *data, size_t obj_start, size_t obj_end,
                           const unsigned char **stream_data, size_t *stream_len,
-                          size_t *stream_keyword_pos)
-{
+                          size_t *stream_keyword_pos) {
     size_t pos = obj_start;
     while (pos + 6 <= obj_end && memcmp(&data[pos], "stream", 6) != 0)
         pos++;
@@ -1265,8 +1233,7 @@ static int extract_stream(const unsigned char *data, size_t obj_start, size_t ob
 }
 
 int cupidimage_pdf_buffer_contains(const unsigned char *data, size_t start, size_t end,
-                                   const char *needle)
-{
+                                   const char *needle) {
     size_t needle_len = strlen(needle);
     if (end <= start || end - start < needle_len) {
         return 0;
@@ -1282,8 +1249,7 @@ int cupidimage_pdf_buffer_contains(const unsigned char *data, size_t start, size
 int cupidimage_pdf_get_page_content_stream(const unsigned char *data, size_t size, pdf_xref *xref,
                                            int page_obj, unsigned char **stream_data,
                                            size_t *stream_len, int *is_flate, char *err,
-                                           size_t errcap)
-{
+                                           size_t errcap) {
     (void)xref;
     pdf_object_view page = {0};
     if (!cupidimage_pdf_get_object_content(data, size, page_obj, &page)) {
@@ -1388,8 +1354,7 @@ int cupidimage_pdf_get_page_content_stream(const unsigned char *data, size_t siz
 }
 
 int cupidimage_pdf_inflate_auto(const unsigned char *data, size_t size, unsigned char **out_data,
-                                size_t *out_len)
-{
+                                size_t *out_len) {
     const size_t max_cap = 64u * 1024u * 1024u;
     size_t cap = size > (max_cap - 1024u) / 4u ? max_cap : size * 4u + 1024u;
     if (cap < 4096u) {

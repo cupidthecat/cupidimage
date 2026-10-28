@@ -14,15 +14,13 @@
     } while (0)
 #endif
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
 }
 
-static uint16_t read_be16(const unsigned char *p)
-{
+static uint16_t read_be16(const unsigned char *p) {
     return (uint16_t)((p[0] << 8) | p[1]);
 }
 
@@ -119,8 +117,7 @@ static const int16_t idct_tab[8][8] = {{11585, 11585, 11585, 11585, 11585, 11585
                                        {6270, -15137, 15137, -6270, -6270, 15137, -15137, 6270},
                                        {3196, -9102, 13623, -16069, 16069, -13623, 9102, -3196}};
 
-static void idct_8x8(const int32_t *block, uint8_t *out, int stride)
-{
+static void idct_8x8(const int32_t *block, uint8_t *out, int stride) {
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             int64_t sum = 0;
@@ -141,8 +138,7 @@ static void idct_8x8(const int32_t *block, uint8_t *out, int stride)
     }
 }
 
-static int huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int num)
-{
+static int huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int num) {
     if (num < 1 || num > 256)
         return 0;
     int slots = 1;
@@ -181,8 +177,7 @@ static int huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, in
     return 1;
 }
 
-static void jpeg_apply_default_huffman(jpeg_huff dc_tables[4], jpeg_huff ac_tables[4])
-{
+static void jpeg_apply_default_huffman(jpeg_huff dc_tables[4], jpeg_huff ac_tables[4]) {
     if (!dc_tables[0].valid) {
         huff_build(&dc_tables[0], std_dc_luminance_bits, std_dc_luminance_val,
                    (int)(sizeof(std_dc_luminance_val) / sizeof(std_dc_luminance_val[0])));
@@ -201,24 +196,21 @@ static void jpeg_apply_default_huffman(jpeg_huff dc_tables[4], jpeg_huff ac_tabl
     }
 }
 
-static void jpeg_free_coeffs(jpeg_comp *comps, int num_comp)
-{
+static void jpeg_free_coeffs(jpeg_comp *comps, int num_comp) {
     for (int i = 0; i < num_comp; i++) {
         free(comps[i].coeffs);
         comps[i].coeffs = NULL;
     }
 }
 
-static int bs_read_byte_raw(jpeg_bitstream *bs)
-{
+static int bs_read_byte_raw(jpeg_bitstream *bs) {
     if (bs->pos >= bs->size) {
         return -1;
     }
     return bs->data[bs->pos++];
 }
 
-static int bs_read_byte_stuffed(jpeg_bitstream *bs)
-{
+static int bs_read_byte_stuffed(jpeg_bitstream *bs) {
     if (bs->pos >= bs->size) {
         return -1;
     }
@@ -243,8 +235,7 @@ static int bs_read_byte_stuffed(jpeg_bitstream *bs)
     return -1;
 }
 
-static int bs_read_bit(jpeg_bitstream *bs)
-{
+static int bs_read_bit(jpeg_bitstream *bs) {
     if (bs->bitcount == 0) {
         int byte = bs_read_byte_stuffed(bs);
         if (byte < 0) {
@@ -259,8 +250,7 @@ static int bs_read_bit(jpeg_bitstream *bs)
     return bit;
 }
 
-static int bs_read_bits(jpeg_bitstream *bs, int n)
-{
+static int bs_read_bits(jpeg_bitstream *bs, int n) {
     int val = 0;
     for (int i = 0; i < n; i++) {
         int bit = bs_read_bit(bs);
@@ -272,8 +262,7 @@ static int bs_read_bits(jpeg_bitstream *bs, int n)
     return val;
 }
 
-static int huff_decode(jpeg_bitstream *bs, const jpeg_huff *h, int *sym)
-{
+static int huff_decode(jpeg_bitstream *bs, const jpeg_huff *h, int *sym) {
     int code = 0;
     for (int i = 1; i <= 16; i++) {
         int bit = bs_read_bit(bs);
@@ -293,8 +282,7 @@ static int huff_decode(jpeg_bitstream *bs, const jpeg_huff *h, int *sym)
     return 0;
 }
 
-static int receive_extend(jpeg_bitstream *bs, int s, int *ok)
-{
+static int receive_extend(jpeg_bitstream *bs, int s, int *ok) {
     if (s < 0 || s > 11) {
         *ok = 0;
         return 0;
@@ -317,8 +305,7 @@ static int receive_extend(jpeg_bitstream *bs, int s, int *ok)
 }
 
 static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff *ac, const int *qt,
-                        int *dc_pred, int32_t *block)
-{
+                        int *dc_pred, int32_t *block) {
     for (int i = 0; i < 64; i++) {
         block[i] = 0;
     }
@@ -366,8 +353,7 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
     return 1;
 }
 
-static int consume_restart(jpeg_bitstream *bs, int expected)
-{
+static int consume_restart(jpeg_bitstream *bs, int expected) {
     bs->bitcount = 0;
     bs->bitbuf = 0;
 
@@ -396,8 +382,7 @@ static int consume_restart(jpeg_bitstream *bs, int expected)
 }
 
 static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc, int al,
-                           int32_t *block)
-{
+                           int32_t *block) {
     int sym = 0;
     if (!huff_decode(bs, dc, &sym) || sym > 11) {
         return 0;
@@ -412,8 +397,7 @@ static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc
     return 1;
 }
 
-static int decode_dc_refine(jpeg_bitstream *bs, int al, int32_t *block)
-{
+static int decode_dc_refine(jpeg_bitstream *bs, int al, int32_t *block) {
     int bit = bs_read_bit(bs);
     if (bit < 0) {
         return 0;
@@ -427,8 +411,7 @@ static int decode_dc_refine(jpeg_bitstream *bs, int al, int32_t *block)
 }
 
 static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac, int ss, int se, int al,
-                           int32_t *block, int *eobrun)
-{
+                           int32_t *block, int *eobrun) {
     int k = ss;
     if (*eobrun > 0) {
         (*eobrun)--;
@@ -475,8 +458,7 @@ static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac, int ss, int 
     return 1;
 }
 
-static int refine_coeff(jpeg_bitstream *bs, int32_t *coef, int p1)
-{
+static int refine_coeff(jpeg_bitstream *bs, int32_t *coef, int p1) {
     int bit = bs_read_bit(bs);
     if (bit < 0) {
         return 0;
@@ -488,8 +470,7 @@ static int refine_coeff(jpeg_bitstream *bs, int32_t *coef, int p1)
 }
 
 static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac, int ss, int se, int al,
-                            int32_t *block, int *eobrun)
-{
+                            int32_t *block, int *eobrun) {
     int p1 = 1 << al;
     int p2 = -p1;
 
@@ -588,8 +569,7 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size, jpeg_c
                                         int mcu_rows, int hmax, int vmax,
                                         const jpeg_huff dc_tables[4], const jpeg_huff ac_tables[4],
                                         int restart_interval, size_t *consumed, char *err,
-                                        size_t errcap)
-{
+                                        size_t errcap) {
     jpeg_bitstream bs;
     bs.data = data;
     bs.size = size;
@@ -753,8 +733,7 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size, jpeg_c
 static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, int height,
                                    int mcu_cols, int mcu_rows, int hmax, int vmax,
                                    int qtables[4][64], int adobe_transform, cupidimage_image *out,
-                                   char *err, size_t errcap)
-{
+                                   char *err, size_t errcap) {
     size_t rgba_size = (size_t)width * (size_t)height * 4u;
     if (rgba_size / 4u != (size_t)width * (size_t)height) {
         set_err(err, errcap, "image too large");
@@ -977,8 +956,7 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
                             const int *scan_comp, int width, int height, int hmax, int vmax,
                             int qtables[4][64], const jpeg_huff dc_tables[4],
                             const jpeg_huff ac_tables[4], int restart_interval, int adobe_transform,
-                            size_t *consumed, cupidimage_image *out, char *err, size_t errcap)
-{
+                            size_t *consumed, cupidimage_image *out, char *err, size_t errcap) {
     jpeg_bitstream bs;
     bs.data = data;
     bs.size = size;
@@ -1241,8 +1219,7 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
 }
 
 int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                         size_t errcap)
-{
+                         size_t errcap) {
     jpeg_huff dc_tables[4] = {0};
     jpeg_huff ac_tables[4] = {0};
     int qtables[4][64];
@@ -1618,7 +1595,6 @@ fail:
     return 0;
 }
 
-int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_jpeg);
 }

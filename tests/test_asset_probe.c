@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int read_input(const char *path, unsigned char **data, size_t *size)
-{
+static int read_input(const char *path, unsigned char **data, size_t *size) {
     FILE *file = fopen(path, "rb");
     if (!file)
         return 0;
@@ -24,8 +23,7 @@ static int read_input(const char *path, unsigned char **data, size_t *size)
     return ok;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if (argc != 5)
         return 2;
     const char *path = argv[1], *format = argv[2], *mode = argv[4];

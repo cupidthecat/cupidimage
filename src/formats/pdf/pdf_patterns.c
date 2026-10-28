@@ -4,9 +4,9 @@
 #include <string.h>
 
 #define PATTERN_BYTES (64u * 1024u * 1024u)
+
 static int pattern_array(const pdf_render_state *st, const pdf_object_view *view, const char *key,
-                         double *numbers, int count, int required)
-{
+                         double *numbers, int count, int required) {
     size_t pos;
     int object;
     if (!cupidimage_pdf_page_value(view, key, &pos))
@@ -31,8 +31,8 @@ static int pattern_array(const pdf_render_state *st, const pdf_object_view *view
     cupidimage_pdf_object_view_release(&array);
     return ok;
 }
-void cupidimage_pdf_patterns_free(pdf_pattern_store *store)
-{
+
+void cupidimage_pdf_patterns_free(pdf_pattern_store *store) {
     while (store->head) {
         pdf_pattern *next = store->head->next;
         free(store->head->tile.rgba);
@@ -43,9 +43,9 @@ void cupidimage_pdf_patterns_free(pdf_pattern_store *store)
     store->bytes_used = 0;
     store->count = 0;
 }
+
 int cupidimage_pdf_pattern_sample(const pdf_pattern *pattern, double x, double y, uint8_t rgba[4],
-                                  double *shape, double *alpha)
-{
+                                  double *shape, double *alpha) {
     if (pattern->shading) {
         double sx = floor((x - pattern->page_x0) * (96.0 / 72.0));
         double sy = floor((pattern->page_top - y) * (96.0 / 72.0));
@@ -82,9 +82,9 @@ int cupidimage_pdf_pattern_sample(const pdf_pattern *pattern, double x, double y
     *alpha = pattern->alpha[pixel];
     return 1;
 }
+
 static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *view, int stroke,
-                                  int object)
-{
+                                  int object) {
     const pdf_image_colors *space = stroke ? &st->gs.stroke_space : &st->gs.fill_space;
     if (space->components != 0)
         return 0;
@@ -154,8 +154,7 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
     return 1;
 }
 
-int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int stroke)
-{
+int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int stroke) {
     if (!st->patterns || st->pattern_depth >= 8 || st->patterns->count >= 65536)
         return 0;
     pdf_object_view view = {0}, resources = {0};

@@ -22,8 +22,7 @@
 #include "svg_internal.h"
 
 void cupidimage_svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_x,
-                                  float sigma_y)
-{
+                                  float sigma_y) {
     if (!buf || w == 0 || h == 0) {
         return;
     }

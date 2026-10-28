@@ -2,14 +2,12 @@
 #include <limits.h>
 #include <stdint.h>
 
-static void write_ansi_bg(FILE *out, uint8_t r, uint8_t g, uint8_t b)
-{
+static void write_ansi_bg(FILE *out, uint8_t r, uint8_t g, uint8_t b) {
     fprintf(out, "\x1b[48;2;%u;%u;%um", r, g, b);
 }
 
 static void sample_blended_rgb(const cupidimage_image *img, int src_x, int src_y, unsigned *r,
-                               unsigned *g, unsigned *b)
-{
+                               unsigned *g, unsigned *b) {
     const uint8_t *px = img->rgba + ((size_t)src_y * (size_t)img->width + (size_t)src_x) * 4u;
     unsigned a = (unsigned)px[3];
     unsigned inv = 255u - a;
@@ -18,8 +16,7 @@ static void sample_blended_rgb(const cupidimage_image *img, int src_x, int src_y
     *b += ((unsigned)px[2] * a + 255u * inv) / 255u;
 }
 
-int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width, int max_height)
-{
+int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width, int max_height) {
     if (!img || !img->rgba || !out || img->width == 0 || img->height == 0) {
         return 0;
     }

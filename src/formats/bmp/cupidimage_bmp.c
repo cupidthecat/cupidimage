@@ -23,21 +23,18 @@
 #define BMP_MAX_DIM 65535u
 #define LCS_GM_IMAGES 4u
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
     fprintf(stderr, "BMP error: %s\n", msg);
 }
 
-static uint16_t read_le16(const unsigned char *p)
-{
+static uint16_t read_le16(const unsigned char *p) {
     return (uint16_t)(p[0] | (p[1] << 8));
 }
 
-static uint32_t read_le32(const unsigned char *p)
-{
+static uint32_t read_le32(const unsigned char *p) {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
@@ -47,8 +44,7 @@ typedef struct bmp_mask_info {
     int bits;
 } bmp_mask_info;
 
-static void bmp_mask_init(bmp_mask_info *mi, uint32_t mask)
-{
+static void bmp_mask_init(bmp_mask_info *mi, uint32_t mask) {
     mi->mask = mask;
     mi->shift = 0;
     mi->bits = 0;
@@ -69,8 +65,7 @@ static void bmp_mask_init(bmp_mask_info *mi, uint32_t mask)
     mi->bits = bits;
 }
 
-static uint8_t bmp_mask_extract(uint32_t value, const bmp_mask_info *mi)
-{
+static uint8_t bmp_mask_extract(uint32_t value, const bmp_mask_info *mi) {
     if (!mi->mask || mi->bits <= 0) {
         return 0;
     }
@@ -83,8 +78,7 @@ static uint8_t bmp_mask_extract(uint32_t value, const bmp_mask_info *mi)
 }
 
 #ifdef CUPIDIMAGE_BMP_DEBUG
-static const char *bmp_header_name(uint32_t size)
-{
+static const char *bmp_header_name(uint32_t size) {
     switch (size) {
         case 12:
             return "BITMAPCOREHEADER";
@@ -103,8 +97,7 @@ static const char *bmp_header_name(uint32_t size)
     }
 }
 
-static const char *bmp_compression_name(uint32_t comp)
-{
+static const char *bmp_compression_name(uint32_t comp) {
     switch (comp) {
         case BI_RGB:
             return "BI_RGB";
@@ -127,8 +120,7 @@ static const char *bmp_compression_name(uint32_t comp)
 #endif
 
 static int bmp_decode_rle8(const uint8_t *src, size_t size, uint32_t width, uint32_t height,
-                           int top_down, uint8_t *out, char *err, size_t errcap)
-{
+                           int top_down, uint8_t *out, char *err, size_t errcap) {
     size_t pos = 0;
     uint32_t x = 0;
     uint32_t y = 0;
@@ -220,8 +212,7 @@ static int bmp_decode_rle8(const uint8_t *src, size_t size, uint32_t width, uint
 }
 
 static int bmp_decode_rle4(const uint8_t *src, size_t size, uint32_t width, uint32_t height,
-                           int top_down, uint8_t *out, char *err, size_t errcap)
-{
+                           int top_down, uint8_t *out, char *err, size_t errcap) {
     size_t pos = 0;
     uint32_t x = 0;
     uint32_t y = 0;
@@ -316,8 +307,8 @@ static int bmp_decode_rle4(const uint8_t *src, size_t size, uint32_t width, uint
     return 1;
 }
 
-static int bmp_should_unpremultiply(const uint8_t *rgba, size_t pixels, int metadata_premultiplied)
-{
+static int bmp_should_unpremultiply(const uint8_t *rgba, size_t pixels,
+                                    int metadata_premultiplied) {
     if (metadata_premultiplied) {
         return 1;
     }
@@ -337,8 +328,7 @@ static int bmp_should_unpremultiply(const uint8_t *rgba, size_t pixels, int meta
     return saw_alpha ? 1 : 0;
 }
 
-static void bmp_unpremultiply(uint8_t *rgba, size_t pixels)
-{
+static void bmp_unpremultiply(uint8_t *rgba, size_t pixels) {
     for (size_t i = 0; i < pixels; i++) {
         uint8_t *p = rgba + i * 4u;
         uint8_t a = p[3];
@@ -358,8 +348,7 @@ static void bmp_unpremultiply(uint8_t *rgba, size_t pixels)
 }
 
 int cupidimage_load_bmp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                        size_t errcap)
-{
+                        size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -876,7 +865,6 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size, cupidimage_image
     return 0;
 }
 
-int cupidimage_load_bmp_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_bmp_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_bmp);
 }

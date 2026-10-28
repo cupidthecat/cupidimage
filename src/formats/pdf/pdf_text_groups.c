@@ -1,8 +1,7 @@
 #include "pdf_render_internal.h"
 #include <stdlib.h>
 
-int cupidimage_pdf_text_group_begin(pdf_render_state *st)
-{
+int cupidimage_pdf_text_group_begin(pdf_render_state *st) {
     if (!st->gs.text_knockout)
         return 1;
     if (!st->form_budget->calls_left)
@@ -24,8 +23,7 @@ int cupidimage_pdf_text_group_begin(pdf_render_state *st)
 
 /* Implicit text/glyph groups do not reset or save the caller's paint state. */
 int cupidimage_pdf_composite_implicit_group(pdf_render_state *st,
-                                            const pdf_transparency_group *group)
-{
+                                            const pdf_transparency_group *group) {
     pdf_graphics_state saved = st->gs;
     st->gs.fill_alpha = st->gs.stroke_alpha = 1;
     st->gs.blend_mode = st->gs.alpha_is_shape = 0;
@@ -36,8 +34,7 @@ int cupidimage_pdf_composite_implicit_group(pdf_render_state *st,
     return ok;
 }
 
-int cupidimage_pdf_text_group_end(pdf_render_state *st)
-{
+int cupidimage_pdf_text_group_end(pdf_render_state *st) {
     pdf_transparency_group *group = st->text_group;
     if (!group)
         return 1;
@@ -50,8 +47,7 @@ int cupidimage_pdf_text_group_end(pdf_render_state *st)
     return ok;
 }
 
-void cupidimage_pdf_text_group_discard(pdf_render_state *st)
-{
+void cupidimage_pdf_text_group_discard(pdf_render_state *st) {
     pdf_transparency_group *group = st->text_group;
     if (!group)
         return;
@@ -62,8 +58,7 @@ void cupidimage_pdf_text_group_discard(pdf_render_state *st)
     free(group);
 }
 
-int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transparency_group *group)
-{
+int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transparency_group *group) {
     size_t pixels = (size_t)group->image.width * group->image.height;
     if (pixels > st->clip_budget->tests_left)
         return 0;

@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void cupidimage_pdf_text_begin(pdf_render_state *st)
-{
+void cupidimage_pdf_text_begin(pdf_render_state *st) {
     if (st->in_text) {
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity, "pdf: nested text object");
@@ -23,8 +22,7 @@ void cupidimage_pdf_text_begin(pdf_render_state *st)
     }
 }
 
-static int text_position_valid(pdf_render_state *st, const double *matrix)
-{
+static int text_position_valid(pdf_render_state *st, const double *matrix) {
     for (int i = 0; i < 6; i++)
         if (!isfinite(matrix[i]) || fabs(matrix[i]) > 1e100) {
             st->image_failed = 1;
@@ -34,8 +32,7 @@ static int text_position_valid(pdf_render_state *st, const double *matrix)
     return 1;
 }
 
-void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y)
-{
+void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y) {
     double *m = st->text_line_matrix;
     m[4] += x * m[0] + y * m[2];
     m[5] += x * m[1] + y * m[3];
@@ -43,8 +40,7 @@ void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y)
         memcpy(st->text_matrix, m, sizeof(st->text_matrix));
 }
 
-void cupidimage_pdf_text_advance(pdf_render_state *st, double distance)
-{
+void cupidimage_pdf_text_advance(pdf_render_state *st, double distance) {
     double *m = st->text_matrix;
     int vertical =
         st->gs.current_font && st->gs.current_font->cid && st->gs.current_font->cid->vertical;
@@ -55,8 +51,7 @@ void cupidimage_pdf_text_advance(pdf_render_state *st, double distance)
 
 /* The fallback glyph remains an 8x8 bitmap. Positioning and text-state
    transforms are applied independently of that temporary glyph representation. */
-static void pdf_draw_glyph(pdf_render_state *st, unsigned char c)
-{
+static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     if (!st->img || !st->img->rgba || st->gs.text_mode == 3)
         return;
     int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
@@ -206,8 +201,8 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c)
         }
     free(stroke);
 }
-static double pdf_char_advance_em(unsigned char c)
-{
+
+static double pdf_char_advance_em(unsigned char c) {
     if (c == ' ')
         return 0.278;
     if (c >= '0' && c <= '9')
@@ -242,8 +237,7 @@ static double pdf_char_advance_em(unsigned char c)
 }
 
 static int pdf_font_lookup_codepoint(const pdf_font_map *font, uint32_t src_code, uint8_t src_len,
-                                     uint32_t *dst_codepoint)
-{
+                                     uint32_t *dst_codepoint) {
     if (!font || !dst_codepoint || src_len == 0) {
         return 0;
     }
@@ -264,8 +258,7 @@ static int pdf_font_lookup_codepoint(const pdf_font_map *font, uint32_t src_code
 }
 
 static uint32_t pdf_decode_next_codepoint(const pdf_render_state *st, const unsigned char *bytes,
-                                          size_t len, size_t *pos)
-{
+                                          size_t len, size_t *pos) {
     if (!bytes || !pos || *pos >= len) {
         return 0;
     }
@@ -296,8 +289,7 @@ static uint32_t pdf_decode_next_codepoint(const pdf_render_state *st, const unsi
     return raw;
 }
 
-static unsigned char pdf_codepoint_to_ascii(uint32_t cp)
-{
+static unsigned char pdf_codepoint_to_ascii(uint32_t cp) {
     if (cp < 128u) {
         return (unsigned char)cp;
     }
@@ -314,8 +306,7 @@ static unsigned char pdf_codepoint_to_ascii(uint32_t cp)
     return '?';
 }
 
-void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length)
-{
+void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length) {
     if (!text || !st->in_text)
         return;
     const pdf_font_map *current = st->gs.current_font;

@@ -14,22 +14,19 @@ static int checks, failures;
         }                                                                                          \
     } while (0)
 
-static void bits(unsigned value, unsigned count)
-{
+static void bits(unsigned value, unsigned count) {
     for (unsigned i = 0; i < count; i++, bitpos++)
         stream[bitpos / 8] |= ((value >> i) & 1u) << (bitpos % 8);
 }
 
-static void single(unsigned symbol)
-{
+static void single(unsigned symbol) {
     bits(1, 1);
     bits(0, 1);
     bits(symbol > 1, 1);
     bits(symbol, symbol > 1 ? 8 : 1);
 }
 
-static size_t fixture(unsigned width, unsigned height, int mixed, int duplicate)
-{
+static size_t fixture(unsigned width, unsigned height, int mixed, int duplicate) {
     memset(stream, 0, sizeof(stream));
     bitpos = 0;
     bits(0x2f, 8);
@@ -83,14 +80,12 @@ static size_t fixture(unsigned width, unsigned height, int mixed, int duplicate)
     return (bitpos + 7) / 8;
 }
 
-static void le32(unsigned char *out, size_t value)
-{
+static void le32(unsigned char *out, size_t value) {
     for (unsigned i = 0; i < 4; i++)
         out[i] = (unsigned char)(value >> (i * 8));
 }
 
-static void decode(unsigned width, unsigned height, int mixed)
-{
+static void decode(unsigned width, unsigned height, int mixed) {
     char error[128];
     size_t length = fixture(width, height, mixed, 0);
     unsigned char container[sizeof(stream) + 21];
@@ -127,8 +122,7 @@ static void decode(unsigned width, unsigned height, int mixed)
     }
 }
 
-int main(void)
-{
+int main(void) {
     decode(1, 1, 0);
     decode(2, 1, 0);
     decode(3, 2, 0);

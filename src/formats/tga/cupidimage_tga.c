@@ -43,25 +43,21 @@ typedef struct tga_extension_info {
     uint8_t attributes_type;
 } tga_extension_info;
 
-static void set_err(char *err, size_t errcap, const char *msg)
-{
+static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
         snprintf(err, errcap, "%s", msg);
     }
 }
 
-static uint16_t read_le16(const unsigned char *p)
-{
+static uint16_t read_le16(const unsigned char *p) {
     return (uint16_t)(p[0] | (p[1] << 8));
 }
 
-static uint32_t read_le32(const unsigned char *p)
-{
+static uint32_t read_le32(const unsigned char *p) {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
-static int mul_overflow_size_t(size_t a, size_t b, size_t *out)
-{
+static int mul_overflow_size_t(size_t a, size_t b, size_t *out) {
     if (a == 0 || b == 0) {
         *out = 0;
         return 0;
@@ -73,23 +69,19 @@ static int mul_overflow_size_t(size_t a, size_t b, size_t *out)
     return 0;
 }
 
-static uint8_t scale_5_to_8(uint8_t v)
-{
+static uint8_t scale_5_to_8(uint8_t v) {
     return (uint8_t)((v * 255u + 15u) / 31u);
 }
 
-static uint8_t scale_6_to_8(uint8_t v)
-{
+static uint8_t scale_6_to_8(uint8_t v) {
     return (uint8_t)((v * 255u + 31u) / 63u);
 }
 
-static uint8_t scale_16_to_8(uint16_t v)
-{
+static uint8_t scale_16_to_8(uint16_t v) {
     return (uint8_t)(((uint32_t)v * 255u + 32767u) / 65535u);
 }
 
-static void tga_convert_rgb555_to_rgba(uint8_t *dest, uint16_t value)
-{
+static void tga_convert_rgb555_to_rgba(uint8_t *dest, uint16_t value) {
     uint8_t r = (uint8_t)((value >> 10) & 0x1Fu);
     uint8_t g = (uint8_t)((value >> 5) & 0x1Fu);
     uint8_t b = (uint8_t)(value & 0x1Fu);
@@ -99,8 +91,7 @@ static void tga_convert_rgb555_to_rgba(uint8_t *dest, uint16_t value)
     dest[3] = 255;
 }
 
-static void tga_convert_rgb5551_to_rgba(uint8_t *dest, uint16_t value, int use_alpha)
-{
+static void tga_convert_rgb5551_to_rgba(uint8_t *dest, uint16_t value, int use_alpha) {
     uint8_t r = (uint8_t)((value >> 10) & 0x1Fu);
     uint8_t g = (uint8_t)((value >> 5) & 0x1Fu);
     uint8_t b = (uint8_t)(value & 0x1Fu);
@@ -114,8 +105,7 @@ static void tga_convert_rgb5551_to_rgba(uint8_t *dest, uint16_t value, int use_a
     }
 }
 
-static void tga_convert_rgb565_to_rgba(uint8_t *dest, uint16_t value)
-{
+static void tga_convert_rgb565_to_rgba(uint8_t *dest, uint16_t value) {
     uint8_t r = (uint8_t)((value >> 11) & 0x1Fu);
     uint8_t g = (uint8_t)((value >> 5) & 0x3Fu);
     uint8_t b = (uint8_t)(value & 0x1Fu);
@@ -125,16 +115,14 @@ static void tga_convert_rgb565_to_rgba(uint8_t *dest, uint16_t value)
     dest[3] = 255;
 }
 
-static void tga_convert_gray8_to_rgba(uint8_t *dest, uint8_t gray)
-{
+static void tga_convert_gray8_to_rgba(uint8_t *dest, uint8_t gray) {
     dest[0] = gray;
     dest[1] = gray;
     dest[2] = gray;
     dest[3] = 255;
 }
 
-static void tga_convert_gray16_to_rgba(uint8_t *dest, uint16_t gray)
-{
+static void tga_convert_gray16_to_rgba(uint8_t *dest, uint16_t gray) {
     uint8_t v = scale_16_to_8(gray);
     dest[0] = v;
     dest[1] = v;
@@ -143,8 +131,7 @@ static void tga_convert_gray16_to_rgba(uint8_t *dest, uint16_t gray)
 }
 
 static int tga_parse_header(const unsigned char *data, size_t size, tga_header *hdr, char *err,
-                            size_t errcap)
-{
+                            size_t errcap) {
     if (size < TGA_HEADER_SIZE) {
         set_err(err, errcap, "file too small for TGA header");
         return 0;
@@ -164,8 +151,7 @@ static int tga_parse_header(const unsigned char *data, size_t size, tga_header *
     return 1;
 }
 
-static int tga_validate_header(const tga_header *hdr, char *err, size_t errcap)
-{
+static int tga_validate_header(const tga_header *hdr, char *err, size_t errcap) {
     if (hdr->color_map_type > 1) {
         set_err(err, errcap, "invalid color map type");
         return 0;
@@ -254,8 +240,7 @@ static int tga_validate_header(const tga_header *hdr, char *err, size_t errcap)
 
 static int tga_load_colormap(const unsigned char *data, size_t size, size_t *offset,
                              const tga_header *hdr, uint8_t **palette_out, uint32_t *palette_count,
-                             char *err, size_t errcap)
-{
+                             char *err, size_t errcap) {
     if (hdr->color_map_type != 1) {
         *palette_out = NULL;
         *palette_count = 0;
@@ -323,8 +308,7 @@ static int tga_load_colormap(const unsigned char *data, size_t size, size_t *off
 }
 
 static int tga_decode_rle(uint8_t *dest, const unsigned char *src, size_t src_size,
-                          uint32_t pixel_count, uint8_t bytes_per_pixel, char *err, size_t errcap)
-{
+                          uint32_t pixel_count, uint8_t bytes_per_pixel, char *err, size_t errcap) {
     size_t src_pos = 0;
     size_t out_pixels = 0;
 
@@ -369,8 +353,7 @@ static int tga_decode_rle(uint8_t *dest, const unsigned char *src, size_t src_si
     return 1;
 }
 
-static void tga_flip_vertical(uint8_t *rgba, uint32_t width, uint32_t height)
-{
+static void tga_flip_vertical(uint8_t *rgba, uint32_t width, uint32_t height) {
     size_t row_bytes = (size_t)width * 4u;
     for (uint32_t y = 0; y < height / 2u; y++) {
         uint8_t *row_top = rgba + (size_t)y * row_bytes;
@@ -383,8 +366,7 @@ static void tga_flip_vertical(uint8_t *rgba, uint32_t width, uint32_t height)
     }
 }
 
-static void tga_mirror_horizontal(uint8_t *rgba, uint32_t width, uint32_t height)
-{
+static void tga_mirror_horizontal(uint8_t *rgba, uint32_t width, uint32_t height) {
     for (uint32_t y = 0; y < height; y++) {
         uint8_t *row = rgba + (size_t)y * (size_t)width * 4u;
         for (uint32_t x = 0; x < width / 2u; x++) {
@@ -407,8 +389,7 @@ static void tga_mirror_horizontal(uint8_t *rgba, uint32_t width, uint32_t height
 }
 
 static int tga_parse_footer(const unsigned char *data, size_t size, uint32_t *ext_offset,
-                            uint32_t *dev_offset)
-{
+                            uint32_t *dev_offset) {
     if (size < TGA_FOOTER_SIZE) {
         return 0;
     }
@@ -423,8 +404,7 @@ static int tga_parse_footer(const unsigned char *data, size_t size, uint32_t *ex
 
 static int tga_parse_extension_area(const unsigned char *data, size_t size, uint32_t offset,
                                     cupidimage_tga_metadata *meta, tga_extension_info *info,
-                                    char *err, size_t errcap)
-{
+                                    char *err, size_t errcap) {
     if (offset == 0) {
         return 1;
     }
@@ -481,8 +461,7 @@ static int tga_parse_extension_area(const unsigned char *data, size_t size, uint
 }
 
 static int tga_decode_thumbnail(const unsigned char *data, size_t size, uint32_t offset,
-                                cupidimage_tga_metadata *meta, char *err, size_t errcap)
-{
+                                cupidimage_tga_metadata *meta, char *err, size_t errcap) {
     if (!meta || offset == 0) {
         return 1;
     }
@@ -537,8 +516,7 @@ static int tga_decode_thumbnail(const unsigned char *data, size_t size, uint32_t
 }
 
 static void tga_apply_gamma(uint8_t *rgba, size_t pixel_count, uint16_t gamma_num,
-                            uint16_t gamma_denom)
-{
+                            uint16_t gamma_denom) {
     if (gamma_num == 0 || gamma_denom == 0) {
         return;
     }
@@ -569,8 +547,7 @@ static void tga_apply_gamma(uint8_t *rgba, size_t pixel_count, uint16_t gamma_nu
 
 static int tga_apply_color_correction(uint8_t *rgba, size_t pixel_count, const unsigned char *data,
                                       size_t size, uint32_t table_offset, int apply_alpha,
-                                      char *err, size_t errcap)
-{
+                                      char *err, size_t errcap) {
     if (table_offset == 0) {
         return 1;
     }
@@ -609,8 +586,7 @@ static int tga_apply_color_correction(uint8_t *rgba, size_t pixel_count, const u
     return 1;
 }
 
-static void tga_zero_output(cupidimage_image *out)
-{
+static void tga_zero_output(cupidimage_image *out) {
     out->width = 0;
     out->height = 0;
     out->rgba = NULL;
@@ -620,8 +596,7 @@ static void tga_zero_output(cupidimage_image *out)
 
 int cupidimage_load_tga_with_metadata(const unsigned char *data, size_t size, cupidimage_image *out,
                                       cupidimage_tga_metadata *meta, int apply_corrections,
-                                      char *err, size_t errcap)
-{
+                                      char *err, size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -897,18 +872,15 @@ int cupidimage_load_tga_with_metadata(const unsigned char *data, size_t size, cu
 }
 
 int cupidimage_load_tga(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
-                        size_t errcap)
-{
+                        size_t errcap) {
     return cupidimage_load_tga_with_metadata(data, size, out, NULL, 1, err, errcap);
 }
 
-int cupidimage_load_tga_file(const char *path, cupidimage_image *out, char *err, size_t errcap)
-{
+int cupidimage_load_tga_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_tga);
 }
 
-void cupidimage_free_tga_metadata(cupidimage_tga_metadata *meta)
-{
+void cupidimage_free_tga_metadata(cupidimage_tga_metadata *meta) {
     if (!meta) {
         return;
     }

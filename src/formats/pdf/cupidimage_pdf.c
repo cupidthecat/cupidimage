@@ -11,8 +11,7 @@
 
 #include "pdf_internal.h"
 
-static int pdf_rotate_page(cupidimage_image *img, int rotation)
-{
+static int pdf_rotate_page(cupidimage_image *img, int rotation) {
     if (!rotation)
         return 1;
     uint32_t width = img->width, height = img->height;
@@ -47,8 +46,7 @@ static int pdf_rotate_page(cupidimage_image *img, int rotation)
 
 static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
                                         cupidimage_image *img, int page_index, char *err,
-                                        size_t errcap)
-{
+                                        size_t errcap) {
     if (!data || !img) {
         cupidimage_set_err(err, errcap, "pdf: null pointer");
         return 0;
@@ -208,20 +206,17 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
 }
 
 int cupidimage_load_pdf(const unsigned char *data, size_t size, cupidimage_image *img, char *err,
-                        size_t errcap)
-{
+                        size_t errcap) {
     return cupidimage_load_pdf_internal(data, size, img, 0, err, errcap);
 }
 
 int cupidimage_load_pdf_page(const unsigned char *data, size_t size, cupidimage_image *img,
-                             int page_index, char *err, size_t errcap)
-{
+                             int page_index, char *err, size_t errcap) {
     return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap);
 }
 
 int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
-                                  size_t errcap)
-{
+                                  size_t errcap) {
     if (!data || !count) {
         cupidimage_set_err(err, errcap, "pdf: null pointer");
         return 0;
@@ -271,8 +266,7 @@ int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *c
 }
 
 int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *img, int page_index,
-                                  char *err, size_t errcap)
-{
+                                  char *err, size_t errcap) {
     unsigned char *buf = NULL;
     size_t size = 0;
     if (!cupidimage_read_file_bytes(path, &buf, &size, err, errcap)) {
@@ -283,8 +277,7 @@ int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *img, int p
     return ok;
 }
 
-int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, size_t errcap)
-{
+int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, size_t errcap) {
     unsigned char *buf = NULL;
     size_t size = 0;
     if (!cupidimage_read_file_bytes(path, &buf, &size, err, errcap)) {
@@ -295,7 +288,6 @@ int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, 
     return ok;
 }
 
-int cupidimage_load_pdf_file(const char *path, cupidimage_image *img, char *err, size_t errcap)
-{
+int cupidimage_load_pdf_file(const char *path, cupidimage_image *img, char *err, size_t errcap) {
     return cupidimage_load_pdf_page_file(path, img, 0, err, errcap);
 }

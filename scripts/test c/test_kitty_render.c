@@ -15,8 +15,7 @@ typedef struct {
 int cupidimage_render_kitty(const cupidimage_image *img, FILE *out, uint32_t term_width,
                             uint32_t term_height, char *err, size_t errcap);
 
-void test_render_small_image(void)
-{
+void test_render_small_image(void) {
     cupidimage_image img = {0};
     img.width = 2;
     img.height = 2;
@@ -31,8 +30,7 @@ void test_render_small_image(void)
     fclose(f);
 }
 
-int main(void)
-{
+int main(void) {
     test_render_small_image();
     printf("test_render_small_image: PASS\n");
     return 0;

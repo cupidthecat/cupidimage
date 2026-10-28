@@ -12,8 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 
-static void usage(const char *prog)
-{
+static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
             "number] [--sixel] [--sixel-colors N] [--sixel-dither MODE] [--ansi] <image-file> "
@@ -26,8 +25,7 @@ static void usage(const char *prog)
     fprintf(stderr, "  --ansi: force ANSI truecolor output (disable Kitty/Sixel auto-detection)\n");
 }
 
-static int is_gif_file(const char *path)
-{
+static int is_gif_file(const char *path) {
     unsigned char sig[6];
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -41,16 +39,14 @@ static int is_gif_file(const char *path)
     return memcmp(sig, "GIF87a", 6) == 0 || memcmp(sig, "GIF89a", 6) == 0;
 }
 
-static void sleep_ms(unsigned ms)
-{
+static void sleep_ms(unsigned ms) {
     struct timespec ts;
     ts.tv_sec = (time_t)(ms / 1000u);
     ts.tv_nsec = (long)(ms % 1000u) * 1000000L;
     nanosleep(&ts, NULL);
 }
 
-static int monotonic_seconds(double *out)
-{
+static int monotonic_seconds(double *out) {
     if (!out) {
         return 0;
     }
@@ -68,8 +64,7 @@ static int monotonic_seconds(double *out)
     return 0;
 }
 
-static int parse_int(const char *s, int *out)
-{
+static int parse_int(const char *s, int *out) {
     if (!s || !*s) {
         return 0;
     }
@@ -85,8 +80,7 @@ static int parse_int(const char *s, int *out)
     return 1;
 }
 
-static int parse_float(const char *s, float *out)
-{
+static int parse_float(const char *s, float *out) {
     if (!s || !*s || !out) {
         return 0;
     }
@@ -99,8 +93,7 @@ static int parse_float(const char *s, float *out)
     return 1;
 }
 
-static int path_has_svg_extension(const char *path)
-{
+static int path_has_svg_extension(const char *path) {
     if (!path) {
         return 0;
     }
@@ -111,8 +104,7 @@ static int path_has_svg_extension(const char *path)
     return strcmp(dot, ".svg") == 0 || strcmp(dot, ".SVG") == 0;
 }
 
-static int path_has_pdf_extension(const char *path)
-{
+static int path_has_pdf_extension(const char *path) {
     if (!path) {
         return 0;
     }
@@ -123,8 +115,7 @@ static int path_has_pdf_extension(const char *path)
     return strcmp(dot, ".pdf") == 0 || strcmp(dot, ".PDF") == 0;
 }
 
-static int read_file_text(const char *path, char **out_text, size_t *out_size)
-{
+static int read_file_text(const char *path, char **out_text, size_t *out_size) {
     if (!path || !out_text || !out_size) {
         return 0;
     }
@@ -163,13 +154,11 @@ static int read_file_text(const char *path, char **out_text, size_t *out_size)
     return 1;
 }
 
-static int ci_eq_char(char a, char b)
-{
+static int ci_eq_char(char a, char b) {
     return tolower((unsigned char)a) == tolower((unsigned char)b);
 }
 
-static int ci_starts_with(const char *s, const char *prefix)
-{
+static int ci_starts_with(const char *s, const char *prefix) {
     if (!s || !prefix) {
         return 0;
     }
@@ -183,15 +172,13 @@ static int ci_starts_with(const char *s, const char *prefix)
     return 1;
 }
 
-static int is_name_char(char c)
-{
+static int is_name_char(char c) {
     unsigned char uc = (unsigned char)c;
     return isalnum(uc) || c == '_' || c == '-' || c == ':' || c == '.';
 }
 
 static int extract_attr_value_ci(const char *start, const char *end, const char *attr, char *out,
-                                 size_t out_cap)
-{
+                                 size_t out_cap) {
     if (!start || !end || !attr || !out || out_cap == 0 || end <= start) {
         return 0;
     }
@@ -240,8 +227,7 @@ static int extract_attr_value_ci(const char *start, const char *end, const char 
     return 0;
 }
 
-static int parse_clock_seconds(const char *s, float *out)
-{
+static int parse_clock_seconds(const char *s, float *out) {
     if (!s || !*s || !out) {
         return 0;
     }
@@ -278,8 +264,7 @@ static int parse_clock_seconds(const char *s, float *out)
     return 1;
 }
 
-static int parse_repeat_count(const char *s, float *count, int *indefinite)
-{
+static int parse_repeat_count(const char *s, float *count, int *indefinite) {
     if (!count || !indefinite) {
         return 0;
     }
@@ -310,8 +295,7 @@ static int parse_repeat_count(const char *s, float *count, int *indefinite)
     return 1;
 }
 
-static const char *find_ci_substr(const char *haystack, const char *needle)
-{
+static const char *find_ci_substr(const char *haystack, const char *needle) {
     if (!haystack || !needle || !*needle) {
         return NULL;
     }
@@ -331,8 +315,7 @@ static const char *find_ci_substr(const char *haystack, const char *needle)
 }
 
 static int parse_css_animation_shorthand_timing(const char *value, float *duration, float *delay,
-                                                float *repeat, int *indefinite)
-{
+                                                float *repeat, int *indefinite) {
     if (!value || !duration || !delay || !repeat || !indefinite) {
         return 0;
     }
@@ -398,8 +381,7 @@ static int parse_css_animation_shorthand_timing(const char *value, float *durati
     return have_duration;
 }
 
-static int analyze_css_animation_timeline(const char *text, float *duration_s, int *indefinite)
-{
+static int analyze_css_animation_timeline(const char *text, float *duration_s, int *indefinite) {
     if (!text || !duration_s || !indefinite) {
         return 0;
     }
@@ -460,8 +442,7 @@ static int analyze_css_animation_timeline(const char *text, float *duration_s, i
     return found;
 }
 
-static int analyze_svg_animation_timeline(const char *text, float *duration_s, int *indefinite)
-{
+static int analyze_svg_animation_timeline(const char *text, float *duration_s, int *indefinite) {
     if (!text || !duration_s || !indefinite) {
         return 0;
     }
@@ -541,8 +522,7 @@ static int analyze_svg_animation_timeline(const char *text, float *duration_s, i
     return found || css_found;
 }
 
-static void apply_fit(int *maxw, int *maxh)
-{
+static void apply_fit(int *maxw, int *maxh) {
     struct winsize ws;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) != 0) {
         return;
@@ -557,8 +537,7 @@ static void apply_fit(int *maxw, int *maxh)
 
 static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, int maxh,
                                         int force_sixel, int force_ansi, int sixel_colors,
-                                        uint8_t sixel_dither)
-{
+                                        uint8_t sixel_dither) {
     char err[256];
 
     /* Force ANSI if requested */
@@ -617,8 +596,7 @@ static int render_image_with_sixel_opts(const cupidimage_image *img, int maxw, i
 
 static int render_animation_with_sixel_opts(const cupidimage_animation *anim, int maxw, int maxh,
                                             int force_sixel, int force_ansi, int sixel_colors,
-                                            uint8_t sixel_dither)
-{
+                                            uint8_t sixel_dither) {
     char err[256];
 
     /* Force ANSI if requested - not supported for animations, return error */
@@ -676,8 +654,7 @@ static int render_animation_with_sixel_opts(const cupidimage_animation *anim, in
 }
 
 static int render_svg_animation(const char *path, int maxw, int maxh, int force_ansi, char *err,
-                                size_t errcap)
-{
+                                size_t errcap) {
     char *text = NULL;
     size_t text_size = 0;
     if (!read_file_text(path, &text, &text_size)) {
@@ -773,8 +750,7 @@ static int render_svg_animation(const char *path, int maxw, int maxh, int force_
     return 1;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if (argc < 2) {
         usage(argv[0]);
         return 1;

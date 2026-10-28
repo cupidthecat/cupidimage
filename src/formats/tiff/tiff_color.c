@@ -2,8 +2,7 @@
 
 int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *info,
                                     const uint8_t *raw, size_t row_bytes, uint8_t *rgba,
-                                    size_t rgba_size, char *err, size_t errcap)
-{
+                                    size_t rgba_size, char *err, size_t errcap) {
     uint16_t bps = info->bits_per_sample[0];
     int photometric = info->photometric;
     int samples = info->samples_per_pixel;
@@ -243,8 +242,7 @@ int cupidimage_tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_in
 }
 
 int cupidimage_tiff_apply_orientation_rgba(uint8_t **rgba, uint32_t *width, uint32_t *height,
-                                           uint16_t orientation, char *err, size_t errcap)
-{
+                                           uint16_t orientation, char *err, size_t errcap) {
     if (orientation == 1) {
         return 1;
     }

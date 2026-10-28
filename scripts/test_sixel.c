@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if (argc != 7)
         return 2;
     FILE *input = fopen(argv[6], "rb");

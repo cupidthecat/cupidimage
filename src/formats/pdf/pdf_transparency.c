@@ -7,8 +7,7 @@ static const char *pdf_blend_names[] = {"Normal",    "Multiply",   "Screen",    
                                         "HardLight", "SoftLight",  "Difference", "Exclusion",
                                         "Hue",       "Saturation", "Color",      "Luminosity"};
 
-static int pdf_blend_name(const pdf_object_view *view, size_t *pos)
-{
+static int pdf_blend_name(const pdf_object_view *view, size_t *pos) {
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     if (*pos == view->len || view->data[(*pos)++] != '/')
         return -1;
@@ -27,8 +26,7 @@ static int pdf_blend_name(const pdf_object_view *view, size_t *pos)
 }
 
 int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view, size_t pos,
-                               unsigned depth, double *value)
-{
+                               unsigned depth, double *value) {
     if (depth == 16)
         return 0;
     int object;
@@ -46,8 +44,7 @@ int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view
             cupidimage_pdf_is_delim(view->data[pos]));
 }
 
-int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view)
-{
+int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view) {
     pdf_graphics_state next = st->gs;
     size_t pos;
     double value;
@@ -133,8 +130,7 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
     return 1;
 }
 
-int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name)
-{
+int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name) {
     pdf_object_view state = {0};
     int ok = cupidimage_pdf_find_resource(st, "ExtGState", name, &state, NULL);
     size_t pos = 0;
@@ -145,16 +141,15 @@ int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name)
     return ok;
 }
 
-static double pdf_luminance(const double c[3])
-{
+static double pdf_luminance(const double c[3]) {
     return .3 * c[0] + .59 * c[1] + .11 * c[2];
 }
-static double pdf_saturation(const double c[3])
-{
+
+static double pdf_saturation(const double c[3]) {
     return fmax(c[0], fmax(c[1], c[2])) - fmin(c[0], fmin(c[1], c[2]));
 }
-static void pdf_set_luminance(double c[3], double target)
-{
+
+static void pdf_set_luminance(double c[3], double target) {
     double delta = target - pdf_luminance(c);
     for (int i = 0; i < 3; i++)
         c[i] += delta;
@@ -166,8 +161,8 @@ static void pdf_set_luminance(double c[3], double target)
         for (int i = 0; i < 3; i++)
             c[i] = target + (c[i] - target) * (1 - target) / (high - target);
 }
-static void pdf_set_saturation(double c[3], double target)
-{
+
+static void pdf_set_saturation(double c[3], double target) {
     int order[3] = {0, 1, 2};
     for (int i = 0; i < 2; i++)
         for (int j = i + 1; j < 3; j++)
@@ -187,8 +182,7 @@ static void pdf_set_saturation(double c[3], double target)
 
 /* ISO 32000-1, 11.3.5: blend source and backdrop in the output RGB space. */
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3],
-                              double result[3])
-{
+                              double result[3]) {
     double s[3], b[3];
     for (int i = 0; i < 3; i++) {
         s[i] = source[i] / 255.0;
@@ -196,9 +190,9 @@ void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t b
     }
     cupidimage_pdf_blend_colors(mode, s, b, result);
 }
+
 void cupidimage_pdf_blend_colors(int mode, const double source[3], const double backdrop[3],
-                                 double result[3])
-{
+                                 double result[3]) {
     double s[3], b[3];
     for (int i = 0; i < 3; i++) {
         s[i] = source[i];

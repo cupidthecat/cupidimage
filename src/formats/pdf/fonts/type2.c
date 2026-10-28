@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
 typedef struct {
     const pdf_cff_font *font;
     const pdf_cff_private *private_dict;
@@ -11,22 +12,22 @@ typedef struct {
     unsigned count, hints, work;
     int width_seen, open;
 } type2_state;
-static int t2_integer(double x, int *n)
-{
+
+static int t2_integer(double x, int *n) {
     if (!isfinite(x) || x < -2147483648.0 || x > 2147483647.0 || floor(x) != x)
         return 0;
     *n = (int)x;
     return 1;
 }
-static int t2_push(type2_state *st, double x)
-{
+
+static int t2_push(type2_state *st, double x) {
     if (st->count == 48 || !isfinite(x) || fabs(x) > 1e30)
         return 0;
     st->stack[st->count++] = x;
     return 1;
 }
-static int t2_emit(type2_state *st, unsigned kind, const double points[6])
-{
+
+static int t2_emit(type2_state *st, unsigned kind, const double points[6]) {
     pdf_cff_outline *out = st->outline;
     if (out->count == 65536)
         return 0;
@@ -46,16 +47,16 @@ static int t2_emit(type2_state *st, unsigned kind, const double points[6])
     memcpy(seg->points, points, sizeof(seg->points));
     return 1;
 }
-static int t2_close(type2_state *st)
-{
+
+static int t2_close(type2_state *st) {
     if (!st->open)
         return 1;
     double p[6] = {st->start_x, st->start_y};
     st->open = 0;
     return t2_emit(st, PDF_CFF_CLOSE, p);
 }
-static int t2_move(type2_state *st, double x, double y)
-{
+
+static int t2_move(type2_state *st, double x, double y) {
     if (!t2_close(st))
         return 0;
     st->x += x;
@@ -66,8 +67,8 @@ static int t2_move(type2_state *st, double x, double y)
     double p[6] = {st->x, st->y};
     return t2_emit(st, PDF_CFF_MOVE, p);
 }
-static int t2_line(type2_state *st, double x, double y)
-{
+
+static int t2_line(type2_state *st, double x, double y) {
     if (!st->open)
         return 0;
     st->x += x;
@@ -75,8 +76,8 @@ static int t2_line(type2_state *st, double x, double y)
     double p[6] = {st->x, st->y};
     return t2_emit(st, PDF_CFF_LINE, p);
 }
-static int t2_curve(type2_state *st, const double d[6])
-{
+
+static int t2_curve(type2_state *st, const double d[6]) {
     if (!st->open)
         return 0;
     double p[6];
@@ -88,8 +89,8 @@ static int t2_curve(type2_state *st, const double d[6])
     }
     return t2_emit(st, PDF_CFF_CURVE, p);
 }
-static int t2_width(type2_state *st, int present)
-{
+
+static int t2_width(type2_state *st, int present) {
     if (st->width_seen)
         return !present;
     st->width_seen = 1;
@@ -102,8 +103,8 @@ static int t2_width(type2_state *st, int present)
     }
     return isfinite(st->outline->width) && fabs(st->outline->width) <= 1e30;
 }
-static int t2_escape(type2_state *st, unsigned op)
-{
+
+static int t2_escape(type2_state *st, unsigned op) {
     double *s = st->stack;
     unsigned n = st->count;
     if (op == 0)
@@ -247,8 +248,8 @@ static int t2_escape(type2_state *st, unsigned op)
     st->count -= need;
     return t2_push(st, result);
 }
-static int t2_run(type2_state *st, pdf_cff_slice code, unsigned depth)
-{
+
+static int t2_run(type2_state *st, pdf_cff_slice code, unsigned depth) {
     if (depth > 10 || code.length > 65535)
         return 0;
     size_t pos = 0;
@@ -420,13 +421,14 @@ static int t2_run(type2_state *st, pdf_cff_slice code, unsigned depth)
     }
     return 0;
 }
-void cupidimage_pdf_type2_free(pdf_cff_outline *outline)
-{
+
+void cupidimage_pdf_type2_free(pdf_cff_outline *outline) {
     free(outline->segments);
     memset(outline, 0, sizeof(*outline));
 }
-int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph, pdf_cff_outline *outline)
-{
+
+int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph,
+                                 pdf_cff_outline *outline) {
     memset(outline, 0, sizeof(*outline));
     pdf_cff_slice code;
     if (!cupidimage_pdf_cff_item(&font->chars, glyph, &code))
@@ -447,8 +449,7 @@ int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph, pdf_c
 }
 
 static int t2_composite(const pdf_cff_font *font, unsigned glyph, pdf_cff_outline *out,
-                        unsigned depth, unsigned *calls)
-{
+                        unsigned depth, unsigned *calls) {
     memset(out, 0, sizeof(*out));
     if (depth == 8 || !*calls)
         return 0;
@@ -499,9 +500,9 @@ done:
         cupidimage_pdf_type2_free(out);
     return ok;
 }
+
 int cupidimage_pdf_cff_glyph_outline(const pdf_cff_font *font, unsigned glyph,
-                                     pdf_cff_outline *outline)
-{
+                                     pdf_cff_outline *outline) {
     unsigned calls = 64;
     return t2_composite(font, glyph, outline, 0, &calls);
 }

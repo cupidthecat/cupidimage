@@ -4,9 +4,9 @@
 #include <string.h>
 
 static unsigned checks, failures;
+
 static void check(const char *filter, const unsigned char *input, size_t length,
-                  const unsigned char *expected, size_t expected_length, int valid)
-{
+                  const unsigned char *expected, size_t expected_length, int valid) {
     pdf_object_view view = {0};
     view.data = (const unsigned char *)filter;
     view.len = strlen(filter);
@@ -23,8 +23,7 @@ static void check(const char *filter, const unsigned char *input, size_t length,
     free(output);
 }
 
-int main(void)
-{
+int main(void) {
     const char *ascii85 = "<< /Filter /ASCII85Decode >>";
     check(ascii85, (const unsigned char *)"z~>", 3, (const unsigned char *)"\0\0\0\0", 4, 1);
     check(ascii85, (const unsigned char *)"!!~>", 4, (const unsigned char *)"\0", 1, 1);
