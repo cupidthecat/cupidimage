@@ -45,7 +45,7 @@ int main(void) {
             memcpy(state->gs.ctm, matrices[matrix], sizeof(state->gs.ctm));
             char content[160];
             snprintf(content, sizeof(content), "%.6f i 0 0 m 0 75 75 75 75 0 c", values[i]);
-            assert(execute(state, content) && !state->path.overflow);
+            assert(execute(state, content) && cupidimage_pdf_path_flatten(state));
             assert(state->path.seg_count >= previous);
             previous = state->path.seg_count;
             double tolerance = fmin(values[i] ? values[i] : 1, .25);
@@ -78,6 +78,7 @@ int main(void) {
     assert(!cupidimage_pdf_set_flatness(&state->gs, NAN));
     assert(!cupidimage_pdf_set_flatness(&state->gs, INFINITY));
     assert(execute(state, ".00000000000000000001 i 0 0 m 0 75 75 75 75 0 c"));
+    assert(!cupidimage_pdf_path_flatten(state));
     assert(state->path.overflow);
     checks += 3;
     free(state);

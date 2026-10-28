@@ -37,7 +37,8 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   Type 3 font metadata lives in `pdf_font_type3.c`, and shared resource-scope
   lookup lives in `pdf_resources.c`. Pattern validation and the bounded
   per-page cell/gradient cache live in `pdf_patterns.c`. Pattern stream execution
-  and per-object backdrop evaluation live in `pdf_pattern_render.c`. Stroke geometry, dash
+  and per-object backdrop evaluation live in `pdf_pattern_render.c`. Device-space path construction and deferred curve subdivision live in
+  `pdf_path.c`. Stroke geometry, dash
   expansion and bounded union coverage live in `pdf_stroke.c`. CID
   horizontal/vertical metrics are parsed in `pdf_font_cid.c`, separately from
   Unicode maps and glyph rasterization. `fonts/` holds binary font tables,

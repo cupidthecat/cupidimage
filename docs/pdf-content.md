@@ -95,10 +95,13 @@ leaves the current setting unchanged. Invalid values are rejected. Subdivision
 has depth and segment limits: a path that exceeds them fails when painted or
 used for clipping, rather than drawing an incomplete approximation.
 
-Ordinary curves are currently flattened when their path operators execute.
-Changing flatness after constructing a curve does not rebuild that curve; deferred
-path construction remains necessary to cover that ordering. Native font fill and
-text-clip coverage use analytic curve intersections rather than flattened edges.
+Ordinary paths retain their transformed cubic control points until a painting
+operator executes or `n` applies pending clipping. Flatness changes between path
+construction and painting therefore use the setting in effect at paint time.
+Later CTM changes do not move an already constructed path. `pdf_path.c` owns
+construction, closure and bounded subdivision; flattened paths are shared by
+fill, stroke and clipping for that operation. Native font fill and text-clip
+coverage use analytic curve intersections rather than flattened edges.
 These controls do not add font hinting or antialiasing.
 
 The implementation follows ISO 32000-1:2008, Tables 57 and 58 and section 10.6.2,

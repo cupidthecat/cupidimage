@@ -477,3 +477,5 @@ checks graphics-state restoration and malformed operands, and exercises complete
 PDFs with fills, strokes, clipping, Forms, Type 3 glyphs and native curved glyph
 strokes. Very small tolerances must produce a bounded rejection when subdivision
 cannot satisfy them; successful decoding alone is not the expected outcome.
+Paint-time changes are tested separately from construction-time CTM capture.
+The document allocation harness covers deferred subdivision failures and recovery.

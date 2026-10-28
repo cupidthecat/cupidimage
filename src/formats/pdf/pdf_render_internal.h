@@ -10,6 +10,8 @@ typedef struct {
     float y1;
     int starts_subpath;
     int closes_subpath;
+    int curve;
+    float cx1, cy1, cx2, cy2;
 } pdf_seg;
 
 typedef struct {
@@ -261,6 +263,12 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
                                   double rgb[3], double *shape, double *alpha);
 void cupidimage_pdf_matrix_concat_double(double m[6], const double n[6]);
 void cupidimage_pdf_path_clear(pdf_path *path);
+void cupidimage_pdf_path_close(pdf_path *path);
+void cupidimage_pdf_path_move_user(pdf_render_state *state, float x, float y);
+void cupidimage_pdf_path_line_user(pdf_render_state *state, float x, float y);
+void cupidimage_pdf_path_curve_to(pdf_render_state *state, float x1, float y1, float x2, float y2,
+                                  float x3, float y3, int first_is_current);
+int cupidimage_pdf_path_flatten(pdf_render_state *state);
 void cupidimage_pdf_render_state_release(pdf_render_state *st);
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t len);
 int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pattern);

@@ -256,166 +256,6 @@ void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy
     *py = (st->page_top_pts - ty) * s;
 }
 
-void cupidimage_pdf_path_clear(pdf_path *p) {
-    if (!p)
-        return;
-    p->seg_count = 0;
-    p->subpath_first_seg = 0;
-    p->has_current = 0;
-    p->has_subpath = 0;
-    p->overflow = 0;
-    p->current_x = 0.0f;
-    p->current_y = 0.0f;
-    p->subpath_start_x = 0.0f;
-    p->subpath_start_y = 0.0f;
-}
-
-static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1) {
-    if (!p)
-        return;
-    if (p->seg_count >= (int)(sizeof(p->segs) / sizeof(p->segs[0]))) {
-        p->overflow = 1;
-        return;
-    }
-    p->segs[p->seg_count].x0 = x0;
-    p->segs[p->seg_count].y0 = y0;
-    p->segs[p->seg_count].x1 = x1;
-    p->segs[p->seg_count].y1 = y1;
-    p->segs[p->seg_count].starts_subpath = p->seg_count == p->subpath_first_seg;
-    p->segs[p->seg_count].closes_subpath = 0;
-    p->seg_count++;
-}
-
-static void pdf_path_move_to(pdf_path *p, float x, float y) {
-    if (!p)
-        return;
-    p->subpath_first_seg = p->seg_count;
-    p->current_x = x;
-    p->current_y = y;
-    p->subpath_start_x = x;
-    p->subpath_start_y = y;
-    p->has_current = 1;
-    p->has_subpath = 1;
-}
-
-static void pdf_path_line_to(pdf_path *p, float x, float y) {
-    if (!p)
-        return;
-    if (!p->has_current) {
-        pdf_path_move_to(p, x, y);
-        return;
-    }
-    pdf_path_add_seg(p, p->current_x, p->current_y, x, y);
-    p->current_x = x;
-    p->current_y = y;
-}
-
-static void pdf_path_close(pdf_path *p) {
-    if (!p || !p->has_current || !p->has_subpath)
-        return;
-    if (fabsf(p->current_x - p->subpath_start_x) > 1e-4f ||
-        fabsf(p->current_y - p->subpath_start_y) > 1e-4f) {
-        pdf_path_add_seg(p, p->current_x, p->current_y, p->subpath_start_x, p->subpath_start_y);
-    }
-    if (p->seg_count > p->subpath_first_seg)
-        p->segs[p->seg_count - 1].closes_subpath = 1;
-    p->current_x = p->subpath_start_x;
-    p->current_y = p->subpath_start_y;
-}
-
-/* Paths retain device coordinates when cm or q/Q changes the graphics state. */
-static void pdf_path_move_user(pdf_render_state *st, float x, float y) {
-    float px, py;
-    cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
-    pdf_path_move_to(&st->path, px, py);
-}
-
-static void pdf_path_line_user(pdf_render_state *st, float x, float y) {
-    float px, py;
-    cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
-    pdf_path_line_to(&st->path, px, py);
-}
-
-static double pdf_point_to_segment_dist_sq(double px, double py, double x0, double y0, double x1,
-                                           double y1) {
-    double vx = x1 - x0;
-    double vy = y1 - y0;
-    double wx = px - x0;
-    double wy = py - y0;
-    double c1 = vx * wx + vy * wy;
-    if (c1 <= 0.0f) {
-        double dx = px - x0;
-        double dy = py - y0;
-        return dx * dx + dy * dy;
-    }
-    double c2 = vx * vx + vy * vy;
-    if (c2 == 0) {
-        double dx = px - x0;
-        double dy = py - y0;
-        return dx * dx + dy * dy;
-    }
-    if (c1 >= c2) {
-        double dx = px - x1;
-        double dy = py - y1;
-        return dx * dx + dy * dy;
-    }
-    double t = c1 / c2;
-    double qx = x0 + t * vx;
-    double qy = y0 + t * vy;
-    double dx = px - qx;
-    double dy = py - qy;
-    return dx * dx + dy * dy;
-}
-
-static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1, float y1,
-                              float x2, float y2, float x3, float y3, unsigned depth) {
-    if (st->path.overflow)
-        return;
-    if (st->path.seg_count >= 4096) {
-        st->path.overflow = 1;
-        return;
-    }
-    double tolerance = cupidimage_pdf_flatness(&st->gs, .25);
-    double squared = tolerance * tolerance;
-    if (pdf_point_to_segment_dist_sq(x1, y1, x0, y0, x3, y3) <= squared &&
-        pdf_point_to_segment_dist_sq(x2, y2, x0, y0, x3, y3) <= squared) {
-        pdf_path_line_to(&st->path, x3, y3);
-        return;
-    }
-    if (depth == 16) {
-        st->path.overflow = 1;
-        return;
-    }
-    float ax = x0 * 0.5f + x1 * 0.5f, ay = y0 * 0.5f + y1 * 0.5f;
-    float bx = x1 * 0.5f + x2 * 0.5f, by = y1 * 0.5f + y2 * 0.5f;
-    float cx = x2 * 0.5f + x3 * 0.5f, cy = y2 * 0.5f + y3 * 0.5f;
-    float dx = ax * 0.5f + bx * 0.5f, dy = ay * 0.5f + by * 0.5f;
-    float ex = bx * 0.5f + cx * 0.5f, ey = by * 0.5f + cy * 0.5f;
-    float mx = dx * 0.5f + ex * 0.5f, my = dy * 0.5f + ey * 0.5f;
-    pdf_flatten_curve(st, x0, y0, ax, ay, dx, dy, mx, my, depth + 1);
-    pdf_flatten_curve(st, mx, my, ex, ey, cx, cy, x3, y3, depth + 1);
-}
-
-static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1, float x2, float y2,
-                              float x3, float y3, int first_is_current) {
-    if (!st->path.has_current)
-        return;
-    if (first_is_current) {
-        x1 = st->path.current_x;
-        y1 = st->path.current_y;
-    } else {
-        cupidimage_pdf_user_to_pixel(st, x1, y1, &x1, &y1);
-    }
-    cupidimage_pdf_user_to_pixel(st, x2, y2, &x2, &y2);
-    cupidimage_pdf_user_to_pixel(st, x3, y3, &x3, &y3);
-    if (!isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2) || !isfinite(x3) ||
-        !isfinite(y3)) {
-        st->path.overflow = 1;
-        return;
-    }
-    pdf_flatten_curve(st, st->path.current_x, st->path.current_y, x1, y1, x2, y2, x3, y3, 0);
-}
-
 static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
     float y0 = seg->y0;
     float y1 = seg->y1;
@@ -461,7 +301,7 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
         max_y = fmaxf(max_y, fmaxf(edge.y0, edge.y1));
         if (i + 1 == st->path.seg_count || st->path.segs[i + 1].starts_subpath) {
             /* Fill closes each subpath without adding a closing stroke. */
-            pdf_seg closing = {edge.x1, edge.y1, start_x, start_y, 0, 0};
+            pdf_seg closing = {.x0 = edge.x1, .y0 = edge.y1, .x1 = start_x, .y1 = start_y};
             xformed[n++] = closing;
         }
     }
@@ -709,6 +549,17 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
                                  int *count) {
     int n = *count;
     st->paint_serial = ++st->form_budget->paint_serial;
+    int paints_path = !strcmp(op, "S") || !strcmp(op, "s") || !strcmp(op, "f") ||
+                      !strcmp(op, "F") || !strcmp(op, "f*") || !strcmp(op, "B") ||
+                      !strcmp(op, "B*") || !strcmp(op, "b") || !strcmp(op, "b*") ||
+                      (!strcmp(op, "n") && st->pending_clip);
+    if (paints_path && !cupidimage_pdf_path_flatten(st)) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity,
+                           "pdf: path precision, allocation or segment limit exceeded");
+        pdf_clear_operands(ops, count);
+        return;
+    }
     if (st->glyph_active && !st->glyph_seen_metrics && strcmp(op, "d0") && strcmp(op, "d1")) {
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity,
@@ -1001,19 +852,19 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         }
     } else if (strcmp(op, "m") == 0) {
         if (n >= 2 && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            pdf_path_move_user(st, (float)ops[n - 2].num, (float)ops[n - 1].num);
+            cupidimage_pdf_path_move_user(st, (float)ops[n - 2].num, (float)ops[n - 1].num);
         }
     } else if (strcmp(op, "l") == 0) {
         if (n >= 2 && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            pdf_path_line_user(st, (float)ops[n - 2].num, (float)ops[n - 1].num);
+            cupidimage_pdf_path_line_user(st, (float)ops[n - 2].num, (float)ops[n - 1].num);
         }
     } else if (strcmp(op, "c") == 0) {
         if (n >= 6 && pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
             pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            pdf_path_curve_to(st, (float)ops[n - 6].num, (float)ops[n - 5].num,
-                              (float)ops[n - 4].num, (float)ops[n - 3].num, (float)ops[n - 2].num,
-                              (float)ops[n - 1].num, 0);
+            cupidimage_pdf_path_curve_to(st, (float)ops[n - 6].num, (float)ops[n - 5].num,
+                                         (float)ops[n - 4].num, (float)ops[n - 3].num,
+                                         (float)ops[n - 2].num, (float)ops[n - 1].num, 0);
         }
     } else if (strcmp(op, "v") == 0 || strcmp(op, "y") == 0) {
         if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
@@ -1021,13 +872,13 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             float x = (float)ops[n - 2].num, y = (float)ops[n - 1].num;
             float cx = (float)ops[n - 4].num, cy = (float)ops[n - 3].num;
             if (op[0] == 'v') {
-                pdf_path_curve_to(st, 0, 0, cx, cy, x, y, 1);
+                cupidimage_pdf_path_curve_to(st, 0, 0, cx, cy, x, y, 1);
             } else {
-                pdf_path_curve_to(st, cx, cy, x, y, x, y, 0);
+                cupidimage_pdf_path_curve_to(st, cx, cy, x, y, x, y, 0);
             }
         }
     } else if (strcmp(op, "h") == 0) {
-        pdf_path_close(&st->path);
+        cupidimage_pdf_path_close(&st->path);
     } else if (strcmp(op, "re") == 0) {
         if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
@@ -1035,11 +886,11 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             float y = (float)ops[n - 3].num;
             float w = (float)ops[n - 2].num;
             float h = (float)ops[n - 1].num;
-            pdf_path_move_user(st, x, y);
-            pdf_path_line_user(st, x + w, y);
-            pdf_path_line_user(st, x + w, y + h);
-            pdf_path_line_user(st, x, y + h);
-            pdf_path_close(&st->path);
+            cupidimage_pdf_path_move_user(st, x, y);
+            cupidimage_pdf_path_line_user(st, x + w, y);
+            cupidimage_pdf_path_line_user(st, x + w, y + h);
+            cupidimage_pdf_path_line_user(st, x, y + h);
+            cupidimage_pdf_path_close(&st->path);
         }
     } else if (strcmp(op, "n") == 0) {
         pdf_path_end(st);
@@ -1047,7 +898,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         cupidimage_pdf_stroke_segments(st, &st->path, NULL);
         pdf_path_end(st);
     } else if (strcmp(op, "s") == 0) {
-        pdf_path_close(&st->path);
+        cupidimage_pdf_path_close(&st->path);
         cupidimage_pdf_stroke_segments(st, &st->path, NULL);
         pdf_path_end(st);
     } else if (strcmp(op, "f") == 0 || strcmp(op, "F") == 0 || strcmp(op, "f*") == 0) {
@@ -1057,7 +908,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         pdf_fill_and_stroke(st, strcmp(op, "B*") == 0);
         pdf_path_end(st);
     } else if (strcmp(op, "b") == 0 || strcmp(op, "b*") == 0) {
-        pdf_path_close(&st->path);
+        cupidimage_pdf_path_close(&st->path);
         pdf_fill_and_stroke(st, strcmp(op, "b*") == 0);
         pdf_path_end(st);
     } else if (strcmp(op, "W") == 0 || strcmp(op, "W*") == 0) {

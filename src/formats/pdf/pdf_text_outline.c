@@ -24,8 +24,11 @@ static int outline_line(pdf_path *path, outline_point a, outline_point b, int fi
     if (!isfinite(a.x) || !isfinite(a.y) || !isfinite(b.x) || !isfinite(b.y) || fabs(a.x) > 1e30 ||
         fabs(a.y) > 1e30 || fabs(b.x) > 1e30 || fabs(b.y) > 1e30)
         return 0;
-    path->segs[path->seg_count++] =
-        (pdf_seg){(float)a.x, (float)a.y, (float)b.x, (float)b.y, first, 0};
+    path->segs[path->seg_count++] = (pdf_seg){.x0 = (float)a.x,
+                                              .y0 = (float)a.y,
+                                              .x1 = (float)b.x,
+                                              .y1 = (float)b.y,
+                                              .starts_subpath = first};
     return 1;
 }
 

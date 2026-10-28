@@ -4384,17 +4384,17 @@
             "src/formats/pdf/pdf_stroke.c",
             "tests/test_pdf_flatness.c",
             "scripts/test_pdf_flatness.py",
-            "docs/pdf-content.md"
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_path.c"
           ],
           "limitations": [
-            "Flatness is applied during ordinary path construction; later changes do not rebuild existing curves.",
             "The remaining operator and ExtGState inventory needs a complete version-specific audit."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "Flatness operands and selected state interactions tested; broader audit pending",
+          "audit": "Flatness operands, paint-time ordering and selected state interactions tested; broader audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 Tables 57 and 58; 10.6.2"
           ]
@@ -4447,17 +4447,17 @@
             "src/formats/pdf/pdf_stroke.c",
             "tests/test_pdf_flatness.c",
             "scripts/test_pdf_flatness.py",
-            "docs/pdf-content.md"
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_path.c"
           ],
           "limitations": [
-            "Flatness is applied during ordinary path construction; later changes do not rebuild existing curves.",
             "The remaining operator and ExtGState inventory needs a complete version-specific audit."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "Flatness operands and selected state interactions tested; broader audit pending",
+          "audit": "Flatness operands, paint-time ordering and selected state interactions tested; broader audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 Tables 57 and 58; 10.6.2"
           ]

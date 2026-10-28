@@ -356,6 +356,6 @@ test-pdf-font-cache: $(BINDIR)/test_pdf_font_cache
 
 $(BINDIR)/test_pdf_font_cache: tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(SRCDIR)/formats/pdf/fonts/program.h
 
-test-pdf-flatness: $(BINDIR)/test_pdf_flatness $(BINDIR)/test_pdf_pages
+test-pdf-flatness: $(BINDIR)/test_pdf_flatness $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	$(BINDIR)/test_pdf_flatness
-	python3 scripts/test_pdf_flatness.py $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_flatness.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom

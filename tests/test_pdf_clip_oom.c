@@ -43,6 +43,7 @@
 #include "../src/formats/pdf/pdf_object_values.c"
 #include "../src/formats/pdf/pdf_objects.c"
 #include "../src/formats/pdf/pdf_patch.c"
+#include "../src/formats/pdf/pdf_path.c"
 #include "../src/formats/pdf/pdf_pattern_render.c"
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
