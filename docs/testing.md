@@ -534,3 +534,11 @@ interpolation, resource-scoped alternates, compressed function metadata and cach
 bounds. Regenerate its three owned color assets with
 `scripts/generate_pdf_separation_fixtures.py`. All uses the specification's
 additive-channel oracle; see [PDF colors](pdf-colors.md) for comparison differences.
+
+`make test-pdf-devicen` checks legacy tint sources through 32 components, wide
+sampled functions, image predictors, palettes, masks, patterns and meshes. It also
+checks Indexed Lab patch conversion and explicitly rejected NChannel selections.
+Regenerate its three owned assets with `scripts/generate_pdf_devicen_fixtures.py`.
+Use `--reference` with the test script for independent comparisons; sampled
+functions above the installed reference's 16-input limit use analytic/native
+oracles instead. See [PDF colors](pdf-colors.md) for cache and work limits.

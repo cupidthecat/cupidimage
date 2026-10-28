@@ -54,18 +54,19 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_mesh.c"
 #include "../src/formats/pdf/pdf_object_values.c"
 #include "../src/formats/pdf/pdf_objects.c"
+#include "../src/formats/pdf/pdf_palettes.c"
 #include "../src/formats/pdf/pdf_patch.c"
 #include "../src/formats/pdf/pdf_path.c"
 #include "../src/formats/pdf/pdf_pattern_render.c"
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
 #include "../src/formats/pdf/pdf_resources.c"
-#include "../src/formats/pdf/pdf_separation.c"
 #include "../src/formats/pdf/pdf_shading.c"
 #include "../src/formats/pdf/pdf_soft_masks.c"
 #include "../src/formats/pdf/pdf_standard_font.c"
 #include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
+#include "../src/formats/pdf/pdf_tint.c"
 static int test_text_lazy_enabled = 1;
 
 static int test_text_surface(const pdf_render_state *parent, pdf_transparency_group *group,

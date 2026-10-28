@@ -2104,10 +2104,11 @@
             "src/formats/pdf/pdf_image_colors.c",
             "scripts/test_pdf_colors.py",
             "docs/pdf-colors.md",
-            "scripts/test_pdf_separation.py"
+            "scripts/test_pdf_separation.py",
+            "scripts/test_pdf_devicen.py"
           ],
           "limitations": [
-            "Indexed, Pattern and Separation source spaces are supported with the documented alternate-space limits. DeviceN/NChannel and physical spot-plane handling remain unfinished."
+            "Indexed, Pattern, Separation and legacy DeviceN source spaces are supported with the documented alternate-space limits. DeviceN supports up to 32 components. NChannel and physical spot-plane handling remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2115,7 +2116,9 @@
             "12"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.6.5"
+          ]
         },
         {
           "id": "11.5",
@@ -2123,11 +2126,12 @@
           "status": "partial",
           "evidence": [
             "docs/pdf-colors.md",
-            "src/formats/pdf/pdf_separation.c",
-            "scripts/test_pdf_separation.py"
+            "src/formats/pdf/pdf_tint.c",
+            "scripts/test_pdf_separation.py",
+            "scripts/test_pdf_devicen.py"
           ],
           "limitations": [
-            "Single-colorant alternate tint transforms and All/None are implemented. DeviceN/NChannel, physical spot planes and spot-aware transparency remain unfinished."
+            "Single-colorant alternate tint transforms and All/None are implemented, along with legacy DeviceN alternate transforms through 32 components. NChannel, physical spot planes and spot-aware transparency remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2137,7 +2141,8 @@
           "audit": "selected evidence reviewed; detailed audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.6.4",
-            "ISO 32000-2:2020 8.6.6.4"
+            "ISO 32000-2:2020 8.6.6.4",
+            "ISO 32000-1:2008 8.6.6.5"
           ]
         },
         {
@@ -2147,10 +2152,11 @@
           "evidence": [
             "docs/pdf-colors.md",
             "src/formats/pdf/pdf_image_colors.c",
-            "scripts/test_pdf_default_colors.py"
+            "scripts/test_pdf_default_colors.py",
+            "scripts/test_pdf_devicen.py"
           ],
           "limitations": [
-            "Supported gray/RGB calibrated, ICC and single-colorant replacements are tested. CMYK ICC, multi-component spot replacements and calibrated/ICC blending spaces remain unfinished."
+            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. CMYK ICC, NChannel and calibrated/ICC blending spaces remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2171,10 +2177,11 @@
             "src/formats/pdf/pdf_image_colors.c",
             "scripts/test_pdf_colors.py",
             "docs/pdf-colors.md",
-            "scripts/test_pdf_default_colors.py"
+            "scripts/test_pdf_default_colors.py",
+            "scripts/test_pdf_devicen.py"
           ],
           "limitations": [
-            "Supported calibrated, ICC and Separation source spaces share color operators. DeviceN/NChannel, remaining ICC models and general color management are unfinished."
+            "Supported calibrated, ICC, Separation and legacy DeviceN source spaces share color operators. NChannel, remaining ICC models and general color management are unfinished."
           ],
           "dependencies": [
             "1",
@@ -2210,10 +2217,11 @@
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_image_colors.c",
             "scripts/test_pdf_colors.py",
-            "docs/pdf-colors.md"
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_devicen.py"
           ],
           "limitations": [
-            "Supported device, calibrated and ICC source colors share painting paths. General color management, spot components and calibrated/ICC blending spaces remain unfinished."
+            "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and calibrated/ICC blending spaces remain unfinished."
           ],
           "dependencies": [
             "1",

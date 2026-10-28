@@ -93,10 +93,11 @@ earlier samples where they overlap. The finished shading is painted once, so
 shared edges and overlaps do not repeatedly apply opacity or masks. Degenerate
 triangles contribute no area. A singular transformation paints nothing.
 
-Mesh samples retain up to four double-precision source components and a coverage
+Mesh samples retain up to 32 double-precision source components and a coverage
 flag until compositing. This preserves CMYK-to-gray conversion and avoids rounding
-interpolated colors before applying opacity. The allocation uses the actual sample
-structure size, including padding.
+interpolated colors before applying opacity. The allocation charges a sample header, including padding,
+plus only the components needed by that mesh. RGB meshes do not reserve space for
+32 components.
 
 Mesh sample buffers and lattice-row storage share the 256 MiB transparency-memory
 limit. Decoded mesh bytes consume the shared 64 MiB content budget. Vertex decoding,
@@ -104,9 +105,9 @@ triangle bounding-box tests and function evaluation consume the shading-work
 budget; the final composite consumes pixel work. Failed decoding or evaluation
 releases temporary buffers before any shading pixels reach the parent surface.
 
-Device, calibrated, selected ICC and Separation source spaces share the color
-conversion path, including supported default remapping. DeviceN, remaining ICC
-models and general color management are unfinished. See [PDF colors](pdf-colors.md).
+Device, calibrated, selected ICC, Separation and legacy DeviceN source spaces
+share the color conversion path, including supported default remapping. NChannel,
+remaining ICC models and general color management are unfinished. See [PDF colors](pdf-colors.md).
 Mesh AntiAlias requests do not enable a separate filtered sampler.
 The renderer's pixel-center interpolation is not pixel-identical to the tested
 independent rasterizers.
@@ -150,7 +151,7 @@ color channels, with mean absolute error 0.26949. Its valid single-element Patte
 color-space array is also covered by the generated tests.
 
 The original `bug1703683_page2_reduced.pdf` remains blocked by its unsupported
-CMYK page group; it also contains unsupported DeviceN colors. Diagnostic wrappers
+CMYK page group. Its DeviceN content has not been requalified as a complete page. Diagnostic wrappers
 around its two DeviceCMYK tensor objects render, with differing-channel fractions
 of 5.29% and 0.212%. Those isolated checks are not passes for the original page.
 
@@ -172,3 +173,9 @@ corpus document. The full manual corpus review remains deferred.
 The implementation follows [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),
 sections 8.6.3, 8.7.4.2 through 8.7.4.5.8 and 11.6.4.2. The interpolation rules
 for Indexed spaces and optional functions are distinct from device-color conversion.
+
+Indexed Coons and tensor patch corners expand through their base space's component
+ranges before interpolation, as triangle meshes do. Lab lookup bytes therefore
+retain signed a/b ranges rather than being treated as normalized device values.
+The DeviceN tests compare both patch families against direct Lab colors; the owned
+Indexed Lab patch asset also has an analytic neutral-gray reference.

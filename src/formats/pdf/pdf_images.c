@@ -82,7 +82,7 @@ typedef struct {
     unsigned char *samples;
     int width, height, bits, soft, has_matte;
     size_t row;
-    double decode[2], matte[4];
+    double decode[2], matte[PDF_COLOR_COMPONENTS];
 } pdf_image_mask;
 
 static int pdf_image_numbers(const pdf_render_state *st, const pdf_object_view *view,
@@ -251,7 +251,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         (stencil && (bits != 1 || pdf_image_present(st, &image, "ColorSpace") != 0)) || width < 1 ||
         height < 1 || (double)width * height * components > 64.0 * 1024 * 1024)
         goto done;
-    double decode[8] = {0, 1, 0, 1, 0, 1, 0, 1};
+    double decode[2 * PDF_COLOR_COMPONENTS] = {0, 1};
     if (colors.indexed)
         decode[1] = (double)((1u << bits) - 1u);
     else if (!stencil)
@@ -262,7 +262,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         goto done;
     if (stencil && !((decode[0] == 0 && decode[1] == 1) || (decode[0] == 1 && decode[1] == 0)))
         goto done;
-    uint32_t color_key[8] = {0};
+    uint32_t color_key[2 * PDF_COLOR_COMPONENTS] = {0};
     uint32_t maximum = (1u << bits) - 1u;
     int has_color_key = 0;
     int soft = 1;
@@ -280,7 +280,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         cupidimage_pdf_skip_ws_and_comments(mask_view.data, mask_view.len, &pos);
         has_color_key = !soft && pos < mask_view.len && mask_view.data[pos] == '[';
         if (has_color_key) {
-            double keys[8];
+            double keys[2 * PDF_COLOR_COMPONENTS];
             if (!pdf_image_numbers(st, &mask_view, keys, 2 * components))
                 goto done;
             for (int i = 0; i < components * 2; i++) {
@@ -337,7 +337,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             if (sx >= width || sy >= height)
                 continue;
             const unsigned char *sample = samples + (size_t)sy * sample_row;
-            double values[4] = {0};
+            double values[PDF_COLOR_COMPONENTS] = {0};
             int transparent = has_color_key;
             for (int c = 0; c < components; c++) {
                 uint32_t value = pdf_packed_sample(sample, (size_t)sx * components + c, bits);

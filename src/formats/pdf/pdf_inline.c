@@ -175,7 +175,7 @@ static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t 
     pdf_image_colors colors = {0};
     if (!cupidimage_pdf_color_space(st, name, 0, &colors))
         return 0;
-    if (colors.calibrated || colors.icc || colors.separation) {
+    if (colors.calibrated || colors.icc || colors.tint) {
         pdf_object_view resource = {0};
         if (!cupidimage_pdf_find_resource(st, "ColorSpace", name, &resource, NULL))
             return 0;
@@ -244,7 +244,7 @@ static int inline_raw_size(pdf_render_state *st, const pdf_object_view *view, si
     if (bits != 1 && bits != 2 && bits != 4 && bits != 8 && bits != 16)
         return 0;
     int components = stencil || colors.indexed ? 1 : colors.components;
-    if (components < 1 || components > 4 ||
+    if (components < 1 || components > PDF_COLOR_COMPONENTS ||
         (size_t)width > INLINE_DATA_LIMIT / (unsigned)components / (unsigned)bits)
         return 0;
     size_t row = ((size_t)width * components * bits + 7) / 8;

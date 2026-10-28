@@ -78,7 +78,7 @@ input values as their oracle. The comparison renderer returns a different result
 for that case, so it is not used as the expected result there.
 
 Complete ICC profile handling, output intents, nonzero black points, calibrated
-blending spaces, general rendering-intent selection, DeviceN and
+blending spaces, general rendering-intent selection, NChannel and
 overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
 
@@ -204,6 +204,48 @@ The optional independent pass is:
 
     python3 scripts/test_pdf_separation.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
 
-This is alternate-space rendering for an additive target. DeviceN/NChannel,
+This is alternate-space rendering for an additive target. NChannel,
 physical spot planes, overprint simulation and spot-aware transparency blending
 remain unfinished. Existing ICC and function limits also apply to tint transforms.
+
+## DeviceN tint transforms
+
+Legacy DeviceN sources support 1 to 32 components through the same alternate-space
+pipeline as Separation. Component names must be unique except for None; All is
+not permitted. Initial component values are all 1. Mixed None components still
+reach the tint function, while a source containing only None contributes no paint
+or shape. Clipping remains effective.
+
+Text, paths, packed and byte-sampled images, inline images, masks, Indexed palettes,
+uncolored patterns and shadings retain all source components until conversion.
+Image Decode, color-key masks and soft-mask Matte values use the source component
+count. This does not expand the component counts supported by JPEG or other image
+compression formats.
+
+Sampled and calculator functions accept up to 32 inputs and outputs. Exponential
+and stitching functions still take one input. Sampled interpolation skips axes
+whose two endpoints coincide, then charges the shared work budget for the active
+corners and output components before reading samples. Cubic sampled interpolation
+(Order 3) remains unsupported.
+
+Indexed lookup data is immutable and owned by the page. Identical byte sequences
+share storage without sharing their base-space interpretation. A page allows up
+to 256 distinct palettes, 8,192 bytes per palette and 16 MiB of charged storage.
+This keeps saved graphics states small even with 32-component bases.
+
+Optional legacy DeviceN attribute dictionaries are accepted, but NChannel is
+explicitly rejected. Its required component-wise process/spot handling, physical
+spot planes, overprint and spot-aware blending are still missing. Supporting an
+alternate tint transform alone is not full NChannel support.
+
+`make test-pdf-devicen` exercises component counts through 32, sampled and
+calculator transforms, images with TIFF predictors, masks, text, patterns, meshes,
+name validation, cache limits and allocation failures. Three owned assets cover
+32-component image/palette data and Indexed Lab patch ranges. Independent checks
+can be requested with:
+
+    python3 scripts/test_pdf_devicen.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+The installed comparison renderer rejects sampled functions above 16 inputs.
+Those 32-input cases use explicit RGB and analytic oracles instead; they are not
+counted as independent comparisons.

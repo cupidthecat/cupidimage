@@ -131,7 +131,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
         empty = 1;
     if (type == 3 && coords[2] == 0 && coords[5] == 0)
         empty = 1;
-    double background_values[4] = {0};
+    double background_values[PDF_COLOR_COMPONENTS] = {0};
     background = background && cupidimage_pdf_page_value(view, "Background", &pos);
     if (background) {
         if (!cupidimage_pdf_function_array(st, view, "Background", background_values,
@@ -156,7 +156,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
             if (empty)
                 continue;
-            double input[2] = {0}, values[4];
+            double input[2] = {0}, values[PDF_COLOR_COMPONENTS];
             if (type == 1) {
                 double mx = ux - matrix[4], my = uy - matrix[5];
                 input[0] = (matrix[3] * mx - matrix[2] * my) / shading_det;

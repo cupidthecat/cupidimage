@@ -3,6 +3,8 @@
 
 #include "pdf_internal.h"
 
+#define PDF_COLOR_COMPONENTS 32
+
 typedef struct {
     float x0;
     float y0;
@@ -40,13 +42,20 @@ typedef struct {
 } pdf_clip_budget;
 
 typedef struct pdf_icc_profile pdf_icc_profile;
-typedef struct pdf_separation pdf_separation;
+typedef struct pdf_tint pdf_tint;
+typedef struct pdf_palette pdf_palette;
 
 typedef struct {
-    pdf_separation *head;
+    pdf_palette *head;
     size_t bytes;
     unsigned count;
-} pdf_separation_store;
+} pdf_palette_store;
+
+typedef struct {
+    pdf_tint *head;
+    size_t bytes;
+    unsigned count;
+} pdf_tint_store;
 
 typedef struct {
     pdf_icc_profile *head;
@@ -57,8 +66,8 @@ typedef struct {
 typedef struct {
     int components, indexed, high, pattern;
     pdf_icc_profile *icc;
-    pdf_separation *separation;
-    unsigned char palette[1024];
+    pdf_tint *tint;
+    const unsigned char *palette;
     int calibrated; /* 0: device; 1: CalGray; 2: CalRGB; 3: Lab. */
     double white[3], gamma[3], matrix[9], adaptation[9], lab_range[4];
 } pdf_image_colors;
@@ -75,7 +84,7 @@ typedef struct pdf_pattern {
     size_t program_length, definition_bytes, surface_bytes;
     struct pdf_graphics_state *initial;
     struct pdf_transparency_group *surface;
-    double matrix[6], bounds[4], base[4];
+    double matrix[6], bounds[4], base[PDF_COLOR_COMPONENTS];
     pdf_image_colors base_space;
     uint64_t serial;
     float initial_ctm[6];
@@ -101,7 +110,7 @@ typedef struct pdf_graphics_state {
     int text_mode;
     pdf_soft_mask *soft_mask;
     const pdf_font_map *current_font;
-    double fill_color[4], stroke_color[4];
+    double fill_color[PDF_COLOR_COMPONENTS], stroke_color[PDF_COLOR_COMPONENTS];
     float line_width_pts;
     int line_cap, line_join, dash_count;
     double miter_limit, flatness, dash_phase, dash[32];
@@ -152,7 +161,8 @@ typedef struct {
     pdf_graphics_state initial_gs;
     pdf_pattern_store *patterns;
     pdf_icc_store *icc_store;
-    pdf_separation_store *separations;
+    pdf_tint_store *tints;
+    pdf_palette_store *palettes;
     unsigned pattern_depth;
     int pattern_uncolored, mask_rendering;
     pdf_graphics_state gs_stack[32];
@@ -226,14 +236,17 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name);
 uint8_t cupidimage_pdf_clamp_u8(double v);
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
                                   float *py);
+const unsigned char *cupidimage_pdf_palette_intern(pdf_palette_store *, const unsigned char *,
+                                                   size_t);
+void cupidimage_pdf_palettes_free(pdf_palette_store *);
 int cupidimage_pdf_color_space_value(const pdf_render_state *, const pdf_object_view *, size_t *,
                                      unsigned, pdf_image_colors *, int);
-int cupidimage_pdf_separation_space(const pdf_render_state *, const pdf_object_view *, size_t,
-                                    size_t *, unsigned, pdf_image_colors *, int);
-int cupidimage_pdf_separation_none(const pdf_separation *);
-void cupidimage_pdf_separation_free(pdf_separation_store *);
-void cupidimage_pdf_separation_paint(pdf_render_state *, int, int, const double[4],
-                                     const pdf_separation *, double, double);
+int cupidimage_pdf_tint_space(const pdf_render_state *, const pdf_object_view *, size_t, size_t *,
+                              unsigned, pdf_image_colors *, int, int);
+int cupidimage_pdf_tint_none(const pdf_tint *);
+void cupidimage_pdf_tint_free(pdf_tint_store *);
+void cupidimage_pdf_tint_paint(pdf_render_state *, int, int, const double *, const pdf_tint *,
+                               double, double);
 int cupidimage_pdf_empty_color(const pdf_image_colors *, const pdf_pattern *);
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
 int cupidimage_pdf_calibrated_output(pdf_image_colors *);

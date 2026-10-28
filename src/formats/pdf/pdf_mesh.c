@@ -4,7 +4,7 @@
 #include <string.h>
 
 typedef struct {
-    double x, y, value[4];
+    double x, y, value[PDF_COLOR_COMPONENTS];
 } mesh_vertex;
 
 uint32_t cupidimage_pdf_mesh_bits(const unsigned char *record, unsigned *pos, unsigned count) {
@@ -55,7 +55,7 @@ int cupidimage_pdf_mesh_inside_box(const pdf_mesh_context *mesh, unsigned x, uns
     return u >= mesh->box[0] && u < mesh->box[2] && v >= mesh->box[1] && v < mesh->box[3];
 }
 
-void cupidimage_pdf_mesh_color(const pdf_image_colors *colors, const double values[4],
+void cupidimage_pdf_mesh_color(const pdf_image_colors *colors, const double *values,
                                pdf_mesh_sample *sample, int lookup) {
     if (colors->indexed && lookup) {
         unsigned index = (unsigned)floor(fmin(colors->high, fmax(0, values[0])) + .5);
@@ -98,7 +98,7 @@ static int mesh_triangle(pdf_mesh_context *mesh, const mesh_vertex *a, const mes
                 return 0;
             if (w[0] < 0 || w[1] < 0 || w[2] < 0 || !cupidimage_pdf_mesh_inside_box(mesh, x, y))
                 continue;
-            double values[4] = {0};
+            double values[PDF_COLOR_COMPONENTS] = {0};
             for (int i = 0; i < mesh->interpolate; i++)
                 values[i] = a->value[i] + w[1] * (b->value[i] - a->value[i]) +
                             w[2] * (c->value[i] - a->value[i]);
@@ -215,9 +215,10 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         st->form_budget->transparency_bytes_live <= PDF_TRANSPARENCY_MEMORY_LIMIT
             ? PDF_TRANSPARENCY_MEMORY_LIMIT - st->form_budget->transparency_bytes_live
             : 0;
-    if (pixels > available / sizeof(*mesh.pixels))
+    size_t per_pixel = sizeof(*mesh.pixels) + (size_t)mesh.colors.components * sizeof(double);
+    if (pixels > available / per_pixel)
         goto done;
-    reserved = pixels * sizeof(*mesh.pixels);
+    reserved = pixels * per_pixel;
     if (type == 5 && vertices >= (size_t)columns) {
         if ((size_t)columns > (available - reserved) / (2 * sizeof(*rows))) {
             reserved = 0;
@@ -226,9 +227,12 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         reserved += (size_t)columns * 2 * sizeof(*rows);
     }
     st->form_budget->transparency_bytes_live += reserved;
-    mesh.pixels = calloc(pixels, sizeof(*mesh.pixels));
+    mesh.pixels = calloc(pixels, per_pixel);
     if (!mesh.pixels)
         goto done;
+    double *sample_values = (double *)(mesh.pixels + pixels);
+    for (size_t pixel = 0; pixel < pixels; pixel++)
+        mesh.pixels[pixel].values = sample_values + pixel * mesh.colors.components;
     if (type == 5 && vertices >= (size_t)columns) {
         rows = malloc((size_t)columns * 2 * sizeof(*rows));
         if (!rows)
@@ -238,9 +242,10 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
     if (background && !mesh_optional(st, view, "Background", &has_background))
         goto done;
     int paint_background = has_background && det != 0;
-    pdf_mesh_sample background_sample = {0};
+    double background_values[PDF_COLOR_COMPONENTS] = {0};
+    pdf_mesh_sample background_sample = {.values = background_values};
     if (paint_background) {
-        double values[4];
+        double values[PDF_COLOR_COMPONENTS];
         if (!cupidimage_pdf_function_array(st, view, "Background", values,
                                            mesh.colors.indexed ? 1 : mesh.colors.components) ||
             pixels > st->form_budget->shade_evaluations_left)

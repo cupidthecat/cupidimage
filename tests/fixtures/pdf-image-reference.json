@@ -427,6 +427,27 @@
       "height": 16,
       "rgba_zlib": "eJxjYPj/n2EUj+JRPIpH8YjDAA3q/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/devicen-32-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbX2//fz8JmIGBgSRMitmj5o+aP2r+qPmj5tPPfAAGUJxf",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/devicen-32-indexed.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbX2//f/8oHsWjeBSP4hGHASrQui4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/indexed-lab-patch.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 0
     }
   ]
 }

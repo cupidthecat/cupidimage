@@ -17,7 +17,7 @@ typedef struct {
     pdf_mesh_context *mesh;
     uint32_t *stamp, serial;
     double *parameters;
-    double colors[4][4];
+    double colors[4][PDF_COLOR_COMPONENTS];
 } patch_target;
 
 static patch_point patch_mid(patch_point a, patch_point b) {
@@ -234,7 +234,7 @@ static int patch_sample(patch_target *target, unsigned x, unsigned y, double u, 
         if (difference < -roundoff || (fabs(difference) <= roundoff && u <= old_u))
             return 1;
     }
-    double values[4] = {0};
+    double values[PDF_COLOR_COMPONENTS] = {0};
     for (int c = 0; c < mesh->interpolate; c++) {
         /* Difference-form interpolation preserves constant components exactly. */
         double left = target->colors[0][c] + v * (target->colors[1][c] - target->colors[0][c]);
@@ -335,7 +335,7 @@ int cupidimage_pdf_paint_patches(pdf_mesh_context *mesh, const unsigned char *da
     patch_target target = {0};
     target.mesh = mesh;
     patch_point previous[16] = {0};
-    double previous_colors[4][4] = {{0}};
+    double previous_colors[4][PDF_COLOR_COMPONENTS] = {{0}};
     size_t bytes = 0, pixels = (size_t)mesh->state->img->width * mesh->state->img->height, pos = 0;
     int ok = 0;
     if (draw) {
@@ -362,7 +362,7 @@ int cupidimage_pdf_paint_patches(pdf_mesh_context *mesh, const unsigned char *da
         if (record > length - pos || !patch_charge(&target, points + colors * mesh->samples))
             goto done;
         patch_point p[16];
-        double corner[4][4] = {{0}};
+        double corner[4][PDF_COLOR_COMPONENTS] = {{0}};
         if (flag) {
             for (unsigned i = 0; i < 4; i++)
                 p[i] = previous[(flag * 3 + i) % 12];
@@ -391,8 +391,9 @@ int cupidimage_pdf_paint_patches(pdf_mesh_context *mesh, const unsigned char *da
                 unsigned index =
                     (unsigned)floor(fmin(mesh->colors.high, fmax(0, corner[i][0])) + .5);
                 for (int c = 0; c < mesh->colors.components; c++)
-                    corner[i][c] =
-                        mesh->colors.palette[index * mesh->colors.components + c] / 255.0;
+                    corner[i][c] = cupidimage_pdf_color_palette_value(
+                        &mesh->colors, c,
+                        mesh->colors.palette[index * mesh->colors.components + c]);
             }
         }
         memcpy(previous, p, points * sizeof(*p));

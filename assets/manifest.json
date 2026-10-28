@@ -587,6 +587,14 @@
       "sha256": "581d85e5907ff296fc0f2d6a843974adf1ca1b369edfae70650d9b7d052d9bf5"
     },
     {
+      "path": "assets/pdf/reference/devicen-32-indexed.pdf",
+      "sha256": "c1f875439ca9f1f492ab0cf22e0db189555c9a571a22bbc73406e56833b0459d"
+    },
+    {
+      "path": "assets/pdf/reference/devicen-32-predictor.pdf",
+      "sha256": "26cbf8e93efd65400c333902c17986f1f9606fd3a328d3c6acfd33d1400b36ed"
+    },
+    {
       "path": "assets/pdf/reference/embedded-cff-cid.pdf",
       "sha256": "6ba0d28ffd8ff81d799bf70afb611fc991f8bebeec906dd805353b20da0cebc9"
     },
@@ -681,6 +689,10 @@
     {
       "path": "assets/pdf/reference/gray-page-group.pdf",
       "sha256": "9d793cac5309c3f709a8d0b9b1acd9fb10cd474f163be899391331da6f2d648e"
+    },
+    {
+      "path": "assets/pdf/reference/indexed-lab-patch.pdf",
+      "sha256": "43b444b666fb23d49dd9b1e3aca8914944f8fa6905509b85cf250db8557960ce"
     },
     {
       "path": "assets/pdf/reference/indexed-soft-mask.pdf",

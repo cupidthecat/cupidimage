@@ -47,7 +47,7 @@ static int pdf_color_reference(const pdf_object_view *view, size_t *pos, pdf_obj
     return 1;
 }
 
-/* Palette strings are bounded by 256 entries of at most four components. */
+/* Palette strings contain at most 256 entries of bounded component count. */
 static int pdf_palette_string(const pdf_object_view *view, size_t *pos, unsigned char *out,
                               size_t *size) {
     if (*pos >= view->len)
@@ -62,7 +62,7 @@ static int pdf_palette_string(const pdf_object_view *view, size_t *pos, unsigned
         if (hex) {
             if (c == '>') {
                 if (high >= 0) {
-                    if (*size == 1024)
+                    if (*size == 256 * PDF_COLOR_COMPONENTS)
                         return 0;
                     out[(*size)++] = (unsigned char)(high * 16);
                 }
@@ -117,7 +117,7 @@ static int pdf_palette_string(const pdf_object_view *view, size_t *pos, unsigned
                 c = '\n';
             }
         }
-        if (*size == 1024)
+        if (*size == 256 * PDF_COLOR_COMPONENTS)
             return 0;
         out[(*size)++] = c;
     }
@@ -189,7 +189,7 @@ static int pdf_device_color_space(const pdf_render_state *st, int components, un
     colors->components = components;
     colors->calibrated = 0;
     colors->icc = NULL;
-    colors->separation = NULL;
+    colors->tint = NULL;
     return 1;
 }
 
@@ -214,9 +214,9 @@ int cupidimage_pdf_color_space_value(const pdf_render_state *st, const pdf_objec
         char family[128];
         if (!pdf_color_name(view, pos, family))
             return 0;
-        if (!strcmp(family, "Separation"))
-            return cupidimage_pdf_separation_space(st, view, start, pos, depth + 1, colors,
-                                                   defaults);
+        if (!strcmp(family, "Separation") || !strcmp(family, "DeviceN"))
+            return cupidimage_pdf_tint_space(st, view, start, pos, depth + 1, colors, defaults,
+                                             !strcmp(family, "DeviceN"));
         if (!strcmp(family, "ICCBased")) {
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
             pdf_object_id profile;
@@ -273,8 +273,10 @@ int cupidimage_pdf_color_space_value(const pdf_render_state *st, const pdf_objec
             return 0;
         colors->high = (int)high;
         colors->indexed = 1;
-        if (!pdf_image_palette(st, view, pos, colors->palette,
-                               (size_t)(colors->high + 1) * colors->components, 0))
+        unsigned char palette[256 * PDF_COLOR_COMPONENTS];
+        size_t bytes = (size_t)colors->components * (colors->high + 1);
+        if (!pdf_image_palette(st, view, pos, palette, bytes, 0) ||
+            !(colors->palette = cupidimage_pdf_palette_intern(st->palettes, palette, bytes)))
             return 0;
         cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
         if (*pos == view->len || view->data[(*pos)++] != ']')

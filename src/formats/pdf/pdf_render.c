@@ -217,8 +217,8 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
 
 void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const double values[4],
                                     const pdf_image_colors *space, double alpha, double shape) {
-    if (space->separation) {
-        cupidimage_pdf_separation_paint(st, x, y, values, space->separation, alpha, shape);
+    if (space->tint) {
+        cupidimage_pdf_tint_paint(st, x, y, values, space->tint, alpha, shape);
         return;
     }
     if (space->icc) {
@@ -559,13 +559,13 @@ static int pdf_expect_num(const pdf_operand *op) {
 static int pdf_set_source_color(pdf_render_state *st, int stroke, const pdf_image_colors *selected,
                                 const pdf_operand *ops, int count) {
     int space = selected->components;
-    if ((space != 1 && space != 3 && space != 4) || count != space)
+    if (space < 1 || space > PDF_COLOR_COMPONENTS || count != space)
         return 0;
     for (int i = 0; i < count; i++)
         if (!pdf_expect_num(&ops[i]))
             return 0;
     double *native = stroke ? st->gs.stroke_color : st->gs.fill_color;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < PDF_COLOR_COMPONENTS; i++)
         native[i] = i < count ? cupidimage_pdf_color_component(selected, i, ops[i].num) : 0;
     if (stroke) {
         st->gs.stroke_space.components = space;
@@ -778,14 +778,14 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             st->image_failed = 1;
         } else {
             int stroke = op[0] == 'C';
-            pdf_operand initial[4] = {{0}};
+            pdf_operand initial[PDF_COLOR_COMPONENTS] = {{0}};
             for (int i = 0; i < colors.components; i++) {
                 initial[i].type = PDF_OPERAND_NUM;
                 initial[i].num =
                     colors.indexed
                         ? cupidimage_pdf_color_palette_value(&colors, i, colors.palette[i])
-                    : colors.separation || (colors.components == 4 && i == 3) ? 1
-                                                                              : 0;
+                    : colors.tint || (colors.components == 4 && i == 3) ? 1
+                                                                        : 0;
             }
             pdf_set_source_color(st, stroke, &colors, initial, colors.components);
             if (stroke) {
@@ -820,7 +820,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             int operands = colors.indexed ? 1 : colors.components;
             int valid = op[2] == 'n' || op[2] == 'N';
             valid = valid && n == operands + 1 && ops[n - 1].type == PDF_OPERAND_NAME;
-            pdf_operand base[4] = {{0}};
+            pdf_operand base[PDF_COLOR_COMPONENTS] = {{0}};
             const pdf_operand *values = ops;
             if (valid && colors.indexed) {
                 valid = pdf_expect_num(ops) && isfinite(ops[0].num);
@@ -850,7 +850,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             pdf_clear_operands(ops, count);
             return;
         }
-        pdf_operand converted[4] = {{0}};
+        pdf_operand converted[PDF_COLOR_COMPONENTS] = {{0}};
         const pdf_operand *values = ops;
         int count = n, valid = 1;
         if (colors.indexed) {
@@ -1496,8 +1496,10 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
     st.patterns = &patterns;
     pdf_icc_store profiles = {0};
     st.icc_store = &profiles;
-    pdf_separation_store separations = {0};
-    st.separations = &separations;
+    pdf_tint_store tints = {0};
+    st.tints = &tints;
+    pdf_palette_store palettes = {0};
+    st.palettes = &palettes;
     st.img = img;
     st.document = document;
     st.document_size = document_size;
@@ -1540,7 +1542,8 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
         ok = cupidimage_pdf_group_finish(&st, &page_group);
     cupidimage_pdf_group_free(&st, &page_group);
     cupidimage_pdf_patterns_free(&patterns);
-    cupidimage_pdf_separation_free(&separations);
+    cupidimage_pdf_palettes_free(&palettes);
+    cupidimage_pdf_tint_free(&tints);
     cupidimage_pdf_icc_free(&profiles);
     if (!ok && err && errcap && !err[0])
         cupidimage_set_err(err, errcap,

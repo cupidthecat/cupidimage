@@ -189,7 +189,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
             return -1;
         tree->sample_bytes += decoded_length;
     } else if (node->type == 0) {
-        double sizes[2];
+        double sizes[PDF_COLOR_COMPONENTS];
         int order = 1;
         if (!node->has_range || !cupidimage_pdf_function_array(st, &view, "Size", sizes, inputs) ||
             !cupidimage_pdf_image_integer(st, &view, "BitsPerSample", &node->bits) ||
@@ -281,8 +281,8 @@ int cupidimage_pdf_load_function(const pdf_render_state *st, const pdf_object_vi
     size_t pos;
     cupidimage_pdf_free_function(tree);
     memset(tree, 0, sizeof(*tree));
-    if (inputs < 1 || inputs > 2 || components < 1 || components > 4 ||
-        !cupidimage_pdf_page_value(parent, key, &pos))
+    if (inputs < 1 || inputs > PDF_COLOR_COMPONENTS || components < 1 ||
+        components > PDF_COLOR_COMPONENTS || !cupidimage_pdf_page_value(parent, key, &pos))
         return 0;
     if (pdf_function_value(st, parent, &pos, inputs, components, tree, 0, 1) == 0)
         return 1;
@@ -295,7 +295,8 @@ int cupidimage_pdf_load_function_value(const pdf_render_state *st, const pdf_obj
                                        pdf_function_tree *tree) {
     cupidimage_pdf_free_function(tree);
     memset(tree, 0, sizeof(*tree));
-    if (inputs >= 1 && inputs <= 2 && components >= 1 && components <= 4 &&
+    if (inputs >= 1 && inputs <= PDF_COLOR_COMPONENTS && components >= 1 &&
+        components <= PDF_COLOR_COMPONENTS &&
         pdf_function_value(st, view, pos, inputs, components, tree, 0, 0) == 0)
         return 1;
     cupidimage_pdf_free_function(tree);
@@ -330,15 +331,11 @@ static double pdf_function_sample(const pdf_function_node *node, size_t index) {
     return (double)(value & ((UINT64_C(1) << node->bits) - 1));
 }
 
-static int pdf_sampled_evaluate(const pdf_function_node *node, const double input[2], double out[4],
+static int pdf_sampled_evaluate(const pdf_function_node *node, const double *input, double *out,
                                 size_t *budget) {
-    unsigned corners = 1u << node->inputs;
-    size_t cost = (size_t)corners * node->components;
-    if (cost > *budget)
-        return 0;
-    *budget -= cost;
-    size_t low[2] = {0}, high[2] = {0};
-    double fraction[2] = {0};
+    size_t base = 0, stride = 1, steps[PDF_COLOR_COMPONENTS];
+    double fractions[PDF_COLOR_COMPONENTS];
+    unsigned active = 0;
     for (int axis = 0; axis < node->inputs; axis++) {
         double span = node->domain[axis * 2 + 1] - node->domain[axis * 2];
         double value = span == 0 ? node->encode[axis * 2]
@@ -348,23 +345,31 @@ static int pdf_sampled_evaluate(const pdf_function_node *node, const double inpu
         if (!isfinite(value))
             return 0;
         value = fmin(node->size[axis] - 1, fmax(0, value));
-        low[axis] = (size_t)floor(value);
-        high[axis] = low[axis] + 1 < (size_t)node->size[axis] ? low[axis] + 1 : low[axis];
-        fraction[axis] = value - low[axis];
+        size_t low = (size_t)floor(value);
+        double fraction = value - low;
+        base += low * stride;
+        if (fraction > 0 && low + 1 < (size_t)node->size[axis]) {
+            steps[active] = stride;
+            fractions[active++] = fraction;
+        }
+        stride *= node->size[axis];
     }
+    uint64_t corners = UINT64_C(1) << active;
+    uint64_t cost = node->inputs + corners * (active + node->components);
+    if (cost > *budget)
+        return 0;
+    *budget -= (size_t)cost;
     for (int c = 0; c < node->components; c++)
         out[c] = 0;
-    for (unsigned corner = 0; corner < corners; corner++) {
-        size_t index = 0, stride = 1;
+    for (uint64_t corner = 0; corner < corners; corner++) {
+        size_t index = base;
         double weight = 1;
-        for (int axis = 0; axis < node->inputs; axis++) {
-            int upper = (corner >> axis) & 1;
-            index += (upper ? high[axis] : low[axis]) * stride;
-            stride *= node->size[axis];
-            weight *= upper ? fraction[axis] : 1 - fraction[axis];
+        for (unsigned axis = 0; axis < active; axis++) {
+            int upper = (int)((corner >> axis) & 1);
+            if (upper)
+                index += steps[axis];
+            weight *= upper ? fractions[axis] : 1 - fractions[axis];
         }
-        if (weight == 0)
-            continue;
         for (int c = 0; c < node->components; c++)
             out[c] += weight * pdf_function_sample(node, index * node->components + c);
     }
@@ -375,13 +380,13 @@ static int pdf_sampled_evaluate(const pdf_function_node *node, const double inpu
     return 1;
 }
 
-static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index,
-                                      const double input[2], double out[4], size_t *budget) {
+static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index, const double *input,
+                                      double *out, size_t *budget) {
     if (!*budget || index < 0 || index >= tree->count)
         return 0;
     (*budget)--;
     const pdf_function_node *node = &tree->nodes[index];
-    double x[2] = {0};
+    double x[PDF_COLOR_COMPONENTS] = {0};
     for (int axis = 0; axis < node->inputs; axis++) {
         if (!isfinite(input[axis]))
             return 0;
@@ -389,7 +394,7 @@ static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index,
     }
     if (node->type == -1) {
         for (int i = 0; i < node->count; i++) {
-            double component[4];
+            double component[PDF_COLOR_COMPONENTS];
             if (!pdf_function_evaluate_node(tree, node->children[i], x, component, budget))
                 return 0;
             out[i] = component[0];
@@ -430,7 +435,7 @@ static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index,
     return 1;
 }
 
-int cupidimage_pdf_evaluate_function(const pdf_function_tree *tree, const double input[2],
-                                     double output[4], size_t *budget) {
+int cupidimage_pdf_evaluate_function(const pdf_function_tree *tree, const double *input,
+                                     double *output, size_t *budget) {
     return tree->count && pdf_function_evaluate_node(tree, 0, input, output, budget);
 }

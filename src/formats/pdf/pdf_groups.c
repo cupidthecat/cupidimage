@@ -178,7 +178,7 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
             pos = 0;
             ok = cupidimage_pdf_image_color_space(st, &space, &pos, 0, &colors);
             ok = ok && (colors.components == 1 || colors.components == 3) && !colors.pattern &&
-                 !colors.indexed && !colors.calibrated && !colors.icc && !colors.separation;
+                 !colors.indexed && !colors.calibrated && !colors.icc && !colors.tint;
             if (ok)
                 *gray = colors.components == 1;
         }
