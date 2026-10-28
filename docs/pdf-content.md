@@ -109,3 +109,25 @@ and the corresponding flatness rules in ISO 32000-2:2020 section 10.7.2.
 `make test-pdf-flatness` checks sampled geometric error, state restoration,
 indirect/default values, Forms, Type 3 glyphs, native glyph strokes and bounded
 failure on excessive precision requests.
+
+## Compatibility and marked-content scopes
+
+Unknown content operators fail outside a `BX`/`EX` compatibility section. Within
+one, their operands are discarded and execution continues. Known operators still
+validate their inputs; compatibility mode does not turn malformed text or drawing
+instructions into valid content. Sections may nest up to 64 levels and must
+balance. This follows ISO 32000-1:2008 section 7.8.2 and Table 32.
+
+`MP`, `DP`, `BMC`, `BDC` and `EMC` validate tag/property operands and balanced
+marked-content nesting, also bounded to 64 levels. Their metadata is not executed
+as drawing instructions. These syntax checks do not implement optional-content
+visibility, tagged-text extraction or accessibility behavior. Rendering-intent
+names are accepted and validated, but color-managed intent transforms remain
+unimplemented.
+
+Compatibility and marked-content scopes are independent of `q`/`Q`. Each nested
+Form, pattern or Type 3 program has its own scope; a caller's `BX` cannot make an
+unknown operator in a Form valid. Page `Contents` arrays are concatenated before
+execution, so scopes can span their stream boundaries. Dangling operands,
+unbalanced sections and stray closing delimiters are rejected. Booleans and null
+remain operands rather than being mistaken for operator names.

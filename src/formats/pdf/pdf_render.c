@@ -494,7 +494,9 @@ typedef enum {
     PDF_OPERAND_NAME,
     PDF_OPERAND_STRING,
     PDF_OPERAND_ARRAY,
-    PDF_OPERAND_DICTIONARY
+    PDF_OPERAND_DICTIONARY,
+    PDF_OPERAND_BOOLEAN,
+    PDF_OPERAND_NULL
 } pdf_operand_type;
 
 typedef struct {
@@ -545,8 +547,8 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, con
     return 1;
 }
 
-static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops,
-                                 int *count) {
+static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops, int *count,
+                                 unsigned *compatibility, unsigned *marked) {
     int n = *count;
     st->paint_serial = ++st->form_budget->paint_serial;
     int paints_path = !strcmp(op, "S") || !strcmp(op, "s") || !strcmp(op, "f") ||
@@ -567,7 +569,37 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         pdf_clear_operands(ops, count);
         return;
     }
-    if (!strcmp(op, "d0") || !strcmp(op, "d1")) {
+    int scope_operator = 1;
+    if (!strcmp(op, "BX")) {
+        if (n || *compatibility == 64)
+            st->image_failed = 1;
+        else
+            (*compatibility)++;
+    } else if (!strcmp(op, "EX")) {
+        if (n || !*compatibility)
+            st->image_failed = 1;
+        else
+            (*compatibility)--;
+    } else if (!strcmp(op, "MP") || !strcmp(op, "DP") || !strcmp(op, "BMC") || !strcmp(op, "BDC")) {
+        int properties = !strcmp(op, "DP") || !strcmp(op, "BDC");
+        int begin = !strcmp(op, "BMC") || !strcmp(op, "BDC");
+        int valid = n == (properties ? 2 : 1) && ops[0].type == PDF_OPERAND_NAME;
+        if (valid && properties)
+            valid = ops[1].type == PDF_OPERAND_NAME || ops[1].type == PDF_OPERAND_DICTIONARY;
+        if (!valid || (begin && *marked == 64))
+            st->image_failed = 1;
+        else if (begin)
+            (*marked)++;
+    } else if (!strcmp(op, "EMC")) {
+        if (n || !*marked)
+            st->image_failed = 1;
+        else
+            (*marked)--;
+    } else if (!strcmp(op, "ri")) {
+        /* Color-managed rendering-intent transforms are not implemented yet. */
+        if (n != 1 || ops[0].type != PDF_OPERAND_NAME)
+            st->image_failed = 1;
+    } else if (!strcmp(op, "d0") || !strcmp(op, "d1")) {
         int box = op[1] == '1',
             valid = st->glyph_active && !st->glyph_seen_metrics && n == (box ? 6 : 2);
         for (int i = 0; valid && i < n; i++)
@@ -595,6 +627,15 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             st->image_failed = 1;
             cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid Type 3 glyph metrics");
         }
+        pdf_clear_operands(ops, count);
+        return;
+    } else {
+        scope_operator = 0;
+    }
+    if (scope_operator) {
+        if (st->image_failed)
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: invalid content scope operator");
         pdf_clear_operands(ops, count);
         return;
     }
@@ -938,6 +979,9 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             cupidimage_pdf_render_text_string(st, ops[2].str, ops[2].len);
         } else
             st->image_failed = 1;
+    } else if (!*compatibility) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity, "pdf: unknown content operator");
     }
 
     cupidimage_pdf_patterns_end_paint(st);
@@ -953,6 +997,7 @@ int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stre
     size_t errcap = st->error_capacity;
     pdf_operand ops[64];
     int op_count = 0;
+    unsigned compatibility = 0, marked = 0;
     memset(ops, 0, sizeof(ops));
 
     size_t pos = 0;
@@ -1092,10 +1137,26 @@ int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stre
             size_t tok_len = pos - start;
             char opbuf[16];
             if (tok_len >= sizeof(opbuf)) {
-                tok_len = sizeof(opbuf) - 1;
+                pdf_clear_operands(ops, &op_count);
+                if (compatibility)
+                    continue;
+                cupidimage_set_err(err, errcap, "pdf: unknown content operator");
+                return 0;
             }
             memcpy(opbuf, &stream[start], tok_len);
             opbuf[tok_len] = '\0';
+            if (!strcmp(opbuf, "true") || !strcmp(opbuf, "false") || !strcmp(opbuf, "null")) {
+                if (op_count == 64) {
+                    pdf_clear_operands(ops, &op_count);
+                    cupidimage_set_err(err, errcap, "pdf: content operand limit exceeded");
+                    return 0;
+                }
+                ops[op_count].type =
+                    !strcmp(opbuf, "null") ? PDF_OPERAND_NULL : PDF_OPERAND_BOOLEAN;
+                ops[op_count].num = !strcmp(opbuf, "true");
+                op_count++;
+                continue;
+            }
             if (!strcmp(opbuf, "BI")) {
                 int ok = op_count == 0 && (!st->glyph_active || st->glyph_seen_metrics) &&
                          cupidimage_pdf_draw_inline_image(st, stream, stream_len, &pos);
@@ -1111,15 +1172,22 @@ int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stre
                 cupidimage_set_err(err, errcap, "pdf: unmatched inline image delimiter");
                 return 0;
             }
-            pdf_execute_operator(st, opbuf, ops, &op_count);
+            pdf_execute_operator(st, opbuf, ops, &op_count, &compatibility, &marked);
             if (st->image_failed)
                 return 0;
             continue;
         }
 
-        pos++;
+        pdf_clear_operands(ops, &op_count);
+        cupidimage_set_err(err, errcap, "pdf: unexpected content delimiter");
+        return 0;
     }
 
+    if (op_count || compatibility || marked) {
+        pdf_clear_operands(ops, &op_count);
+        cupidimage_set_err(err, errcap, "pdf: incomplete content operands or scope");
+        return 0;
+    }
     pdf_clear_operands(ops, &op_count);
     if (st->in_text) {
         cupidimage_set_err(err, errcap, "pdf: unterminated text object");

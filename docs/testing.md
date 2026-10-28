@@ -479,3 +479,9 @@ strokes. Very small tolerances must produce a bounded rejection when subdivision
 cannot satisfy them; successful decoding alone is not the expected outcome.
 Paint-time changes are tested separately from construction-time CTM capture.
 The document allocation harness covers deferred subdivision failures and recovery.
+
+`make test-pdf-content-scopes` checks unknown operators inside and outside nested
+compatibility sections, marked-content operands, scope depth bounds, `q`/`Q`
+independence, split `Contents` arrays, nested Form/Type 3 isolation and malformed
+operands/delimiters. Allocation-failure cases verify cleanup on ignored and
+rejected instructions.
