@@ -371,3 +371,7 @@ test-pdf-calibrated: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-lab: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_lab.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+.PHONY: download-pdf-corpus
+download-pdf-corpus:
+	python3 scripts/audit_pdf_corpus.py --download-only

@@ -140,12 +140,29 @@ def compare(reference, actual, dimensions):
             'mean_absolute_error': round(total / len(rgb), 5), 'different_channel_fraction': round(changed / len(rgb), 5)}
 
 
+def download_only(rows, revision, cache):
+    """Fetch and verify inputs without invoking a renderer or changing rating logs."""
+    counts = Counter()
+    for index, row in enumerate(rows, 1):
+        print(f"[{index}/{len(rows)}] {row['path']}", flush=True)
+        try:
+            cached = (cache / revision / safe_relative(row['path'])).is_file()
+            fetch(row, revision, cache, True)
+            counts['cached' if cached else 'downloaded'] += 1
+        except (OSError, ValueError) as error:
+            counts['input-error'] += 1
+            print(f"Input unavailable: {error}", file=sys.stderr, flush=True)
+    print(json.dumps(dict(sorted(counts.items())), sort_keys=True))
+    return 1 if counts['input-error'] else 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--probe', type=Path, default=ROOT / 'bin/test_pdf_pages')
     parser.add_argument('--cache', type=Path, default=ROOT / '.cache/pdfjs-full')
     parser.add_argument('--corpus', type=Path, help='Audit all PDFs in a local corpus instead of downloading the pinned tracked files')
     parser.add_argument('--download', action='store_true', help='Download missing pinned tracked PDFs (about 119 MiB for the complete revision)')
+    parser.add_argument('--download-only', action='store_true', help='Download and verify selected pinned PDFs without building, rendering, rating, or changing reports')
     parser.add_argument('--resume', action='store_true', help='Resume a report from the same probe and options; completed documents are skipped')
     parser.add_argument('--match', default='*', help='Glob against relative PDF paths')
     parser.add_argument('--limit', type=int, default=0, help='Limit documents; 0 means every matching document')
@@ -163,16 +180,14 @@ def main():
     args = parser.parse_args()
     if args.limit < 0 or args.max_pages < 1 or args.memory_mib < 0 or not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('Limits must be positive (limit/memory may be zero)')
+    if args.download_only and (args.corpus or args.reference or args.terminal_preview or args.pause or args.resume or args.keep_images):
+        parser.error('--download-only cannot be combined with local-corpus, rendering, or resume options')
     if args.pause and (not args.terminal_preview or not sys.stdin.isatty()):
         parser.error('--pause requires --terminal-preview and interactive stdin')
     if args.terminal_preview:
         if not args.cli.is_file(): parser.error('Build the CLI first: make cli')
         args.cli = args.cli.resolve()
         args.keep_images = True
-    probe = args.probe.resolve()
-    if not probe.is_file(): parser.error('Build the probe first: make bin/test_pdf_pages')
-    if args.reference and (not shutil.which('pdfinfo') or not shutil.which('pdftoppm')):
-        parser.error('--reference needs installed pdfinfo and pdftoppm')
     manifest = json.loads((ROOT / 'tests/fixtures/pdfjs-corpus.json').read_text())
     if args.corpus:
         corpus = args.corpus.resolve()
@@ -183,6 +198,12 @@ def main():
     rows = [r for r in rows if fnmatch.fnmatchcase(r['path'], args.match)]
     if args.limit: rows = rows[:args.limit]
     if not rows: parser.error("No PDFs match the selected corpus and pattern")
+    if args.download_only:
+        return download_only(rows, manifest['revision'], args.cache.resolve())
+    probe = args.probe.resolve()
+    if not probe.is_file(): parser.error('Build the probe first: make bin/test_pdf_pages')
+    if args.reference and (not shutil.which('pdfinfo') or not shutil.which('pdftoppm')):
+        parser.error('--reference needs installed pdfinfo and pdftoppm')
     args.report.parent.mkdir(parents=True, exist_ok=True)
     counts = Counter()
     configuration = {'revision': None if args.corpus else manifest['revision'],

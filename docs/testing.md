@@ -60,6 +60,9 @@ runner verifies both before using downloaded or cached files. Per-run reports
 also record SHA-256 hashes.
 
 ```sh
+# Fetch inputs only; no renderer, manual rating, or report overwrite:
+make download-pdf-corpus
+
 make bin/test_pdf_pages
 # Full tracked corpus, every page up to the explicit per-document safety cap:
 python3 scripts/audit_pdf_corpus.py --download

@@ -8,6 +8,35 @@ The review log is separate from automated pass/fail tests.
 make cli bin/test_asset_probe
 ```
 
+## Download PDFs before reviewing
+
+The PDF corpus is cached outside Git. Pulling a branch does not download those
+files. To download and verify all 1,007 pinned PDFs without rendering or rating:
+
+```sh
+make download-pdf-corpus
+# Or directly, without a build:
+python3 scripts/audit_pdf_corpus.py --download-only
+```
+
+Existing cached files are verified and reused. The command can be rerun after an
+interruption; no `--resume` is needed. It does not change rating or audit reports.
+Use `--match`, `--limit`, or `--cache` with the Python command to select inputs or
+choose their cache location. A failed download or hash check gives a nonzero exit
+status and preserves any existing file; it is not a rendering failure.
+
+For a Sixel comparison after downloading and building:
+
+```sh
+python3 scripts/review_assets.py --pdfjs --reference --backend sixel \
+  --report .cache/visual-review/pdf-ratings-sixel.jsonl
+```
+
+Alternatively, add `--download` to that review command to fetch each missing PDF
+as it is reached. `Input unavailable: Not cached; use --download` means that no
+decoder was tested for the file. The separate external `.link` corpus is not
+followed by either download mode.
+
 ## Choose files
 
 ```sh

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Offline unit tests for corpus integrity, process limits, and comparisons."""
+import contextlib
+import io
 import hashlib
 import json
 import zlib
@@ -8,7 +10,9 @@ import struct
 import sys
 import tempfile
 import unittest
-from audit_pdf_corpus import compare, fetch, inspect_output, process, safe_relative, verify_blob, read_ppm
+from unittest.mock import patch
+import audit_pdf_corpus
+from audit_pdf_corpus import compare, fetch, inspect_output, process, safe_relative, verify_blob, read_ppm, download_only
 from pdf_visuals import write_png, save_visuals, write_gallery
 
 
@@ -29,6 +33,51 @@ class AuditTests(unittest.TestCase):
             actual, digest = fetch(row, 'revision', Path(temp), False)
             self.assertEqual(actual, path); self.assertEqual(digest, hashlib.sha256(data).hexdigest())
             with self.assertRaises(FileNotFoundError): fetch({**row, 'path': 'missing.pdf'}, 'revision', Path(temp), False)
+
+    def test_download_only(self):
+        data = b'%PDF-1.4\n%%EOF\n'
+        row = {'path': 'a.pdf', 'size': len(data), 'git_blob_sha1': hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()}
+        with tempfile.TemporaryDirectory() as temp:
+            cache = Path(temp)
+            output = io.StringIO()
+            with patch('audit_pdf_corpus.urllib.request.urlopen', return_value=io.BytesIO(data)) as request, contextlib.redirect_stdout(output):
+                self.assertEqual(download_only([row], 'revision', cache), 0)
+            request.assert_called_once()
+            self.assertEqual(json.loads(output.getvalue().splitlines()[-1]), {'downloaded': 1})
+            self.assertEqual((cache/'revision/a.pdf').read_bytes(), data)
+            output = io.StringIO()
+            with patch('audit_pdf_corpus.urllib.request.urlopen', side_effect=AssertionError('cached inputs must not download')), contextlib.redirect_stdout(output):
+                self.assertEqual(download_only([row], 'revision', cache), 0)
+            self.assertEqual(json.loads(output.getvalue().splitlines()[-1]), {'cached': 1})
+
+    def test_download_only_failure_preserves_cache(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache=Path(temp);(cache/'revision').mkdir()
+            path=cache/'revision/a.pdf';path.write_bytes(b'bad')
+            row={'path':'a.pdf','size':3,'git_blob_sha1':'0'*40}
+            output=io.StringIO();errors=io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                self.assertEqual(download_only([row,{**row,'path':'../escape.pdf'}],'revision',cache),1)
+            self.assertEqual(path.read_bytes(),b'bad')
+            self.assertEqual(json.loads(output.getvalue().splitlines()[-1]),{'input-error':2})
+            self.assertIn('Input unavailable:',errors.getvalue())
+
+    def test_download_only_cli_needs_no_renderer(self):
+        data=b'%PDF-1.4\n%%EOF\n'
+        row={'path':'a.pdf','size':len(data),'git_blob_sha1':hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()}
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);fixtures=root/'tests/fixtures';fixtures.mkdir(parents=True)
+            (fixtures/'pdfjs-corpus.json').write_text(json.dumps({'revision':'revision','files':[row]}))
+            cache=root/'cache';(cache/'revision').mkdir(parents=True);(cache/'revision/a.pdf').write_bytes(data)
+            report=root/'ratings.jsonl';report.write_text('preserve ratings')
+            args=['audit','--download-only','--cache',str(cache),'--probe',str(root/'absent'),'--report',str(report)]
+            with patch.object(audit_pdf_corpus,'ROOT',root), patch.object(sys,'argv',args), contextlib.redirect_stdout(io.StringIO()), patch('audit_pdf_corpus.process',side_effect=AssertionError('must not render')):
+                self.assertEqual(audit_pdf_corpus.main(),0)
+            self.assertEqual(report.read_text(),'preserve ratings')
+            for extra in ('--reference','--resume','--keep-images'):
+                with patch.object(sys,'argv',args+[extra]), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                    audit_pdf_corpus.main()
+                self.assertEqual(error.exception.code,2)
 
     def test_pixels(self):
         with tempfile.TemporaryDirectory() as temp:
