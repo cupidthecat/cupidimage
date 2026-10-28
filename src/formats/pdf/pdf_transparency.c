@@ -150,7 +150,8 @@ static int pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *
         return 0;
     if (!shading && !cupidimage_pdf_apply_stroke_view(st, view, &next))
         return 0;
-    if (!pdf_read_blend_mode(st, view, &next.blend_mode))
+    if (!cupidimage_pdf_read_intent(st, view, "RI", &next.rendering_intent) ||
+        !pdf_read_blend_mode(st, view, &next.blend_mode))
         return 0;
     if (st->glyph_uncolored) {
         next.fill_alpha = st->gs.fill_alpha;

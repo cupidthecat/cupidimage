@@ -224,7 +224,7 @@ void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const do
     if (space->icc) {
         double converted[3];
         if (!cupidimage_pdf_icc_color(space->icc, values, st->group && st->group->gray,
-                                      converted)) {
+                                      st->gs.rendering_intent, converted)) {
             st->image_failed = 1;
             return;
         }
@@ -630,9 +630,10 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         else
             (*marked)--;
     } else if (!strcmp(op, "ri")) {
-        /* Color-managed rendering-intent transforms are not implemented yet. */
         if (n != 1 || ops[0].type != PDF_OPERAND_NAME)
             st->image_failed = 1;
+        else
+            st->gs.rendering_intent = cupidimage_pdf_intent_name(ops[0].str);
     } else if (!strcmp(op, "d0") || !strcmp(op, "d1")) {
         int box = op[1] == '1',
             valid = st->glyph_active && !st->glyph_seen_metrics && n == (box ? 6 : 2);

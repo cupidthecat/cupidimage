@@ -14,15 +14,20 @@ typedef struct {
     double parameters[7];
 } pdf_icc_curve;
 
+typedef struct {
+    pdf_icc_curve curves[3];
+    pdf_icc_lut lut;
+    pdf_image_colors output;
+    int valid, reference_black;
+} pdf_icc_transform;
+
 struct pdf_icc_profile {
     struct pdf_icc_profile *next;
     pdf_object_id object;
     unsigned char *data;
     size_t length;
     int components, lab_pcs;
-    pdf_icc_curve curves[3];
-    pdf_icc_lut lut;
-    pdf_image_colors output;
+    pdf_icc_transform transforms[4];
 };
 
 static unsigned icc_u16(const unsigned char *p) {
@@ -116,6 +121,8 @@ static int icc_curve(const unsigned char *data, size_t length, pdf_icc_curve *cu
            (curve->function < 3 || icc_curve_value(curve, curve->parameters[4], &ignored));
 }
 
+static int icc_model(pdf_icc_profile *, pdf_icc_transform *, const char[4]);
+
 static int icc_parse(pdf_icc_profile *profile) {
     const unsigned char *p = profile->data;
     if (profile->length < 132 || icc_u32(p) != profile->length || memcmp(p + 36, "acsp", 4) ||
@@ -148,7 +155,40 @@ static int icc_parse(pdf_icc_profile *profile) {
         if (!memcmp(entry, "D2B", 3))
             return 0;
     }
-    pdf_image_colors *out = &profile->output;
+    static const char *tags[] = {"A2B1", "A2B0", "A2B2"};
+    int valid = 0;
+    for (unsigned i = 0; i < 3; i++) {
+        profile->transforms[i].valid = icc_model(profile, &profile->transforms[i], tags[i]);
+        valid |= profile->transforms[i].valid;
+    }
+    /* ICC v4 media white is already chromatically adapted to the PCS. Legacy
+     * v2 absolute handling also needs its profile-class/adaptation conventions. */
+    if (p[8] == 4 && profile->transforms[0].valid) {
+        const unsigned char *white = NULL;
+        size_t length = 0;
+        if (icc_tag(profile, "wtpt", &white, &length) == 1 && length == 20 &&
+            !memcmp(white, "XYZ ", 4) && !icc_u32(white + 4)) {
+            pdf_icc_transform *absolute = &profile->transforms[3];
+            *absolute = profile->transforms[0];
+            for (unsigned column = 0; column < 3; column++) {
+                double media = icc_fixed(white + 8 + column * 4);
+                if (media <= 0)
+                    absolute->valid = 0;
+                double scale = media / absolute->output.white[column];
+                for (unsigned row = 0; row < 3; row++)
+                    absolute->output.adaptation[row * 3 + column] *= scale;
+            }
+        }
+    }
+    return valid;
+}
+
+static int icc_model(pdf_icc_profile *profile, pdf_icc_transform *transform,
+                     const char tag_name[4]) {
+    const unsigned char *p = profile->data;
+    int gray = profile->components == 1, rgb = profile->components == 3,
+        cmyk = profile->components == 4;
+    pdf_image_colors *out = &transform->output;
     out->components = rgb || profile->lab_pcs ? 3 : 1;
     out->calibrated = profile->lab_pcs ? 3 : rgb ? 2 : 1;
     out->white[0] = icc_fixed(p + 68);
@@ -159,18 +199,28 @@ static int icc_parse(pdf_icc_profile *profile) {
     out->lab_range[1] = out->lab_range[3] = 127;
     const unsigned char *table = NULL;
     size_t table_length = 0;
-    int selected = icc_tag(profile, "A2B1", &table, &table_length);
+    int selected = icc_tag(profile, tag_name, &table, &table_length);
     if (!selected)
         selected = icc_tag(profile, "A2B0", &table, &table_length);
     if (selected < 0)
         return 0;
     if (selected) {
-        if (!cupidimage_pdf_icc_lut_parse(&profile->lut, table, table_length,
+        if (!cupidimage_pdf_icc_lut_parse(&transform->lut, table, table_length,
                                           (unsigned)profile->components, profile->lab_pcs))
             return 0;
         out->components = 3;
         out->calibrated = profile->lab_pcs ? 3 : 2;
-        if (profile->lab_pcs && profile->lut.bytes == 2)
+        transform->reference_black = p[8] == 4 && !memcmp(tag_name, "A2B0", 4);
+        if (p[8] == 4 && !memcmp(tag_name, "A2B2", 4)) {
+            const unsigned char *gamut = NULL;
+            size_t gamut_length = 0;
+            int present = icc_tag(profile, "rig2", &gamut, &gamut_length);
+            if (present < 0 ||
+                (present && (gamut_length != 12 || memcmp(gamut, "sig ", 4) || icc_u32(gamut + 4))))
+                return 0;
+            transform->reference_black = present && !memcmp(gamut + 8, "prmg", 4);
+        }
+        if (profile->lab_pcs && transform->lut.bytes == 2)
             out->lab_range[1] = out->lab_range[3] = 128;
         return cupidimage_pdf_calibrated_output(out);
     }
@@ -183,7 +233,7 @@ static int icc_parse(pdf_icc_profile *profile) {
         const unsigned char *tag = NULL;
         size_t length = 0;
         if (icc_tag(profile, gray ? "kTRC" : curves[i], &tag, &length) != 1 ||
-            !icc_curve(tag, length, profile->curves + i))
+            !icc_curve(tag, length, transform->curves + i))
             return 0;
         if (rgb) {
             if (icc_tag(profile, columns[i], &tag, &length) != 1 || length != 20 ||
@@ -253,31 +303,42 @@ int cupidimage_pdf_icc_space(const pdf_render_state *st, pdf_object_id object,
 }
 
 int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values[4], int gray,
-                             double output[3]) {
-    if (profile->lut.inputs) {
+                             int intent, double output[3]) {
+    if (intent < 0 || intent >= 4 || !profile->transforms[intent].valid)
+        return 0;
+    const pdf_icc_transform *transform = &profile->transforms[intent];
+    double xyz[3];
+    if (transform->lut.inputs) {
         double pcs[4] = {0};
-        if (!cupidimage_pdf_icc_lut_value(&profile->lut, values, pcs))
+        if (!cupidimage_pdf_icc_lut_value(&transform->lut, values, pcs))
             return 0;
         if (profile->lab_pcs) {
-            double factor = profile->lut.bytes == 2 ? 65535.0 / 65280.0 : 1;
+            double factor = transform->lut.bytes == 2 ? 65535.0 / 65280.0 : 1;
             pcs[0] *= 100 * factor;
             pcs[1] = pcs[1] * 255 * factor - 128;
             pcs[2] = pcs[2] * 255 * factor - 128;
-            cupidimage_pdf_calibrated_color(&profile->output, pcs, gray, output);
+            cupidimage_pdf_calibrated_xyz(&transform->output, pcs, xyz);
         } else {
             for (unsigned i = 0; i < 3; i++)
-                pcs[i] *= 65535.0 / 32768.0;
-            cupidimage_pdf_xyz_color(&profile->output, pcs, gray, output);
+                xyz[i] = pcs[i] * 65535.0 / 32768.0;
         }
-        return 1;
+    } else {
+        double linear[4] = {0};
+        for (int i = 0; i < profile->components; i++)
+            if (!icc_curve_value(transform->curves + i, values[i], linear + i))
+                return 0;
+        if (profile->lab_pcs)
+            linear[0] *= 100;
+        cupidimage_pdf_calibrated_xyz(&transform->output, linear, xyz);
     }
-    double linear[4] = {0};
-    for (int i = 0; i < profile->components; i++)
-        if (!icc_curve_value(profile->curves + i, values[i], linear + i))
-            return 0;
-    if (profile->lab_pcs)
-        linear[0] *= 100;
-    cupidimage_pdf_calibrated_color(&profile->output, linear, gray, output);
+    if (transform->reference_black) {
+        /* Inverse of ICC.1:2022 6.3.4.3's reference-medium encoding, for the
+         * fixed output target whose black point is zero. */
+        static const double black[3] = {.003357, .003479, .002869};
+        for (unsigned i = 0; i < 3; i++)
+            xyz[i] = (xyz[i] - black[i]) / (1 - black[i] / transform->output.white[i]);
+    }
+    cupidimage_pdf_xyz_color(&transform->output, xyz, gray, output);
     return 1;
 }
 

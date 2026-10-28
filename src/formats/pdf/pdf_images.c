@@ -223,6 +223,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     pdf_image_mask mask = {0};
     pdf_object_view mask_view = {0};
     pdf_soft_mask *graphics_mask = st->gs.soft_mask;
+    int graphics_intent = st->gs.rendering_intent;
     pdf_image_colors colors = {0};
     int width, height, bits, components, ok = 0;
     size_t pos;
@@ -231,7 +232,8 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
         !pdf_image_type(st, &image))
         goto done;
     int stencil = 0;
-    if (!pdf_image_boolean(st, &image, "ImageMask", &stencil))
+    if (!cupidimage_pdf_read_intent(st, &image, "Intent", &st->gs.rendering_intent) ||
+        !pdf_image_boolean(st, &image, "ImageMask", &stencil))
         goto done;
     if ((st->glyph_uncolored || st->pattern_uncolored) && !stencil)
         goto done;
@@ -373,6 +375,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
 done:
     cupidimage_pdf_patterns_end_paint(st);
     st->gs.soft_mask = graphics_mask;
+    st->gs.rendering_intent = graphics_intent;
     free(mask.samples);
     cupidimage_pdf_object_view_release(&mask_view);
     free(samples);

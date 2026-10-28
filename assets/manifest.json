@@ -703,6 +703,14 @@
       "sha256": "9d793cac5309c3f709a8d0b9b1acd9fb10cd474f163be899391331da6f2d648e"
     },
     {
+      "path": "assets/pdf/reference/icc-intent-image-local.pdf",
+      "sha256": "6872bf5a125025849cc34178689fa6a86d1cedb02ee676a8e3f17df35fc0dff9"
+    },
+    {
+      "path": "assets/pdf/reference/icc-intent-selection.pdf",
+      "sha256": "af54eb4208b27a2672052457839ceca744f9f956b4ce74a886c90a3285c10d98"
+    },
+    {
       "path": "assets/pdf/reference/icc-lut16-cmyk.pdf",
       "sha256": "cbc96e1ae6feca38469c2001543f551e95e3c5a5b5b922abbbf46ba0174ed826"
     },

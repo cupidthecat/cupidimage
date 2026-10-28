@@ -574,3 +574,8 @@ analytic assets with `scripts/generate_pdf_icc_lut_fixtures.py`.
 `scripts/compare_pdf_icc_profiles.py` can compare supplied profile files with an
 installed independent color engine; it disables black-point compensation and
 never adds those profiles to the repository.
+
+`make test-pdf-intents` exercises PDF intent inheritance and ICC transform selection.
+Run `python3 scripts/test_pdf_intents.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference`
+for the optional independent comparisons. The version 4 perceptual reference-medium
+mapping is distinct from the unfinished general black-point compensation path.

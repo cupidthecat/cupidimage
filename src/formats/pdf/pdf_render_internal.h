@@ -108,6 +108,7 @@ typedef struct pdf_graphics_state {
     float ctm[6];
     double font_size_pts, leading_pts, char_space, word_space, horizontal_scale, text_rise;
     int text_mode;
+    int rendering_intent; /* Relative, perceptual, saturation, absolute. */
     pdf_soft_mask *soft_mask;
     const pdf_font_map *current_font;
     double fill_color[PDF_COLOR_COMPONENTS], stroke_color[PDF_COLOR_COMPONENTS];
@@ -198,6 +199,9 @@ struct pdf_transparency_group {
 
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
                                 double alpha, double shape, int blend_mode);
+int cupidimage_pdf_intent_name(const char *);
+int cupidimage_pdf_read_intent(const pdf_render_state *, const pdf_object_view *, const char *,
+                               int *);
 int cupidimage_pdf_dictionary_boolean(const pdf_render_state *st, const pdf_object_view *view,
                                       const char *key, int *value);
 int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
@@ -251,8 +255,9 @@ int cupidimage_pdf_empty_color(const pdf_image_colors *, const pdf_pattern *);
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
 int cupidimage_pdf_calibrated_output(pdf_image_colors *);
 int cupidimage_pdf_icc_space(const pdf_render_state *, pdf_object_id, pdf_image_colors *);
+void cupidimage_pdf_calibrated_xyz(const pdf_image_colors *, const double[4], double[3]);
 void cupidimage_pdf_xyz_color(const pdf_image_colors *, const double[3], int, double[3]);
-int cupidimage_pdf_icc_color(const pdf_icc_profile *, const double[4], int, double[3]);
+int cupidimage_pdf_icc_color(const pdf_icc_profile *, const double[4], int, int, double[3]);
 void cupidimage_pdf_icc_free(pdf_icc_store *);
 int cupidimage_pdf_calibrated_space(const pdf_render_state *, const pdf_object_view *, size_t *,
                                     int, pdf_image_colors *);

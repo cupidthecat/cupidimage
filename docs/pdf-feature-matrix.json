@@ -672,7 +672,8 @@
           "evidence": [
             "docs/pdf-content.md",
             "src/formats/pdf/pdf_render.c",
-            "scripts/test_pdf_content_syntax.py"
+            "scripts/test_pdf_content_syntax.py",
+            "scripts/test_pdf_intents.py"
           ],
           "limitations": [
             "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
@@ -2101,10 +2102,11 @@
             "docs/pdf-colors.md",
             "src/formats/pdf/pdf_icc_lut.c",
             "scripts/test_pdf_icc_lut.py",
-            "scripts/compare_pdf_icc_profiles.py"
+            "scripts/compare_pdf_icc_profiles.py",
+            "scripts/test_pdf_intents.py"
           ],
           "limitations": [
-            "Supported matrix/TRC and 8/16-bit forward table profiles cover gray/RGB/CMYK sources with unit ranges. mAB/mBA, multiprocess profiles, unusual ranges, alternate fallback, general intents, black-point compensation, output profiles and ICC blending remain incomplete."
+            "Supported matrix/TRC and 8/16-bit forward table profiles cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. mAB/mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and ICC blending remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -2231,20 +2233,26 @@
         {
           "id": "11.8",
           "requirement": "Rendering intent, output intents, and black-point compensation where applicable; color management behavior documented and tested.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "src/formats/pdf/pdf_intents.c",
+            "src/formats/pdf/pdf_icc.c",
+            "scripts/test_pdf_intents.py",
+            "docs/pdf-colors.md"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "PDF intent state and supported ICC source tables are implemented, including version 4 absolute/media-white and declared reference-medium mapping. Version 2 absolute handling, general black-point compensation, output profiles/intents and calibrated/group intent conversions remain unfinished."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Selected source intent paths and state lifetimes tested; complete color-management audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.8, 8.9.5 and 11.6.7",
+            "ICC.1:2022 6.3.2.2, 6.3.4.3 and 8.10"
+          ]
         },
         {
           "id": "11.9",

@@ -84,6 +84,7 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_text_outline.c"
 #undef cupidimage_pdf_font_outline
+#include "../src/formats/pdf/pdf_intents.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "../src/formats/pdf/pdf_xref.c"
 #include "fixtures/pdf-cff.inc"

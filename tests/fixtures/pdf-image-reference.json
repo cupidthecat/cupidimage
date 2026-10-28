@@ -518,6 +518,20 @@
       "height": 16,
       "rgba_zlib": "eJz7z5D2//8oHsWjeBSP4hGHASX8li4=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-intent-selection.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//X44FW1paYsU7duzAirGZgQ+Pmj9q/qj5o+aPmj+w5gMAsXqZjg==",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-intent-image-local.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbsWPH/x0k4PLycpIwKWaPmj9q/qj5o+aPmk8/8wFjOCh9",
+      "tolerance": 1
     }
   ]
 }

@@ -134,3 +134,8 @@ ICC profile ownership and tag selection live in `pdf_icc.c`; bounded forward
 lookup-table evaluation lives in `pdf_icc_lut.c`. Both use the shared calibrated
 XYZ-to-output conversion. Raw tables borrow immutable profile storage, so cache
 cleanup has one owner and no per-pixel allocation.
+
+`pdf_intents.c` parses PDF intent state. The graphics state carries the selection;
+`pdf_icc.c` keeps separate immutable per-intent transforms in each cached profile.
+The calibrated source-to-XYZ step is shared with ICC conversion before the final
+output transform, preserving PCS range and reference-medium adjustments.

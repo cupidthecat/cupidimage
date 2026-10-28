@@ -78,7 +78,7 @@ input values as their oracle. The comparison renderer returns a different result
 for that case, so it is not used as the expected result there.
 
 Complete ICC profile handling, output intents, nonzero black points, calibrated
-blending spaces, general rendering-intent selection, full NChannel support and
+blending spaces, complete rendering-intent handling, full NChannel support and
 overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
 
@@ -103,12 +103,13 @@ forward; no inverse transform is inferred from a noninvertible curve.
 
 Transforms use the D50 profile connection space and then the fixed sRGB output
 conversion described above. The profile's header rendering intent is not used
-as a PDF graphics-state rendering intent. General intent selection, output
-profiles, black-point compensation and ICC blending spaces remain unfinished.
-The relative-colorimetric path selects A2B1, then A2B0, before matrix/curve tags.
-Unsupported selected A2B types and profiles containing D2B transforms are rejected
-rather than silently replaced with matrix tags. Other PDF rendering intents are
-not yet applied.
+as a PDF graphics-state rendering intent. PDF intent state selects A2B0 for
+perceptual, A2B1 for relative colorimetry, or A2B2 for saturation. Missing selected
+tables fall back to A2B0, then matrix/curve tags. Unsupported selected A2B types
+and profiles containing D2B transforms are rejected rather than silently replaced
+with matrix tags. A malformed transform for an unused intent does not prevent
+using another supported transform. Output profiles, black-point compensation and
+ICC blending spaces remain unfinished.
 
 PDF N must match the supported profile's channel count. Range may be absent,
 null or an indirect array, but this implementation currently requires [0, 1]
@@ -342,6 +343,54 @@ Black-point compensation remains a known difference. An authored constant A2B1
 profile produces gray 119 without compensation; the comparison renderer maps its
 nonzero source black point to black. A separate uncompensated color-engine check
 confirmed the native result. The compensated result is not used as an oracle for
-the current uncompensated path. General rendering intents, black-point
-compensation, output profiles, mAB/mBA, multiprocess tags and ICC blending spaces
-still require work.
+the current uncompensated relative-colorimetric path. Black-point compensation,
+output profiles, mAB/mBA, multiprocess tags and ICC blending spaces still require
+work. The intent support below does not resolve those differences.
+
+
+## Rendering intent state
+
+The `ri` operator, ExtGState `RI` and image `Intent` entries select the intent at
+painting time. The default is RelativeColorimetric. Unknown names, including the
+empty name, also select RelativeColorimetric as required by ISO 32000-1 section
+8.6.5.8. Null or absent dictionary entries leave the inherited intent unchanged;
+wrong value types fail. Dictionary entries may be indirect.
+
+Intent survives `q`/`Q`, follows Form inheritance, and remains local when an image
+overrides it. Inline images use the same conversion path. Tiling and shading
+patterns start with the defining content stream's initial state, rather than the
+state at pattern selection. A shading pattern's ExtGState can override that
+initial intent. Cached shading patterns distinguish those initial states.
+Uncolored pattern bases are converted using the caller's paint state.
+
+Each cached ICC profile retains separate validated transforms. This lets a color
+space be selected before an intent changes without retaining the old conversion.
+Version 4 absolute colorimetry uses the relative transform and media-white scaling
+from ICC.1:2022 section 6.3.2.2. It requires a valid positive `wtpt` tag. Version 2
+absolute colorimetry remains unsupported because its legacy white-point and
+adaptation conventions need separate handling.
+
+Version 4 perceptual LUTs map the standardized reference-medium black point to
+the fixed output's zero black point, using the inverse linear XYZ equations in
+ICC.1:2022 section 6.3.4.3. Saturation LUTs use that mapping only when `rig2`
+explicitly identifies the perceptual reference medium gamut. Without that tag,
+the reference gamut is unspecified, so the renderer does not assume it. This is
+reference-medium encoding, not general source black-point detection or compensation.
+Version 2 perceptual profiles can still differ from renderers that automatically
+compensate their source black point. Saturation profiles with unspecified reference
+gamuts can also differ from implementations that assume the perceptual medium.
+
+`make test-pdf-intents` checks state changes, tag selection, fallback, malformed
+metadata, text, strokes, images, inline images, patterns, Forms and allocation
+recovery. Its optional `--reference` pass compares all four supported version 4
+intent paths with an independent color engine, with optional compensation off.
+Two analytic assets cover distinct intent tables and local image overrides.
+Regenerate them with `scripts/generate_pdf_intent_fixtures.py`.
+
+This does not complete intent handling for calibrated spaces, transparency-group
+conversion, document/page output intents, version 2 absolute colorimetry or
+arbitrary source/destination profiles.
+
+[Issue #51](https://github.com/cupidthecat/cupidimage/issues/51) tracks the remaining
+color-management and ink-rendering requirements. The feature matrix keeps their
+status separate from these focused implementation checkpoints.

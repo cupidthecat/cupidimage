@@ -192,6 +192,7 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
              cached = cached->next) {
             if (cached->shading && cached->initial &&
                 cached->initial->alpha_is_shape == st->initial_gs.alpha_is_shape &&
+                cached->initial->rendering_intent == st->initial_gs.rendering_intent &&
                 cached->resource_object == object && cached->tile.width == st->img->width &&
                 cached->tile.height == st->img->height && cached->page_x0 == st->page_x0_pts &&
                 cached->page_top == st->page_top_pts &&
