@@ -1263,8 +1263,16 @@ int cupidimage_pdf_inflate_auto(const unsigned char *data, size_t size, unsigned
             return 0;
         }
 
-        size_t len = 0;
-        if (cupidimage_inflate_zlib(data, size, buf, cap, &len)) {
+        size_t len = 0, consumed = 0;
+        if (cupidimage_inflate_zlib_prefix(data, size, buf, cap, &len, &consumed)) {
+            /* ISO 32000-1 7.3.8.2 permits one extra end-of-line before endstream. */
+            size_t trailing = size - consumed;
+            int eol = (trailing == 1 && (data[consumed] == '\r' || data[consumed] == '\n')) ||
+                      (trailing == 2 && data[consumed] == '\r' && data[consumed + 1] == '\n');
+            if (trailing && !eol) {
+                free(buf);
+                return 0;
+            }
             *out_data = buf;
             *out_len = len;
             return 1;

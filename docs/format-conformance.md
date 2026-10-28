@@ -230,7 +230,7 @@ remains a visual difference, not a corpus pixel pass.
 operators, expands standard abbreviations and passes a borrowed image view to
 the shared renderer. Raw, ASCIIHex, ASCII85, RunLength, Flate and JPEG boundaries
 are parsed from the encoding rather than guessed from an `EI` byte sequence.
-The DEFLATE prefix reader reports the checksum boundary; existing whole-stream
+The DEFLATE prefix reader reports the checksum boundary; non-PDF whole-stream
 callers still reject trailing bytes.
 
 The inline suite has 134 checks covering packed/16-bit samples, predictors,

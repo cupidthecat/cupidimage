@@ -75,3 +75,17 @@ profile for RFCs, not a replacement for the general object and rendering rules.
 Encryption, external stream files and damaged-file reconstruction remain outside
 this implementation. See the [conformance tracker](format-conformance.md) for the
 remaining rendering work.
+
+## Flate stream endings
+
+PDF Flate streams accept a single extra LF, CR or CRLF after the complete zlib
+payload, as permitted by ISO 32000-1 section 7.3.8.2. The decoder first locates
+the checksum boundary using RFC 1950 framing, then validates the remaining
+bytes. Arbitrary garbage, repeated line endings and concatenated zlib streams
+are still rejected. Checksum and truncation checks remain mandatory.
+
+This rule applies to PDF stream decoding, including embedded font programs,
+content and image data. It does not relax the strict whole-stream entry point
+used by the other formats. `make test-pdf-flate-extent` compares TrueType, CFF,
+Type 1, content, image and chained-filter cases with their unpadded equivalents,
+and checks allocation-failure cleanup.

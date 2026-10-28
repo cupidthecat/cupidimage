@@ -485,3 +485,10 @@ compatibility sections, marked-content operands, scope depth bounds, `q`/`Q`
 independence, split `Contents` arrays, nested Form/Type 3 isolation and malformed
 operands/delimiters. Allocation-failure cases verify cleanup on ignored and
 rejected instructions.
+
+`make test-pdf-flate-extent` tests the PDF stream-ending exception with embedded
+TrueType/CFF/Type 1 programs, page content, image samples and filter chains. A
+single CR, LF or CRLF after the zlib checksum is accepted; garbage, repeated
+endings, another zlib stream, bad checksums and truncation are rejected. The
+same padded inputs still fail the strict shared inflater. Allocation-failure
+runs compare successful recovery with the unpadded rendering.
