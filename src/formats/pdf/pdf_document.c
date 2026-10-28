@@ -957,24 +957,17 @@ int cupidimage_pdf_page_reference(const pdf_object_view *view, size_t pos, pdf_o
 
 int cupidimage_pdf_page_rectangle(const unsigned char *data, size_t size,
                                   const pdf_object_view *view, size_t pos, double box[4]) {
-    pdf_object_view indirect = {0};
-    pdf_object_id object = 0;
-    if (pos < view->len && view->data[pos] != '[') {
-        if (!cupidimage_pdf_page_reference(view, pos, &object) ||
-            !cupidimage_pdf_view_object(data, size, view, object, &indirect))
-            return 0;
-        view = &indirect;
-        pos = 0;
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    }
-    int ok = pos < view->len && view->data[pos++] == '[';
-    for (int i = 0; ok && i < 4; i++) {
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-        ok = cupidimage_pdf_parse_pdf_number(view->data, view->len, &pos, &box[i]);
-    }
-    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    ok = ok && pos < view->len && view->data[pos] == ']';
-    cupidimage_pdf_object_view_release(&indirect);
+    pdf_object_view value = {0};
+    if (!cupidimage_pdf_resolve_value(data, size, view, pos, &value, 0))
+        return 0;
+    pos = 0;
+    cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &pos);
+    int ok = pos < value.len && value.data[pos++] == '[';
+    for (int i = 0; ok && i < 4; i++)
+        ok = cupidimage_pdf_resolved_number(data, size, &value, &pos, &box[i]) && isfinite(box[i]);
+    cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &pos);
+    ok = ok && pos < value.len && value.data[pos] == ']';
+    cupidimage_pdf_object_view_release(&value);
     if (!ok)
         return 0;
     double x0 = fmin(box[0], box[2]), y0 = fmin(box[1], box[3]);
@@ -988,11 +981,12 @@ int cupidimage_pdf_page_rectangle(const unsigned char *data, size_t size,
 int cupidimage_pdf_get_page_geometry_indexed(const unsigned char *data, size_t size,
                                              pdf_object_id page_obj, pdf_page_geometry *geometry,
                                              char *err, size_t errcap, const pdf_xref *xref) {
-    double media[4] = {0, 0, 612, 792}, crop[4] = {0};
+    double media[4] = {0}, crop[4] = {0};
     int have_media = 0, have_crop = 0, have_rotation = 0;
     pdf_object_id visited[64];
     int depth = 0;
     geometry->rotation = 0;
+    geometry->user_unit = 1;
     while (page_obj > 0) {
         if (depth == 64)
             goto invalid;
@@ -1005,31 +999,58 @@ int cupidimage_pdf_get_page_geometry_indexed(const unsigned char *data, size_t s
             goto invalid;
         size_t pos = 0;
         int ok = 1;
-        if (!have_media && cupidimage_pdf_page_value(&node, "MediaBox", &pos)) {
-            ok = cupidimage_pdf_page_rectangle(data, size, &node, pos, media);
-            have_media = 1;
-        }
-        if (ok && !have_crop && cupidimage_pdf_page_value(&node, "CropBox", &pos)) {
-            ok = cupidimage_pdf_page_rectangle(data, size, &node, pos, crop);
-            have_crop = 1;
-        }
-        if (ok && !have_rotation && cupidimage_pdf_page_value(&node, "Rotate", &pos)) {
-            pdf_object_view indirect = {0};
-            const pdf_object_view *value = &node;
-            pdf_object_id object = 0;
-            if (cupidimage_pdf_page_reference(&node, pos, &object)) {
-                ok = cupidimage_pdf_view_object(data, size, &node, object, &indirect);
-                value = &indirect;
-                pos = 0;
+        /* UserUnit belongs to the page itself; it is not an inherited entry. */
+        if (depth == 1) {
+            pdf_object_view value = {0};
+            int status = cupidimage_pdf_optional_value(data, size, &node, "UserUnit", &value);
+            if (status < 0)
+                ok = 0;
+            else if (status == 1) {
+                size_t at = 0;
+                ok =
+                    cupidimage_pdf_resolved_number(data, size, &value, &at, &geometry->user_unit) &&
+                    isfinite(geometry->user_unit) && geometry->user_unit > 0 &&
+                    geometry->user_unit <= 75000 && (float)geometry->user_unit > 0;
             }
-            double angle = 0;
-            cupidimage_pdf_skip_ws_and_comments(value->data, value->len, &pos);
-            ok = ok && cupidimage_pdf_parse_pdf_number(value->data, value->len, &pos, &angle) &&
-                 angle >= INT_MIN && angle <= INT_MAX && fmod(angle, 90.0) == 0;
-            if (ok)
-                geometry->rotation = (((int)angle % 360) + 360) % 360;
-            cupidimage_pdf_object_view_release(&indirect);
-            have_rotation = 1;
+            cupidimage_pdf_object_view_release(&value);
+        }
+        if (ok && !have_media) {
+            pdf_object_view value = {0};
+            int status = cupidimage_pdf_optional_value(data, size, &node, "MediaBox", &value);
+            if (status < 0)
+                ok = 0;
+            else if (status == 1) {
+                ok = cupidimage_pdf_page_rectangle(data, size, &value, 0, media);
+                have_media = 1;
+            }
+            cupidimage_pdf_object_view_release(&value);
+        }
+        if (ok && !have_crop) {
+            pdf_object_view value = {0};
+            int status = cupidimage_pdf_optional_value(data, size, &node, "CropBox", &value);
+            if (status < 0)
+                ok = 0;
+            else if (status == 1) {
+                ok = cupidimage_pdf_page_rectangle(data, size, &value, 0, crop);
+                have_crop = 1;
+            }
+            cupidimage_pdf_object_view_release(&value);
+        }
+        if (ok && !have_rotation) {
+            pdf_object_view value = {0};
+            int status = cupidimage_pdf_optional_value(data, size, &node, "Rotate", &value);
+            if (status < 0)
+                ok = 0;
+            else if (status == 1) {
+                double angle;
+                size_t at = 0;
+                ok = cupidimage_pdf_resolved_number(data, size, &value, &at, &angle) &&
+                     angle >= INT_MIN && angle <= INT_MAX && fmod(angle, 90.0) == 0;
+                if (ok)
+                    geometry->rotation = (((int)angle % 360) + 360) % 360;
+                have_rotation = 1;
+            }
+            cupidimage_pdf_object_view_release(&value);
         }
         pdf_object_id parent = 0;
         if (ok && !(have_media && have_crop && have_rotation) &&
@@ -1041,12 +1062,14 @@ int cupidimage_pdf_get_page_geometry_indexed(const unsigned char *data, size_t s
             goto invalid;
         page_obj = parent;
     }
+    if (!have_media)
+        goto invalid;
     if (!have_crop)
         memcpy(crop, media, sizeof(crop));
-    geometry->x0 = fmax(media[0], crop[0]);
-    geometry->y0 = fmax(media[1], crop[1]);
-    geometry->x1 = fmin(media[2], crop[2]);
-    geometry->y1 = fmin(media[3], crop[3]);
+    geometry->x0 = fmax(media[0], crop[0]) * geometry->user_unit;
+    geometry->y0 = fmax(media[1], crop[1]) * geometry->user_unit;
+    geometry->x1 = fmin(media[2], crop[2]) * geometry->user_unit;
+    geometry->y1 = fmin(media[3], crop[3]) * geometry->user_unit;
     double width = ceil((geometry->x1 - geometry->x0) * (96.0 / 72.0));
     double height = ceil((geometry->y1 - geometry->y0) * (96.0 / 72.0));
     /* Bound preview memory and validate before converting to integer dimensions. */

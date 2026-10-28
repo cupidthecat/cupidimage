@@ -1526,6 +1526,7 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
     st.gs.font_size_pts = 12.0;
     st.gs.horizontal_scale = 1.0;
     pdf_matrix_identity(st.gs.ctm);
+    st.gs.ctm[0] = st.gs.ctm[3] = (float)geometry->user_unit;
     st.gs.line_width_pts = 1.0f;
     st.gs.miter_limit = 10;
     st.gs.fill_alpha = st.gs.stroke_alpha = 1;

@@ -93,8 +93,16 @@ filters remain unfinished. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
 
 ## PDF details and limits
 
-PDF pages render at 96 DPI, rounding fractional pixel extents upward. CropBox is intersected with MediaBox, and page
-rotation applies to both text and graphics. Direct and indirect page boxes and
+PDF pages render at 96 DPI, rounding fractional pixel extents upward. A page's
+UserUnit scales default user-space units before text, images, forms and patterns
+are placed. It defaults to one and is not inherited from the page tree. The
+supported range is positive values through 75,000, subject to representable
+transforms and the preview-size bound. Null optional page boxes and Rotate entries
+continue inheritance; box array members and UserUnit may be indirect. A required
+MediaBox must be found on the page or an ancestor, rather than guessed from a
+paper-size default.
+
+CropBox is intersected with MediaBox, and page rotation applies to both text and graphics. Direct and indirect page boxes and
 rotation values are supported. Invalid boxes, cyclic parent chains, and previews
 larger than 64 megapixels are rejected. Whitespace is preserved, so sparse content cannot change the
 page dimensions or shift its origin.

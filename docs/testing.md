@@ -454,3 +454,12 @@ values and optional null entries with omitted entries. It covers Decode and
 Matte members, color-key arrays, stencil defaults, escaped names, mask reference
 chains and soft-mask precedence. Required null/mistyped values and cycles are
 rejected. Successful cases run through complete-page allocation-failure checks.
+
+
+`make test-pdf-user-unit` compares page-unit scaling with equivalent explicit
+transforms across standard, TrueType, CFF, Type 1 and Type 3 text, all text modes,
+images, forms, patterns and transparency. It also checks page-local defaults,
+null inheritance, indirect box members, bounds and rotation allocation failures.
+The optional `--reference` pass uses seven exact checks with a secondary rasterizer;
+the primary comparison tool in the development environment ignores UserUnit.
+No raster tolerance is widened to hide that difference.

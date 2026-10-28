@@ -5,6 +5,7 @@
 #define realloc fault_realloc
 #define free fault_free
 #include "../src/compression/ccitt.c"
+#include "../src/core/image.c"
 #include "../src/formats/jpeg/cupidimage_jpeg.c"
 #include "../src/formats/jpeg/jpeg_arithmetic.c"
 #include "../src/formats/jpeg/jpeg_entropy.c"
@@ -213,7 +214,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -316,7 +317,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -454,7 +455,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -546,7 +547,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -597,7 +598,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -695,7 +696,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -764,7 +765,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             pdf_font_table fonts;
             cupidimage_pdf_font_table_init(&fonts);
@@ -820,7 +821,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -902,7 +903,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -966,7 +967,7 @@ int main(int argc, char **argv) {
             image.width = 24;
             image.height = 16;
             image.rgba = pixels;
-            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16, 1};
             char error[128] = {0};
             allocation_count = 0;
             fail_at = failure;
@@ -1091,7 +1092,7 @@ int main(int argc, char **argv) {
                 image.width = 48;
                 image.height = 40;
                 image.rgba = pixels;
-                pdf_page_geometry geometry = {0, 0, 36, 30, 0, 48, 40};
+                pdf_page_geometry geometry = {0, 0, 36, 30, 0, 48, 40, 1};
                 char content[128], error[128] = {0};
                 int content_length =
                     snprintf(content, sizeof(content), "BT %s %d Tr 2 4 Td (ABC) Tj ET",

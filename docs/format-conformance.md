@@ -42,6 +42,9 @@ Synthetic cases cover misleading nested keys and a missing real root.
 
 ## Coverage and remaining work
 
+The [PDF feature inventory](pdf-feature-matrix.md) records the expanded checklist
+with per-item status and evidence. It is not a completed standards audit.
+
 | Format/output | Existing coverage | Known gaps or remaining qualification |
 | --- | --- | --- |
 | ANSI truecolor | RGB escape output, alpha compositing, scaling, write failures | Cross-terminal rendering and the complete alpha/background option matrix |

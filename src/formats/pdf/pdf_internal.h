@@ -37,6 +37,7 @@ typedef struct {
     double x0, y0, x1, y1;
     int rotation;
     int width, height;
+    double user_unit;
 } pdf_page_geometry;
 
 typedef struct {
