@@ -5,8 +5,17 @@
 
 int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
                                        const unsigned char *stream, size_t length,
-                                       cupidimage_image *image, double *shape, double sx, double sy,
-                                       double ox, double oy, const double bbox[4], int uncolored) {
+                                       pdf_pattern *cache, double sx, double sy, double ox,
+                                       double oy, const double bbox[4], int uncolored) {
+    cupidimage_image *image = &cache->tile;
+    double *shape = cache->shape;
+    pdf_transparency_group group = {0};
+    group.image = *image;
+    group.alpha = cache->alpha;
+    group.shape = cache->shape;
+    group.color = cache->color;
+    group.gray = cache->gray;
+    group.isolated = 1;
     if (!parent->form_budget->calls_left || length > parent->form_budget->bytes_left)
         return 0;
     parent->form_budget->calls_left--;
@@ -33,7 +42,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     child->img = image;
     child->shape_plane = shape;
     child->alpha_plane = shape + (size_t)image->width * image->height;
-    child->group = NULL;
+    child->group = cache->color ? &group : NULL;
     child->mask_rendering = 0;
     child->page_x0_pts = 0;
     child->page_top_pts = image->height * (72.0f / 96.0f);
@@ -224,8 +233,16 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
 }
 
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], cupidimage_image *image,
-                                          double *shape) {
+                                          const double matrix[6], pdf_pattern *cache) {
+    cupidimage_image *image = &cache->tile;
+    double *shape = cache->shape;
+    pdf_transparency_group group = {0};
+    group.image = *image;
+    group.alpha = cache->alpha;
+    group.shape = cache->shape;
+    group.color = cache->color;
+    group.gray = cache->gray;
+    group.isolated = group.knockout = 1;
     if (!parent->form_budget->calls_left)
         return 0;
     parent->form_budget->calls_left--;
@@ -245,7 +262,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     child->img = image;
     child->shape_plane = shape;
     child->alpha_plane = shape + (size_t)image->width * image->height;
-    child->group = NULL;
+    child->group = &group;
     child->mask_rendering = 0;
     child->form_depth = 0;
     child->gs_stack_len = 0;
@@ -280,5 +297,39 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     cupidimage_pdf_object_view_release(&shading);
     cupidimage_pdf_render_state_release(child);
     free(child);
+    return ok;
+}
+
+int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *pattern, int gray) {
+    if (!pattern->initial || !pattern->color)
+        return 0;
+    pdf_render_state *context = malloc(sizeof(*context));
+    if (!context)
+        return 0;
+    *context = *st;
+    context->initial_gs = *pattern->initial;
+    size_t pixels = (size_t)pattern->tile.width * pattern->tile.height;
+    memset(pattern->tile.rgba, 0, pixels * 4);
+    memset(pattern->shape, 0, pixels * 5 * sizeof(double));
+    pattern->gray = gray;
+    int ok = 1;
+    if (pattern->shading) {
+        ok = cupidimage_pdf_render_shading_pattern(context, &pattern->definition, pattern->matrix,
+                                                   pattern);
+    } else if (pattern->bounds[0] != pattern->bounds[2] &&
+               pattern->bounds[1] != pattern->bounds[3]) {
+        double first_x = floor(-pattern->bounds[2] / pattern->xstep) + 1;
+        double last_x = ceil((pattern->xstep - pattern->bounds[0]) / pattern->xstep) - 1;
+        double first_y = floor(-pattern->bounds[3] / pattern->ystep) + 1;
+        double last_y = ceil((pattern->ystep - pattern->bounds[1]) / pattern->ystep) - 1;
+        double sx = pattern->tile.width / (pattern->xstep * (96.0 / 72.0));
+        double sy = pattern->tile.height / (pattern->ystep * (96.0 / 72.0));
+        for (int y = (int)first_y; ok && y <= (int)last_y; y++)
+            for (int x = (int)first_x; ok && x <= (int)last_x; x++)
+                ok = cupidimage_pdf_render_pattern_cell(
+                    context, &pattern->definition, pattern->program, pattern->program_length,
+                    pattern, sx, sy, x * pattern->xstep, y * pattern->ystep, pattern->bounds, 0);
+    }
+    free(context);
     return ok;
 }

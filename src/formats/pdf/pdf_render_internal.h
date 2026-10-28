@@ -45,9 +45,9 @@ typedef struct {
 typedef struct pdf_pattern {
     struct pdf_pattern *next;
     cupidimage_image tile;
-    double *shape, *alpha;
+    double *shape, *alpha, *color;
     double inverse[6], xstep, ystep;
-    int shading, resource_object, uncolored, deferred;
+    int shading, resource_object, uncolored, deferred, gray;
     pdf_object_view definition;
     unsigned char *program;
     size_t program_length, definition_bytes, surface_bytes;
@@ -256,18 +256,18 @@ void cupidimage_pdf_path_clear(pdf_path *path);
 void cupidimage_pdf_render_state_release(pdf_render_state *st);
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t len);
 int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pattern);
+int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *pattern, int gray);
 int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
                                        const unsigned char *stream, size_t length,
-                                       cupidimage_image *image, double *shape, double sx, double sy,
-                                       double ox, double oy, const double bbox[4], int uncolored);
+                                       pdf_pattern *cache, double sx, double sy, double ox,
+                                       double oy, const double bbox[4], int uncolored);
 void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage);
 
 int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_view *view,
                                       int background);
 int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view);
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], cupidimage_image *image,
-                                          double *shape);
+                                          const double matrix[6], pdf_pattern *cache);
 
 int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, size_t length,
                             double phase);

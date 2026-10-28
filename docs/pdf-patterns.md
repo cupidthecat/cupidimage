@@ -6,8 +6,11 @@ placement, gaps, overlaps, clipping and transparency. Shading patterns reuse the
 
 ## Tiling cells and backdrops
 
-Normal-blended cells can be rendered once and repeated. Their cache stores RGB
-bytes with separate double-precision shape and alpha. Uncolored cells use the
+Normal-blended cells can be rendered once and repeated. Colored cells and shading
+patterns keep double-precision color, shape and alpha, with a byte image mirror.
+Their definitions and initial state are retained so a cache can be rebuilt when
+painting moves between RGB and grayscale groups. Source CMYK values are converted
+directly into the destination space during that rebuild. Uncolored cells use the
 caller's native device color when the cache is painted. Color-setting operators
 and ordinary color images are not permitted in an uncolored definition.
 
@@ -27,17 +30,18 @@ Nested forms and text use their existing resource and graphics-state rules.
 ## Bounds and remaining work
 
 Pattern definitions, cached cells and per-object results share the 64 MiB pattern
-cache budget. A per-object surface uses 44 bytes per pixel plus its descriptor;
-it also consumes the shared transparency budget while it is being evaluated.
+cache budget. Colored caches and per-object surfaces use 44 bytes per pixel plus
+their descriptors; uncolored caches use 20 bytes per pixel. A per-object surface
+also consumes the shared transparency budget while it is being evaluated.
 The per-object surface is released when that paint operation ends.
 Definitions consume retained-stream storage, and each tile invocation consumes
 content and invocation work. The full output viewport bounds tile enumeration.
 Consequently, very dense backdrop-dependent patterns can exhaust the work budget
 even when their ordinary cached equivalent fits.
 
-The ordinary cell cache still stores RGB bytes. Native color handling inside
-those caches, including conversion into a different blending space, remains
-incomplete. Shading-pattern ExtGState transparency restrictions also remain.
+Changing a cache's destination space consumes the same content, invocation and
+shading-evaluation budgets as its first rendering. Shading-pattern ExtGState
+entries with non-unit ca/CA or a non-Normal blend mode remain unsupported.
 CMYK, calibrated and ICC group blending spaces are separate unfinished work.
 
 ## Tests and specification
@@ -56,3 +60,10 @@ non-isolated evaluation described by the specification. The new analytic cases
 are not reported as reference passes, and reference tolerances are not widened.
 The optional `--reference-only` diagnostic compares the analytic pixels with an
 independent renderer and fails on this known discrepancy.
+
+`make test-pdf-pattern-colors` adds 30 analytic checks for cache precision,
+RGB/gray transitions, selecting and reselecting resources, compressed pattern
+definitions and alpha-as-shape in a shading pattern's own soft mask. The shading
+cache key includes the initial alpha-as-shape setting. Fault injection covers
+retained dictionary copies and cache rebuilds without modifying the caller's
+output on failure.

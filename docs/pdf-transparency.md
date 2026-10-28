@@ -43,8 +43,8 @@ Solid fill/stroke colors, decoded image components, and all seven shading types
 retain floating-point device values until compositing. Indexed colors expand to
 their base components first. Normal-blended uncolored tiling patterns cache
 coverage and alpha, then apply the caller's native color once. Backdrop-dependent
-patterns retain double-precision per-object results. Ordinary colored cell caches
-still store RGB bytes; native-color handling inside those caches remains incomplete.
+patterns retain double-precision per-object results. Ordinary colored caches also retain double-precision color and rebuild from their
+definitions when the destination changes between RGB and grayscale.
 
 Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
@@ -65,11 +65,13 @@ image masks constrain intrinsic shape. Nested groups carry their accumulated
 shape even when their resulting alpha is zero.
 
 Tiling and shading caches retain separate double-precision shape and alpha
-planes alongside byte color samples. Fully transparent painted areas no longer
+planes alongside a byte image mirror; colored caches also retain double-precision
+color. Fully transparent painted areas no longer
 look like unpainted holes to a containing knockout group. Keeping cache alpha
 unrounded also corrects three analytic pattern expectations by one byte; the
 checked-in assets are unchanged. Group surfaces use 44 bytes per pixel, and
-ordinary pattern caches use 20 bytes per pixel plus their descriptors.
+uncolored pattern caches use 20 bytes per pixel plus their descriptors. Colored
+pattern caches use 44 bytes per pixel.
 Backdrop-dependent pattern results use 44 bytes per pixel and are released after
 the paint operation. See [PDF patterns](pdf-patterns.md).
 

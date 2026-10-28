@@ -384,3 +384,7 @@ needed. Device-conversion formulas come from ISO 32000-1 section 10.3.
 analytic pixels, including changing backdrops, overlapping cells, transformed
 grids, text, soft masks and deferred validation. Known independent-renderer
 differences are documented in [PDF patterns](pdf-patterns.md).
+
+`make test-pdf-pattern-colors` checks floating-point pattern caches across RGB/gray
+groups, initial alpha-as-shape settings, compressed definitions and sub-byte
+opacity. Allocation-failure tests cover definition retention and cache rebuilds.

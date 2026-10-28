@@ -585,6 +585,20 @@ round trips are unchanged.
 
 The independent renderers tested for the new Multiply cases disagree with the
 specification's non-isolated result. Those cases remain analytic checks, not
-reference passes. Ordinary colored-cell caches, additional color spaces, CMYK
-blending groups and shading-pattern ExtGState transparency still need work.
+reference passes. Additional color spaces, CMYK blending groups and
+shading-pattern ExtGState transparency still need work.
 The full manual document-rating pass remains deferred.
+
+
+## Destination-aware pattern colors
+
+Ordinary colored tiling and shading caches now retain double-precision colors.
+They keep their definitions and rebuild when reused in a different supported
+blending space, preserving direct CMYK-to-gray conversion and avoiding early
+byte rounding. Shading-cache reuse also distinguishes the initial AIS setting.
+
+The pattern-color suite has 30 analytic cases, including compressed definitions,
+RGB/gray/RGB transitions and sub-byte opacity. The allocation-failure suite has
+2,526 checks after adding retained-copy and cache-rebuild cases. The existing
+asset manifest and reference tolerances are unchanged. CMYK, calibrated and ICC
+blending groups remain unimplemented.

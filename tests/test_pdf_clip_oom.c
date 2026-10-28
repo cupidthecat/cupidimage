@@ -769,6 +769,94 @@ int main(void) {
                 fault_free(live[0]);
         }
     }
+    for (int owns_view = 0; owns_view < 2; owns_view++)
+        for (size_t failure = 0; failure <= 2; failure++) {
+            unsigned char *owned = malloc(16);
+            if (!owned)
+                return 1;
+            memcpy(owned, "xx<< /N 1 >>", 12);
+            pdf_object_view view = {owned + 2, 10, owns_view ? owned : NULL};
+            pdf_pattern pattern = {0};
+            pdf_pattern_store store = {0};
+            pdf_render_state state = {0};
+            state.patterns = &store;
+            state.document = (const unsigned char *)"document";
+            state.document_size = 8;
+            allocation_count = 0;
+            fail_at = failure;
+            int ok = pattern_retain(&state, &pattern, &view, NULL, 0);
+            checks++;
+            if (ok != (failure == 0) || (!ok && store.bytes_used))
+                failures++;
+            memset(owned, 0, 16);
+            if (ok && (pattern.definition.data == view.data ||
+                       memcmp(pattern.definition.data, "<< /N 1 >>", 10)))
+                failures++;
+            free(owned);
+            fault_free(pattern.initial);
+            fault_free(pattern.definition.owned);
+            if (live_count) {
+                failures++;
+                while (live_count)
+                    fault_free(live[0]);
+            }
+        }
+    /* Cached colors must be rebuilt when an inherited pattern enters another blending space. */
+    for (int shading = 0; shading < 2; shading++) {
+        const char *program = ".8 0 0 .6 k 0 0 3 3 re f";
+        const char *form = "0 0 18 12 re f";
+        char pattern[512], document[2048];
+        if (shading)
+            snprintf(pattern, sizeof(pattern),
+                     "5 0 obj << /PatternType 2 /Shading << /ShadingType 2 /ColorSpace /DeviceCMYK "
+                     "/Coords [0 0 18 0] /Function << /FunctionType 2 /Domain [0 1] "
+                     "/C0 [.8 0 0 .6] /C1 [.8 0 0 .6] /N 1 >> >> >> endobj\n");
+        else
+            snprintf(
+                pattern, sizeof(pattern),
+                "5 0 obj << /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 3 3] "
+                "/XStep 3 /YStep 3 /Resources << >> /Length %zu >> stream\n%s\nendstream endobj\n",
+                strlen(program), program);
+        int length = snprintf(document, sizeof(document),
+                              "3 0 obj << /Resources << /Pattern << /P 5 0 R >> "
+                              "/XObject << /F 6 0 R >> >> >> endobj\n%s"
+                              "6 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] "
+                              "/Group << /S /Transparency /I true /CS /DeviceGray >> "
+                              "/Length %zu >> stream\n%s\nendstream endobj\n",
+                              pattern, strlen(form), form);
+        if (length < 0 || (size_t)length >= sizeof(document))
+            return 1;
+        const char *content = "/Pattern cs /P scn 0 0 18 12 re f /F Do 0 0 18 12 re f";
+        size_t total = 0;
+        for (size_t failure = 0; failure <= total; failure++) {
+            unsigned char pixels[24 * 16 * 4];
+            memset(pixels, 255, sizeof(pixels));
+            cupidimage_image image = {0};
+            image.width = 24;
+            image.height = 16;
+            image.rgba = pixels;
+            pdf_page_geometry geometry = {0, 0, 18, 12, 0, 24, 16};
+            char error[128] = {0};
+            allocation_count = 0;
+            fail_at = failure;
+            int ok = cupidimage_pdf_render_content_stream(
+                (const unsigned char *)content, strlen(content), (const unsigned char *)document,
+                (size_t)length, 3, NULL, &image, &geometry, error, sizeof(error));
+            if (!failure)
+                total = allocation_count;
+            checks++;
+            if (live_count || (!failure && !ok))
+                failures++;
+            if (!ok)
+                for (size_t i = 0; i < sizeof(pixels); i++)
+                    if (pixels[i] != 255) {
+                        failures++;
+                        break;
+                    }
+            while (live_count)
+                fault_free(live[0]);
+        }
+    }
     {
         pdf_render_state state = {0};
         pdf_pattern_store full = {0};

@@ -142,7 +142,7 @@ def main():
               lambda x,y:(round((x+.5-4)/24*255),)*3 if x>=4 else white,tolerance=1)
         check('shading-pattern-alpha',shading_pattern(axial,content='/Half gs /Pattern cs /P scn 0 0 18 12 re f',
               page_extra='/ExtGState << /Half << /ca .5 >> >>'),
-              lambda x,y:(int(gray(x,y)[0]*.5+127.5+.5),)*3,reference=False)
+              lambda x,y:(int((x+.5)/24*255*.5+127.5+.5),)*3,reference=False)
         background=('<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [3 0 15 0] /Background [0 1 0] '
                     '/Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >> >>')
         background_pixel=lambda x,y:(round((1-(x+.5-4)/16)*255),0,round((x+.5-4)/16*255)) if 4<=x<20 else (0,255,0)

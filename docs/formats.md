@@ -452,8 +452,9 @@ operators do not move it. Form and glyph resource scopes retain their own initia
 transforms. Tiling types 1 and 3 use rounded device-grid step vectors; type 2 keeps
 the requested geometry. Singular original or rounded grids are rejected.
 
-Normal-blended cells use an RGBA cache with separate floating-point shape and
-alpha. Cells that request non-Normal blending are evaluated per painted object
+Normal-blended colored cells use floating-point color, shape and alpha with an
+RGBA mirror. Cached definitions are rebuilt when the destination changes between
+RGB and grayscale groups. Cells that request non-Normal blending are evaluated per painted object
 against its actual backdrop, with all tiles in one non-isolated group. The
 caller's transparency applies once to the resulting pattern source. A mask
 definition inside a pattern has its own fixed backdrop. See [PDF patterns](pdf-patterns.md)
@@ -482,11 +483,13 @@ the direct `sh` operator ignores Background and the current fill/stroke pattern.
 
 Each gradient is cached as a transparent viewport-sized raster. Repeated uses
 of an indirect pattern resource reuse that raster when the viewport and initial
-transform match. These rasters share the 64 MiB pattern-cache budget, while the
+transform and initial AIS setting match. Their colors are rebuilt when the
+destination changes between RGB and grayscale. These rasters share the 64 MiB pattern-cache budget, while the
 tiling-only cell dimension limits do not apply. The caller's alpha and blend
-mode apply when the pattern paints. Nondefault transparency in a shading
-pattern's own ExtGState is rejected, rather than silently ignored. Patch rendering
-has bounded subdivision and inverse-mapping work. See [PDF shading](pdf-shading.md)
+mode apply when the pattern paints. Non-unit ca/CA or non-Normal blending in a
+shading pattern's own ExtGState is rejected, rather than silently ignored. Supported soft masks and AIS are applied
+inside the pattern; the cache distinguishes different initial AIS settings.
+Patch rendering has bounded subdivision and inverse-mapping work. See [PDF shading](pdf-shading.md)
 for mesh formats, interpolation, memory bounds and comparison limits.
 
 ## PDF stroke styling
