@@ -55,15 +55,22 @@ The decoded sample buffer is limited to 64 MiB. Image dimensions, component coun
 and bit depth are checked against the JPEG frame before decoding its samples.
 Progressive coefficients need additional working memory; allocation failures
 release partial coefficient and output buffers. Every filter stage retains its
-own decoded-size bounds. Coefficient prediction, refinement and dequantization
+own decoded-size bounds. Each component retains the quantization table selected
+by its first scan. Table definitions may arrive before the component that needs
+them, and a selector may be reused after that component's scans finish. A
+conflicting table at a later scan of the same component is rejected.
+
+Coefficient prediction, refinement and dequantization
 use checked arithmetic. A dequantized coefficient is limited to an absolute
 value of 536,870,911 so the complete fixed-point inverse transform fits in a
 signed 64-bit accumulator. Values outside that implementation bound fail rather
 than wrapping. Sample clipping happens before narrowing the accumulator result.
 
 The current DCT path supports 8-bit, Huffman-coded baseline and progressive
-frames. Sampling factors above two and noninterleaved sequential color scans are
-not yet supported. Other DCT coding modes need an applicability and implementation
+frames. Horizontal and vertical sampling factors from one through four are
+supported, including 4:1:1 and fractional component ratios. Interleaved scans are
+limited to ten data units per MCU; a one-component scan always uses one block per
+MCU. Noninterleaved sequential color scans are not yet supported. Other DCT coding modes need an applicability and implementation
 audit. JPXDecode and JBIG2Decode remain unsupported. These limits are distinct from
 image placement, interpolation and color-management work.
 
@@ -88,6 +95,12 @@ to isolate decoding from scaled-image boundary rules:
 CMYK comparisons retain exact raw-sample equivalents rather than counting an
 unmanaged conversion as a color-managed reference match. Existing packed-image,
 mask, inline-image and fax suites remain separate regression gates.
+
+`make test-pdf-jpeg-sampling` checks sampling grids, partial edge blocks, restart
+intervals, single-component scans and per-component quantization tables. Complete
+progressive fixtures include their AC scans so comparisons do not depend on an
+independent decoder's progressive-preview smoothing. Selected sample comparisons
+can be run with `--reference`; the ordinary tests need no external codec.
 
 The governing rules are in [ISO 32000-1, sections 7.4 and
 8.9](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),

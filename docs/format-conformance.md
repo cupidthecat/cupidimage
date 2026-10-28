@@ -654,7 +654,13 @@ from scaled-image raster behavior. Exact independent probes use native-resolutio
 pages; CMYK comparisons do not conflate unmanaged and color-managed output. See
 [PDF images](pdf-images.md) for limits and test commands.
 
-DCT support is still incomplete: sampling factors above two, noninterleaved
-sequential color scans and other applicable coding modes remain under audit in
+DCT support is still incomplete: noninterleaved sequential color scans and other
+applicable coding modes remain under audit in
 [#49](https://github.com/cupidthecat/cupidimage/issues/49). The wider PDF work in
 #45 remains open.
+
+JPEG sampling now accepts factors through four and checks the per-scan MCU
+data-unit limit. Single-component scans use their own block grid. Components
+retain their selected quantizers through output, allowing deferred definitions
+and selector reuse between completed component scans. Focused sampling tests
+cover edge blocks, restart wrapping, native samples and complete PDF images.

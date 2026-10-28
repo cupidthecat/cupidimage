@@ -46,6 +46,8 @@ typedef struct jpeg_comp {
     int blocks_w;
     int blocks_h;
     int32_t *coeffs;
+    int quantizers[64];
+    int have_quantizers;
 } jpeg_comp;
 
 typedef struct jpeg_bitstream {
@@ -766,7 +768,7 @@ static uint8_t jpeg_sample_clamp(int value) {
 
 /* DCT stream samples remain in their native component space for the caller's
  * Decode array and color-space conversion. Component order follows the frame. */
-static void jpeg_native_pixel(uint8_t *destination, uint8_t buffers[4][16 * 16],
+static void jpeg_native_pixel(uint8_t *destination, uint8_t buffers[4][32 * 32],
                               const int widths[4], const int heights[4], int components, int x,
                               int y, int mcu_width, int mcu_height) {
     for (int i = 0; i < components; i++) {
@@ -792,8 +794,8 @@ static int jpeg_sample_transform(const jpeg_sample_profile *profile, int marker)
 
 static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, int height,
                                    int mcu_cols, int mcu_rows, int hmax, int vmax,
-                                   int qtables[4][64], int adobe_transform, cupidimage_image *out,
-                                   char *err, size_t errcap, const jpeg_sample_profile *profile) {
+                                   int adobe_transform, cupidimage_image *out, char *err,
+                                   size_t errcap, const jpeg_sample_profile *profile) {
     unsigned channels = profile ? (unsigned)num_comp : 4u;
     size_t rgba_size = (size_t)width * (size_t)height * channels;
     if (rgba_size / channels != (size_t)width * (size_t)height) {
@@ -810,7 +812,7 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, in
     int mcu_w = hmax * 8;
     int mcu_h = vmax * 8;
 
-    uint8_t comp_buf[4][16 * 16];
+    uint8_t comp_buf[4][32 * 32];
     int comp_w[4] = {0, 0, 0, 0};
     int comp_h[4] = {0, 0, 0, 0};
     for (int i = 0; i < num_comp; i++) {
@@ -847,7 +849,7 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, in
                         int block_y = my * c->v + by;
                         int32_t *block = c->coeffs + ((block_y * c->blocks_w + block_x) * 64);
                         for (int i = 0; i < 64; i++) {
-                            if (!jpeg_dequantize(block[i], qtables[c->tq][i], &deq[i])) {
+                            if (!jpeg_dequantize(block[i], c->quantizers[i], &deq[i])) {
                                 free(rgba);
                                 set_err(err, errcap, "JPEG coefficient exceeds transform bounds");
                                 return 0;
@@ -1063,7 +1065,7 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, 
     int mcu_cols = (width + mcu_w - 1) / mcu_w;
     int mcu_rows = (height + mcu_h - 1) / mcu_h;
 
-    uint8_t comp_buf[4][16 * 16];
+    uint8_t comp_buf[4][32 * 32];
     int comp_w[4] = {0, 0, 0, 0};
     int comp_h[4] = {0, 0, 0, 0};
     for (int i = 0; i < num_comp; i++) {
@@ -1409,6 +1411,13 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                     goto fail;
                 }
             }
+            unsigned blocks_per_mcu = 0;
+            for (int i = 0; i < ns; i++)
+                blocks_per_mcu += (unsigned)(comps[scan_comp[i]].h * comps[scan_comp[i]].v);
+            if (ns > 1 && blocks_per_mcu > 10) {
+                set_err(err, errcap, "too many data units in interleaved JPEG MCU");
+                goto fail;
+            }
             int ss = data[pos++];
             int se = data[pos++];
             int ah_al = data[pos++];
@@ -1421,9 +1430,19 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                 goto fail;
             }
 
-            for (int i = 0; i < num_comp; i++) {
-                if (comps[i].tq < 0 || comps[i].tq > 3 || !qvalid[comps[i].tq]) {
+            for (int i = 0; i < ns; i++) {
+                jpeg_comp *component = comps + scan_comp[i];
+                if (component->tq < 0 || component->tq > 3 || !qvalid[component->tq]) {
                     set_err(err, errcap, "missing quant table");
+                    goto fail;
+                }
+                if (!component->have_quantizers) {
+                    memcpy(component->quantizers, qtables[component->tq],
+                           sizeof(component->quantizers));
+                    component->have_quantizers = 1;
+                } else if (memcmp(component->quantizers, qtables[component->tq],
+                                  sizeof(component->quantizers))) {
+                    set_err(err, errcap, "quantization table changed during component scans");
                     goto fail;
                 }
             }
@@ -1635,10 +1654,14 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                 if (comps[i].v > vmax)
                     vmax = comps[i].v;
             }
-            if (hmax > 2 || vmax > 2) {
+            if (hmax > 4 || vmax > 4) {
                 set_err(err, errcap, "unsupported sampling factors");
                 goto fail;
             }
+            /* A single-component scan has one block per MCU regardless of
+             * the frame's relative sampling factors (T.81, A.2). */
+            if (num_comp == 1)
+                comps[0].h = comps[0].v = hmax = vmax = 1;
             mcu_cols = (width + hmax * 8 - 1) / (hmax * 8);
             mcu_rows = (height + vmax * 8 - 1) / (vmax * 8);
             if (progressive && !coeffs_allocated) {
@@ -1680,7 +1703,7 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
         return 1;
     if (progressive && saw_sos) {
         if (!jpeg_progressive_finish(comps, num_comp, width, height, mcu_cols, mcu_rows, hmax, vmax,
-                                     qtables, adobe_transform, out, err, errcap, profile)) {
+                                     adobe_transform, out, err, errcap, profile)) {
             goto fail;
         }
         if (coeffs_allocated) {

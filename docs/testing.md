@@ -432,3 +432,9 @@ reference probes are separate from scaled raw-sample-equivalence checks; see
 `make test-jpeg-math` checks coefficient and refinement bounds, dense inverse
 transform inputs, and sequential zero-run boundaries. These tests protect the
 shared JPEG decoder used by PDF DCT streams.
+
+`make test-pdf-jpeg-sampling` generates varied component block grids for sampling
+factors through four, edge blocks, restart wrapping and per-component quantizer
+lifetimes. PDF cases compare with equivalent raw-sample images and exercise
+allocation failures. The optional `--reference` pass checks selected grayscale
+and RGB grids without claiming agreement for differing upsampling algorithms.
