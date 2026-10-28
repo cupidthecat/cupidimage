@@ -486,9 +486,11 @@ of an indirect pattern resource reuse that raster when the viewport and initial
 transform and initial AIS setting match. Their colors are rebuilt when the
 destination changes between RGB and grayscale. These rasters share the 64 MiB pattern-cache budget, while the
 tiling-only cell dimension limits do not apply. The caller's alpha and blend
-mode apply when the pattern paints. Non-unit ca/CA or non-Normal blending in a
-shading pattern's own ExtGState is rejected, rather than silently ignored. Supported soft masks and AIS are applied
-inside the pattern; the cache distinguishes different initial AIS settings.
+mode apply when the pattern paints. Its own ExtGState separately supports ca,
+BM, SMask and AIS. Parameters for strokes, fonts and text do not affect the
+internal shading operation. Non-Normal patterns use a non-isolated knockout
+group against the object's backdrop; cached Normal patterns retain color, shape
+and alpha separately. The cache distinguishes different initial AIS settings.
 Patch rendering has bounded subdivision and inverse-mapping work. See [PDF shading](pdf-shading.md)
 for mesh formats, interpolation, memory bounds and comparison limits.
 

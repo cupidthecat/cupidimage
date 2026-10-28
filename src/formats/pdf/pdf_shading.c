@@ -152,7 +152,8 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
                 continue;
             if (background)
                 cupidimage_pdf_composite_device(st, (int)x, (int)y, background_values,
-                                                colors.components, 1, 1);
+                                                colors.components, st->gs.fill_alpha,
+                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
             if (empty)
                 continue;
             double input[2] = {0}, values[4];

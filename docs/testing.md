@@ -388,3 +388,7 @@ differences are documented in [PDF patterns](pdf-patterns.md).
 `make test-pdf-pattern-colors` checks floating-point pattern caches across RGB/gray
 groups, initial alpha-as-shape settings, compressed definitions and sub-byte
 opacity. Allocation-failure tests cover definition retention and cache rebuilds.
+
+`make test-pdf-shading-patterns` exercises pattern-local opacity, blending, masks
+and shape across all shading geometries. Background members, compressed graphics
+state values and ignored path/text parameters have exact analytic expectations.

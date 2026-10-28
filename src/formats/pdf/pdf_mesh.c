@@ -98,7 +98,8 @@ static int mesh_triangle(pdf_mesh_context *mesh, const mesh_vertex *a, const mes
                 continue;
             double values[4] = {0};
             for (int i = 0; i < mesh->interpolate; i++)
-                values[i] = w[0] * a->value[i] + w[1] * b->value[i] + w[2] * c->value[i];
+                values[i] = a->value[i] + w[1] * (b->value[i] - a->value[i]) +
+                            w[2] * (c->value[i] - a->value[i]);
             if (mesh->function) {
                 double low = fmin(mesh->decode[4], mesh->decode[5]),
                        high = fmax(mesh->decode[4], mesh->decode[5]);
@@ -234,20 +235,16 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
     int has_background = 0;
     if (background && !mesh_optional(st, view, "Background", &has_background))
         goto done;
-    if (has_background && det) {
+    int paint_background = has_background && det != 0;
+    pdf_mesh_sample background_sample = {0};
+    if (paint_background) {
         double values[4];
-        pdf_mesh_sample sample = {0};
         if (!cupidimage_pdf_function_array(st, view, "Background", values,
                                            mesh.colors.indexed ? 1 : mesh.colors.components) ||
             pixels > st->form_budget->shade_evaluations_left)
             goto done;
         st->form_budget->shade_evaluations_left -= pixels;
-        cupidimage_pdf_mesh_color(&mesh.colors, values, &sample, 1);
-        for (unsigned y = 0; y < st->img->height; y++)
-            for (unsigned x = 0; x < st->img->width; x++)
-                if (cupidimage_pdf_mesh_inside_box(&mesh, x, y)) {
-                    mesh.pixels[(size_t)y * st->img->width + x] = sample;
-                }
+        cupidimage_pdf_mesh_color(&mesh.colors, values, &background_sample, 1);
     }
     if (type == 4) {
         mesh_vertex triangle[3];
@@ -293,12 +290,17 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
             }
         }
     }
-    if (pixels > st->clip_budget->tests_left)
+    unsigned paints = paint_background ? 2 : 1;
+    if (pixels > st->clip_budget->tests_left / paints)
         goto done;
-    st->clip_budget->tests_left -= pixels;
+    st->clip_budget->tests_left -= pixels * paints;
     for (unsigned y = 0; y < st->img->height; y++)
         for (unsigned x = 0; x < st->img->width; x++) {
             const pdf_mesh_sample *p = mesh.pixels + (size_t)y * st->img->width + x;
+            if (paint_background && cupidimage_pdf_mesh_inside_box(&mesh, x, y))
+                cupidimage_pdf_composite_device(st, (int)x, (int)y, background_sample.values,
+                                                mesh.colors.components, st->gs.fill_alpha,
+                                                st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
             if (p->painted)
                 cupidimage_pdf_composite_device(st, (int)x, (int)y, p->values,
                                                 mesh.colors.components, st->gs.fill_alpha,

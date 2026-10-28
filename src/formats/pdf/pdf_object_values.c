@@ -78,3 +78,22 @@ int cupidimage_pdf_entry_is_name(const unsigned char *data, size_t size,
     cupidimage_pdf_object_view_release(&value);
     return ok;
 }
+
+int cupidimage_pdf_optional_value(const unsigned char *data, size_t size,
+                                  const pdf_object_view *view, const char *key,
+                                  pdf_object_view *out) {
+    size_t pos;
+    if (!cupidimage_pdf_page_value(view, key, &pos))
+        return 0;
+    if (!cupidimage_pdf_resolve_value(data, size, view, pos, out, 0))
+        return -1;
+    pos = 0;
+    cupidimage_pdf_skip_ws_and_comments(out->data, out->len, &pos);
+    if (out->len - pos >= 4 && !memcmp(out->data + pos, "null", 4) &&
+        (out->len - pos == 4 || cupidimage_pdf_is_ws(out->data[pos + 4]) ||
+         cupidimage_pdf_is_delim(out->data[pos + 4]))) {
+        cupidimage_pdf_object_view_release(out);
+        return 0;
+    }
+    return 1;
+}

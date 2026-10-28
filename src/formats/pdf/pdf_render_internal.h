@@ -218,6 +218,8 @@ void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t b
 void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g,
                                     uint8_t b, double alpha, double shape);
 
+int cupidimage_pdf_graphics_number(const pdf_render_state *st, const pdf_object_view *view,
+                                   const char *key, double minimum, double maximum, double *number);
 int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view, size_t pos,
                                unsigned depth, double *value);
 int cupidimage_pdf_shading_colors(const pdf_render_state *st, const pdf_object_view *view,
@@ -265,9 +267,11 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
 
 int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_view *view,
                                       int background);
+int cupidimage_pdf_apply_shading_graphics_view(pdf_render_state *st, const pdf_object_view *view);
 int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view);
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], pdf_pattern *cache);
+                                          const double matrix[6], pdf_pattern *cache,
+                                          pdf_transparency_group *live);
 
 int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, size_t length,
                             double phase);

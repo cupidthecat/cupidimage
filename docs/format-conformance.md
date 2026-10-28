@@ -282,7 +282,7 @@ evaluation, as described in [PDF patterns](pdf-patterns.md).
 Per-page cache ownership keeps saved graphics states valid and releases cells on
 both success and error paths.
 
-The pattern suite has 76 checks and 40 optional independent comparisons.
+The pattern suite has 76 checks and 41 optional independent comparisons.
 Gradient comparisons allow one or two channel units for reference approximation;
 small analytic fixtures still require exact pixels.
 One nested-pattern comparison uses a second renderer because the first shifts
@@ -585,8 +585,7 @@ round trips are unchanged.
 
 The independent renderers tested for the new Multiply cases disagree with the
 specification's non-isolated result. Those cases remain analytic checks, not
-reference passes. Additional color spaces, CMYK blending groups and
-shading-pattern ExtGState transparency still need work.
+reference passes. Additional color spaces and CMYK blending groups still need work.
 The full manual document-rating pass remains deferred.
 
 
@@ -602,3 +601,19 @@ RGB/gray/RGB transitions and sub-byte opacity. The allocation-failure suite has
 2,526 checks after adding retained-copy and cache-rebuild cases. The existing
 asset manifest and reference tolerances are unchanged. CMYK, calibrated and ICC
 blending groups remain unimplemented.
+
+
+## Shading-pattern state and background shape
+
+Shading patterns now apply their own opacity, blend mode, masks and alpha-as-shape
+inside the specified implicit knockout group. All seven shading geometries keep
+background and main shading members separate, including meshes. Constant mesh
+components use difference-form interpolation to avoid roundoff before blending.
+Stroke and text parameters are ignored in a shading pattern's ExtGState.
+
+Graphics-state parsing also resolves indirect and escaped blend-mode names,
+indirect array elements and explicit null entries. The new shading-pattern suite
+has 96 analytic cases; the general transparency suite has 177 cases and the
+allocation-failure suite has 2,586 checks. Reference discrepancies are documented
+in the pattern guide without widening tolerances. The 360 existing assets remain
+passing, and the full manual document review is still deferred.

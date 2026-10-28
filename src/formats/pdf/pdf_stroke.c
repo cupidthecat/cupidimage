@@ -123,26 +123,21 @@ static int stroke_read_dash(const pdf_render_state *st, const pdf_object_view *v
 int cupidimage_pdf_apply_stroke_view(const pdf_render_state *st, const pdf_object_view *view,
                                      pdf_graphics_state *next) {
     const char *keys[] = {"LC", "LJ", "ML"};
-    size_t pos;
-    double value;
-    for (int i = 0; i < 3; i++)
-        if (cupidimage_pdf_page_value(view, keys[i], &pos)) {
-            if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || !isfinite(value))
-                return 0;
-            if (i == 2) {
-                if (value < 1 || value > 1e6)
-                    return 0;
-                next->miter_limit = value;
-            } else {
-                if (value < 0 || value > 2 || floor(value) != value)
-                    return 0;
-                if (i == 0)
-                    next->line_cap = (int)value;
-                else
-                    next->line_join = (int)value;
-            }
-        }
-    return !cupidimage_pdf_page_value(view, "D", &pos) || stroke_read_dash(st, view, pos, next, 0);
+    double numbers[3] = {next->line_cap, next->line_join, next->miter_limit};
+    for (int i = 0; i < 3; i++) {
+        if (!cupidimage_pdf_graphics_number(st, view, keys[i], i == 2 ? 1 : 0, i == 2 ? 1e6 : 2,
+                                            &numbers[i]) ||
+            (i != 2 && floor(numbers[i]) != numbers[i]))
+            return 0;
+    }
+    next->line_cap = (int)numbers[0];
+    next->line_join = (int)numbers[1];
+    next->miter_limit = numbers[2];
+    pdf_object_view dash = {0};
+    int present = cupidimage_pdf_optional_value(st->document, st->document_size, view, "D", &dash);
+    int ok = present == 0 || (present > 0 && stroke_read_dash(st, &dash, 0, next, 0));
+    cupidimage_pdf_object_view_release(&dash);
+    return ok;
 }
 
 typedef struct {

@@ -154,8 +154,9 @@ def main():
         check('shading-background-bbox',shading_pattern(full_background),
               lambda x,y:full_color(x,y) if 8<=x<20 else (0,255,0) if 4<=x<8 else white,tolerance=1)
         check('default-shading-extstate',shading_pattern(axial,pattern_attrs='/ExtGState << /ca 1 /BM /Normal /SMask /None >>'),gray,tolerance=1)
-        check('unsupported-shading-extstate-alpha',shading_pattern(axial,pattern_attrs='/ExtGState << /ca .5 >>'),reject=True)
-        check('unsupported-shading-extstate-blend',shading_pattern(axial,pattern_attrs='/ExtGState << /BM /Multiply >>'),reject=True)
+        check('shading-extstate-alpha',shading_pattern(axial,pattern_attrs='/ExtGState << /ca .5 >>'),
+              lambda x,y:(int(((x+.5)/24*.5+.5)*255+.5),)*3,reference=False)
+        check('shading-extstate-blend',shading_pattern(axial,pattern_attrs='/ExtGState << /BM /Multiply >>'),gray,tolerance=1)
         check('singular-shading-pattern',shading_pattern(axial,pattern_attrs='/Matrix [0 0 0 0 0 0]'),reject=True)
         # The sh operator uses its own colours, even when a pattern is selected.
         direct_objects={6:axial}

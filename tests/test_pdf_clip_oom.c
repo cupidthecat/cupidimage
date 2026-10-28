@@ -871,14 +871,25 @@ int main(void) {
         if (cupidimage_pdf_select_pattern(&state, "P", 0))
             failures++;
     }
-    {
-        const char *pattern_document =
+    for (int variant = 0; variant < 4; variant++) {
+        const char *states[] = {"", "/ca .5", "/ca .5 /BM /Multiply",
+                                "/ca .5 /BM /Multiply /SMask << /S /Luminosity /G 8 0 R >>"};
+        const char *mask = ".5 g 0 0 18 12 re f";
+        char pattern_document[1024];
+        int length = snprintf(
+            pattern_document, sizeof(pattern_document),
             "3 0 obj << /Resources << /Pattern << /P 5 0 R >> >> >> endobj\n"
-            "5 0 obj << /PatternType 2 /Shading 6 0 R >> endobj\n"
+            "5 0 obj << /PatternType 2 /ExtGState << %s >> /Shading 6 0 R >> endobj\n"
             "6 0 obj << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 18 0] /Function 7 0 R "
             ">> endobj\n"
             "7 0 obj << /FunctionType 4 /Domain [0 1] /Range [0 1] /Length 2 >> "
-            "stream\n{}\nendstream endobj\n";
+            "stream\n{}\nendstream endobj\n"
+            "8 0 obj << /Type /XObject /Subtype /Form /BBox [0 0 18 12] "
+            "/Group << /S /Transparency /I true /CS /DeviceGray >> /Length %zu >> "
+            "stream\n%s\nendstream endobj\n",
+            states[variant], strlen(mask), mask);
+        if (length < 0 || (size_t)length >= sizeof(pattern_document))
+            return 1;
         const char *content = "/Pattern cs /P scn q /P scn Q 0 0 18 12 re f";
         size_t total = 0;
         for (size_t failure = 0; failure <= total; failure++) {

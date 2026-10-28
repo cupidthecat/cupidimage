@@ -91,6 +91,55 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     return ok;
 }
 
+static int pdf_pattern_capture_surface(pdf_render_state *parent, pdf_pattern *pattern,
+                                       pdf_transparency_group *group) {
+    const size_t limit = 64u * 1024u * 1024u;
+    size_t pixels = (size_t)group->image.width * group->image.height;
+    size_t bytes = group->bytes + sizeof(*group);
+    if (pixels > parent->clip_budget->tests_left || parent->patterns->bytes_used > limit ||
+        bytes > limit - parent->patterns->bytes_used)
+        return 0;
+    parent->clip_budget->tests_left -= pixels;
+    for (size_t pixel = 0; pixel < pixels; pixel++) {
+        double color[3], alpha, shape;
+        cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
+        memcpy(group->color + pixel * 3, color, sizeof(color));
+    }
+    parent->patterns->bytes_used += bytes;
+    parent->form_budget->transparency_bytes_live -= group->bytes;
+    pattern->surface_bytes = bytes;
+    pattern->surface = group;
+    group->parent = NULL;
+    group->backdrop = NULL;
+    group->isolated = 1;
+    return 1;
+}
+
+static int pdf_pattern_shading_surface(pdf_render_state *parent, pdf_pattern *pattern) {
+    pdf_transparency_group *group = calloc(1, sizeof(*group));
+    pdf_render_state *context = malloc(sizeof(*context));
+    int ok = group && context;
+    if (ok)
+        ok = cupidimage_pdf_group_surface(parent, group, 0, NULL);
+    if (ok) {
+        group->knockout = 1;
+        *context = *parent;
+        context->initial_gs = *pattern->initial;
+        ok = cupidimage_pdf_render_shading_pattern(context, &pattern->definition, pattern->matrix,
+                                                   pattern, group);
+    }
+    if (ok)
+        ok = pdf_pattern_capture_surface(parent, pattern, group);
+    if (ok)
+        group = NULL;
+    if (group) {
+        cupidimage_pdf_group_free(parent, group);
+        free(group);
+    }
+    free(context);
+    return ok;
+}
+
 int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pattern) {
     const size_t cache_limit = 64u * 1024u * 1024u;
     cupidimage_pdf_pattern_surface_release(parent, pattern);
@@ -102,6 +151,8 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
         pixels > (cache_limit - parent->patterns->bytes_used - sizeof(pdf_transparency_group)) /
                      (4 + 5 * sizeof(double)))
         return 0;
+    if (pattern->shading)
+        return pdf_pattern_shading_surface(parent, pattern);
     const double *inverse = pattern->inverse;
     double low[2] = {INFINITY, INFINITY}, high[2] = {-INFINITY, -INFINITY};
     for (unsigned corner = 0; corner < 4; corner++) {
@@ -199,30 +250,10 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
                 ok = cupidimage_pdf_render_stream(child, pattern->program, pattern->program_length);
             cupidimage_pdf_render_state_release(child);
         }
-    if (ok && pixels > parent->clip_budget->tests_left)
-        ok = 0;
-    if (ok) {
-        parent->clip_budget->tests_left -= pixels;
-        for (size_t pixel = 0; pixel < pixels; pixel++) {
-            double color[3], alpha, shape;
-            cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
-            memcpy(group->color + pixel * 3, color, sizeof(color));
-        }
-        size_t bytes = group->bytes + sizeof(*group);
-        if (parent->patterns->bytes_used > cache_limit ||
-            bytes > cache_limit - parent->patterns->bytes_used)
-            ok = 0;
-        else {
-            parent->patterns->bytes_used += bytes;
-            parent->form_budget->transparency_bytes_live -= group->bytes;
-            pattern->surface_bytes = bytes;
-            pattern->surface = group;
-            group->parent = NULL;
-            group->backdrop = NULL;
-            group->isolated = 1;
-            group = NULL;
-        }
-    }
+    if (ok)
+        ok = pdf_pattern_capture_surface(parent, pattern, group);
+    if (ok)
+        group = NULL;
     if (group) {
         cupidimage_pdf_group_free(parent, group);
         free(group);
@@ -233,9 +264,10 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
 }
 
 int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_object_view *pattern,
-                                          const double matrix[6], pdf_pattern *cache) {
-    cupidimage_image *image = &cache->tile;
-    double *shape = cache->shape;
+                                          const double matrix[6], pdf_pattern *cache,
+                                          pdf_transparency_group *live) {
+    cupidimage_image *image = live ? &live->image : &cache->tile;
+    double *shape = live ? live->shape : cache->shape;
     pdf_transparency_group group = {0};
     group.image = *image;
     group.alpha = cache->alpha;
@@ -261,8 +293,9 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     child->gs.blend_mode = 0;
     child->img = image;
     child->shape_plane = shape;
-    child->alpha_plane = shape + (size_t)image->width * image->height;
-    child->group = &group;
+    child->alpha_plane = live ? live->alpha : cache->alpha;
+    child->group = live ? live : &group;
+    child->pattern_deferred = live != NULL;
     child->mask_rendering = 0;
     child->form_depth = 0;
     child->gs_stack_len = 0;
@@ -288,8 +321,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
         ok = 0;
     if (ok && cupidimage_pdf_page_value(pattern, "ExtGState", &pos))
         ok = cupidimage_pdf_image_dictionary(parent, pattern, "ExtGState", &state) &&
-             cupidimage_pdf_apply_graphics_view(child, &state) && child->gs.fill_alpha == 1 &&
-             child->gs.stroke_alpha == 1 && child->gs.blend_mode == 0;
+             cupidimage_pdf_apply_shading_graphics_view(child, &state);
     if (ok)
         ok = cupidimage_pdf_image_dictionary(parent, pattern, "Shading", &shading) &&
              cupidimage_pdf_paint_shading_view(child, &shading, 1);
@@ -315,7 +347,7 @@ int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *patt
     int ok = 1;
     if (pattern->shading) {
         ok = cupidimage_pdf_render_shading_pattern(context, &pattern->definition, pattern->matrix,
-                                                   pattern);
+                                                   pattern, NULL);
     } else if (pattern->bounds[0] != pattern->bounds[2] &&
                pattern->bounds[1] != pattern->bounds[3]) {
         double first_x = floor(-pattern->bounds[2] / pattern->xstep) + 1;

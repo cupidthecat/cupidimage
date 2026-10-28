@@ -234,10 +234,13 @@ static int patch_sample(patch_target *target, unsigned x, unsigned y, double u, 
         if (difference < -roundoff || (fabs(difference) <= roundoff && u <= old_u))
             return 1;
     }
-    double w[4] = {(1 - u) * (1 - v), (1 - u) * v, u * v, u * (1 - v)}, values[4] = {0};
-    for (int c = 0; c < mesh->interpolate; c++)
-        for (unsigned i = 0; i < 4; i++)
-            values[c] += w[i] * target->colors[i][c];
+    double values[4] = {0};
+    for (int c = 0; c < mesh->interpolate; c++) {
+        /* Difference-form interpolation preserves constant components exactly. */
+        double left = target->colors[0][c] + v * (target->colors[1][c] - target->colors[0][c]);
+        double right = target->colors[3][c] + v * (target->colors[2][c] - target->colors[3][c]);
+        values[c] = left + u * (right - left);
+    }
     if (mesh->function) {
         double low = fmin(mesh->decode[4], mesh->decode[5]),
                high = fmax(mesh->decode[4], mesh->decode[5]);

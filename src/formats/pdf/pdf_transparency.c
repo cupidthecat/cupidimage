@@ -9,20 +9,78 @@ static const char *pdf_blend_names[] = {"Normal",    "Multiply",   "Screen",    
 
 static int pdf_blend_name(const pdf_object_view *view, size_t *pos) {
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
-    if (*pos == view->len || view->data[(*pos)++] != '/')
-        return -1;
     size_t start = *pos;
-    while (*pos < view->len && !cupidimage_pdf_is_ws(view->data[*pos]) &&
-           !cupidimage_pdf_is_delim(view->data[*pos]))
-        (*pos)++;
-    size_t length = *pos - start;
-    if (length == 10 && !memcmp(view->data + start, "Compatible", length))
+    char name[128];
+    if (!cupidimage_pdf_read_name(view, pos, name)) {
+        if (start < view->len && view->data[start] == '/' && *pos == start + 1)
+            return -1;
+        return -2;
+    }
+    if (!strcmp(name, "Compatible"))
         return 0;
     for (int i = 0; i < 16; i++)
-        if (strlen(pdf_blend_names[i]) == length &&
-            !memcmp(view->data + start, pdf_blend_names[i], length))
+        if (!strcmp(name, pdf_blend_names[i]))
             return i;
     return -1;
+}
+
+static int pdf_blend_element(const pdf_render_state *st, const pdf_object_view *view, size_t *pos) {
+    int object;
+    if (!cupidimage_pdf_page_reference(view, *pos, &object))
+        return pdf_blend_name(view, pos);
+    pdf_object_view value = {0};
+    if (!cupidimage_pdf_resolve_value(st->document, st->document_size, view, *pos, &value, 0))
+        return -2;
+    size_t at = 0;
+    int mode = pdf_blend_name(&value, &at);
+    cupidimage_pdf_object_view_release(&value);
+    double ignored;
+    for (unsigned i = 0; i < 2; i++) {
+        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+        if (!cupidimage_pdf_parse_pdf_number(view->data, view->len, pos, &ignored))
+            return -2;
+    }
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+    if (*pos == view->len || view->data[(*pos)++] != 'R')
+        return -2;
+    return mode;
+}
+
+static int pdf_read_blend_mode(const pdf_render_state *st, const pdf_object_view *view, int *mode) {
+    pdf_object_view value = {0};
+    int present =
+        cupidimage_pdf_optional_value(st->document, st->document_size, view, "BM", &value);
+    if (present <= 0)
+        return present == 0;
+    size_t pos = 0;
+    int ok = 0, chosen = -1;
+    cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &pos);
+    if (pos < value.len && value.data[pos] == '[') {
+        pos++;
+        for (unsigned i = 0; i <= 64; i++) {
+            cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &pos);
+            if (pos < value.len && value.data[pos] == ']') {
+                ok = 1;
+                if (chosen < 0)
+                    chosen = 0;
+                break;
+            }
+            if (i == 64)
+                break;
+            int candidate = pdf_blend_element(st, &value, &pos);
+            if (candidate == -2)
+                break;
+            if (chosen < 0 && candidate >= 0)
+                chosen = candidate;
+        }
+    } else {
+        chosen = pdf_blend_name(&value, &pos);
+        ok = chosen >= 0;
+    }
+    if (ok)
+        *mode = chosen;
+    cupidimage_pdf_object_view_release(&value);
+    return ok;
 }
 
 int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view *view, size_t pos,
@@ -44,11 +102,27 @@ int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view
             cupidimage_pdf_is_delim(view->data[pos]));
 }
 
-int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view) {
+int cupidimage_pdf_graphics_number(const pdf_render_state *st, const pdf_object_view *view,
+                                   const char *key, double minimum, double maximum,
+                                   double *number) {
+    pdf_object_view value = {0};
+    int present = cupidimage_pdf_optional_value(st->document, st->document_size, view, key, &value);
+    if (present <= 0)
+        return present == 0;
+    double parsed;
+    int ok = cupidimage_pdf_read_number(st, &value, 0, 0, &parsed) && isfinite(parsed) &&
+             parsed >= minimum && parsed <= maximum;
+    cupidimage_pdf_object_view_release(&value);
+    if (ok)
+        *number = parsed;
+    return ok;
+}
+
+static int pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view, int shading) {
     pdf_graphics_state next = st->gs;
     size_t pos;
     double value;
-    if (cupidimage_pdf_page_value(view, "Font", &pos)) {
+    if (!shading && cupidimage_pdf_page_value(view, "Font", &pos)) {
         int object;
         double font_size;
         if (!cupidimage_pdf_graphics_font(st->document, st->document_size, view, &object,
@@ -61,52 +135,23 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
             next.font_size_pts = font_size;
         }
     }
-    if (cupidimage_pdf_page_value(view, "ca", &pos)) {
-        if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1)
-            return 0;
-        next.fill_alpha = value;
-    }
-    if (cupidimage_pdf_page_value(view, "CA", &pos)) {
-        if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1)
-            return 0;
-        next.stroke_alpha = value;
-    }
-    if (cupidimage_pdf_page_value(view, "LW", &pos)) {
-        if (!cupidimage_pdf_read_number(st, view, pos, 0, &value) || value < 0 || value > 1e6)
+    if (!cupidimage_pdf_graphics_number(st, view, "ca", 0, 1, &next.fill_alpha))
+        return 0;
+    if (!shading) {
+        value = next.line_width_pts;
+        if (!cupidimage_pdf_graphics_number(st, view, "CA", 0, 1, &next.stroke_alpha) ||
+            !cupidimage_pdf_graphics_number(st, view, "LW", 0, 1e6, &value))
             return 0;
         next.line_width_pts = (float)value;
     }
     if (!cupidimage_pdf_dictionary_boolean(st, view, "AIS", &next.alpha_is_shape) ||
-        !cupidimage_pdf_dictionary_boolean(st, view, "TK", &next.text_knockout) ||
+        (!shading && !cupidimage_pdf_dictionary_boolean(st, view, "TK", &next.text_knockout)) ||
         (st->in_text && next.text_knockout != st->gs.text_knockout))
         return 0;
-    if (!cupidimage_pdf_apply_stroke_view(st, view, &next))
+    if (!shading && !cupidimage_pdf_apply_stroke_view(st, view, &next))
         return 0;
-    if (cupidimage_pdf_page_value(view, "BM", &pos)) {
-        int mode = -1;
-        if (pos < view->len && view->data[pos] == '[') {
-            pos++;
-            for (unsigned i = 0; i < 64; i++) {
-                cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
-                if (pos < view->len && view->data[pos] == ']') {
-                    if (mode < 0)
-                        mode = 0;
-                    break;
-                }
-                if (pos == view->len || view->data[pos] != '/')
-                    return 0;
-                int candidate = pdf_blend_name(view, &pos);
-                if (mode < 0 && candidate >= 0)
-                    mode = candidate;
-                if (i == 63)
-                    return 0;
-            }
-        } else
-            mode = pdf_blend_name(view, &pos);
-        if (mode < 0)
-            return 0;
-        next.blend_mode = mode;
-    }
+    if (!pdf_read_blend_mode(st, view, &next.blend_mode))
+        return 0;
     if (st->glyph_uncolored) {
         next.fill_alpha = st->gs.fill_alpha;
         next.stroke_alpha = st->gs.stroke_alpha;
@@ -131,6 +176,14 @@ int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_vi
     }
     st->gs = next;
     return 1;
+}
+
+int cupidimage_pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *view) {
+    return pdf_apply_graphics_view(st, view, 0);
+}
+
+int cupidimage_pdf_apply_shading_graphics_view(pdf_render_state *st, const pdf_object_view *view) {
+    return pdf_apply_graphics_view(st, view, 1);
 }
 
 int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name) {

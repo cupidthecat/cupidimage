@@ -98,6 +98,24 @@ def main():
                     check(f'{mode}-{alpha}-{count}',f'/ca {alpha} /BM /{mode}',content,lambda x,y:wanted)
         check('restore','/ca .5','q /G gs 1 0 0 rg 0 0 9 12 re f Q 0 0 1 rg 9 0 9 12 re f',lambda x,y:(255,128,128)if x<12 else(0,0,255))
         check('indirect-alpha','/ca 11 0 R','/G gs 1 0 0 rg 0 0 18 12 re f',lambda x,y:(255,128,128),extra={11:'.5'})
+        green_red = '0 1 0 rg 0 0 18 12 re f /G gs 1 0 0 rg 0 0 18 12 re f'
+        check('escaped-blend', '/BM /Mul#74iply', green_red, lambda x,y:(0,0,0))
+        check('indirect-blend', '/BM 11 0 R', green_red, lambda x,y:(0,0,0), extra={11:'/Multiply'})
+        check('indirect-blend-array', '/BM 11 0 R', green_red, lambda x,y:(0,0,0),
+              extra={11:'[/Future 12 0 R /Screen]',12:'/Mul#74iply'})
+        check('empty-name-fallback', '/BM [/ /Multiply]', green_red, lambda x,y:(0,0,0),reference=False)
+        nulls = '/ca null /CA null /LW null /LC null /LJ null /ML null /D null /BM null /AIS null /TK null /SMask null /Font null'
+        check('null-state', nulls, '/G gs 1 0 0 rg 0 0 18 12 re f', lambda x,y:(255,0,0))
+        check('indirect-null-state', '/ca 11 0 R /BM 12 0 R',
+              '/G gs 1 0 0 rg 0 0 18 12 re f',lambda x,y:(255,0,0),
+              extra={11:'13 0 R',12:'null',13:'null'})
+        page='<< /Type /Page /Parent 2 0 R /Contents 4 0 R /MediaBox [0 0 18 12] /Resources << /ExtGState << /G 8 0 R /H 11 0 R >> >> >>'
+        check('null-preserves-state', '/ca .5 /BM /Multiply',
+              '0 1 0 rg 0 0 18 12 re f /G gs /H gs 1 0 0 rg 0 0 18 12 re f',
+              lambda x,y:(0,128,0),extra={3:page,11:'<< '+nulls+' >>'},reference=False)
+        for state in ('/BM [/Normal /Mul#GG]', '/BM [/Normal /#00]', '/BM [null /Normal]'):
+            check('invalid-blend-name-'+str(count),state,'/G gs',reject=True)
+        check('cyclic-blend-reference','/BM 11 0 R','/G gs',extra={11:'12 0 R',12:'11 0 R'},reject=True)
         check('blend-array','/BM [/Future /Multiply /Screen]','0 1 0 rg 0 0 18 12 re f /G gs 1 0 0 rg 0 0 18 12 re f',lambda x,y:(0,0,0))
         check('blend-fallback','/BM [/Future]','/G gs 1 0 0 rg 0 0 18 12 re f',lambda x,y:(255,0,0))
         check('soft-mask-none','/SMask /None /ca .5','/G gs 1 0 0 rg 0 0 18 12 re f',lambda x,y:(255,128,128))

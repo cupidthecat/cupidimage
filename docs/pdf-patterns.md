@@ -27,6 +27,20 @@ group, so the caller's opacity is applied once rather than once per tile. Patter
 phase remains anchored to the defining content stream's initial coordinates.
 Nested forms and text use their existing resource and graphics-state rules.
 
+## Shading-pattern transparency
+
+A shading pattern's ExtGState can set nonstroking opacity, blend mode, soft mask
+and alpha-as-shape for the shading itself. Stroke opacity, line styling and font
+parameters do not affect the `sh` operation and are ignored in that dictionary.
+The caller's opacity and mask still apply separately when the pattern paints.
+
+Non-Normal shading patterns use a per-object non-isolated knockout group against
+the real backdrop. Normal blending can use the isolated cache. Background and
+shading samples are separate members of the implicit group, including for mesh
+shadings. This distinction matters when alpha or a mask represents shape: part
+of the background can remain beneath a partially shaped sample. Ordinary opacity
+must not be applied twice where the shading covers its background.
+
 ## Bounds and remaining work
 
 Pattern definitions, cached cells and per-object results share the 64 MiB pattern
@@ -40,9 +54,8 @@ Consequently, very dense backdrop-dependent patterns can exhaust the work budget
 even when their ordinary cached equivalent fits.
 
 Changing a cache's destination space consumes the same content, invocation and
-shading-evaluation budgets as its first rendering. Shading-pattern ExtGState
-entries with non-unit ca/CA or a non-Normal blend mode remain unsupported.
-CMYK, calibrated and ICC group blending spaces are separate unfinished work.
+shading-evaluation budgets as its first rendering. CMYK, calibrated and ICC group
+blending spaces remain unfinished, along with device color-management parameters.
 
 ## Tests and specification
 
@@ -67,3 +80,10 @@ definitions and alpha-as-shape in a shading pattern's own soft mask. The shading
 cache key includes the initial alpha-as-shape setting. Fault injection covers
 retained dictionary copies and cache rebuilds without modifying the caller's
 output on failure.
+
+`make test-pdf-shading-patterns` adds 96 analytic checks across all seven shading
+types and all 16 blend modes. It covers inner/outer opacity and masks, shape,
+backgrounds, deferred validation, irrelevant graphics-state entries and compressed
+indirect parameter values. Focused probes of two independent renderers left the
+shading pattern's own opacity and blend settings unapplied. These tests therefore
+remain analytic evidence, not a claim of reference pixel parity.

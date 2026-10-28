@@ -232,7 +232,22 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
     int ok = pattern_retain(st, pattern, view, NULL, 0);
     if (ok) {
         bytes += pattern->definition_bytes;
-        ok = cupidimage_pdf_render_shading_pattern(st, view, matrix, pattern);
+        int needs_backdrop = 0;
+        int *previous = st->pattern_needs_backdrop;
+        st->pattern_needs_backdrop = &needs_backdrop;
+        ok = cupidimage_pdf_render_shading_pattern(st, view, matrix, pattern, NULL);
+        st->pattern_needs_backdrop = previous;
+        if (!ok && needs_backdrop) {
+            size_t cell_bytes = pixels * (4 + 5 * sizeof(double));
+            free(pattern->tile.rgba);
+            free(pattern->shape);
+            pattern->tile.rgba = NULL;
+            pattern->shape = pattern->alpha = pattern->color = NULL;
+            st->patterns->bytes_used -= cell_bytes;
+            bytes -= cell_bytes;
+            pattern->deferred = 1;
+            ok = 1;
+        }
     }
     if (!ok) {
         st->patterns->bytes_used -= bytes;
