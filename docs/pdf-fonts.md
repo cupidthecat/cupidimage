@@ -151,6 +151,34 @@ PDF metrics. That fallback is not a substitute for correctly authored font
 metadata. Identity-V origin offsets and advances are applied before/after glyph
 painting, respectively.
 
+### Horizontal glyph origins
+
+TrueType outlines use the horizontal pen origin derived from xMin and the signed
+left side bearing in hmtx. The bearing is read from either a long metric record
+or the trailing side-bearing array. The complete glyph is shifted into pen
+coordinates only after its components have been assembled. Shifting each child
+first would break component offsets and point attachment.
+
+USE_MY_METRICS carries the selected component's horizontal origin through nested
+composites. PDF Widths and CID metrics still determine text advances; moving an
+outline does not change the next character's position. Cached outlines retain
+this font-space normalization across text transforms, fill/stroke and clipping.
+This does not implement hint instructions, phantom-point attachment or grid fitting.
+
+The origin and metric rules follow the OpenType
+[hmtx](https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx) and
+[glyf](https://learn.microsoft.com/en-us/typography/opentype/spec/glyf) tables.
+`make test-pdf-truetype-bearings` checks signed bearings, nonzero xMin, both metric
+layouts, composite metric selection, nested components, PDF width overrides,
+clipping and allocation recovery. Two owned PDF assets have analytic pixel
+references. The optional independent pass is:
+
+    python3 scripts/test_pdf_truetype_bearings.py bin/test_pdf_pages bin/test_pdf_truetype bin/test_pdf_clip_oom --reference
+
+Exact reference comparisons cover the aligned fill cases and component-origin
+selection. Fractional transformed edges and text-clip boundaries retain vector
+oracles; their scan conversion still differs from the comparison raster.
+
 ## CFF and Type 2 programs
 
 FontFile3 accepts Type1C, CIDFontType0C and OpenType programs containing a CFF

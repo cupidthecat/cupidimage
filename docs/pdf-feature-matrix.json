@@ -838,7 +838,10 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_truetype_bearings.py",
+            "assets/pdf/reference/embedded-truetype-bearing.pdf",
+            "assets/pdf/reference/embedded-truetype-short-bearing.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."

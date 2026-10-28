@@ -513,3 +513,8 @@ are rejected rather than interpreted as matrix profiles.
 `make test-pdf-default-colors` checks default-space substitution across color
 operators, images, Forms, patterns, text and shadings. It also tests the empty
 initial Pattern color, combined fill/stroke and clipping without visible paint.
+
+`make test-pdf-truetype-bearings` verifies horizontal glyph origins from hmtx
+side bearings and glyf bounds. It covers short metric layouts, composite metric
+selection, PDF advance overrides, cached rendering and clipping. Regenerate the
+two owned bearing assets with `scripts/generate_pdf_bearing_fixtures.py`.

@@ -392,6 +392,20 @@
       "height": 16,
       "rgba_zlib": "eJz7/38UjIIRDBgYRvEoHrEYAG89e70=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-bearing.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0cEJwDAAA7Hsv3Q6hKEcRAL/D3wvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPCXc8601/vY1P+t97Gp/1vvY1P/t97Hpv5vvY9N/d96H5v6v/U+NvV/631s6v/W+9jU/633san/W+9jU/+33sem/m+9j03933ofm/q/9T429X/rfWzq/9b72NT/rfexqf9b72NT/7fex6b+b72PTf3feh+b+r/1Pjb1f+t9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwLs+BQft8A==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-short-bearing.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0cEJwDAAA7Hsv3S6Qqk/B5XA/wPfCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8dc6Z9vc+NvV/631s6v/W+9jU/633san/W+9jU/+33sem/m+9j03933ofm/q/9T429X/rfWzq/9b72NT/rfexqf9b72NT/7fex6b+b72PTf3feh+b+r/1Pjb1f+t9bOr/1vvY1P+t97Gp/1vvY1P/t97Hpv5vvY9N/d96HwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBbD5vG7fA=",
+      "tolerance": 0
     }
   ]
 }

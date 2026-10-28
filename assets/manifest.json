@@ -595,12 +595,20 @@
       "sha256": "e2c9018976dd3719ed3a7b2feaec89eb69d195284abab856ada26a2cac4d85fb"
     },
     {
+      "path": "assets/pdf/reference/embedded-truetype-bearing.pdf",
+      "sha256": "c8a0baa3cce159eb0c812854f10f2393ec64f83d2677b3d69f9fe919adda39f8"
+    },
+    {
       "path": "assets/pdf/reference/embedded-truetype-cmap10.pdf",
       "sha256": "11524fb7641379c5291ba55cc3eb00d183538914568a626d73b834f7a0471b92"
     },
     {
       "path": "assets/pdf/reference/embedded-truetype-post-names.pdf",
       "sha256": "5554b8754a0f8bbf57e8bb82200177b1f5dd870455ecd9290448c687fabdc086"
+    },
+    {
+      "path": "assets/pdf/reference/embedded-truetype-short-bearing.pdf",
+      "sha256": "120aee05d189b8c92ef61bc89f5d9cc21393bba6bae2211805d3305a1f0d4a6e"
     },
     {
       "path": "assets/pdf/reference/embedded-type1-filtered.pdf",
