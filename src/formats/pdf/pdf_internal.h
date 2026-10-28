@@ -69,7 +69,7 @@ typedef struct {
 typedef struct pdf_font_program pdf_font_program;
 
 typedef struct {
-    char name[32];
+    char name[128];
     pdf_object_id graphics_object;
     pdf_tounicode_entry *entries;
     int count;

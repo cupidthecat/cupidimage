@@ -640,3 +640,21 @@ programs explicitly embedded in PDFs. It tests both simple-font types, encodings
 PDF width overrides, all text modes, transformed text, embedded-program priority,
 invalid metadata and allocation recovery. The owned width-marker asset has an
 analytic reference; the visible family sample remains decoded-unverified.
+
+## Font resource names
+
+Font resource names retain up to 127 decoded bytes, matching the shared name
+reader and the portability limit in ISO 32000-1 Annex C. The old font-table limit
+of 31 bytes rejected valid resources before text rendering. Hex escapes count as
+one decoded byte, and names with common prefixes remain distinct.
+
+The empty name `/` is also valid under section 7.3.5. It can identify a font
+resource or a Type 3 CharProc. It is distinct from an absent selection or the
+anonymous font references supplied by ExtGState. This does not make an empty
+Encoding or BaseEncoding a recognized encoding; those values are still rejected.
+
+`make test-pdf-font-resources` checks empty and full-length names, escaped and
+non-ASCII bytes, prefix collisions, Forms, ExtGState selection, saved state, all
+text modes and allocation recovery. Two owned assets have analytic glyph-pixel
+references. The optional `--reference` pass checks the applicable cases against
+an independent rasterizer.

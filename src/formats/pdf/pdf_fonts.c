@@ -49,7 +49,7 @@ void cupidimage_pdf_font_table_free(pdf_font_table *table) {
 static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name,
                                         pdf_object_id object) {
     size_t name_length = name ? strlen(name) : 0;
-    if (!table || (!object && !name_length) || name_length >= 32) {
+    if (!table || (!object && !name) || name_length >= sizeof(table->fonts[0].name)) {
         return NULL;
     }
     for (int i = 0; i < table->count; i++) {
@@ -103,7 +103,7 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name,
 }
 
 const pdf_font_map *cupidimage_pdf_font_table_find(const pdf_font_table *table, const char *name) {
-    if (!table || !name || !*name) {
+    if (!table || !name) {
         return NULL;
     }
     for (int i = 0; i < table->count; i++) {

@@ -554,3 +554,9 @@ encoding rules, PDF width precedence, clipping, transforms and allocation failur
 Regenerate its two owned assets with `scripts/generate_pdf_substitution_fixtures.py`.
 The width-marker reference is analytic; the visible font-family page is not a
 cross-renderer reference pass.
+
+`make test-pdf-font-resources` checks zero- through 127-byte font resource names,
+escapes, common-prefix collisions, scope/state restoration and allocation recovery.
+It also checks empty Type 3 glyph and color-resource names without accepting empty
+encoding identifiers. Regenerate its two analytic assets with
+`scripts/generate_pdf_font_resource_fixtures.py`.

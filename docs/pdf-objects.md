@@ -89,3 +89,12 @@ content and image data. It does not relax the strict whole-stream entry point
 used by the other formats. `make test-pdf-flate-extent` compares TrueType, CFF,
 Type 1, content, image and chained-filter cases with their unpadded equivalents,
 and checks allocation-failure cleanup.
+
+## Decoded names
+
+The shared name reader accepts the empty name `/` and up to 127 decoded bytes.
+Escaped bytes are decoded before checking that limit; an encoded zero byte remains
+invalid. Resource keys, font selections, Type 3 glyph names and colorant names use
+these decoded values. A valid name token is not necessarily a valid value for a
+particular entry: Encoding and BaseEncoding still require a supported encoding.
+See ISO 32000-1 section 7.3.5 and Annex C.

@@ -21,14 +21,18 @@
           "evidence": [
             "docs/pdf-objects.md",
             "src/formats/pdf/pdf_xref.c",
-            "scripts/test_pdf_xref.py"
+            "scripts/test_pdf_xref.py",
+            "scripts/test_pdf_font_resources.py"
           ],
           "limitations": [
             "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
           ],
           "dependencies": [],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.3.5",
+            "ISO 32000-1:2008 Annex C"
+          ]
         },
         {
           "id": "1.2",
@@ -53,14 +57,18 @@
           "evidence": [
             "docs/pdf-objects.md",
             "src/formats/pdf/pdf_xref.c",
-            "scripts/test_pdf_xref.py"
+            "scripts/test_pdf_xref.py",
+            "scripts/test_pdf_font_resources.py"
           ],
           "limitations": [
             "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
           ],
           "dependencies": [],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.3.5",
+            "ISO 32000-1:2008 Annex C"
+          ]
         },
         {
           "id": "1.4",
@@ -620,7 +628,8 @@
           "evidence": [
             "docs/pdf-content.md",
             "src/formats/pdf/pdf_render.c",
-            "scripts/test_pdf_content_syntax.py"
+            "scripts/test_pdf_content_syntax.py",
+            "scripts/test_pdf_font_resources.py"
           ],
           "limitations": [
             "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
@@ -631,7 +640,10 @@
             "3"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.3.5",
+            "ISO 32000-1:2008 Annex C"
+          ]
         },
         {
           "id": "4.3",

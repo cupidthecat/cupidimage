@@ -73,7 +73,7 @@ int cupidimage_pdf_read_name(const pdf_object_view *v, size_t *p, char name[128]
         name[count++] = (char)c;
     }
     name[count] = 0;
-    return count != 0;
+    return 1;
 }
 
 int cupidimage_pdf_entry_is_name(const unsigned char *data, size_t size,

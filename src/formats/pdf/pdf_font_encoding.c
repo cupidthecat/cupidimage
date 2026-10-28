@@ -71,14 +71,15 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
     if (!cupidimage_pdf_dictionary_value(data, size, view, "Encoding", &encoding))
         return 0;
     char base[128] = {0};
-    int ok = 1;
+    int ok = 1, base_present = 0;
     pos = 0;
     cupidimage_pdf_skip_ws_and_comments(encoding.data, encoding.len, &pos);
     int dictionary =
         encoding.len - pos >= 2 && encoding.data[pos] == '<' && encoding.data[pos + 1] == '<';
-    if (pos < encoding.len && encoding.data[pos] == '/')
+    if (pos < encoding.len && encoding.data[pos] == '/') {
+        base_present = 1;
         ok = cupidimage_pdf_read_name(&encoding, &pos, base);
-    else if (!dictionary) {
+    } else if (!dictionary) {
         ok = encoding.len - pos >= 4 && !memcmp(encoding.data + pos, "null", 4) &&
              (encoding.len - pos == 4 || cupidimage_pdf_is_ws(encoding.data[pos + 4]) ||
               cupidimage_pdf_is_delim(encoding.data[pos + 4]));
@@ -86,10 +87,11 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
         pdf_object_view value = {0};
         size_t at = 0;
         int present = cupidimage_pdf_optional_value(data, size, &encoding, "BaseEncoding", &value);
+        base_present = present > 0;
         ok = present == 0 || (present > 0 && cupidimage_pdf_read_name(&value, &at, base));
         cupidimage_pdf_object_view_release(&value);
     }
-    if (*base) {
+    if (base_present) {
         if (strcmp(base, "StandardEncoding") && strcmp(base, "WinAnsiEncoding") &&
             strcmp(base, "MacRomanEncoding") && strcmp(base, "MacExpertEncoding"))
             ok = 0;

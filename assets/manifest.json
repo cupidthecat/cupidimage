@@ -651,6 +651,14 @@
       "sha256": "3be8a0ae748c09cf3793748f3d83875665db7d45ed7eebae82b861684407132d"
     },
     {
+      "path": "assets/pdf/reference/font-resource-127.pdf",
+      "sha256": "f36ccf489d41969d6162000ba322c2f4c2ab76263f4ae52cde9d35b300c8c0d1"
+    },
+    {
+      "path": "assets/pdf/reference/font-resource-empty.pdf",
+      "sha256": "2b563f1669ccb04dd743be3b93caea415c6134e74ff105f7079ad1283e49b436"
+    },
+    {
       "path": "assets/pdf/reference/function-based-shading.pdf",
       "sha256": "c3b4c82626474ff0ad1d8ac568cf699a2644a4fbf7e72b00b7aa3bc86f65d225"
     },
