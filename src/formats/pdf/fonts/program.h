@@ -5,6 +5,7 @@
 #include "type2.h"
 
 #define PDF_FONT_OUTLINE_CACHE_SLOTS 16
+#define PDF_FONT_EXTENDED_GLYPH 65536u
 
 typedef struct {
     pdf_tt_outline truetype;
@@ -24,7 +25,10 @@ struct pdf_font_program {
     int cid;
     pdf_cached_outline outline_cache[PDF_FONT_OUTLINE_CACHE_SLOTS];
     unsigned outline_cache_next;
+    struct pdf_font_program *extended;
 };
+
+struct pdf_font_program *cupidimage_pdf_font_program_select(struct pdf_font_program *, unsigned *);
 
 void cupidimage_pdf_font_outline_cache_clear(struct pdf_font_program *program);
 int cupidimage_pdf_font_outline(struct pdf_font_program *program, unsigned glyph,

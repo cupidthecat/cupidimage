@@ -299,6 +299,7 @@ static int outline_winding(const outline_edge *edges, unsigned count, double x, 
 
 int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_program *program,
                                            unsigned glyph) {
+    program = cupidimage_pdf_font_program_select(program, &glyph);
     if (st->gs.text_mode == 3 || st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0)
         return 1;
     if (!st->form_budget->glyph_calls_left)

@@ -28,7 +28,7 @@ for path in sorted(SOURCE.glob('*.afm')):
 for unknown in ('Arial','ABCDEF+Helvetica','helvetica','Helvetica-Bold-Italic',''):
     assert subprocess.run([probe,unknown],capture_output=True).returncode == 2
 print(f'Standard font resources: 14 fonts, {count} metric/encoding correspondences, 5 unknown-name checks passed')
-print(f'Standard substitute outlines: {glyph_count} glyphs decoded; {missing_count} extended AFM names are not present across the 12 Latin faces')
+print(f'Standard substitute outlines: {glyph_count} glyphs decoded; {missing_count} extended AFM names are absent from the compact arrays; extended coverage is tested separately')
 metadata = subprocess.run([probe,'Helvetica','--metadata'],capture_output=True,text=True,timeout=10)
 assert metadata.returncode == 0, metadata.stderr
 print(metadata.stdout.strip())

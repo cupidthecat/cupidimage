@@ -27,3 +27,8 @@ assets/pdf/pdfjs/LICENSE-DEJAVU.txt -whitespace
 # Preserve the original Adobe font metrics and license spacing.
 third_party/adobe-core14/*.afm -text -whitespace
 third_party/adobe-core14/readme.txt -text -whitespace
+
+# Preserve the pinned extended fonts and their original notices byte-for-byte.
+third_party/extended-standard-fonts/*.ttf binary
+third_party/extended-standard-fonts/LICENSE -text -whitespace
+third_party/extended-standard-fonts/AUTHORS -text -whitespace

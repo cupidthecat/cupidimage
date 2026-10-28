@@ -78,9 +78,11 @@ These simple fonts consume one byte per character, even when a malformed
 ToUnicode map describes longer codes. ToUnicode cannot change their advances.
 Their outlines come from bundled, BSD-licensed CFF substitutes, not the bitmap
 fallback. Symbol and ZapfDingbats cover all named glyphs in the pinned AFMs.
-Each Courier face omits 84 extended AFM names; each Helvetica/Times face omits
-86. Those missing names use the substitute's .notdef glyph while retaining the
-specified advance. There is no claim that these substitute shapes are identical
+The compact Courier faces omit 84 extended AFM names and Helvetica/Times omit
+86. An additional pinned TrueType face now supplies 1,016 of these 1,024 missing
+face/glyph combinations. Existing compact outlines keep priority. The standalone
+commaaccent remains missing in the four Courier and four Times faces; these eight
+combinations retain .notdef while preserving the specified advance. There is no claim that these substitute shapes are identical
 to every platform's font choice. Hinting remains unimplemented.
 
 The pinned AFMs, original license, provenance and per-file hashes are in
@@ -295,7 +297,7 @@ text fidelity in the current PDF work. The main gaps are:
 - CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- Extended glyph coverage in the standard-font substitutes and general substitution for other nonembedded fonts.
+- The eight remaining standard-font face/glyph gaps and general substitution for other nonembedded fonts.
 
 The applicability of newer font formats and tables must be checked against the
 PDF version; this list is not a claim that every PDF version requires them.
@@ -563,3 +565,38 @@ transformed Type 1 width vectors. Allocation tests compare cached and uncached
 renders. A failed allocation must either fail page loading cleanly or recover
 with identical pixels. This compatibility path does not make omitted required
 font metrics conforming.
+
+## Extended standard-font coverage
+
+The 12 Latin faces use unmodified Liberation Fonts 2.1.5 programs for known AFM
+glyphs absent from the compact outlines. A name in the font's post table takes
+priority; Adobe glyph-name mapping and the Microsoft Unicode cmap provide the
+fallback lookup. Unknown AFM names still select .notdef rather than accidentally
+exposing an unrelated glyph from the larger substitute.
+
+Each selected face is decompressed only when needed, owns its bytes, and is charged
+to the existing 64 MiB font-program budget. Extended outlines have their own cache
+entries but share the page's cache and glyph-work limits. All text modes, clipping,
+transforms and source colors use the regular TrueType drawing path. Advances still
+come from PDF Widths/MissingWidth or the standard AFM data, never from the extended
+font's layout metrics. Existing covered glyphs keep their original outlines.
+
+`scripts/test_pdf_extended_fonts.py` compares the 1,016 added glyphs with the same
+unmodified programs embedded explicitly in PDFs. It also covers all text modes,
+transforms and allocation failures. These are same-program equivalence checks,
+not a claim of visual parity with other font substitutes. Font hinting and font
+antialiasing are still unfinished.
+
+Provenance, original notices and hashes are under
+`third_party/extended-standard-fonts`. The original fonts and their generated data
+remain under SIL Open Font License 1.1; see THIRD_PARTY_NOTICES.md.
+
+The optional independent geometry pass checks all 1,016 added unhinted outlines
+against FontTools, including contour endpoints and on/off-curve flags:
+
+    python3 scripts/compare_pdf_extended_outlines.py bin/test_pdf_truetype
+
+`scripts/generate_pdf_extended_fixtures.py` creates a 12-face visible sample and
+an analytic advance-marker asset. The visible sample is decoded-unverified until
+its raster is independently qualified; only the advance marker has an analytic
+pixel reference.

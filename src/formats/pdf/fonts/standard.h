@@ -24,4 +24,12 @@ typedef struct {
 } pdf_standard_outline;
 
 const pdf_standard_outline *cupidimage_pdf_standard_outline(const char *name);
+
+typedef struct {
+    const char *name;
+    const unsigned char *data;
+    size_t length, decoded_length;
+} pdf_extended_font;
+
+const pdf_extended_font *cupidimage_pdf_extended_font(const char *name);
 #endif

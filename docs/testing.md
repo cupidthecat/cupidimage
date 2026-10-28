@@ -542,3 +542,9 @@ Regenerate its three owned assets with `scripts/generate_pdf_devicen_fixtures.py
 Use `--reference` with the test script for independent comparisons; sampled
 functions above the installed reference's 16-input limit use analytic/native
 oracles instead. See [PDF colors](pdf-colors.md) for cache and work limits.
+
+The standard-font target also checks the pinned extended-font data and compares
+all 1,016 added face/glyph combinations with explicit embedded programs. It covers
+all eight text modes, transforms and allocation recovery. These equivalence tests
+preserve the original compact outlines and PDF advances; they do not establish
+cross-renderer parity or complete font coverage.

@@ -783,6 +783,10 @@
       "sha256": "10b02c491c96a069792b8762d14722a58402adb659e508824b80e1d3407eda0c"
     },
     {
+      "path": "assets/pdf/reference/standard-extended-advance.pdf",
+      "sha256": "089312510bf267074ef984a6da3097b4049e276afe6bdeaf64f593630f6b8b3b"
+    },
+    {
       "path": "assets/pdf/reference/standard-font-metrics.pdf",
       "sha256": "c11072cf01eb0d7b0d3b273d1068a306edbc1916a1e51ba18cab30dfed1aa5b7"
     },
@@ -821,6 +825,10 @@
     {
       "path": "assets/pdf/shapes.tex",
       "sha256": "1d3e27ee1fb6ab3665f875c5fe08bddb25022783cf1e03ed367e36bc66c044e0"
+    },
+    {
+      "path": "assets/pdf/standard-extended-glyphs.pdf",
+      "sha256": "b5d791d53e0eb0883cf6647d85d4993437d07f9232b2df3f35befa5270ee3bb2"
     },
     {
       "path": "assets/pdf/standard-font-substitutes.pdf",

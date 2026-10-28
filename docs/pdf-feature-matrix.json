@@ -975,10 +975,13 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_extended_fonts.py",
+            "scripts/compare_pdf_extended_outlines.py",
+            "third_party/extended-standard-fonts/manifest.json"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Standard substitutes retain PDF/AFM advances and include 1,016 additional face/glyph combinations. Eight standalone commaaccent gaps, general nonembedded-font substitution, hinting and antialiasing remain incomplete."
           ],
           "dependencies": [
             "1",

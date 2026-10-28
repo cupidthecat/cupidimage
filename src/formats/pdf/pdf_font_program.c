@@ -45,6 +45,7 @@ static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slic
 size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
     return program
                ? sizeof(*program) + program->length + program->gid_length +
+                     cupidimage_pdf_font_program_bytes(program->extended) +
                      (program->is_cff ? 65536 * sizeof(uint16_t) +
                                             program->cff.private_count * sizeof(pdf_cff_private) +
                                             (program->cff.fdselect ? program->cff.chars.count : 0)
@@ -59,6 +60,7 @@ size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
 
 void cupidimage_pdf_font_program_free(pdf_font_program *program) {
     if (program) {
+        cupidimage_pdf_font_program_free(program->extended);
         cupidimage_pdf_font_outline_cache_clear(program);
         cupidimage_pdf_cff_free(&program->cff);
         cupidimage_pdf_type1_free(&program->type1);
@@ -66,6 +68,14 @@ void cupidimage_pdf_font_program_free(pdf_font_program *program) {
         free(program->gid_map);
         free(program);
     }
+}
+
+pdf_font_program *cupidimage_pdf_font_program_select(pdf_font_program *program, unsigned *glyph) {
+    if (program->extended && *glyph >= PDF_FONT_EXTENDED_GLYPH) {
+        *glyph -= PDF_FONT_EXTENDED_GLYPH;
+        return program->extended;
+    }
+    return program;
 }
 
 unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code) {
@@ -102,6 +112,7 @@ int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsig
 
 int cupidimage_pdf_font_program_advance(pdf_font_program *program, unsigned glyph,
                                         size_t *cache_bytes_left, double *advance) {
+    program = cupidimage_pdf_font_program_select(program, &glyph);
     if (!program->is_type1 && !program->is_cff) {
         *advance = (double)cupidimage_pdf_tt_advance(&program->font, glyph) / program->font.units;
         return 1;

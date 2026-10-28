@@ -254,12 +254,14 @@ test-pdf-type1: $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_pages
 $(BINDIR)/test_pdf_standard: tests/test_pdf_standard.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
-test-pdf-standard-fonts: $(BINDIR)/test_pdf_standard $(BINDIR)/test_pdf_pages
+test-pdf-standard-fonts: $(BINDIR)/test_pdf_standard $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/generate_pdf_standard_metrics.py --check
 	python3 scripts/generate_pdf_standard_outlines.py --check
+	python3 scripts/generate_pdf_extended_fonts.py --check
 	python3 scripts/test_pdf_standard_metrics.py $(BINDIR)/test_pdf_standard
 	python3 scripts/test_pdf_standard_fonts.py $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_standard_outlines.py $(BINDIR)/test_pdf_pages
+	python3 scripts/test_pdf_extended_fonts.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-graphics-fonts: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_graphics_fonts.py $(BINDIR)/test_pdf_pages
