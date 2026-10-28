@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
             int length = snprintf(text, sizeof(text),
                                   "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica %s >>",
                                   cases[i].encoding);
-            pdf_object_view view = {(const unsigned char *)text, (size_t)length, NULL};
+            pdf_object_view view = {(const unsigned char *)text, (size_t)length, NULL, NULL};
             pdf_font_map parsed = {0};
             size_t budget = 0;
             int ok =
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
                 return 4;
         }
         const unsigned char text[] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
-        pdf_object_view view = {text, sizeof(text) - 1, NULL};
+        pdf_object_view view = {text, sizeof(text) - 1, NULL, NULL};
         pdf_font_map parsed = {0};
         size_t budget = 64u * 1024u * 1024u;
         int ok =

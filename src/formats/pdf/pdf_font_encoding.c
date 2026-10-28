@@ -86,7 +86,8 @@ static int pdf_font_reference_end(const pdf_object_view *view, size_t *pos) {
 }
 
 int cupidimage_pdf_graphics_font(const unsigned char *data, size_t size,
-                                 const pdf_object_view *state, int *object, double *font_size) {
+                                 const pdf_object_view *state, pdf_object_id *object,
+                                 double *font_size) {
     pdf_object_view array = {0}, scalar = {0};
     size_t pos = 0, at = 0;
     int ok = cupidimage_pdf_dictionary_value(data, size, state, "Font", &array);
@@ -112,7 +113,7 @@ int cupidimage_pdf_graphics_font(const unsigned char *data, size_t size,
          (at == scalar.len || cupidimage_pdf_is_ws(scalar.data[at]) ||
           cupidimage_pdf_is_delim(scalar.data[at]));
     if (ok) {
-        int reference;
+        pdf_object_id reference;
         double ignored;
         if (cupidimage_pdf_page_reference(&array, pos, &reference))
             ok = pdf_font_reference_end(&array, &pos);

@@ -7,22 +7,22 @@
    document and override bytes remain borrowed. The override supports font-local
    and inline scopes. */
 int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category, const char *name,
-                                 pdf_object_view *value, int *reference) {
+                                 pdf_object_view *value, pdf_object_id *reference) {
     if (value)
         memset(value, 0, sizeof(*value));
     if (reference)
         *reference = 0;
-    int object = st->page_object, override = st->resource_override != NULL;
+    pdf_object_id object = st->page_object;
+    int override = st->resource_override != NULL;
     for (unsigned depth = 0; (object > 0 || override) && depth < 64; depth++) {
         pdf_object_view node = {0}, resources = {0}, entries = {0};
-        int parent = 0;
+        pdf_object_id parent = 0;
         if (override) {
             node = *st->resource_override;
             node.owned = NULL;
             override = 0;
             parent = object;
-        } else if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object,
-                                                      &node))
+        } else if (!cupidimage_pdf_state_object(st, object, &node))
             return 0;
         size_t pos;
         if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
@@ -31,13 +31,12 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
             pos = 0;
             if (ok && name)
                 ok = cupidimage_pdf_page_value(&entries, name, &pos);
-            int target = 0;
+            pdf_object_id target = 0;
             if (ok && name && cupidimage_pdf_page_reference(&entries, pos, &target)) {
                 if (reference)
                     *reference = target;
                 if (value)
-                    ok = cupidimage_pdf_get_object_content(st->document, st->document_size, target,
-                                                           value);
+                    ok = cupidimage_pdf_state_object(st, target, value);
             } else if (ok && value) {
                 value->data = entries.data + pos;
                 value->len = entries.len - pos;
@@ -64,4 +63,10 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
         object = parent;
     }
     return 0;
+}
+
+int cupidimage_pdf_state_object(const pdf_render_state *st, pdf_object_id object,
+                                pdf_object_view *view) {
+    return cupidimage_pdf_lookup_object(st->xref, st->document, st->document_size, object, view) ==
+           1;
 }

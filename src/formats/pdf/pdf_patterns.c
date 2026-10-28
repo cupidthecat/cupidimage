@@ -8,13 +8,13 @@
 static int pattern_array(const pdf_render_state *st, const pdf_object_view *view, const char *key,
                          double *numbers, int count, int required) {
     size_t pos;
-    int object;
+    pdf_object_id object;
     if (!cupidimage_pdf_page_value(view, key, &pos))
         return !required;
     pdf_object_view array = {0};
     const pdf_object_view *source = view;
     if (cupidimage_pdf_page_reference(view, pos, &object)) {
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &array))
+        if (!cupidimage_pdf_state_object(st, object, &array))
             return 0;
         source = &array;
         pos = 0;
@@ -180,7 +180,7 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
 }
 
 static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *view, int stroke,
-                                  int object) {
+                                  pdf_object_id object) {
     const pdf_image_colors *space = stroke ? &st->gs.stroke_space : &st->gs.fill_space;
     if (space->components != 0)
         return 0;
@@ -281,7 +281,7 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     double bbox[4], matrix[6] = {1, 0, 0, 1, 0, 0}, step_x, step_y;
     size_t pos, length;
     const unsigned char *stream;
-    int resource_object = 0;
+    pdf_object_id resource_object = 0;
     if (!cupidimage_pdf_find_resource(st, "Pattern", name, &view, &resource_object) ||
         !cupidimage_pdf_image_integer(st, &view, "PatternType", &type))
         goto done;

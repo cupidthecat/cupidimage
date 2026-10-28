@@ -617,3 +617,18 @@ has 96 analytic cases; the general transparency suite has 177 cases and the
 allocation-failure suite has 2,586 checks. Reference discrepancies are documented
 in the pattern guide without widening tolerances. The 360 existing assets remain
 passing, and the full manual document review is still deferred.
+
+## Revision-aware PDF object resolution
+
+Complete documents now use their cross-reference tables or streams rather than
+selecting the first physical object with a matching number. The index preserves
+revision precedence, active generations, free/null entries and compressed-object
+indices, including hybrid files. Stream filter metadata and page content arrays
+resolve indirect objects through that index. Legacy indirect cross-reference
+lengths are verified against their own revision, not a newer replacement.
+
+[PDF objects and revisions](pdf-objects.md) records the validation rules, limits
+and focused fault-injection tests. This removes a loading prerequisite for font
+and rendering work; it does not establish complete PDF support. Optional-value
+consumers still need a broader null/default audit, and encryption and damaged-file
+reconstruction remain unsupported.

@@ -34,12 +34,12 @@ static int cid_number(const unsigned char *data, size_t size, const pdf_object_v
                       double *n, unsigned depth) {
     if (depth == 16)
         return 0;
-    int object;
+    pdf_object_id object;
     cupidimage_pdf_skip_ws_and_comments(v->data, v->len, p);
     if (cupidimage_pdf_page_reference(v, *p, &object)) {
         pdf_object_view indirect = {0};
         size_t pos = 0;
-        int ok = cupidimage_pdf_get_object_content(data, size, object, &indirect) &&
+        int ok = cupidimage_pdf_view_object(data, size, v, object, &indirect) &&
                  cid_number(data, size, &indirect, &pos, n, depth + 1) && cid_skip_reference(v, p);
         cupidimage_pdf_object_view_release(&indirect);
         return ok;
@@ -55,11 +55,11 @@ static int cid_resolve(const unsigned char *data, size_t size, const pdf_object_
     if (depth == 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(v->data, v->len, p);
-    int object;
+    pdf_object_id object;
     if (cupidimage_pdf_page_reference(v, *p, &object)) {
         pdf_object_view indirect = {0};
         size_t pos = 0;
-        int ok = cupidimage_pdf_get_object_content(data, size, object, &indirect) &&
+        int ok = cupidimage_pdf_view_object(data, size, v, object, &indirect) &&
                  cid_resolve(data, size, &indirect, &pos, out, depth + 1) &&
                  cid_skip_reference(v, p);
         if (ok && !out->owned) {
@@ -71,6 +71,7 @@ static int cid_resolve(const unsigned char *data, size_t size, const pdf_object_
     }
     out->data = v->data + *p;
     out->len = v->len - *p;
+    out->xref = v->xref;
     return 1;
 }
 
@@ -200,7 +201,7 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
     cupidimage_pdf_skip_ws_and_comments(array.data, array.len, &pos);
     if (!cupidimage_pdf_font_dictionary_at(data, size, &array, pos, &descendant))
         goto done;
-    int object;
+    pdf_object_id object;
     if (cupidimage_pdf_page_reference(&array, pos, &object)) {
         if (!cid_skip_reference(&array, &pos))
             goto done;

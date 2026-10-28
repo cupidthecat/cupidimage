@@ -11,12 +11,13 @@ int cupidimage_pdf_function_array(const pdf_render_state *st, const pdf_object_v
         return 0;
     pdf_object_view owned = {0};
     const pdf_object_view *view = parent;
-    int object, ok = 0;
+    pdf_object_id object;
+    int ok = 0;
     for (unsigned depth = 0; cupidimage_pdf_page_reference(view, pos, &object); depth++) {
         if (depth == 16)
             goto done;
         pdf_object_view next = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &next))
+        if (!cupidimage_pdf_state_object(st, object, &next))
             goto done;
         cupidimage_pdf_object_view_release(&owned);
         owned = next;
@@ -79,12 +80,13 @@ static int pdf_stitching_parts(const pdf_render_state *st, const pdf_object_view
         return 0;
     pdf_object_view owned = {0};
     const pdf_object_view *view = parent;
-    int object, ok = 0;
+    pdf_object_id object;
+    int ok = 0;
     for (unsigned refs = 0; cupidimage_pdf_page_reference(view, pos, &object); refs++) {
         if (refs == 16)
             goto done;
         pdf_object_view next = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &next))
+        if (!cupidimage_pdf_state_object(st, object, &next))
             goto done;
         cupidimage_pdf_object_view_release(&owned);
         owned = next;
@@ -104,7 +106,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
     if (depth >= 16 || tree->count == PDF_FUNCTION_NODES)
         return -1;
     cupidimage_pdf_skip_ws_and_comments(parent->data, parent->len, pos);
-    int object;
+    pdf_object_id object;
     if (cupidimage_pdf_page_reference(parent, *pos, &object)) {
         double ignored;
         cupidimage_pdf_parse_pdf_number(parent->data, parent->len, pos, &ignored);
@@ -113,7 +115,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
         cupidimage_pdf_skip_ws_and_comments(parent->data, parent->len, pos);
         (*pos)++;
         pdf_object_view view = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &view))
+        if (!cupidimage_pdf_state_object(st, object, &view))
             return -1;
         size_t p = 0;
         int result =
@@ -168,7 +170,8 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
     if (node->type == 4) {
         if (!node->has_range)
             return -1;
-        pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL};
+        pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL,
+                                  NULL};
         const unsigned char *raw;
         size_t length, decoded_length;
         unsigned char *decoded = NULL;
@@ -218,7 +221,8 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
         if (cupidimage_pdf_page_value(&view, "Decode", &p) &&
             !cupidimage_pdf_function_array(st, &view, "Decode", node->decode, components * 2))
             return -1;
-        pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL};
+        pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL,
+                                  NULL};
         const unsigned char *raw;
         size_t length, decoded_length;
         unsigned char *decoded = NULL;

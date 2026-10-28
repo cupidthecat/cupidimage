@@ -43,16 +43,16 @@ static int stroke_skip_reference(const pdf_object_view *view, size_t *pos) {
 
 static int stroke_read_array(const pdf_render_state *st, const pdf_object_view *view, size_t *pos,
                              pdf_graphics_state *gs, unsigned depth) {
-    int object;
+    pdf_object_id object;
     if (depth == 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     if (cupidimage_pdf_page_reference(view, *pos, &object)) {
         pdf_object_view indirect = {0};
         size_t p = 0;
-        int ok =
-            cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect) &&
-            stroke_read_array(st, &indirect, &p, gs, depth + 1) && stroke_skip_reference(view, pos);
+        int ok = cupidimage_pdf_state_object(st, object, &indirect) &&
+                 stroke_read_array(st, &indirect, &p, gs, depth + 1) &&
+                 stroke_skip_reference(view, pos);
         cupidimage_pdf_object_view_release(&indirect);
         return ok;
     }
@@ -86,15 +86,14 @@ static int stroke_read_array(const pdf_render_state *st, const pdf_object_view *
 
 static int stroke_read_dash(const pdf_render_state *st, const pdf_object_view *view, size_t pos,
                             pdf_graphics_state *gs, unsigned depth) {
-    int object;
+    pdf_object_id object;
     if (depth == 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, &pos);
     if (cupidimage_pdf_page_reference(view, pos, &object)) {
         pdf_object_view indirect = {0};
-        int ok =
-            cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect) &&
-            stroke_read_dash(st, &indirect, 0, gs, depth + 1);
+        int ok = cupidimage_pdf_state_object(st, object, &indirect) &&
+                 stroke_read_dash(st, &indirect, 0, gs, depth + 1);
         cupidimage_pdf_object_view_release(&indirect);
         return ok;
     }

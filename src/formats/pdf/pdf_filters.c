@@ -279,61 +279,69 @@ static int pdf_filter_null(const pdf_object_view *view, size_t *pos) {
            cupidimage_pdf_is_delim(view->data[*pos]);
 }
 
-/* Direct parameter dictionaries contain integer filter controls. Indirect
- * parameter objects are still handled only by the single-Flate image path. */
+/* Indexed streams resolve indirect parameters before entering this decoder. */
 static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
                                  pdf_filter_params *params) {
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
     if (pdf_filter_null(view, pos))
         return 1;
-    if (view->len - *pos < 2 || memcmp(view->data + *pos, "<<", 2))
+    pdf_object_view dictionary = {0};
+    size_t end;
+    if (!cupidimage_pdf_dictionary_view(view, *pos, &dictionary, &end))
         return 0;
-    *pos += 2;
-    for (;;) {
-        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
-        if (view->len - *pos >= 2 && !memcmp(view->data + *pos, ">>", 2)) {
-            *pos += 2;
-            return 1;
-        }
-        if (*pos == view->len || view->data[(*pos)++] != '/')
-            return 0;
-        size_t start = *pos;
-        while (*pos < view->len && !cupidimage_pdf_is_ws(view->data[*pos]) &&
-               !cupidimage_pdf_is_delim(view->data[*pos]))
-            (*pos)++;
-        size_t n = *pos - start;
+    static const char *keys[] = {"Predictor",   "Colors",
+                                 "Columns",     "BitsPerComponent",
+                                 "EarlyChange", "K",
+                                 "Rows",        "DamagedRowsBeforeError",
+                                 "EndOfLine",   "EncodedByteAlign",
+                                 "EndOfBlock",  "BlackIs1"};
+    *pos = end;
+    view = &dictionary;
+    for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
+        size_t at;
+        if (!cupidimage_pdf_page_value(view, keys[i], &at))
+            continue;
+        size_t *pos = &at;
+        const char *name = keys[i];
+        size_t n = strlen(name);
         int *value = NULL;
         int boolean = 0;
-        if (n == 9 && !memcmp(view->data + start, "Predictor", n))
+        if (n == 9 && !memcmp(name, "Predictor", n))
             value = &params->predictor;
-        else if (n == 6 && !memcmp(view->data + start, "Colors", n))
+        else if (n == 6 && !memcmp(name, "Colors", n))
             value = &params->colors;
-        else if (n == 7 && !memcmp(view->data + start, "Columns", n))
+        else if (n == 7 && !memcmp(name, "Columns", n))
             value = &params->columns;
-        else if (n == 16 && !memcmp(view->data + start, "BitsPerComponent", n))
+        else if (n == 16 && !memcmp(name, "BitsPerComponent", n))
             value = &params->bits;
-        else if (n == 11 && !memcmp(view->data + start, "EarlyChange", n))
+        else if (n == 11 && !memcmp(name, "EarlyChange", n))
             value = &params->early;
-        else if (n == 1 && view->data[start] == 'K')
+        else if (n == 1 && name[0] == 'K')
             value = &params->fax.k;
-        else if (n == 4 && !memcmp(view->data + start, "Rows", n))
+        else if (n == 4 && !memcmp(name, "Rows", n))
             value = &params->fax.rows;
-        else if (n == 22 && !memcmp(view->data + start, "DamagedRowsBeforeError", n))
+        else if (n == 22 && !memcmp(name, "DamagedRowsBeforeError", n))
             value = &params->fax.damaged_rows;
-        else if (n == 9 && !memcmp(view->data + start, "EndOfLine", n)) {
+        else if (n == 9 && !memcmp(name, "EndOfLine", n)) {
             value = &params->fax.end_of_line;
             boolean = 1;
-        } else if (n == 16 && !memcmp(view->data + start, "EncodedByteAlign", n)) {
+        } else if (n == 16 && !memcmp(name, "EncodedByteAlign", n)) {
             value = &params->fax.byte_align;
             boolean = 1;
-        } else if (n == 10 && !memcmp(view->data + start, "EndOfBlock", n)) {
+        } else if (n == 10 && !memcmp(name, "EndOfBlock", n)) {
             value = &params->fax.end_of_block;
             boolean = 1;
-        } else if (n == 8 && !memcmp(view->data + start, "BlackIs1", n)) {
+        } else if (n == 8 && !memcmp(name, "BlackIs1", n)) {
             value = &params->fax.black_is_one;
             boolean = 1;
         }
         if (!value)
+            return 0;
+        cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+        if (pdf_filter_null(view, pos))
+            continue;
+        pdf_object_id reference;
+        if (cupidimage_pdf_page_reference(view, *pos, &reference))
             return 0;
         if (boolean) {
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -361,10 +369,12 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
         if (value == &params->columns)
             params->fax.columns = (int)number;
     }
+    return 1;
 }
 
-int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned char *data,
-                                 size_t length, unsigned char **decoded, size_t *decoded_length) {
+int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsigned char *data,
+                                        size_t length, unsigned char **decoded,
+                                        size_t *decoded_length) {
     char filters[8][32];
     pdf_filter_params params[8];
     for (int i = 0; i < 8; i++)
@@ -383,17 +393,11 @@ int cupidimage_pdf_decode_stream(const pdf_object_view *view, const unsigned cha
                 pos++;
                 break;
             }
-            if (count == 8 || pos == view->len || view->data[pos++] != '/')
+            char name[128];
+            if (count == 8 || !cupidimage_pdf_read_name(view, &pos, name) ||
+                strlen(name) >= sizeof(filters[0]))
                 return 0;
-            size_t start = pos;
-            while (pos < view->len && !cupidimage_pdf_is_ws(view->data[pos]) &&
-                   !cupidimage_pdf_is_delim(view->data[pos]))
-                pos++;
-            size_t n = pos - start;
-            if (!n || n >= sizeof(filters[0]))
-                return 0;
-            memcpy(filters[count], view->data + start, n);
-            filters[count++][n] = 0;
+            strcpy(filters[count++], name);
             if (!array)
                 break;
         }

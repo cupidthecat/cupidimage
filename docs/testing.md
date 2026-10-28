@@ -392,3 +392,14 @@ opacity. Allocation-failure tests cover definition retention and cache rebuilds.
 `make test-pdf-shading-patterns` exercises pattern-local opacity, blending, masks
 and shape across all shading geometries. Background members, compressed graphics
 state values and ignored path/text parameters have exact analytic expectations.
+
+## PDF object resolution
+
+`make test-pdf-xref` checks complete generated PDFs, not just headerless object
+snippets. Cases cover classic, stream and hybrid indices; incremental replacements;
+free entries and generations; compressed-object indices; omitted/wide fields;
+filter chains and predictors; indirect parameters and content arrays; and legacy
+indirect stream lengths across revisions. Negative cases exercise cycles,
+truncation, invalid offsets and malformed structural fields. The same PDFs run
+through allocation-failure injection, checking leaks and successful-output pixels.
+See [PDF objects and revisions](pdf-objects.md) for the supported rules and bounds.

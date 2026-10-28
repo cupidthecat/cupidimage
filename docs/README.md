@@ -6,6 +6,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 
 - [Source architecture](architecture.md): module responsibilities and build boundaries.
 - [Formats](formats.md): decoder features, rendering behavior, and limits.
+- [PDF objects and revisions](pdf-objects.md): cross-reference tables, streams, generations and limits.
 - [PDF content syntax](pdf-content.md): names, text strings, operands and parser limits.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
 - [PDF patterns](pdf-patterns.md): tiling, backdrop-dependent evaluation and cache limits.

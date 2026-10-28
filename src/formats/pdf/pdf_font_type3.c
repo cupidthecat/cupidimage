@@ -25,7 +25,7 @@ static int type3_array(const unsigned char *data, size_t size, const pdf_object_
 static unsigned type3_named_glyph(const void *context, const char *name) {
     const pdf_object_view *procs = context;
     size_t pos;
-    int object;
+    pdf_object_id object;
     if (!cupidimage_pdf_page_value(procs, name, &pos))
         return 0;
     return cupidimage_pdf_page_reference(procs, pos, &object) && object > 0 ? (unsigned)object

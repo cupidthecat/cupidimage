@@ -6,12 +6,20 @@ int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
                                  unsigned depth) {
     if (depth == 16)
         return 0;
-    int object;
+    pdf_object_id object;
     if (cupidimage_pdf_page_reference(view, p, &object)) {
         pdf_object_view value = {0};
-        if (!cupidimage_pdf_get_object_content(data, size, object, &value))
+        int status = cupidimage_pdf_lookup_object(view->xref, data, size, object, &value);
+        if (status < 0)
             return 0;
-        int next;
+        if (!status) {
+            out->data = (const unsigned char *)"null";
+            out->len = 4;
+            out->owned = NULL;
+            out->xref = view->xref;
+            return 1;
+        }
+        pdf_object_id next;
         size_t at = 0;
         cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
         if (cupidimage_pdf_page_reference(&value, at, &next)) {
@@ -24,6 +32,7 @@ int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
     }
     out->data = view->data + p;
     out->len = view->len - p;
+    out->xref = view->xref;
     return 1;
 }
 

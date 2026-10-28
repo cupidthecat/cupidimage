@@ -25,7 +25,7 @@ static int pdf_blend_name(const pdf_object_view *view, size_t *pos) {
 }
 
 static int pdf_blend_element(const pdf_render_state *st, const pdf_object_view *view, size_t *pos) {
-    int object;
+    pdf_object_id object;
     if (!cupidimage_pdf_page_reference(view, *pos, &object))
         return pdf_blend_name(view, pos);
     pdf_object_view value = {0};
@@ -87,10 +87,10 @@ int cupidimage_pdf_read_number(const pdf_render_state *st, const pdf_object_view
                                unsigned depth, double *value) {
     if (depth == 16)
         return 0;
-    int object;
+    pdf_object_id object;
     if (cupidimage_pdf_page_reference(view, pos, &object)) {
         pdf_object_view indirect = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect))
+        if (!cupidimage_pdf_state_object(st, object, &indirect))
             return 0;
         int ok = cupidimage_pdf_read_number(st, &indirect, 0, depth + 1, value);
         cupidimage_pdf_object_view_release(&indirect);
@@ -123,7 +123,7 @@ static int pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *
     size_t pos;
     double value;
     if (!shading && cupidimage_pdf_page_value(view, "Font", &pos)) {
-        int object;
+        pdf_object_id object;
         double font_size;
         if (!cupidimage_pdf_graphics_font(st->document, st->document_size, view, &object,
                                           &font_size))

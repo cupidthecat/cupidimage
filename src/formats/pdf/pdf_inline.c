@@ -315,7 +315,7 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
     size_t dict_end = p.used;
     if (!inline_text(&p, ">>"))
         goto done;
-    pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL};
+    pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL, NULL};
     size_t decoded_size;
     if (!inline_raw_size(st, &view, &decoded_size))
         goto done;

@@ -10,11 +10,11 @@
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,
                                     const char *key, pdf_object_view *result) {
     size_t pos;
-    int object;
+    pdf_object_id object;
     if (!cupidimage_pdf_page_value(parent, key, &pos))
         return 0;
     if (cupidimage_pdf_page_reference(parent, pos, &object)) {
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, result))
+        if (!cupidimage_pdf_state_object(st, object, result))
             return 0;
         pos = 0;
         cupidimage_pdf_skip_ws_and_comments(result->data, result->len, &pos);
@@ -31,7 +31,7 @@ int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object
     return 1;
 }
 
-static int pdf_image_object(const pdf_render_state *st, const char *name, int *object) {
+static int pdf_image_object(const pdf_render_state *st, const char *name, pdf_object_id *object) {
     return cupidimage_pdf_find_resource(st, "XObject", name, NULL, object) && *object > 0;
 }
 
@@ -325,14 +325,15 @@ static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view
                                const char *key, int width, int height, int components,
                                pdf_image_mask *mask) {
     pdf_object_view view = {0};
-    int object, stencil = 0, ok = 0;
+    pdf_object_id object;
+    int stencil = 0, ok = 0;
     size_t pos;
     mask->soft = strcmp(key, "SMask") == 0;
     mask->decode[0] = 0;
     mask->decode[1] = 1;
     if (!cupidimage_pdf_page_value(parent, key, &pos) ||
         !cupidimage_pdf_page_reference(parent, pos, &object) ||
-        !cupidimage_pdf_get_object_content(st->document, st->document_size, object, &view))
+        !cupidimage_pdf_state_object(st, object, &view))
         goto done;
     if (!cupidimage_pdf_image_name_is(&view, "Subtype", "Image") ||
         (cupidimage_pdf_page_value(&view, "Type", &pos) &&
@@ -574,9 +575,9 @@ done:
 
 int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
     pdf_object_view image = {0};
-    int object, ok = 0;
-    if (pdf_image_object(st, name, &object) &&
-        cupidimage_pdf_get_object_content(st->document, st->document_size, object, &image)) {
+    pdf_object_id object;
+    int ok = 0;
+    if (pdf_image_object(st, name, &object) && cupidimage_pdf_state_object(st, object, &image)) {
         if (cupidimage_pdf_image_name_is(&image, "Subtype", "Form"))
             ok = cupidimage_pdf_draw_form(st, object, &image);
         else

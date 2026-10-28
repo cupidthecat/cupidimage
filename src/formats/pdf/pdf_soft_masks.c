@@ -30,7 +30,8 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     pdf_function_tree *function = NULL;
     pdf_transparency_group surface = {0};
     pdf_soft_mask *mask = NULL;
-    int ok = 0, object, luminosity, gray;
+    pdf_object_id object;
+    int ok = 0, luminosity, gray;
     size_t pos = 0;
     *out = NULL;
     *replace = 0;
@@ -59,7 +60,7 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
         goto done;
     if (!cupidimage_pdf_page_value(&dictionary, "G", &pos) ||
         !cupidimage_pdf_page_reference(&dictionary, pos, &object) || object <= 0 ||
-        !cupidimage_pdf_get_object_content(st->document, st->document_size, object, &form) ||
+        !cupidimage_pdf_state_object(st, object, &form) ||
         !cupidimage_pdf_entry_is_name(st->document, st->document_size, &form, "Subtype", "Form") ||
         !cupidimage_pdf_dictionary_value(st->document, st->document_size, &form, "Group",
                                          &attributes) ||

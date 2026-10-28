@@ -35,7 +35,7 @@ static int pdf_color_name(const pdf_object_view *view, size_t *pos, char name[12
     return used != 0;
 }
 
-static int pdf_color_reference(const pdf_object_view *view, size_t *pos, int *object) {
+static int pdf_color_reference(const pdf_object_view *view, size_t *pos, pdf_object_id *object) {
     if (!cupidimage_pdf_page_reference(view, *pos, object))
         return 0;
     double ignored;
@@ -129,10 +129,10 @@ static int pdf_image_palette(const pdf_render_state *st, const pdf_object_view *
     if (depth >= 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
-    int object;
+    pdf_object_id object;
     if (pdf_color_reference(view, pos, &object)) {
         pdf_object_view indirect = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect))
+        if (!cupidimage_pdf_state_object(st, object, &indirect))
             return 0;
         size_t p = 0, length = 0;
         cupidimage_pdf_skip_ws_and_comments(indirect.data, indirect.len, &p);
@@ -161,10 +161,10 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
     if (depth >= 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
-    int object;
+    pdf_object_id object;
     if (pdf_color_reference(view, pos, &object)) {
         pdf_object_view indirect = {0};
-        if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &indirect))
+        if (!cupidimage_pdf_state_object(st, object, &indirect))
             return 0;
         size_t p = 0;
         int ok = cupidimage_pdf_image_color_space(st, &indirect, &p, depth + 1, colors);

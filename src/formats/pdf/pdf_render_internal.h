@@ -47,7 +47,8 @@ typedef struct pdf_pattern {
     cupidimage_image tile;
     double *shape, *alpha, *color;
     double inverse[6], xstep, ystep;
-    int shading, resource_object, uncolored, deferred, gray;
+    int shading, uncolored, deferred, gray;
+    pdf_object_id resource_object;
     pdf_object_view definition;
     unsigned char *program;
     size_t program_length, definition_bytes, surface_bytes;
@@ -116,7 +117,8 @@ typedef struct {
     uint64_t paint_serial;
     const unsigned char *document;
     size_t document_size;
-    int page_object;
+    const pdf_xref *xref;
+    pdf_object_id page_object;
     const pdf_object_view *resource_override;
     int image_failed;
     char *error;
@@ -139,7 +141,7 @@ typedef struct {
     int32_t *text_winding;
     size_t text_winding_bytes;
     const pdf_font_table *font_table;
-    int form_objects[16];
+    pdf_object_id form_objects[16];
     pdf_form_clip form_clips[16];
     int form_depth;
     int glyph_depth;
@@ -187,7 +189,8 @@ int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transpar
 int cupidimage_pdf_composite_implicit_group(pdf_render_state *st,
                                             const pdf_transparency_group *group);
 
-int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
+int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
+                             const pdf_object_view *form);
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,
                                     const char *key, pdf_object_view *result);
 int cupidimage_pdf_image_integer(const pdf_render_state *st, const pdf_object_view *view,
@@ -242,8 +245,10 @@ void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y);
 void cupidimage_pdf_text_advance(pdf_render_state *st, double distance);
 void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length);
 
+int cupidimage_pdf_state_object(const pdf_render_state *st, pdf_object_id object,
+                                pdf_object_view *view);
 int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category, const char *name,
-                                 pdf_object_view *value, int *reference);
+                                 pdf_object_view *value, pdf_object_id *reference);
 
 int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *font, unsigned code);
 

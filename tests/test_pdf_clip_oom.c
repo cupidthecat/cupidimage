@@ -34,6 +34,7 @@
 #include "../src/formats/pdf/pdf_inline.c"
 #include "../src/formats/pdf/pdf_mesh.c"
 #include "../src/formats/pdf/pdf_object_values.c"
+#include "../src/formats/pdf/pdf_objects.c"
 #include "../src/formats/pdf/pdf_patch.c"
 #include "../src/formats/pdf/pdf_pattern_render.c"
 #include "../src/formats/pdf/pdf_patterns.c"
@@ -47,6 +48,7 @@
 #include "../src/formats/pdf/pdf_text_groups.c"
 #include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/pdf_transparency.c"
+#include "../src/formats/pdf/pdf_xref.c"
 #include "fixtures/pdf-cff.inc"
 #include "fixtures/pdf-truetype.inc"
 #include "fixtures/pdf-type1.inc"
@@ -55,7 +57,67 @@
 #undef realloc
 #undef free
 
-int main(void) {
+static int test_document_allocations(const char *path, int expected_failure) {
+    FILE *file = fopen(path, "rb");
+    if (!file || fseek(file, 0, SEEK_END))
+        return 2;
+    long length = ftell(file);
+    if (length < 0 || fseek(file, 0, SEEK_SET)) {
+        fclose(file);
+        return 2;
+    }
+    unsigned char *document = malloc((size_t)length);
+    if (!document || fread(document, 1, (size_t)length, file) != (size_t)length) {
+        free(document);
+        fclose(file);
+        return 2;
+    }
+    fclose(file);
+    size_t total = 0, checks = 0, failures = 0, expected_size = 0;
+    unsigned char *expected = NULL;
+    unsigned width = 0, height = 0;
+    for (size_t failure = 0; failure <= total; failure++) {
+        allocation_count = 0;
+        fail_at = failure;
+        cupidimage_image image = {0};
+        char error[256];
+        int ok =
+            cupidimage_load_pdf_page(document, (size_t)length, &image, 0, error, sizeof(error));
+        if (!failure) {
+            total = allocation_count;
+            if (ok == expected_failure)
+                failures++;
+            if (ok) {
+                width = image.width;
+                height = image.height;
+                expected_size = (size_t)width * height * 4;
+                expected = malloc(expected_size);
+                if (!expected)
+                    abort();
+                memcpy(expected, image.rgba, expected_size);
+            }
+        } else if (ok && (expected_failure || image.width != width || image.height != height ||
+                          memcmp(expected, image.rgba, expected_size)))
+            failures++;
+        fault_free(image.rgba);
+        checks++;
+        if (live_count) {
+            fprintf(stderr, "document allocation %zu leaked %zu blocks\n", failure, live_count);
+            failures++;
+            while (live_count)
+                fault_free(live[0]);
+        }
+    }
+    free(expected);
+    free(document);
+    printf("PDF document allocation failures: %zu checks, %zu failures\n", checks, failures);
+    return failures != 0;
+}
+
+int main(int argc, char **argv) {
+    if (argc == 3)
+        return test_document_allocations(argv[1], atoi(argv[2]));
+
     static const struct {
         const char *content;
         int valid;
@@ -557,7 +619,7 @@ int main(void) {
     }
     {
         const unsigned char data[] = "<< /Group << /S /Transparency /I true >> >>";
-        pdf_object_view form = {data, sizeof(data) - 1, NULL};
+        pdf_object_view form = {data, sizeof(data) - 1, NULL, NULL};
         cupidimage_image image = {0};
         image.width = image.height = 5000;
         pdf_form_budget budget = {0};
@@ -775,7 +837,7 @@ int main(void) {
             if (!owned)
                 return 1;
             memcpy(owned, "xx<< /N 1 >>", 12);
-            pdf_object_view view = {owned + 2, 10, owns_view ? owned : NULL};
+            pdf_object_view view = {owned + 2, 10, owns_view ? owned : NULL, NULL};
             pdf_pattern pattern = {0};
             pdf_pattern_store store = {0};
             pdf_render_state state = {0};
@@ -921,7 +983,7 @@ int main(void) {
         state.img = &image;
         state.patterns = &full;
         full.bytes_used = PATTERN_BYTES - 1;
-        pdf_object_view view = {(const unsigned char *)"<< >>", 5, NULL};
+        pdf_object_view view = {(const unsigned char *)"<< >>", 5, NULL, NULL};
         checks++;
         if (pattern_select_shading(&state, &view, 0, 0))
             failures++;
@@ -944,7 +1006,7 @@ int main(void) {
                          entries[test]);
             const char *source =
                 "<< /Subtype /Type0 /Encoding /Identity-V /DescendantFonts [6 0 R] >>";
-            pdf_object_view view = {(const unsigned char *)source, strlen(source), NULL};
+            pdf_object_view view = {(const unsigned char *)source, strlen(source), NULL, NULL};
             size_t total = 0;
             for (size_t failure = 0; failure <= total; failure++) {
                 pdf_font_map font = {0};

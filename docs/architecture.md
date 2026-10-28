@@ -26,6 +26,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
 
 - PDF: public page APIs, document/object parsing and streams, font maps and the
   bitmap fallback, image samples and masks, and graphics/content rendering.
+  `pdf_xref.c` builds revision-aware indices; `pdf_objects.c` resolves indexed
+  objects and stream parameters with shared recursion/work budgets. The immutable
+  index is passed through document, resource and font views without global state.
   Type 3 font metadata lives in `pdf_font_type3.c`, and shared resource-scope
   lookup lives in `pdf_resources.c`. Pattern validation and the bounded
   per-page cell/gradient cache live in `pdf_patterns.c`. Pattern stream execution
@@ -50,7 +53,7 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   names independently of fonts. `pdf_groups.c` manages floating-point RGB/gray group buffers with separate shape and alpha,
   state initialization and compositing, including the isolated page buffer and
   final white-medium composite. Knockout members use the initial group backdrop.
-  Pattern caches retain shape and alpha separately from their byte colors. `pdf_soft_masks.c` renders group-derived
+  Pattern caches retain floating-point color, shape and alpha separately. `pdf_soft_masks.c` renders group-derived
   masks, evaluates their transfer functions and owns their reference-counted
   lifetime. Groups and retained masks share a transparency-memory budget.
   Text matrices, glyph coverage, spacing and advances live in `pdf_text.c`;

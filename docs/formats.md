@@ -280,8 +280,11 @@ than treating embedded `obj`, `stream`, or `endobj` text as structure.
 Object streams use the shared byte filters. Their object counts, header extent,
 body offsets, and ordering are checked before extracting an object.
 
-The object resolver still uses recovery scanning in places; this is not complete
-cross-reference, generation-number, or incremental-update support.
+Complete PDF files now use a revision-aware cross-reference index, preserving
+generations and free entries and selecting compressed objects by their declared
+container and index. See [PDF objects and revisions](pdf-objects.md) for hybrid
+precedence, indirect stream parameters, validation and limits. Encryption and
+damaged-file reconstruction remain unsupported.
 
 ## PDF shadings
 

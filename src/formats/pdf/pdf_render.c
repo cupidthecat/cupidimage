@@ -14,7 +14,8 @@
 #include "pdf_content_syntax.h"
 #include "pdf_render_internal.h"
 
-int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
+int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
+                             const pdf_object_view *form);
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream,
                                  size_t stream_len);
 
@@ -1267,7 +1268,8 @@ void cupidimage_pdf_matrix_concat_double(double m[6], const double n[6]) {
 
 int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *font, unsigned code) {
     const pdf_type3_font *type = font->type3;
-    int object = type->glyphs[code], ok = 0;
+    pdf_object_id object = type->glyphs[code];
+    int ok = 0;
     if (!object || st->gs.text_mode == 3 || st->gs.font_size_pts == 0 ||
         st->gs.horizontal_scale == 0)
         return 1;
@@ -1282,7 +1284,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     cupidimage_pdf_font_table_init(&fonts);
     const unsigned char *stream;
     size_t length, pos;
-    if (!cupidimage_pdf_get_object_content(st->document, st->document_size, object, &program) ||
+    if (!cupidimage_pdf_state_object(st, object, &program) ||
         !cupidimage_pdf_object_stream(st->document, st->document_size, &program, &stream,
                                       &length) ||
         !cupidimage_pdf_decode_stream(&program, stream, length, &decoded, &length) ||
@@ -1359,7 +1361,8 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form) {
+int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
+                             const pdf_object_view *form) {
     size_t pos, length;
     int type = 1, ok = 0;
     const unsigned char *stream;
@@ -1402,11 +1405,10 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, int object, const pdf_object_
     if (cupidimage_pdf_page_value(form, "Matrix", &pos)) {
         pdf_object_view indirect = {0};
         const pdf_object_view *matrix = form;
-        int matrix_obj;
+        pdf_object_id matrix_obj;
         if (pos < form->len && form->data[pos] != '[') {
             if (!cupidimage_pdf_page_reference(form, pos, &matrix_obj) ||
-                !cupidimage_pdf_get_object_content(st->document, st->document_size, matrix_obj,
-                                                   &indirect))
+                !cupidimage_pdf_state_object(st, matrix_obj, &indirect))
                 goto done;
             matrix = &indirect;
             pos = 0;
@@ -1489,14 +1491,17 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t stream_len,
-                                         const unsigned char *document, size_t document_size,
-                                         int page_object, const pdf_font_table *font_table,
-                                         cupidimage_image *img, const pdf_page_geometry *geometry,
-                                         char *err, size_t errcap) {
+int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, size_t stream_len,
+                                                 const unsigned char *document,
+                                                 size_t document_size, pdf_object_id page_object,
+                                                 const pdf_font_table *font_table,
+                                                 cupidimage_image *img,
+                                                 const pdf_page_geometry *geometry, char *err,
+                                                 size_t errcap, const pdf_xref *xref) {
     pdf_render_state st = {0};
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
+    st.xref = xref;
     pdf_form_budget form_budget = {
         64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536, 256u * 1024u * 1024u, 0, 0};
     st.form_budget = &form_budget;
@@ -1546,4 +1551,15 @@ int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t str
         cupidimage_set_err(err, errcap,
                            "pdf: unsupported page group or transparency limit exceeded");
     return ok;
+}
+
+int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t stream_len,
+                                         const unsigned char *document, size_t document_size,
+                                         pdf_object_id page_object,
+                                         const pdf_font_table *font_table, cupidimage_image *img,
+                                         const pdf_page_geometry *geometry, char *err,
+                                         size_t errcap) {
+    return cupidimage_pdf_render_content_stream_indexed(stream, stream_len, document, document_size,
+                                                        page_object, font_table, img, geometry, err,
+                                                        errcap, NULL);
 }

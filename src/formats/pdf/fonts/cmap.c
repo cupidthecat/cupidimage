@@ -384,17 +384,19 @@ static int cmap_program(pdf_cmap *map, const unsigned char *data, size_t length,
 }
 
 static int cmap_value(const unsigned char *doc, size_t size, const pdf_object_view *view, size_t p,
-                      pdf_object_view *out, int *object) {
+                      pdf_object_view *out, pdf_object_id *object) {
     *object = 0;
     if (cupidimage_pdf_page_reference(view, p, object))
-        return cupidimage_pdf_get_object_content(doc, size, *object, out);
+        return cupidimage_pdf_view_object(doc, size, view, *object, out);
     out->data = view->data + p;
     out->len = view->len - p;
+    out->xref = view->xref;
     return 1;
 }
 
 static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_view *view,
-                     pdf_cmap **result, int chain[5], unsigned depth, size_t *decoded_bytes) {
+                     pdf_cmap **result, pdf_object_id chain[5], unsigned depth,
+                     size_t *decoded_bytes) {
     if (depth == 5)
         return 0;
     pdf_cmap *map = calloc(1, sizeof(*map));
@@ -446,7 +448,7 @@ static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_vie
         goto done;
     }
     if (cupidimage_pdf_page_value(view, "UseCMap", &p)) {
-        int object;
+        pdf_object_id object;
         if (!cmap_value(doc, size, view, p, &base, &object))
             goto done;
         for (unsigned i = 0; object && i < depth; i++)
@@ -461,7 +463,7 @@ static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_vie
     int dict_mode = -1;
     if (cupidimage_pdf_page_value(view, "WMode", &p)) {
         pdf_object_view value = {0};
-        int object;
+        pdf_object_id object;
         if (!cmap_value(doc, size, view, p, &value, &object))
             goto done;
         size_t at = 0;
@@ -497,7 +499,7 @@ done:
 
 int cupidimage_pdf_cmap_load(const unsigned char *doc, size_t size, const pdf_object_view *view,
                              pdf_cmap **result) {
-    int chain[5] = {0};
+    pdf_object_id chain[5] = {0};
     size_t decoded = 0;
     *result = NULL;
     return cmap_load(doc, size, view, result, chain, 0, &decoded);

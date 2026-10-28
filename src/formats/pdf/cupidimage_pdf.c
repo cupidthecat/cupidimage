@@ -79,13 +79,13 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
         return 0;
     }
 
-    int pages_obj = 0;
+    pdf_object_id pages_obj = 0;
     if (!cupidimage_pdf_get_pages_obj(data, size, &xref, &pages_obj, err, errcap)) {
         free(xref.entries);
         return 0;
     }
 
-    int page_obj = 0;
+    pdf_object_id page_obj = 0;
     if (!cupidimage_pdf_get_page_obj_by_index(data, size, &xref, pages_obj, page_index, &page_obj,
                                               err, errcap)) {
         free(xref.entries);
@@ -94,14 +94,16 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
 
     pdf_font_table fonts;
     cupidimage_pdf_font_table_init(&fonts);
-    if (!cupidimage_pdf_collect_page_fonts(data, size, page_obj, &fonts, err, errcap)) {
+    if (!cupidimage_pdf_collect_page_fonts_indexed(data, size, page_obj, &fonts, err, errcap,
+                                                   &xref)) {
         /* Keep rendering even if font metadata parsing fails. */
         cupidimage_pdf_font_table_free(&fonts);
         cupidimage_pdf_font_table_init(&fonts);
     }
 
     pdf_page_geometry geometry;
-    if (!cupidimage_pdf_get_page_geometry(data, size, page_obj, &geometry, err, errcap)) {
+    if (!cupidimage_pdf_get_page_geometry_indexed(data, size, page_obj, &geometry, err, errcap,
+                                                  &xref)) {
         cupidimage_pdf_font_table_free(&fonts);
         free(xref.entries);
         return 0;
@@ -174,8 +176,9 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
             render_len = inflated_len;
         }
 
-        if (!cupidimage_pdf_render_content_stream(render_data, render_len, data, size, page_obj,
-                                                  &fonts, img, &geometry, err, errcap)) {
+        if (!cupidimage_pdf_render_content_stream_indexed(render_data, render_len, data, size,
+                                                          page_obj, &fonts, img, &geometry, err,
+                                                          errcap, &xref)) {
             free(inflated);
             free(stream_data);
             cupidimage_pdf_font_table_free(&fonts);
@@ -248,14 +251,15 @@ int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *c
         return 0;
     }
 
-    int pages_obj = 0;
+    pdf_object_id pages_obj = 0;
     if (!cupidimage_pdf_get_pages_obj(data, size, &xref, &pages_obj, err, errcap)) {
         free(xref.entries);
         return 0;
     }
 
     int page_count = 0;
-    if (!cupidimage_pdf_get_pages_count_from_obj(data, size, pages_obj, &page_count, err, errcap)) {
+    if (!cupidimage_pdf_get_pages_count_indexed(data, size, pages_obj, &page_count, err, errcap,
+                                                &xref)) {
         free(xref.entries);
         return 0;
     }

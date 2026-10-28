@@ -225,7 +225,7 @@ int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group
     pdf_object_view page = {0}, attributes = {0};
     size_t pos;
     int ok = 0, gray = 0, ignored_isolation = 0, knockout = 0;
-    if (!cupidimage_pdf_get_object_content(st->document, st->document_size, st->page_object, &page))
+    if (!cupidimage_pdf_state_object(st, st->page_object, &page))
         goto done;
     if (cupidimage_pdf_page_value(&page, "Group", &pos)) {
         if (!cupidimage_pdf_dictionary_value(st->document, st->document_size, &page, "Group",
