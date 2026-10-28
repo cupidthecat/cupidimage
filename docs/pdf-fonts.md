@@ -235,12 +235,17 @@ programs, widths or CID metrics.
 
 ## What remains
 
+[Issue #50](https://github.com/cupidthecat/cupidimage/issues/50) tracks font and
+text fidelity in the current PDF work. The main gaps are:
+
 - TrueType instruction execution, grid fitting and antialiased font coverage.
 - CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
 - Extended glyph coverage in the standard-font substitutes and general substitution for other nonembedded fonts.
 
+The applicability of newer font formats and tables must be checked against the
+PDF version; this list is not a claim that every PDF version requires them.
 These gaps can still change glyph shape, pixel phase or text coverage. Successful
 loading is not enough to mark a font or document correct.
 

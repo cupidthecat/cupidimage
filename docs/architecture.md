@@ -28,8 +28,7 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   wrappers. `jpeg_entropy.c` owns Huffman tables and shared sequential/progressive
   coefficient decoding. `jpeg_arithmetic.c` implements arithmetic probability
   states and sequential/progressive coefficient scans. `jpeg_output.c` reconstructs
-  samples and provides native
-  component or RGBA output. `jpeg_internal.h` defines their private contracts.
+  samples and provides native component or RGBA output. `jpeg_internal.h` defines their private contracts.
 - PDF: public page APIs, document/object parsing and streams, font maps and the
   bitmap fallback, image samples and masks, and graphics/content rendering.
   `pdf_xref.c` builds revision-aware indices; `pdf_objects.c` resolves indexed

@@ -32,8 +32,12 @@ non-interlaced and Adam7; color types 0/2/3/4/6 with 1/2/4/8/16-bit depths; pale
 
 ## JPEG
 
-baseline/progressive DCT, Huffman-coded, 8-bit precision; grayscale/YCbCr/CMYK/YCCK;
-sampling up to 2x2. No arithmetic coding or >2x2 sampling.
+8-bit Huffman-coded baseline, extended sequential and progressive DCT, plus
+arithmetic-coded sequential and progressive DCT; grayscale/YCbCr/CMYK/YCCK.
+Sampling factors run from one through four, with separate and mixed sequential
+component scans. Lossless, higher-precision, hierarchical and color-managed
+output still need work. The recent shared-decoder changes support PDF DCT images;
+they do not complete the standalone JPEG audit.
 
 ## WebP
 
@@ -70,15 +74,22 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 
 ## PDF
 
-basic text, raw, FlateDecode, ASCIIHexDecode, ASCII85Decode, RunLengthDecode, and LZWDecode page streams, gray/RGB/CMYK paint, line and cubic Bezier paths,
-nonzero/even-odd fills, and path clipping. Type 3 text executes PDF glyph programs;
-supported TrueType, CFF and Type 1 programs render unhinted outlines. Image XObjects
-support 1/2/4/8/16-bit DeviceRGB, DeviceGray, and DeviceCMYK samples in raw or
-FlateDecode streams. Baseline and progressive grayscale, RGB/YCbCr and CMYK/YCCK
-JPEG images use DCTDecode. Images also support TIFF/PNG predictors, Decode
-arrays, and affine placement. Form XObjects render nested content with local resources,
-transforms, and bounding-box clipping. Previews use inherited MediaBox/CropBox rectangles,
-nonzero page origins, and clockwise rotation in multiples of 90 degrees. Unhinted TrueType, CFF/Type 2 and Type 1 outlines are supported; complete font fidelity, color management, general transparency and annotations remain incomplete.
+PDF pages support text positioning and clipping, unhinted TrueType/CFF/Type 1
+outlines, Type 3 glyph programs, standard-font substitutes and horizontal/vertical
+CID metrics. Paths, styled strokes, forms, tiling patterns and all seven shading
+geometries share the graphics pipeline. RGB/gray transparency groups, text
+knockout and graphics-state soft masks are implemented within the limits below.
+
+Images include packed and 16-bit device-color samples, indexed palettes, fax and
+DCT streams, filter chains, Decode arrays, explicit masks and soft masks. Image
+placement uses the current affine transform. Pages honor inherited MediaBox and
+CropBox rectangles, nonzero origins and quarter-turn rotation.
+
+Complete font fidelity, image interpolation, color management, additional
+transparency spaces, annotations, optional-content visibility and several image
+filters remain unfinished. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
+[shading](pdf-shading.md), [pattern](pdf-patterns.md), [object](pdf-objects.md) and
+[transparency](pdf-transparency.md) guides describe the implemented paths and gaps.
 
 ## PDF details and limits
 
@@ -103,9 +114,10 @@ ColorTransform 0/1, Adobe marker precedence and PDF Decode arrays without losing
 CMYK channels. Frame dimensions, bit depth and component count must match the
 image dictionary. Flate/LZW stages accept indirect predictor dictionaries and
 packed/16-bit prediction; each filter reads only its own parameters. The current
-DCT subset uses Huffman-coded 8-bit baseline/progressive frames, with sampling
-factors from one through four and separate or mixed sequential component scans.
-Other applicable DCT modes and JPX remain unfinished. See [PDF images](pdf-images.md) for the pipeline,
+DCT path supports 8-bit Huffman baseline/extended sequential/progressive frames
+and arithmetic sequential/progressive frames. Sampling factors run from one
+through four, with separate or mixed sequential component scans. Remaining DCT
+applicability questions, JPX and JBIG2 remain open. See [PDF images](pdf-images.md) for the pipeline,
 checks and limits.
 Drawing an invalid or unsupported XObject returns a load error.
 
@@ -261,15 +273,16 @@ Font, ToUnicode, or Filter entries.
 
 These maps choose characters for the existing bitmap fallback. Embedded font
 glyph selection follows the font encoding instead; complete PDF CMap semantics
-remain open. Simple-font Widths
-and MissingWidth entries now control advances; fonts without supported metrics
-retain the approximate fallback advances. Invalid outline metadata retains that
-fallback rather than a partially parsed font. An invalid ToUnicode map alone
-does not discard valid outlines, Type 3 programs or CID metrics. `make test-pdf-font-maps` checks those boundaries.
+remain open. Simple-font Widths and MissingWidth entries control advances; fonts
+without supported metrics retain the approximate fallback advances. Invalid
+required outline metadata fails the page instead of silently selecting a fallback.
+An invalid ToUnicode map alone does not discard valid outlines, Type 3 programs
+or CID metrics. `make test-pdf-font-maps` checks those boundaries.
 
 Character maps are limited to 65,536 entries per font and 256 fonts per resource
-scope. Oversized ranges and allocation failures discard the metadata instead of
-attempting unbounded expansion. Entries are sorted once, duplicate codes keep
+scope. Failures in optional ToUnicode maps discard only those maps. Required
+font metadata and exhausted font-table storage fail the page rather than
+attempting unbounded expansion or replacing all fonts. Entries are sorted once, duplicate codes keep
 the last definition, and glyph lookup uses binary search.
 
 ## PDF object syntax
@@ -289,8 +302,10 @@ damaged-file reconstruction remain unsupported.
 
 ## PDF shadings
 
-The `sh` operator paints Type 1 function-based, Type 2 axial, and Type 3 radial shadings in DeviceGray,
-DeviceRGB, or DeviceCMYK. Supported color functions include one- or two-input Type 0 sampled functions, single-input Type 2
+The `sh` operator paints function-based, axial, radial, free-form/lattice triangle
+and Coons/tensor patch shadings. Supported color spaces include DeviceGray,
+DeviceRGB, DeviceCMYK and Indexed, with the function restrictions described in
+[PDF shading](pdf-shading.md). Supported color functions include one- or two-input Type 0 sampled functions, single-input Type 2
 exponential functions, Type 3 stitching functions, Type 4 calculator functions,
 and arrays of single-output
 functions. Exponential functions accept Domain, C0/C1, N, and optional Range.
@@ -302,9 +317,8 @@ be indirect objects. Gray functions can use the default C0/C1 values.
 Each page has a shared budget of 128 million color-function evaluations, including
 nested forms and stitched/component functions. Function trees are limited to
 64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
-silently leaving a blank area. Cubic sampled interpolation, mesh shadings,
-and color-managed shading spaces
-remain unsupported.
+silently leaving a blank area. Cubic sampled interpolation and color-managed
+shading spaces remain unsupported.
 
 Small fixtures require exact analytic pixels. Optional independent comparisons
 use native-resolution pages, with one channel unit allowed for linear axial
@@ -388,7 +402,7 @@ spacing, scaling, leading, font selection and rise. Text state is saved by
 `q`/`Q` and retained across text objects; `BT` resets the two text matrices.
 Text matrices themselves are not saved by `q`/`Q`.
 
-All eight `Tr` modes apply to the current fallback glyph shapes: fill, stroke,
+All eight `Tr` modes apply to supported outlines and fallback glyph shapes: fill, stroke,
 fill/stroke, invisible, and their clipping variants. Clipping accumulates the
 nonzero winding of nonempty bitmap glyph outlines and intersects the graphics clip at `ET`.
 Showing only spaces in a clipping text mode produces an empty text clip. Invisible
@@ -402,13 +416,13 @@ fallback outside that range. Identity CID metrics and vertical positioning are
 described below. The standard 14 Type 1 fonts use pinned Adobe metrics when
 PDF widths are absent, with bundled CFF substitute outlines. Extended substitute
 glyph coverage, hinting, custom Type 1 procedures and complete font fidelity
-remain separate work. Malformed glyph metadata still uses the existing
-fallback policy; invalid ToUnicode metadata is isolated from valid glyph data. Bitmap glyph shapes are not equivalent to actual
-font outlines.
+remain separate work. Invalid required glyph metadata fails the page; invalid
+ToUnicode metadata is isolated from valid glyph data. Bitmap fallback shapes
+are not equivalent to actual font outlines.
 
 Text clipping uses the page's bounded clipping allocations and work budget.
 Transforms must remain finite. Zero font size and zero horizontal scale do not
-paint; negative values reflect the fallback glyph geometry.
+paint; negative values reflect the glyph geometry.
 
 ## PDF Type 3 glyph programs
 
@@ -436,9 +450,9 @@ Glyph execution is limited to 16 nested calls, 65,536 invocations per page and
 the shared 64 MiB decoded-content budget. Reusing a stream under another font's
 resources is not itself rejected as a cycle; depth and work limits bound actual
 recursion. Type 3 dictionaries are limited to 64 KiB and Differences arrays to
-1,024 entries. Predefined name-only encodings and other unimplemented
-content operations remain unsupported; malformed font metadata follows the
-existing fallback policy.
+1,024 entries. Named encodings use the shared simple-font resolver. Glyph
+programs can only use implemented PDF content operators. Invalid required font
+metadata fails the page rather than changing the font to a bitmap fallback.
 
 ## PDF tiling patterns
 
@@ -539,8 +553,8 @@ painting/clipping modes and saved graphics state use the same placement rules.
 ToUnicode chooses a fallback glyph but does not choose the CID's metrics. An
 unmapped CID shows the existing placeholder, rather than treating its number as
 Unicode. Invalid and truncated codes use CID zero with codespace-based byte
-recovery. Malformed font metadata retains the
-existing font-table fallback policy. Supported embedded TrueType programs instead
+recovery. Invalid required font metadata fails the page; optional extraction-map
+failures do not discard a valid font program. Supported embedded TrueType programs instead
 select outlines through CIDToGIDMap; CFF CID programs use their charsets and
 font dictionaries. Embedded maps support CID ranges, notdef
 recovery and UseCMap inheritance. The 59 predefined CJK maps in ISO 32000-1 Table 118 are bundled along with

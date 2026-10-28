@@ -49,14 +49,14 @@ Synthetic cases cover misleading nested keys and a missing real root.
 | Sixel | Palette generation, dithering, transparency, emitted stream checks | Device limits, raster aspect behavior, and live-terminal qualification |
 | SVG | Static geometry, styles, filters, basic text, sampled animation | Full SVG/CSS semantics, fonts, external resources, and independent visual corpus |
 | PNG | Static color types/depths, Adam7, transparency, framing, DEFLATE | APNG frame API, color management, and metadata exposure |
-| JPEG | 8-bit baseline/progressive Huffman DCT and existing color modes | Arithmetic/lossless/higher-precision modes, broader sampling and color-profile coverage |
+| JPEG | 8-bit sequential/progressive Huffman and arithmetic DCT, sampling through four, separate component scans | Lossless/higher-precision/hierarchical modes, color management and complete standalone qualification |
 | WebP | VP8/VP8L still images, filtered/compressed alpha, container checks | Animation API/composition, ICC color conversion, broader codec differential tests |
 | GIF | Animation, disposal, palettes, interlacing, transparency | Full extension/edge-case corpus and independent composition comparison |
 | BMP | Existing Windows/OS2 and compression variants | Header/color-space variants and independent generated-format matrix |
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Page geometry, basic text/vector graphics, clipping, forms, image XObjects and masks, opacity and RGB blending | Font rendering, transparency groups, mesh shadings, annotations, filters, object structures, real-document corpus |
+| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, tiling patterns, seven shading types, RGB/gray groups and text knockout | Font fidelity/substitution, image interpolation, color management, further transparency spaces, annotations, optional content, JPX/JBIG2 and full-document qualification |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
