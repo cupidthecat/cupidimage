@@ -96,9 +96,10 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     cupidimage_pdf_font_table_init(&fonts);
     if (!cupidimage_pdf_collect_page_fonts_indexed(data, size, page_obj, &fonts, err, errcap,
                                                    &xref)) {
-        /* Keep rendering even if font metadata parsing fails. */
         cupidimage_pdf_font_table_free(&fonts);
-        cupidimage_pdf_font_table_init(&fonts);
+        free(xref.entries);
+        cupidimage_set_err(err, errcap, "pdf: invalid or exhausted font resources");
+        return 0;
     }
 
     pdf_page_geometry geometry;

@@ -12,7 +12,7 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-pdf-xref test-pdf-shading-patterns test-pdf-pattern-colors test-pdf-pattern-backdrops test-pdf-device-color test-pdf-patch test-pdf-mesh test-pdf-content-syntax test-pdf-text-knockout test-pdf-knockout test-pdf-page-groups test-pdf-soft-masks test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-pdf-font-defaults test-pdf-xref test-pdf-shading-patterns test-pdf-pattern-colors test-pdf-pattern-backdrops test-pdf-device-color test-pdf-patch test-pdf-mesh test-pdf-content-syntax test-pdf-text-knockout test-pdf-knockout test-pdf-page-groups test-pdf-soft-masks test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
@@ -314,3 +314,6 @@ test-pdf-shading-patterns: $(BINDIR)/test_pdf_pages
 
 test-pdf-xref: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_xref.py $< $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-font-defaults: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_font_defaults.py $< $(BINDIR)/test_pdf_clip_oom

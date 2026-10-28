@@ -28,8 +28,8 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
     } else if (cupidimage_pdf_page_value(&encoding, "BaseEncoding", &pos)) {
         pdf_object_view value = {0};
         size_t at = 0;
-        ok = cupidimage_pdf_dictionary_value(data, size, &encoding, "BaseEncoding", &value) &&
-             cupidimage_pdf_read_name(&value, &at, base);
+        int present = cupidimage_pdf_optional_value(data, size, &encoding, "BaseEncoding", &value);
+        ok = present == 0 || (present > 0 && cupidimage_pdf_read_name(&value, &at, base));
         cupidimage_pdf_object_view_release(&value);
     }
     if (*base) {
@@ -40,7 +40,12 @@ int cupidimage_pdf_simple_encoding(const unsigned char *data, size_t size,
             glyphs[i] = lookup(context, cupidimage_pdf_encoding_name(base, i));
     }
     if (ok && dictionary && cupidimage_pdf_page_value(&encoding, "Differences", &pos)) {
-        ok = cupidimage_pdf_dictionary_value(data, size, &encoding, "Differences", &differences);
+        int present =
+            cupidimage_pdf_optional_value(data, size, &encoding, "Differences", &differences);
+        if (present <= 0) {
+            cupidimage_pdf_object_view_release(&encoding);
+            return present == 0;
+        }
         pos = 0;
         cupidimage_pdf_skip_ws_and_comments(differences.data, differences.len, &pos);
         ok = ok && pos < differences.len && differences.data[pos++] == '[';

@@ -119,8 +119,8 @@ Identity-H/V. Their horizontal and vertical mappings cover the Adobe CNS1, GB1,
 Japan1 and Korea1 collections, including mixed-width and UTF-16 codes. They select
 CIDs, not replacement font outlines: faithful rendering still requires a supported
 font program. Other named maps remain unsupported. This parser reads the CMap
-data format; it is not a general PostScript interpreter. Invalid maps retain the
-font table's existing fallback policy rather than establishing faithful text.
+data format; it is not a general PostScript interpreter. Invalid required encoding
+maps fail font loading. Optional ToUnicode extraction maps are handled separately.
 
 ## TrueType programs and geometry
 
@@ -227,9 +227,11 @@ levels. Stroked outlines share the path's 4,096-segment bound. Pixel intersectio
 work and text clipping use the page's shared budgets.
 
 Programs, maps, component points, curve edges and stroke masks are released on
-both success and failure. Invalid glyph metadata retains the existing font-table
-fallback policy; an invalid glyph encountered in a loaded program fails the page
-rather than quietly dropping that glyph.
+both success and failure. Invalid required font resources or exhausted font-table
+storage fail the page rather than silently replacing every collected font with a
+bitmap fallback. An invalid glyph encountered in a loaded program also fails the
+page. Invalid optional ToUnicode maps are discarded without losing valid glyph
+programs, widths or CID metrics.
 
 ## What remains
 
@@ -393,3 +395,29 @@ Content font names decode `#XX` escapes before lookup. Literal-string line endin
 and escapes preserve the PDF character-code rules, and TJ validates each element
 rather than skipping malformed values. See [PDF content syntax](pdf-content.md)
 for the supported grammar, exact tests and parser bounds.
+
+## Optional values and character widths
+
+Null dictionary entries have the same effect as omitted entries, including
+undefined references and generation mismatches. The font path applies this to
+Encoding, BaseEncoding, Differences, FontDescriptor, font-program streams,
+Widths, MissingWidth and ToUnicode. CID fonts also retain the specified defaults
+for null DW, DW2, W, W2 and CIDToGIDMap entries. Encoding CMap WMode and UseCMap
+entries treat null as absent. A null higher-priority program entry does not
+hide a valid lower-priority embedded program. Required values still need their
+specified types; a null element inside a Widths array is not a numeric width.
+Widths are required for most simple fonts. The existing embedded-advance fallback
+for missing non-Type3 widths remains damaged-input compatibility, not evidence
+that a conforming producer may omit required widths.
+
+Simple-font Widths elements and MissingWidth accept indirect numbers. Widths are
+indexed by the original character code before Unicode extraction mapping. Null
+page Resources continue inheritance, while an explicitly empty dictionary still
+shadows the parent. Null unused font and graphics-state entries do not discard
+other resources. Forms with null Resources retain the invoking resource scope.
+
+`make test-pdf-font-defaults` compares these cases with omitted-entry or explicit
+numeric equivalents using standard, TrueType and compact font programs. Complete
+page loads also run under allocation-failure injection, with successful recovery
+required to preserve every output pixel. The resource-budget and malformed-font
+reference tests now require an error instead of accepting changed fallback text.

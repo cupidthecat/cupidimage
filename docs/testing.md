@@ -403,3 +403,9 @@ indirect stream lengths across revisions. Negative cases exercise cycles,
 truncation, invalid offsets and malformed structural fields. The same PDFs run
 through allocation-failure injection, checking leaks and successful-output pixels.
 See [PDF objects and revisions](pdf-objects.md) for the supported rules and bounds.
+
+`make test-pdf-font-defaults` checks null/undefined optional font values, indirect
+widths, CID horizontal/vertical defaults, encoding CMap defaults,
+embedded-program selection and inherited page/form resources against
+exact equivalent documents. Allocation failures run through complete page loads;
+a successful call must retain the baseline pixels, not silently replace fonts.

@@ -383,17 +383,6 @@ static int cmap_program(pdf_cmap *map, const unsigned char *data, size_t length,
     return map->space_count && cmap_index(map);
 }
 
-static int cmap_value(const unsigned char *doc, size_t size, const pdf_object_view *view, size_t p,
-                      pdf_object_view *out, pdf_object_id *object) {
-    *object = 0;
-    if (cupidimage_pdf_page_reference(view, p, object))
-        return cupidimage_pdf_view_object(doc, size, view, *object, out);
-    out->data = view->data + p;
-    out->len = view->len - p;
-    out->xref = view->xref;
-    return 1;
-}
-
 static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_view *view,
                      pdf_cmap **result, pdf_object_id chain[5], unsigned depth,
                      size_t *decoded_bytes) {
@@ -447,10 +436,13 @@ static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_vie
         ok = 1;
         goto done;
     }
-    if (cupidimage_pdf_page_value(view, "UseCMap", &p)) {
-        pdf_object_id object;
-        if (!cmap_value(doc, size, view, p, &base, &object))
-            goto done;
+    int present = cupidimage_pdf_optional_value(doc, size, view, "UseCMap", &base);
+    if (present < 0)
+        goto done;
+    if (present) {
+        pdf_object_id object = 0;
+        if (cupidimage_pdf_page_value(view, "UseCMap", &p))
+            cupidimage_pdf_page_reference(view, p, &object);
         for (unsigned i = 0; object && i < depth; i++)
             if (chain[i] == object)
                 goto done;
@@ -461,14 +453,14 @@ static int cmap_load(const unsigned char *doc, size_t size, const pdf_object_vie
         memcpy(map->spaces, map->base->spaces, map->space_count * sizeof(*map->spaces));
     }
     int dict_mode = -1;
-    if (cupidimage_pdf_page_value(view, "WMode", &p)) {
-        pdf_object_view value = {0};
-        pdf_object_id object;
-        if (!cmap_value(doc, size, view, p, &value, &object))
-            goto done;
+    pdf_object_view mode = {0};
+    present = cupidimage_pdf_optional_value(doc, size, view, "WMode", &mode);
+    if (present < 0)
+        goto done;
+    if (present) {
         size_t at = 0;
-        cmap_token token = cmap_lex(value.data, value.len, &at, 0);
-        cupidimage_pdf_object_view_release(&value);
+        cmap_token token = cmap_lex(mode.data, mode.len, &at, 0);
+        cupidimage_pdf_object_view_release(&mode);
         if (token.type != CM_NUMBER || (token.number != 0 && token.number != 1))
             goto done;
         dict_mode = (int)token.number;

@@ -42,9 +42,9 @@ def main():
                 extra={3: f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 18 12] /Contents {value} 0 R >>'})),
         ):
             cases.append((name + '-' + value[:20], pdf, True))
-        # Font metadata is optional; malformed maps must fall back safely.
+        # Invalid resource references must not silently discard the font table.
         cases.append(('font-' + value[:20], document(
-            f'/MediaBox [0 0 18 12] /Resources << /Font << /F1 {value} 0 R >> >>'), False))
+            f'/MediaBox [0 0 18 12] /Resources << /Font << /F1 {value} 0 R >> >>'), True))
     cases += [
         ('xref-range-overflow', base.replace(b'xref\n0 5\n', b'xref\n2147483647 5\n'), True),
         ('xref-zero-count', base.replace(b'xref\n0 5\n', b'xref\n0 0\n'), True),

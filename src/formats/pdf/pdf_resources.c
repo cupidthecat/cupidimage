@@ -25,9 +25,12 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
         } else if (!cupidimage_pdf_state_object(st, object, &node))
             return 0;
         size_t pos;
-        if (cupidimage_pdf_page_value(&node, "Resources", &pos)) {
-            int ok = cupidimage_pdf_image_dictionary(st, &node, "Resources", &resources) &&
-                     cupidimage_pdf_image_dictionary(st, &resources, category, &entries);
+        int present = cupidimage_pdf_optional_dictionary(st->document, st->document_size, &node,
+                                                         "Resources", &resources);
+        if (present != 0) {
+            int ok = present > 0 &&
+                     cupidimage_pdf_optional_dictionary(st->document, st->document_size, &resources,
+                                                        category, &entries) == 1;
             pos = 0;
             if (ok && name)
                 ok = cupidimage_pdf_page_value(&entries, name, &pos);
@@ -40,6 +43,7 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
             } else if (ok && value) {
                 value->data = entries.data + pos;
                 value->len = entries.len - pos;
+                value->xref = entries.xref;
                 if (entries.owned) {
                     value->owned = entries.owned;
                     entries.owned = NULL;

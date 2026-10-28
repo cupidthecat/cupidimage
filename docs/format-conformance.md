@@ -632,3 +632,11 @@ and focused fault-injection tests. This removes a loading prerequisite for font
 and rendering work; it does not establish complete PDF support. Optional-value
 consumers still need a broader null/default audit, and encryption and damaged-file
 reconstruction remain unsupported.
+
+The subsequent font audit applies null/default semantics to simple-font encoding
+and metrics, embedded-program selection, optional ToUnicode maps, and inherited
+page/form resources. Required font parsing and storage failures now fail the page
+instead of clearing the entire font table and reporting a successful fallback
+render. Optional extraction-map failures remain isolated from glyph programs.
+Focused equivalence and complete-loader allocation tests cover these paths; the
+broader audit of other optional rendering parameters remains open.

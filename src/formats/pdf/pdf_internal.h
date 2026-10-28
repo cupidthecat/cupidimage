@@ -214,6 +214,11 @@ int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, size_t pos, pdf_object_view *out,
                                  unsigned depth);
 /* Optional values: 0 for absent/null, 1 for a resolved value, -1 for an error. */
+int cupidimage_pdf_optional_dictionary(const unsigned char *data, size_t size,
+                                       const pdf_object_view *parent, const char *key,
+                                       pdf_object_view *out);
+int cupidimage_pdf_resolved_number(const unsigned char *data, size_t size,
+                                   const pdf_object_view *view, size_t *pos, double *number);
 int cupidimage_pdf_optional_value(const unsigned char *data, size_t size,
                                   const pdf_object_view *view, const char *key,
                                   pdf_object_view *out);

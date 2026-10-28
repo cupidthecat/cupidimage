@@ -192,7 +192,8 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
         cupidimage_pdf_object_view_release(&encoding);
         return 0;
     }
-    pdf_object_view array = {0}, descendant = {0};
+    pdf_object_view array = {0}, descendant = {0}, default_value = {0}, widths = {0},
+                    vertical_widths = {0};
     pdf_cid_font *cid = NULL;
     int ok = cid_resolve(data, size, view, &pos, &array, 0);
     pos = 0;
@@ -230,16 +231,26 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
     cid->default_origin_y = .88;
     cid->default_advance_y = -1;
     double value;
-    if (cupidimage_pdf_page_value(&descendant, "DW", &pos)) {
-        if (!cid_number(data, size, &descendant, &pos, &value, 0))
+    int present = cupidimage_pdf_optional_value(data, size, &descendant, "DW", &default_value);
+    if (present < 0)
+        goto done;
+    pos = 0;
+    if (present) {
+        if (!cid_number(data, size, &default_value, &pos, &value, 0))
             goto done;
         cid->default_width = value / 1000;
     }
-    if (cupidimage_pdf_page_value(&descendant, "DW2", &pos)) {
-        pdf_object_view defaults = {0};
-        int valid = cid_resolve(data, size, &descendant, &pos, &defaults, 0);
+    cupidimage_pdf_object_view_release(&default_value);
+    present = cupidimage_pdf_optional_value(data, size, &descendant, "DW2", &default_value);
+    if (present < 0)
+        goto done;
+    if (present) {
+        pdf_object_view defaults = default_value;
+        defaults.owned = NULL;
+        int valid = 1;
         size_t p = 0;
-        valid = valid && defaults.len && defaults.data[p++] == '[';
+        cupidimage_pdf_skip_ws_and_comments(defaults.data, defaults.len, &p);
+        valid = p < defaults.len && defaults.data[p++] == '[';
         if (valid)
             valid = cid_number(data, size, &defaults, &p, &value, 0);
         if (valid)
@@ -254,9 +265,10 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
         if (!valid)
             goto done;
     }
-    size_t wp, w2p;
-    int w = cupidimage_pdf_page_value(&descendant, "W", &wp),
-        w2 = cupidimage_pdf_page_value(&descendant, "W2", &w2p);
+    int w = cupidimage_pdf_optional_value(data, size, &descendant, "W", &widths),
+        w2 = cupidimage_pdf_optional_value(data, size, &descendant, "W2", &vertical_widths);
+    if (w < 0 || w2 < 0)
+        goto done;
     if (w || w2) {
         if (metadata_cost > 64u * 1024u * 1024u - 65536 * sizeof(pdf_cid_metric) ||
             *budget > 64u * 1024u * 1024u - metadata_cost - 65536 * sizeof(pdf_cid_metric))
@@ -264,15 +276,18 @@ int cupidimage_pdf_parse_cid_font(const unsigned char *data, size_t size,
         cid->metrics = calloc(65536, sizeof(pdf_cid_metric));
         if (!cid->metrics)
             goto done;
-        if (w && !cid_width_array(data, size, &descendant, wp, cid, 0))
+        if (w && !cid_width_array(data, size, &widths, 0, cid, 0))
             goto done;
-        if (w2 && !cid_width_array(data, size, &descendant, w2p, cid, 1))
+        if (w2 && !cid_width_array(data, size, &vertical_widths, 0, cid, 1))
             goto done;
     }
     font->cid = cid;
     *budget += cupidimage_pdf_cid_font_bytes(cid);
     cid = NULL;
 done:
+    cupidimage_pdf_object_view_release(&default_value);
+    cupidimage_pdf_object_view_release(&widths);
+    cupidimage_pdf_object_view_release(&vertical_widths);
     cupidimage_pdf_object_view_release(&encoding);
     cupidimage_pdf_cid_font_free(cid);
     cupidimage_pdf_object_view_release(&descendant);

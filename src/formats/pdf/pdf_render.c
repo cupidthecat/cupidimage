@@ -1448,19 +1448,19 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
     inv[4] = -(inv[0] * m[4] + inv[2] * m[5]);
     inv[5] = -(inv[1] * m[4] + inv[3] * m[5]);
     child->form_objects[child->form_depth++] = object;
-    if (cupidimage_pdf_page_value(form, "Resources", &pos)) {
-        pdf_object_view resources = {0};
-        int valid = cupidimage_pdf_image_dictionary(st, form, "Resources", &resources);
-        cupidimage_pdf_object_view_release(&resources);
-        if (!valid)
-            goto done;
+    pdf_object_view form_resources = {0};
+    int local_resources = cupidimage_pdf_optional_dictionary(st->document, st->document_size, form,
+                                                             "Resources", &form_resources);
+    cupidimage_pdf_object_view_release(&form_resources);
+    if (local_resources < 0)
+        goto done;
+    if (local_resources > 0) {
         child->page_object = object;
         child->resource_override = form;
-        if (!cupidimage_pdf_collect_page_fonts(st->document, st->document_size, object, &fonts,
-                                               st->error, st->error_capacity)) {
-            cupidimage_pdf_font_table_free(&fonts);
-            cupidimage_pdf_font_table_init(&fonts);
-        }
+        if (!cupidimage_pdf_collect_page_fonts_indexed(st->document, st->document_size, object,
+                                                       &fonts, st->error, st->error_capacity,
+                                                       st->xref))
+            goto done;
         child->font_table = &fonts;
     }
     if (!cupidimage_pdf_image_stream(st, form, &stream, &length) ||

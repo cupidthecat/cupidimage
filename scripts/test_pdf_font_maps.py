@@ -83,8 +83,15 @@ def main():
         assert render('last-source-code',document(page+' '+resources,stream=text.replace('(Z)','<ffffffff>'),extra={**objects,7:stream(last)}))==baseline
         for size in (256,257):
             many='/Resources << /Font << '+' '.join(f'/F{i} 6 0 R'for i in range(size))+' >> >>'
-            expected=baseline if size==256 else fallback
-            assert render('font-budget-'+str(size),document(page+' '+many,stream=text,extra=objects))==expected
+            data = document(page+' '+many,stream=text,extra=objects)
+            if size == 256:
+                assert render('font-budget-'+str(size), data) == baseline
+            else:
+                path = Path(directory) / 'font-budget.pdf'
+                path.write_bytes(data)
+                rejected = subprocess.run([probe, str(path), '0'], capture_output=True, timeout=15)
+                assert rejected.returncode == 3, rejected.stderr
+                count += 1
     print(f'PDF font-map resources: {count} passed')
 
 

@@ -106,3 +106,44 @@ int cupidimage_pdf_optional_value(const unsigned char *data, size_t size,
     }
     return 1;
 }
+
+int cupidimage_pdf_optional_dictionary(const unsigned char *data, size_t size,
+                                       const pdf_object_view *parent, const char *key,
+                                       pdf_object_view *out) {
+    pdf_object_view value = {0}, dictionary = {0};
+    int status = cupidimage_pdf_optional_value(data, size, parent, key, &value);
+    if (status <= 0)
+        return status;
+    size_t end;
+    if (!cupidimage_pdf_dictionary_view(&value, 0, &dictionary, &end)) {
+        cupidimage_pdf_object_view_release(&value);
+        return -1;
+    }
+    dictionary.owned = value.owned;
+    *out = dictionary;
+    return 1;
+}
+
+int cupidimage_pdf_resolved_number(const unsigned char *data, size_t size,
+                                   const pdf_object_view *view, size_t *pos, double *number) {
+    cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
+    pdf_object_id reference;
+    size_t end = *pos;
+    int indirect = cupidimage_pdf_parse_reference(view, &end, &reference);
+    pdf_object_view value = {0};
+    if (!cupidimage_pdf_resolve_value(data, size, view, *pos, &value, 0))
+        return 0;
+    size_t at = 0;
+    cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
+    int ok = cupidimage_pdf_parse_pdf_number(value.data, value.len, &at, number) &&
+             (at == value.len || cupidimage_pdf_is_ws(value.data[at]) ||
+              cupidimage_pdf_is_delim(value.data[at]));
+    if (ok && indirect) {
+        cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
+        ok = at == value.len;
+    }
+    if (ok)
+        *pos = indirect ? end : *pos + at;
+    cupidimage_pdf_object_view_release(&value);
+    return ok;
+}
