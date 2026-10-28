@@ -751,6 +751,18 @@
       "sha256": "a3b9d2450db54cc71af0377d3dcf76c91cf32f0ed278f1318499369ac9e7d3ee"
     },
     {
+      "path": "assets/pdf/reference/nchannel-process-cmyk-subset.pdf",
+      "sha256": "c50ccff102beee10ef2fa3dda34949113cf05e62040348c86ba9bd035baf5e97"
+    },
+    {
+      "path": "assets/pdf/reference/nchannel-process-gray.pdf",
+      "sha256": "ebe4d7d345c6aa92422d357aecef4afcc7206e328cbfca4729516b1d78e3e96d"
+    },
+    {
+      "path": "assets/pdf/reference/nchannel-process-rgb.pdf",
+      "sha256": "763fe2958459cda525a6a8b0e72cd4c151ed6c0db15eec6ba58603a1a4374009"
+    },
+    {
       "path": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
       "sha256": "c7bd14a3fcd08d7688cb7b79c156a9cbeb672e6cbe6dd5bcaae4e64a154009dc"
     },

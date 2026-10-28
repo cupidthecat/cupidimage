@@ -78,7 +78,7 @@ input values as their oracle. The comparison renderer returns a different result
 for that case, so it is not used as the expected result there.
 
 Complete ICC profile handling, output intents, nonzero black points, calibrated
-blending spaces, general rendering-intent selection, NChannel and
+blending spaces, general rendering-intent selection, full NChannel support and
 overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
 
@@ -204,7 +204,7 @@ The optional independent pass is:
 
     python3 scripts/test_pdf_separation.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
 
-This is alternate-space rendering for an additive target. NChannel,
+This is alternate-space rendering for an additive target. NChannel spot mixtures,
 physical spot planes, overprint simulation and spot-aware transparency blending
 remain unfinished. Existing ICC and function limits also apply to tint transforms.
 
@@ -233,10 +233,10 @@ share storage without sharing their base-space interpretation. A page allows up
 to 256 distinct palettes, 8,192 bytes per palette and 16 MiB of charged storage.
 This keeps saved graphics states small even with 32-component bases.
 
-Optional legacy DeviceN attribute dictionaries are accepted, but NChannel is
-explicitly rejected. Its required component-wise process/spot handling, physical
-spot planes, overprint and spot-aware blending are still missing. Supporting an
-alternate tint transform alone is not full NChannel support.
+Optional legacy DeviceN attribute dictionaries are accepted. Process-only NChannel
+spaces use the path described below. NChannel spot mixtures, physical spot planes,
+overprint and spot-aware blending are still missing. Supporting an alternate tint
+transform alone is not full NChannel support.
 
 `make test-pdf-devicen` exercises component counts through 32, sampled and
 calculator transforms, images with TIFF predictors, masks, text, patterns, meshes,
@@ -249,3 +249,49 @@ can be requested with:
 The installed comparison renderer rejects sampled functions above 16 inputs.
 Those 32-input cases use explicit RGB and analytic oracles instead; they are not
 counted as independent comparisons.
+
+## Process-only NChannel spaces
+
+NChannel spaces containing only process components use their Process dictionary
+rather than the aggregate alternate tint function. Supported process spaces are
+DeviceGray, DeviceRGB, DeviceCMYK, CalGray, CalRGB and the supported gray/RGB ICC
+models. Lab, special spaces and unknown spot components are rejected.
+
+Non-CMYK spaces require every process component in its normal order. CMYK may
+select a subset in any order; omitted components have zero tint. The reserved
+Cyan, Magenta, Yellow and Black names retain their CMYK meanings, including when
+the Process Components array uses custom names. Duplicate mappings and None are
+not valid NChannel components. All remains prohibited for every DeviceN space.
+RGB/gray process values are additive, while CMYK values are subtractive. Initial
+values remain 1 for every selected component, as specified for DeviceN.
+
+Process definitions and component names may be indirect. Definitions for process
+components in Colorants are ignored. The shared tint cache distinguishes the
+resolved process space and component mapping, including scoped default colors.
+Text, paths, images, masks, Indexed palettes, patterns and shadings use the same
+process conversion path.
+
+The aggregate alternate and tint function are still required to have suitable
+object kinds. Their unused profiles and function bodies are not executed for a
+supported process-only definition. An authored conflict test deliberately supplies
+a black aggregate function for RGB process values [.25, .5, .75]. Native output
+uses the process color; the installed comparison renderer uses the black fallback.
+That case follows ISO 32000-2 section 8.6.6.5 and is a specification-based check,
+not an independent raster match. Consistent alternate definitions are compared
+separately.
+
+`make test-pdf-nchannel` checks all CMYK subset permutations, natural RGB/gray
+values, calibrated/ICC process spaces, indirect metadata, scoped defaults, cache
+limits and allocation failures. Three owned assets have consistent alternates and
+analytic references. The RGB and gray assets also match the installed comparison
+raster exactly. The CMYK subset asset follows the existing native device conversion:
+its green is [0, 255, 0], while the comparison raster is [0, 166, 80]. That asset is
+a component-mapping regression, not a cross-renderer color-management pass.
+The optional independent pass is:
+
+    python3 scripts/test_pdf_nchannel.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+Spot-only and mixed process/spot NChannel spaces remain unsupported, even when
+Colorants entries are present. MixingHints, physical ink interactions, overprint
+and spot-aware transparency require further work. Existing ICC and color-management
+limits still apply; this is not complete NChannel support.

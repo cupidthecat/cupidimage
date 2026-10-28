@@ -537,7 +537,7 @@ additive-channel oracle; see [PDF colors](pdf-colors.md) for comparison differen
 
 `make test-pdf-devicen` checks legacy tint sources through 32 components, wide
 sampled functions, image predictors, palettes, masks, patterns and meshes. It also
-checks Indexed Lab patch conversion and explicitly rejected NChannel selections.
+checks Indexed Lab patch conversion and invalid NChannel declarations.
 Regenerate its three owned assets with `scripts/generate_pdf_devicen_fixtures.py`.
 Use `--reference` with the test script for independent comparisons; sampled
 functions above the installed reference's 16-input limit use analytic/native
@@ -560,3 +560,9 @@ escapes, common-prefix collisions, scope/state restoration and allocation recove
 It also checks empty Type 3 glyph and color-resource names without accepting empty
 encoding identifiers. Regenerate its two analytic assets with
 `scripts/generate_pdf_font_resource_fixtures.py`.
+
+`make test-pdf-nchannel` checks process-only NChannel spaces across text, images,
+patterns, shading and scoped resources. Its independent pass covers consistent
+alternates; deliberately conflicting aggregate functions use the Process dictionary
+as their specification-based oracle. Regenerate its three analytic assets with
+`scripts/generate_pdf_nchannel_fixtures.py`. Spot mixtures remain unsupported.

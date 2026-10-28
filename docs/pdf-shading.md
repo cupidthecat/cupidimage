@@ -106,7 +106,7 @@ budget; the final composite consumes pixel work. Failed decoding or evaluation
 releases temporary buffers before any shading pixels reach the parent surface.
 
 Device, calibrated, selected ICC, Separation and legacy DeviceN source spaces
-share the color conversion path, including supported default remapping. NChannel,
+share the color conversion path, including supported default remapping. NChannel spot mixtures,
 remaining ICC models and general color management are unfinished. See [PDF colors](pdf-colors.md).
 Mesh AntiAlias requests do not enable a separate filtered sampler.
 The renderer's pixel-center interpolation is not pixel-identical to the tested

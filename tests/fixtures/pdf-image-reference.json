@@ -476,6 +476,27 @@
       "height": 120,
       "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nchannel-process-rgb.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxzaDjw32EUj+JRPIpH8YjDADAEvq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nchannel-process-gray.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj43zCKR/EoHsWjeMRhAPAEvq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nchannel-process-cmyk-subset.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj+M8wCkfhKByFo3AEQgCMef0f",
+      "tolerance": 0
     }
   ]
 }
