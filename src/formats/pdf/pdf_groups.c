@@ -40,7 +40,9 @@ static double group_initial_alpha(const pdf_transparency_group *group, size_t pi
 }
 
 static void group_initial_color(const pdf_transparency_group *group, size_t pixel, double out[3]) {
-    if (!group->isolated && group->parent && group->parent->knockout) {
+    if (!group->isolated && group->parent &&
+        (group->parent->knockout ||
+         (group->parent->lazy_backdrop && group->parent->shape[pixel] == 0))) {
         group_initial_color(group->parent, pixel, out);
         return;
     }
@@ -54,6 +56,16 @@ static void group_initial_color(const pdf_transparency_group *group, size_t pixe
  * A knockout member uses the group's initial backdrop, not earlier members. */
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
                                 double alpha, double shape, int blend_mode) {
+    unsigned x = (unsigned)(pixel % group->image.width);
+    unsigned y = (unsigned)(pixel / group->image.width);
+    if (x < group->left)
+        group->left = x;
+    if (y < group->top)
+        group->top = y;
+    if (x + 1 > group->right)
+        group->right = x + 1;
+    if (y + 1 > group->bottom)
+        group->bottom = y + 1;
     double a0 = group_initial_alpha(group, pixel), ag = group->alpha[pixel];
     double previous_alpha = ag + a0 * (1 - ag);
     double base_group_alpha = group->knockout ? 0 : ag;
@@ -61,6 +73,8 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
     double result_group_alpha = (1 - shape) * ag + (shape - alpha) * base_group_alpha + alpha;
     double ar = result_group_alpha + a0 * (1 - result_group_alpha);
     double *color = group->color + pixel * 3, backdrop[3], blended[3], converted[3];
+    if (group->lazy_backdrop && group->shape[pixel] == 0)
+        group_initial_color(group, pixel, color);
     if (group->knockout)
         group_initial_color(group, pixel, backdrop);
     else
@@ -116,7 +130,7 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
     group->gray = parent->group ? parent->group->gray : 0;
     group->parent = parent->group;
     group->backdrop = parent->img;
-    if (!isolated) {
+    if (!isolated && !group->lazy_backdrop) {
         for (size_t pixel = 0; pixel < pixels; pixel++) {
             group_initial_color(group, pixel, group->color + pixel * 3);
             for (unsigned i = 0; i < 3; i++)
@@ -128,9 +142,15 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
     }
     group->image.width = parent->img->width;
     group->image.height = parent->img->height;
+    group->left = group->image.width;
+    group->top = group->image.height;
+    group->right = group->bottom = 0;
     group->bytes = pixels * per_pixel;
     parent->form_budget->transparency_bytes_live += group->bytes;
     if (background) {
+        group->left = group->top = 0;
+        group->right = group->image.width;
+        group->bottom = group->image.height;
         for (size_t pixel = 0; pixel < pixels; pixel++) {
             group->alpha[pixel] = group->shape[pixel] = 1;
             for (unsigned i = 0; i < 3; i++) {
@@ -260,14 +280,14 @@ void cupidimage_pdf_group_source(const pdf_transparency_group *group, size_t pix
 }
 
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group) {
-    if (!group->image.rgba)
+    if (!group->image.rgba || group->right <= group->left || group->bottom <= group->top)
         return 1;
-    size_t pixels = (size_t)group->image.width * group->image.height;
+    size_t pixels = (size_t)(group->right - group->left) * (group->bottom - group->top);
     if (pixels > parent->clip_budget->tests_left)
         return 0;
     parent->clip_budget->tests_left -= pixels;
-    for (unsigned y = 0; y < group->image.height; y++)
-        for (unsigned x = 0; x < group->image.width; x++) {
+    for (unsigned y = group->top; y < group->bottom; y++)
+        for (unsigned x = group->left; x < group->right; x++) {
             size_t pixel = (size_t)y * group->image.width + x;
             double color[3], alpha, shape;
             cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);

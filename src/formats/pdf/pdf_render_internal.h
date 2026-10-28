@@ -172,7 +172,8 @@ struct pdf_transparency_group {
     double *alpha, *color, *shape;
     const pdf_transparency_group *parent;
     const cupidimage_image *backdrop;
-    int isolated, gray, knockout;
+    int isolated, gray, knockout, lazy_backdrop;
+    unsigned left, top, right, bottom;
     size_t bytes;
 };
 

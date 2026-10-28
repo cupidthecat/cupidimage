@@ -55,7 +55,18 @@
 #include "../src/formats/pdf/pdf_standard_font.c"
 #include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
+static int test_text_lazy_enabled = 1;
+
+static int test_text_surface(const pdf_render_state *parent, pdf_transparency_group *group,
+                             int isolated, const double background[3]) {
+    if (!test_text_lazy_enabled)
+        group->lazy_backdrop = 0;
+    return cupidimage_pdf_group_surface(parent, group, isolated, background);
+}
+
+#define cupidimage_pdf_group_surface test_text_surface
 #include "../src/formats/pdf/pdf_text_groups.c"
+#undef cupidimage_pdf_group_surface
 static int test_outline_cache_enabled = 1;
 
 static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_outline *truetype,
@@ -98,6 +109,7 @@ static int test_document_allocations(const char *path, int expected_failure) {
     unsigned width = 0, height = 0;
     /* Establish uncached pixels before testing cached rendering and failures. */
     test_outline_cache_enabled = 0;
+    test_text_lazy_enabled = 0;
     fail_at = 0;
     allocation_count = 0;
     cupidimage_image uncached = {0};
@@ -122,6 +134,7 @@ static int test_document_allocations(const char *path, int expected_failure) {
     }
     checks++;
     test_outline_cache_enabled = 1;
+    test_text_lazy_enabled = 1;
     for (size_t failure = 0; failure <= total; failure++) {
         allocation_count = 0;
         fail_at = failure;
@@ -1293,6 +1306,40 @@ int main(int argc, char **argv) {
             }
         }
         fail_at = 0;
+    }
+    {
+        unsigned char pixels[16 * 16 * 4];
+        memset(pixels, 255, sizeof(pixels));
+        cupidimage_image image = {.width = 16, .height = 16, .rgba = pixels};
+        pdf_form_budget form = {0};
+        pdf_clip_budget clip = {0, 10000, 100};
+        pdf_render_state state = {0};
+        state.img = &image;
+        state.form_budget = &form;
+        state.clip_budget = &clip;
+        state.gs.fill_alpha = 1;
+        const double red[3] = {1, 0, 0};
+        for (int sample = 0; sample < 4; sample++) {
+            pdf_transparency_group group = {0};
+            group.lazy_backdrop = sample != 3;
+            int ok = cupidimage_pdf_group_surface(&state, &group, 0, sample == 3 ? red : NULL);
+            if (ok && sample == 1)
+                cupidimage_pdf_group_paint(&group, 5 * 16 + 7, red, 0, 1, 0);
+            if (ok && sample == 2) {
+                cupidimage_pdf_group_paint(&group, 5 * 16 + 7, red, .5, 1, 0);
+                cupidimage_pdf_group_paint(&group, 8 * 16 + 9, red, .5, 1, 0);
+            }
+            size_t before = clip.tests_left;
+            if (ok)
+                ok = cupidimage_pdf_group_finish(&state, &group);
+            const size_t expected[] = {0, 1, 12, 256};
+            checks++;
+            if (!ok || before - clip.tests_left != expected[sample])
+                failures++;
+            cupidimage_pdf_group_free(&state, &group);
+            if (form.transparency_bytes_live || live_count)
+                failures++;
+        }
     }
     printf("PDF clip allocation failures: %zu checks, %zu failures\n", checks, failures);
     return failures != 0;

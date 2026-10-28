@@ -244,3 +244,11 @@ optional references still use strict object lookup rather than null substitution
 Shading-pattern state follows the same decoding rules for its applicable
 parameters; see [PDF patterns](pdf-patterns.md). The general transparency suite
 now has 177 checks, in addition to the focused group, mask and pattern suites.
+
+## Surface bounds
+
+Groups track the bounds of contributed shape, not just nonzero alpha. Completion
+therefore preserves transparent knockout objects while skipping untouched pixels.
+A supplied background initializes full-surface bounds. Implicit text groups defer
+backdrop initialization until a pixel is painted; other group surfaces retain
+their existing initialization. Nested backdrop lookup handles both forms.

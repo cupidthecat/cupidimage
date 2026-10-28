@@ -518,3 +518,8 @@ initial Pattern color, combined fill/stroke and clipping without visible paint.
 side bearings and glyf bounds. It covers short metric layouts, composite metric
 selection, PDF advance overrides, cached rendering and clipping. Regenerate the
 two owned bearing assets with `scripts/generate_pdf_bearing_fixtures.py`.
+
+`make test-pdf-text-surfaces` checks sparse text groups, dense collections of short
+text objects, empty/invisible text and clipping. The allocation harness compares
+lazy text surfaces against eager backdrop initialization and verifies that group
+work bounds include zero-alpha shape and explicit backgrounds.

@@ -15,11 +15,6 @@ void cupidimage_pdf_text_begin(pdf_render_state *st) {
     st->text_matrix[0] = st->text_matrix[3] = 1;
     st->text_line_matrix[0] = st->text_line_matrix[3] = 1;
     st->in_text = 1;
-    if (!cupidimage_pdf_text_group_begin(st)) {
-        st->image_failed = 1;
-        cupidimage_set_err(st->error, st->error_capacity,
-                           "pdf: text transparency group exceeds limits");
-    }
 }
 
 static int text_position_valid(pdf_render_state *st, const double *matrix) {
@@ -309,6 +304,13 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
     if (!text || !st->in_text)
         return;
     const pdf_font_map *current = st->gs.current_font;
+    if (length && ((st->gs.text_mode & 3) != 3 || (current && current->type3)) &&
+        !cupidimage_pdf_text_group_begin(st)) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity,
+                           "pdf: text transparency group exceeds limits");
+        return;
+    }
     if (length && st->gs.text_mode >= 4 && (!current || !current->type3) &&
         !cupidimage_pdf_text_clip_prepare(st)) {
         st->image_failed = 1;

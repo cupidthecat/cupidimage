@@ -521,3 +521,24 @@ The optional reference pass checks 90 of the 106 current cases exactly. Mac OS
 Roman Euro follows Table 115 but differs from the reference result; those cases
 remain analytic checks. Extension-table cases and malformed-input rejections
 also remain separate from reference passes.
+
+## Text surface work
+
+An implicit knockout group is allocated when a text string first needs to paint,
+not when BT merely resets text state. Empty text objects and outline-font text
+in invisible or clipping-only mode do not allocate a color surface. Clipping
+masks, text advances and Type 3 painting keep their existing rules.
+
+Text groups initialize backdrop colors only at pixels reached by glyph shape.
+Group completion visits the rectangle containing contributed shape, including
+zero-opacity objects that can knock out earlier paint. Explicit background
+colors still cover the whole surface. The compositing equations and precision
+are unchanged; this avoids charging a full-page pixel pass for each short text
+object. Surface memory and page work budgets remain enforced.
+
+`make test-pdf-text-surfaces` checks thousands of empty/invisible text objects,
+a 264-object text grid, mode changes, clipping and empty pattern colors. Fault
+injection compares lazy surfaces with an eager-backdrop baseline. Separate bounds
+checks cover empty surfaces, zero opacity, disjoint painted pixels and explicit
+backgrounds. Existing nested-group, soft-mask, pattern and knockout tests remain
+part of the aggregate suite.

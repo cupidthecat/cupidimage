@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 int cupidimage_pdf_text_group_begin(pdf_render_state *st) {
-    if (!st->gs.text_knockout)
+    if (!st->gs.text_knockout || st->text_group)
         return 1;
     if (!st->form_budget->calls_left)
         return 0;
@@ -10,6 +10,9 @@ int cupidimage_pdf_text_group_begin(pdf_render_state *st) {
     pdf_transparency_group *group = calloc(1, sizeof(*group));
     if (!group)
         return 0;
+    /* Text usually touches a small part of the page. Initialize its backdrop
+     * only where a glyph contributes shape, retaining the same group equations. */
+    group->lazy_backdrop = 1;
     if (!cupidimage_pdf_group_surface(st, group, 0, NULL)) {
         free(group);
         return 0;
@@ -59,12 +62,14 @@ void cupidimage_pdf_text_group_discard(pdf_render_state *st) {
 }
 
 int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transparency_group *group) {
-    size_t pixels = (size_t)group->image.width * group->image.height;
+    if (group->right <= group->left || group->bottom <= group->top)
+        return 1;
+    size_t pixels = (size_t)(group->right - group->left) * (group->bottom - group->top);
     if (pixels > st->clip_budget->tests_left)
         return 0;
     st->clip_budget->tests_left -= pixels;
-    for (unsigned y = 0; y < group->image.height; y++)
-        for (unsigned x = 0; x < group->image.width; x++) {
+    for (unsigned y = group->top; y < group->bottom; y++)
+        for (unsigned x = group->left; x < group->right; x++) {
             double shape = group->shape[(size_t)y * group->image.width + x];
             if (shape > 0)
                 cupidimage_pdf_paint_pixel(st, (int)x, (int)y, 0, shape);
