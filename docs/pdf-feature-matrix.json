@@ -986,10 +986,13 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "src/formats/pdf/pdf_font_outline.c",
+            "tests/test_pdf_font_cache.c",
+            "tests/test_pdf_clip_oom.c"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Native unhinted TT/Type1/CFF outlines have per-program glyph-keyed caching and cached/uncached regression checks. Type 3 drawing and future hinted/rasterized glyph caches require separate state-sensitive treatment."
           ],
           "dependencies": [
             "1",

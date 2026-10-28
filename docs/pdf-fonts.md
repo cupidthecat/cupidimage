@@ -218,6 +218,31 @@ The decoded private section and lookup arrays count against retained font storag
 Custom OtherSubrs, dynamically generated PostScript font data and synthetic or
 multiple-master programs remain unsupported.
 
+## Decoded outline cache
+
+TrueType, Type 1 and CFF programs keep a bounded cache of decoded, unhinted
+font-space outlines. Each program has sixteen entries keyed by glyph ID. The
+program's identity separates independent font dictionaries and subsets, even
+when they use the same glyph numbers or font names.
+
+The cache contains no text matrix, size, color, clipping, opacity or rasterized
+pixels. Those are applied after lookup. TrueType path construction leaves the
+cached points unchanged, so a second use at a different position or transform
+cannot reuse already-transformed coordinates. Type 3 execution remains separate;
+its state-dependent drawing commands are not stored as these outlines.
+
+A page can retain up to 16 MiB of outline data through a cumulative cache budget.
+Evicted data is freed, but eviction does not replenish the budget. Once the
+budget is spent, new glyphs decode normally without being retained; existing
+entries can still be reused. Cache limits do not select a different glyph or
+change its advance. Font destruction frees every retained outline.
+
+`make test-pdf-font-cache` checks hits, ownership, independent programs, eviction
+and exhausted budgets. Complete-document allocation tests first render without
+the cache, then require cached rendering and any successful allocation-failure
+recovery to preserve those pixels. Existing transformed-text, CID, clipping,
+pattern and transparency regressions exercise the same renderer.
+
 ## Bounds and ownership
 
 Each retained font program is limited to 16 MiB, with 64 MiB of program storage

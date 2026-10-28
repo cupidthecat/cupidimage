@@ -463,3 +463,10 @@ null inheritance, indirect box members, bounds and rotation allocation failures.
 The optional `--reference` pass uses seven exact checks with a secondary rasterizer;
 the primary comparison tool in the development environment ignores UserUnit.
 No raster tolerance is widened to hide that difference.
+
+
+`make test-pdf-font-cache` verifies decoded-outline reuse, independent font
+programs, eviction, budget exhaustion and cleanup. The document allocation probe
+uses an uncached render as its pixel baseline before testing cached rendering and
+fault injection. This is an internal equivalence check, not an independent
+font-rasterization reference claim.

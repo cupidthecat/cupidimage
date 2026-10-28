@@ -59,6 +59,7 @@ size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
 
 void cupidimage_pdf_font_program_free(pdf_font_program *program) {
     if (program) {
+        cupidimage_pdf_font_outline_cache_clear(program);
         cupidimage_pdf_cff_free(&program->cff);
         cupidimage_pdf_type1_free(&program->type1);
         free(program->bytes);

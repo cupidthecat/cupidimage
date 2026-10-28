@@ -12,11 +12,11 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-pdf-feature-matrix test-pdf-user-unit test-pdf-image-values test-pdf-dct-arithmetic test-pdf-jpeg-sampling test-jpeg-math test-pdf-dct test-pdf-truetype-selection test-pdf-type3-objects test-pdf-font-defaults test-pdf-xref test-pdf-shading-patterns test-pdf-pattern-colors test-pdf-pattern-backdrops test-pdf-device-color test-pdf-patch test-pdf-mesh test-pdf-content-syntax test-pdf-text-knockout test-pdf-knockout test-pdf-page-groups test-pdf-soft-masks test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-pdf-font-cache test-pdf-feature-matrix test-pdf-user-unit test-pdf-image-values test-pdf-dct-arithmetic test-pdf-jpeg-sampling test-jpeg-math test-pdf-dct test-pdf-truetype-selection test-pdf-type3-objects test-pdf-font-defaults test-pdf-xref test-pdf-shading-patterns test-pdf-pattern-colors test-pdf-pattern-backdrops test-pdf-device-color test-pdf-patch test-pdf-mesh test-pdf-content-syntax test-pdf-text-knockout test-pdf-knockout test-pdf-page-groups test-pdf-soft-masks test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
-TEST_BINS = test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+TEST_BINS = test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
@@ -350,3 +350,8 @@ test-pdf-user-unit: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-feature-matrix:
 	python3 scripts/test_pdf_feature_matrix.py
+
+test-pdf-font-cache: $(BINDIR)/test_pdf_font_cache
+	$(BINDIR)/test_pdf_font_cache
+
+$(BINDIR)/test_pdf_font_cache: tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(SRCDIR)/formats/pdf/fonts/program.h

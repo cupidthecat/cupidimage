@@ -29,6 +29,7 @@
 #include "../src/formats/pdf/pdf_filters.c"
 #include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
+#include "../src/formats/pdf/pdf_font_outline.c"
 #include "../src/formats/pdf/pdf_font_program.c"
 #include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
@@ -52,7 +53,17 @@
 #include "../src/formats/pdf/pdf_stroke.c"
 #include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_text_groups.c"
+static int test_outline_cache_enabled = 1;
+
+static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_outline *truetype,
+                             pdf_cff_outline *postscript, size_t *budget, int *borrowed) {
+    return cupidimage_pdf_font_outline(program, glyph, truetype, postscript,
+                                       test_outline_cache_enabled ? budget : NULL, borrowed);
+}
+
+#define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_text_outline.c"
+#undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "../src/formats/pdf/pdf_xref.c"
 #include "fixtures/pdf-cff.inc"
@@ -82,6 +93,32 @@ static int test_document_allocations(const char *path, int expected_failure) {
     size_t total = 0, checks = 0, failures = 0, expected_size = 0;
     unsigned char *expected = NULL;
     unsigned width = 0, height = 0;
+    /* Establish uncached pixels before testing cached rendering and failures. */
+    test_outline_cache_enabled = 0;
+    fail_at = 0;
+    allocation_count = 0;
+    cupidimage_image uncached = {0};
+    char baseline_error[256];
+    int baseline_ok = cupidimage_load_pdf_page(document, (size_t)length, &uncached, 0,
+                                               baseline_error, sizeof(baseline_error));
+    if (baseline_ok == expected_failure)
+        failures++;
+    if (baseline_ok) {
+        width = uncached.width;
+        height = uncached.height;
+        expected_size = (size_t)width * height * 4;
+        expected = malloc(expected_size);
+        if (!expected)
+            abort();
+        memcpy(expected, uncached.rgba, expected_size);
+    }
+    fault_free(uncached.rgba);
+    if (live_count) {
+        fprintf(stderr, "uncached document leaked %zu blocks\n", live_count);
+        abort();
+    }
+    checks++;
+    test_outline_cache_enabled = 1;
     for (size_t failure = 0; failure <= total; failure++) {
         allocation_count = 0;
         fail_at = failure;
@@ -93,17 +130,9 @@ static int test_document_allocations(const char *path, int expected_failure) {
             total = allocation_count;
             if (ok == expected_failure)
                 failures++;
-            if (ok) {
-                width = image.width;
-                height = image.height;
-                expected_size = (size_t)width * height * 4;
-                expected = malloc(expected_size);
-                if (!expected)
-                    abort();
-                memcpy(expected, image.rgba, expected_size);
-            }
-        } else if (ok && (expected_failure || image.width != width || image.height != height ||
-                          memcmp(expected, image.rgba, expected_size)))
+        }
+        if (ok && (expected_failure || !expected || image.width != width ||
+                   image.height != height || memcmp(expected, image.rgba, expected_size)))
             failures++;
         fault_free(image.rgba);
         checks++;
@@ -246,7 +275,7 @@ int main(int argc, char **argv) {
         image.width = 2;
         image.height = 2;
         image.rgba = pixels;
-        pdf_form_budget budget = {0, 3, 3, 0, 0, 0, 0};
+        pdf_form_budget budget = {0, 3, 3, 0, 0, 0, 0, 0};
         pdf_render_state state = {0};
         state.img = &image;
         state.document = (const unsigned char *)shading_doc;

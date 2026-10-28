@@ -109,17 +109,18 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
     return 1;
 }
 
-static int outline_path(pdf_tt_outline *outline, pdf_path *path, outline_edge *edges,
+static outline_point outline_tt_transform(const pdf_tt_point *point, const double matrix[6]) {
+    return (outline_point){(float)(matrix[0] * point->x + matrix[2] * point->y + matrix[4]),
+                           (float)(matrix[1] * point->x + matrix[3] * point->y + matrix[5])};
+}
+
+static int outline_path(const pdf_tt_outline *outline, pdf_path *path, outline_edge *edges,
                         unsigned *edge_count, const double m[6]) {
     for (unsigned i = 0; i < outline->count; i++) {
         double x = outline->points[i].x, y = outline->points[i].y;
-        outline->points[i].x = m[0] * x + m[2] * y + m[4];
-        outline->points[i].y = m[1] * x + m[3] * y + m[5];
-        if (!isfinite(outline->points[i].x) || !isfinite(outline->points[i].y) ||
-            fabs(outline->points[i].x) > 1e30 || fabs(outline->points[i].y) > 1e30)
+        double tx = m[0] * x + m[2] * y + m[4], ty = m[1] * x + m[3] * y + m[5];
+        if (!isfinite(tx) || !isfinite(ty) || fabs(tx) > 1e30 || fabs(ty) > 1e30)
             return 0;
-        outline->points[i].x = (float)outline->points[i].x;
-        outline->points[i].y = (float)outline->points[i].y;
     }
     unsigned first = 0;
     while (first < outline->count) {
@@ -128,8 +129,9 @@ static int outline_path(pdf_tt_outline *outline, pdf_path *path, outline_edge *e
             last++;
         if (last == outline->count)
             return 0;
-        pdf_tt_point *points = outline->points;
-        outline_point a = {points[first].x, points[first].y}, z = {points[last].x, points[last].y};
+        const pdf_tt_point *points = outline->points;
+        outline_point a = outline_tt_transform(points + first, m),
+                      z = outline_tt_transform(points + last, m);
         outline_point start = points[first].on  ? a
                               : points[last].on ? z
                                                 : outline_mid(z, a),
@@ -138,7 +140,7 @@ static int outline_path(pdf_tt_outline *outline, pdf_path *path, outline_edge *e
                  remaining = last - first + 1 - (points[first].on || points[last].on ? 1 : 0);
         int new_path = 1;
         while (remaining) {
-            outline_point p = {points[index].x, points[index].y};
+            outline_point p = outline_tt_transform(points + index, m);
             if (points[index].on) {
                 edges[(*edge_count)++] = (outline_edge){current, current, p, 0, {0, 0}};
                 if (path && !outline_line(path, current, p, new_path))
@@ -147,9 +149,8 @@ static int outline_path(pdf_tt_outline *outline, pdf_path *path, outline_edge *e
                 index++;
                 remaining--;
             } else {
-                outline_point next = remaining > 1
-                                         ? (outline_point){points[index + 1].x, points[index + 1].y}
-                                         : start;
+                outline_point next =
+                    remaining > 1 ? outline_tt_transform(points + index + 1, m) : start;
                 int on = remaining == 1 || points[index + 1].on;
                 outline_point end = on ? next : outline_mid(p, next);
                 edges[(*edge_count)++] = (outline_edge){current, p, end, 1, {0, 0}};
@@ -293,7 +294,7 @@ static int outline_winding(const outline_edge *edges, unsigned count, double x, 
     return winding;
 }
 
-int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_program *program,
+int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_program *program,
                                            unsigned glyph) {
     if (st->gs.text_mode == 3 || st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0)
         return 1;
@@ -307,14 +308,9 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_
     unsigned edge_count = 0;
     int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     unsigned char *stroke = NULL;
-    int ok = 0;
-    if (program->is_type1) {
-        if (!cupidimage_pdf_type1_outline(&program->type1, glyph, &cff_outline))
-            goto done;
-    } else if (program->is_cff) {
-        if (!cupidimage_pdf_cff_glyph_outline(&program->cff, glyph, &cff_outline))
-            goto done;
-    } else if (!cupidimage_pdf_tt_outline(&program->font, glyph, &outline))
+    int ok = 0, borrowed = 0;
+    if (!cupidimage_pdf_font_outline(program, glyph, &outline, &cff_outline,
+                                     &st->form_budget->outline_cache_bytes_left, &borrowed))
         goto done;
     unsigned count = (program->is_cff || program->is_type1) ? cff_outline.count : outline.count;
     if (!count) {
@@ -424,7 +420,9 @@ done:
     free(stroke);
     free(path);
     free(edges);
-    cupidimage_pdf_tt_outline_free(&outline);
-    cupidimage_pdf_type2_free(&cff_outline);
+    if (!borrowed) {
+        cupidimage_pdf_tt_outline_free(&outline);
+        cupidimage_pdf_type2_free(&cff_outline);
+    }
     return ok;
 }

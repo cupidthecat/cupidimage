@@ -105,6 +105,7 @@ typedef struct {
     size_t cmap_steps_left;
     size_t transparency_bytes_live;
     uint64_t paint_serial;
+    size_t outline_cache_bytes_left;
 } pdf_form_budget;
 
 typedef struct pdf_transparency_group pdf_transparency_group;
@@ -284,7 +285,7 @@ int cupidimage_pdf_set_dash(pdf_graphics_state *gs, const unsigned char *data, s
 int cupidimage_pdf_apply_stroke_view(const pdf_render_state *st, const pdf_object_view *view,
                                      pdf_graphics_state *next);
 
-int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, const pdf_font_program *program,
+int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_program *program,
                                            unsigned glyph);
 
 #endif

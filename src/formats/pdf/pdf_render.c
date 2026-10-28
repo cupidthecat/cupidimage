@@ -1509,7 +1509,8 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
     st.clip_budget = &clip_budget;
     st.xref = xref;
     pdf_form_budget form_budget = {
-        64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536, 256u * 1024u * 1024u, 0, 0};
+        64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536, 256u * 1024u * 1024u, 0, 0,
+        16u * 1024u * 1024u};
     st.form_budget = &form_budget;
     pdf_pattern_store patterns = {0};
     st.patterns = &patterns;

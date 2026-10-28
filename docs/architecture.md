@@ -115,3 +115,12 @@ Refactors must preserve the public header, reference-pixel tests, malformed-inpu
 behavior, and output protocols. The asset runner also records full decoded pixel
 hashes, which can be compared before and after a behavior-preserving refactor.
 These hashes show behavior preservation, not independent visual correctness.
+
+
+### Font-space geometry reuse
+
+`pdf_font_outline.c` owns the bounded decoded-outline cache for each native font
+program. `pdf_text_outline.c` builds transformed edges without modifying cached
+font coordinates. Paint state stays in the renderer, and the page budget bounds
+retained outline storage separately from font-program bytes. Font destruction
+releases cache entries.
