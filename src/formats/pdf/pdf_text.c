@@ -112,7 +112,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
         max_y = fmax(max_y, y);
     }
     unsigned char *stroke = NULL;
-    if (mode == 1 || mode == 2) {
+    if ((mode == 1 || mode == 2) && !(st->gs.stroke_space.pattern && !st->gs.stroke_pattern)) {
         pdf_path contour = {0};
         static const int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         static const int ends[4][4] = {{0, 0, 0, 1}, {1, 0, 1, 1}, {0, 0, 1, 0}, {0, 1, 1, 1}};

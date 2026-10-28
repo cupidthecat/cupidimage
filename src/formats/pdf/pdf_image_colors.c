@@ -156,8 +156,48 @@ static int pdf_image_palette(const pdf_render_state *st, const pdf_object_view *
     return pdf_palette_string(view, pos, palette, &length) && length == expected;
 }
 
-int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
-                                     size_t *pos, unsigned depth, pdf_image_colors *colors) {
+static int pdf_color_space_value(const pdf_render_state *, const pdf_object_view *, size_t *,
+                                 unsigned, pdf_image_colors *, int);
+
+/* Defaults replace a selected device space once; the replacement is not remapped again. */
+static int pdf_device_color_space(const pdf_render_state *st, int components, unsigned depth,
+                                  pdf_image_colors *colors, int defaults) {
+    if (depth >= 16)
+        return 0;
+    const char *key = components == 1   ? "DefaultGray"
+                      : components == 3 ? "DefaultRGB"
+                                        : "DefaultCMYK";
+    pdf_object_view resource = {0}, value = {0};
+    int status =
+        defaults ? cupidimage_pdf_find_resource_checked(st, "ColorSpace", key, &resource, NULL) : 0;
+    if (status < 0)
+        return 0;
+    if (status > 0) {
+        int ok =
+            cupidimage_pdf_resolve_value(st->document, st->document_size, &resource, 0, &value, 0);
+        size_t pos = 0;
+        cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &pos);
+        int absent = ok && value.len - pos >= 4 && !memcmp(value.data + pos, "null", 4) &&
+                     (value.len - pos == 4 || cupidimage_pdf_is_ws(value.data[pos + 4]) ||
+                      cupidimage_pdf_is_delim(value.data[pos + 4]));
+        if (!absent)
+            ok = ok && pdf_color_space_value(st, &value, &pos, depth + 1, colors, 0) &&
+                 colors->components == components && !colors->indexed && !colors->pattern &&
+                 colors->calibrated != 3;
+        cupidimage_pdf_object_view_release(&value);
+        cupidimage_pdf_object_view_release(&resource);
+        if (!absent)
+            return ok;
+    }
+    colors->components = components;
+    colors->calibrated = 0;
+    colors->icc = NULL;
+    return 1;
+}
+
+static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
+                                 size_t *pos, unsigned depth, pdf_image_colors *colors,
+                                 int defaults) {
     if (depth >= 16)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -167,7 +207,7 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
         if (!cupidimage_pdf_state_object(st, object, &indirect))
             return 0;
         size_t p = 0;
-        int ok = cupidimage_pdf_image_color_space(st, &indirect, &p, depth + 1, colors);
+        int ok = pdf_color_space_value(st, &indirect, &p, depth + 1, colors, defaults);
         cupidimage_pdf_object_view_release(&indirect);
         return ok;
     }
@@ -201,8 +241,7 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
             if (*pos == view->len || view->data[(*pos)++] != ']')
                 return 0;
-            colors->components = device_components;
-            return 1;
+            return pdf_device_color_space(st, device_components, depth, colors, defaults);
         }
         if (!strcmp(family, "Pattern")) {
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -212,7 +251,7 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
                 colors->components = 0;
                 return 1;
             }
-            if (!cupidimage_pdf_image_color_space(st, view, pos, depth + 1, colors) ||
+            if (!pdf_color_space_value(st, view, pos, depth + 1, colors, defaults) ||
                 colors->pattern)
                 return 0;
             cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -223,8 +262,8 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
         }
         if (strcmp(family, "Indexed"))
             return 0;
-        if (!cupidimage_pdf_image_color_space(st, view, pos, depth + 1, colors) ||
-            colors->indexed || colors->pattern)
+        if (!pdf_color_space_value(st, view, pos, depth + 1, colors, defaults) || colors->indexed ||
+            colors->pattern)
             return 0;
         double high;
         cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -254,8 +293,13 @@ int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_objec
                          : !strcmp(name, "DeviceCMYK") ? 4
                                                        : 0;
     if (colors->components)
-        return 1;
+        return pdf_device_color_space(st, colors->components, depth, colors, defaults);
     return 0;
+}
+
+int cupidimage_pdf_image_color_space(const pdf_render_state *st, const pdf_object_view *view,
+                                     size_t *pos, unsigned depth, pdf_image_colors *colors) {
+    return pdf_color_space_value(st, view, pos, depth, colors, 1);
 }
 
 int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth,
@@ -269,10 +313,8 @@ int cupidimage_pdf_color_space(const pdf_render_state *st, const char *name, uns
                      : !strcmp(name, "DeviceRGB")  ? 3
                      : !strcmp(name, "DeviceCMYK") ? 4
                                                    : 0;
-    if (components) {
-        colors->components = components;
-        return 1;
-    }
+    if (components)
+        return pdf_device_color_space(st, components, depth, colors, 1);
     if (depth >= 16)
         return 0;
     pdf_object_view value = {0};

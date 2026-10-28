@@ -114,7 +114,8 @@ def main():
               attrs='/Resources << /ColorSpace << /P [/Indexed /DeviceCMYK 0 <00ffff00>] >> >>')
         for bad in ('0 1 sc', '/name scn', '[] sc', 'sc'):
             check('indexed-bad-operands', '/P cs '+bad+' '+FILL, reject=True, attrs=palette_resources)
-        for content in ('cs', '(DeviceRGB) cs', '/Unknown cs', '/Pattern cs', '/DeviceRGB cs 1 sc',
+        check('initial-empty-pattern', '/Pattern cs '+FILL, (128,128,128))
+        for content in ('cs', '(DeviceRGB) cs', '/Unknown cs', '/DeviceRGB cs 1 sc',
                         '/DeviceGray cs 1 0 0 sc', '/DeviceCMYK cs 1 0 0 scn', '/DeviceRGB cs /name scn',
                         '/DeviceRGB cs [1 0 0] sc', '1 0 rg', '1 0 0 0 1 k'):
             check('invalid-operands', content + ' ' + FILL, reject=True)

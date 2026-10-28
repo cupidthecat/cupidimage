@@ -193,10 +193,9 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
     double rgb[3] = {0};
     double shape = coverage, intrinsic_alpha = 1;
     if (space->pattern) {
-        if (!pattern) {
-            st->image_failed = 1;
+        /* Selecting Pattern starts with an empty pattern until SCN/scn selects one. */
+        if (!pattern)
             return;
-        }
         double px = st->page_x0_pts + (x + .5) * (72.0 / 96.0),
                py = st->page_top_pts - (y + .5) * (72.0 / 96.0);
         if (!cupidimage_pdf_pattern_sample(st, pattern, px, py, rgb, &shape, &intrinsic_alpha)) {
@@ -367,6 +366,15 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
 /* Fill-and-stroke is one PDF object. Stroke-covered pixels use the original
  * backdrop, not a fill that has already been composited onto it. */
 static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
+    int empty_fill = st->gs.fill_space.pattern && !st->gs.fill_pattern;
+    int empty_stroke = st->gs.stroke_space.pattern && !st->gs.stroke_pattern;
+    if (empty_fill || empty_stroke) {
+        if (!empty_fill)
+            pdf_fill_path(st, even_odd);
+        if (!empty_stroke)
+            cupidimage_pdf_stroke_segments(st, &st->path, NULL);
+        return;
+    }
     if (st->gs.fill_alpha == 1 && st->gs.stroke_alpha == 1 && !st->gs.blend_mode &&
         !st->gs.soft_mask && !st->gs.fill_space.pattern && !st->gs.stroke_space.pattern) {
         pdf_fill_path(st, even_odd);
@@ -792,13 +800,17 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         pdf_image_colors colors = stroke ? st->gs.stroke_space : st->gs.fill_space;
         int direct = op[0] != 's' && op[0] != 'S';
         if (direct) {
-            colors.calibrated = 0;
-            colors.icc = NULL;
-            colors.indexed = 0;
-            colors.pattern = 0;
-            colors.components = op[0] == 'g' || op[0] == 'G'   ? 1
-                                : op[0] == 'r' || op[0] == 'R' ? 3
-                                                               : 4;
+            memset(&colors, 0, sizeof(colors));
+            const char *name = op[0] == 'g' || op[0] == 'G'   ? "DeviceGray"
+                               : op[0] == 'r' || op[0] == 'R' ? "DeviceRGB"
+                                                              : "DeviceCMYK";
+            if (!cupidimage_pdf_color_space(st, name, 0, &colors)) {
+                st->image_failed = 1;
+                cupidimage_set_err(st->error, st->error_capacity,
+                                   "pdf: invalid or unsupported default color space");
+                pdf_clear_operands(ops, count);
+                return;
+            }
         }
         if (!direct && colors.pattern) {
             int operands = colors.indexed ? 1 : colors.components;

@@ -323,7 +323,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     edges = malloc((size_t)count * 2 * sizeof(*edges));
     if (!edges)
         goto done;
-    if (mode == 1 || mode == 2) {
+    if ((mode == 1 || mode == 2) && !(st->gs.stroke_space.pattern && !st->gs.stroke_pattern)) {
         path = calloc(1, sizeof(*path));
         if (!path)
             goto done;
@@ -375,7 +375,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
             y1 = fmax(y1, points[j].y);
         }
     }
-    if (mode == 1 || mode == 2) {
+    if ((mode == 1 || mode == 2) && !(st->gs.stroke_space.pattern && !st->gs.stroke_pattern)) {
         size_t pixels = (size_t)st->img->width * st->img->height;
         stroke = calloc((pixels + 7) / 8, 1);
         if (!stroke)

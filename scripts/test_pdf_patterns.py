@@ -196,8 +196,9 @@ def main():
         for kwargs in [dict(step='0'),dict(ystep='0'),dict(paint=3),dict(tiling=0),dict(tiling=4),
                        dict(matrix='0 0 0 0 0 0'),dict(matrix='0 0 0 1 0 0'),dict(matrix='1 0 0 0 0 0'),dict(matrix='1 1 2 2 0 0'),dict(bbox='2 0 1 1'),dict(step='1000000000'),
                        dict(resources='17'),dict(paint=2),dict(content='/PC cs 1 0 0 /P scn 0 0 18 12 re f'),
-                       dict(content='/Pattern cs /P sc 0 0 18 12 re f'),dict(content='/Pattern cs 0 0 18 12 re f')]:
+                       dict(content='/Pattern cs /P sc 0 0 18 12 re f')]:
             check('invalid',fixture(**kwargs),reject=True)
+        check('initial-empty-pattern',fixture(content='/Pattern cs 0 0 18 12 re f'),lambda x,y:white)
         recursive=stream('/Pattern cs /P scn 0 0 3 3 re f','/Type /Pattern /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 3 3] /XStep 3 /YStep 3 /Resources << /Pattern << /P 5 0 R >> >>')
         check('recursive',fixture(extra={5:recursive}),reject=True)
     print(f'PDF patterns: {count} checks passed; {refs} independent comparisons')

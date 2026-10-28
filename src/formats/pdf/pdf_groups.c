@@ -167,14 +167,6 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
             return 0;
     } else if (required)
         return 0;
-    const char *defaults[] = {"DefaultRGB", "DefaultGray", "DefaultCMYK"};
-    for (unsigned i = 0; i < 3; i++) {
-        pdf_object_view value = {0};
-        int remapped = cupidimage_pdf_find_resource(st, "ColorSpace", defaults[i], &value, NULL);
-        cupidimage_pdf_object_view_release(&value);
-        if (remapped)
-            return 0;
-    }
     return 1;
 }
 

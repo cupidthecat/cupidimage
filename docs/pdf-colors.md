@@ -1,7 +1,8 @@
 # PDF color conversion
 
 PDF source colors are converted before transparency compositing. DeviceGray,
-DeviceRGB and DeviceCMYK keep their existing unmanaged conversion rules.
+DeviceRGB and DeviceCMYK use their existing unmanaged conversion rules unless
+the current resources replace them with a supported default color space.
 CalGray, CalRGB and Lab have a separate calibrated-source path; selecting one
 must not silently treat its samples as ordinary device values.
 
@@ -44,7 +45,7 @@ ISO 32000-2:2020 Table 144, rather than treating a palette index as a color.
 Calibrated sources work with fill and stroke colors, native text, image XObjects,
 inline images, Indexed palettes, tiling patterns and supported shadings/meshes.
 `q`/`Q` preserves the complete source space. Device-color operators reset the
-calibrated selection. Deferred uncolored patterns retain their base color space,
+calibrated selection, subject to default-space remapping. Deferred uncolored patterns retain their base color space,
 not just a component count.
 
 Named inline-image color spaces retain their array structure and object-reference
@@ -130,3 +131,33 @@ Optional independent comparisons allow two channel values of rounding:
 The profile model and curve equations follow ISO 32000-1 section 8.6.5.5 and
 ICC.1:2022 sections 10.6/10.18 and Annex F. Support for one model does not establish
 full ICC handling or arbitrary-document visual fidelity.
+
+## Default spaces and initial pattern colors
+
+DefaultGray, DefaultRGB and DefaultCMYK in the current ColorSpace resources
+replace a selected device space once, as specified by ISO 32000-1 section
+8.6.5.6. The replacement must have the same component count and cannot be Lab,
+Indexed or Pattern. Supported calibrated and ICC source spaces work here;
+unsupported replacement models still fail. A device-space replacement is not
+remapped again. Null or undefined defaults leave the original device space intact.
+
+Remapping applies to color operators, image XObjects, inline images, Indexed
+bases, uncolored pattern bases and shadings. Forms use their own resources for
+new selections while preserving inherited graphics-state colors. Soft-mask
+samples remain alpha values rather than being converted through DefaultGray.
+A transparency group with no explicit CS inherits its parent blending space;
+unused default spaces do not cause it to fail. Explicit group spaces are still
+subject to the blending-space restrictions above.
+
+Selecting Pattern without choosing a pattern with SCN/scn paints nothing
+(ISO 32000-1 Table 74). This applies to paths and text, including combined fill
+and stroke. An empty stroke does not cover an otherwise visible fill. Path and
+text clipping still take effect even when the painting color is empty.
+
+`make test-pdf-default-colors` checks resource scope, default references,
+replacement validation, compressed resources, image and pattern bases, native and fallback text,
+clipping, combined painting and allocation recovery. Failed resource lookups
+are distinguished from absent defaults, so allocation failures cannot silently
+change the output colors. Optional comparisons use:
+
+    python3 scripts/test_pdf_default_colors.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference

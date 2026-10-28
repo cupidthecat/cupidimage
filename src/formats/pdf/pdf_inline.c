@@ -185,9 +185,18 @@ static int inline_color_resource(inline_parser *p, pdf_render_state *st, size_t 
         char *array = NULL;
         size_t at = 0, length = 0;
         cupidimage_pdf_skip_ws_and_comments(exact.data, exact.len, &at);
-        ok = ok && cupidimage_pdf_content_array(exact.data, exact.len, &at, &array, &length);
         p->used = start;
-        ok = ok && inline_text(p, "[") && inline_append(p, array, length) && inline_text(p, "] ");
+        if (ok && at < exact.len && exact.data[at] == '/') {
+            char device[128];
+            ok = cupidimage_pdf_read_name(&exact, &at, device) &&
+                 (!strcmp(device, "DeviceGray") || !strcmp(device, "DeviceRGB") ||
+                  !strcmp(device, "DeviceCMYK"));
+            ok = ok && inline_text(p, "/") && inline_text(p, device) && inline_text(p, " ");
+        } else {
+            ok = ok && cupidimage_pdf_content_array(exact.data, exact.len, &at, &array, &length);
+            ok = ok && inline_text(p, "[") && inline_append(p, array, length) &&
+                 inline_text(p, "] ");
+        }
         free(array);
         cupidimage_pdf_object_view_release(&exact);
         cupidimage_pdf_object_view_release(&resource);

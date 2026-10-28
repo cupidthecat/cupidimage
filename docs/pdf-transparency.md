@@ -48,7 +48,9 @@ definitions when the destination changes between RGB and grayscale.
 
 Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
-remapping remain unsupported and are rejected for these groups.
+remap painted source colors. A group without an explicit CS inherits its parent
+blending space; an explicit CS is remapped and must still resolve to a supported
+blending space. Calibrated and ICC blending spaces remain unsupported.
 
 ## Knockout and shape
 

@@ -2029,10 +2029,11 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_image_colors.c",
-            "scripts/test_pdf_colors.py"
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md"
           ],
           "limitations": [
-            "Calibrated/ICC/spot spaces, default-space substitution and color management are unfinished."
+            "Device conversions and supported default-space substitutions are tested. Full output-profile selection, black-point compensation and intent handling remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2097,10 +2098,11 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_image_colors.c",
-            "scripts/test_pdf_colors.py"
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md"
           ],
           "limitations": [
-            "Calibrated/ICC/spot spaces, default-space substitution and color management are unfinished."
+            "Indexed and Pattern sources accept supported calibrated/ICC bases. Separation, DeviceN/NChannel and tint transforms remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -2131,20 +2133,24 @@
         {
           "id": "11.6",
           "requirement": "DefaultGray/DefaultRGB/DefaultCMYK substitution.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-colors.md",
+            "src/formats/pdf/pdf_image_colors.c",
+            "scripts/test_pdf_default_colors.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Supported gray/RGB calibrated and ICC source replacements are tested; CMYK ICC, spot replacements and calibrated/ICC blending spaces remain unfinished."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.6"
+          ]
         },
         {
           "id": "11.7",
@@ -2153,10 +2159,12 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_image_colors.c",
-            "scripts/test_pdf_colors.py"
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_default_colors.py"
           ],
           "limitations": [
-            "Calibrated/ICC/spot spaces, default-space substitution and color management are unfinished."
+            "Calibrated and selected ICC source spaces, default substitution and empty initial Pattern colors are supported. Spot spaces, remaining ICC models and general color management are unfinished."
           ],
           "dependencies": [
             "1",
@@ -2191,10 +2199,11 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_image_colors.c",
-            "scripts/test_pdf_colors.py"
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md"
           ],
           "limitations": [
-            "Calibrated/ICC/spot spaces, default-space substitution and color management are unfinished."
+            "Supported device, calibrated and ICC source colors share painting paths. General color management, spot components and calibrated/ICC blending spaces remain unfinished."
           ],
           "dependencies": [
             "1",

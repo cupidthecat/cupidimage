@@ -509,3 +509,7 @@ and meshes. Indexed matte arrays use the base color space component count.
 sampled/parametric curves, indirect and compressed metadata, cache lifetime,
 source-color pipelines and allocation-failure cleanup. Unsupported LUT profiles
 are rejected rather than interpreted as matrix profiles.
+
+`make test-pdf-default-colors` checks default-space substitution across color
+operators, images, Forms, patterns, text and shadings. It also tests the empty
+initial Pattern color, combined fill/stroke and clipping without visible paint.

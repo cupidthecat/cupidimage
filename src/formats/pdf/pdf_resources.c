@@ -6,8 +6,9 @@
    Returned views retain temporary object storage when necessary; original
    document and override bytes remain borrowed. The override supports font-local
    and inline scopes. */
-int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category, const char *name,
-                                 pdf_object_view *value, pdf_object_id *reference) {
+int cupidimage_pdf_find_resource_checked(const pdf_render_state *st, const char *category,
+                                         const char *name, pdf_object_view *value,
+                                         pdf_object_id *reference) {
     if (value)
         memset(value, 0, sizeof(*value));
     if (reference)
@@ -23,24 +24,26 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
             override = 0;
             parent = object;
         } else if (!cupidimage_pdf_state_object(st, object, &node))
-            return 0;
+            return -1;
         size_t pos;
         int present = cupidimage_pdf_optional_dictionary(st->document, st->document_size, &node,
                                                          "Resources", &resources);
         if (present != 0) {
-            int ok = present > 0 &&
-                     cupidimage_pdf_optional_dictionary(st->document, st->document_size, &resources,
-                                                        category, &entries) == 1;
+            int ok = present < 0
+                         ? -1
+                         : cupidimage_pdf_optional_dictionary(st->document, st->document_size,
+                                                              &resources, category, &entries);
             pos = 0;
-            if (ok && name)
+            if (ok > 0 && name)
                 ok = cupidimage_pdf_page_value(&entries, name, &pos);
             pdf_object_id target = 0;
-            if (ok && name && cupidimage_pdf_page_reference(&entries, pos, &target)) {
+            if (ok > 0 && name && cupidimage_pdf_page_reference(&entries, pos, &target)) {
                 if (reference)
                     *reference = target;
                 if (value)
-                    ok = cupidimage_pdf_state_object(st, target, value);
-            } else if (ok && value) {
+                    ok = cupidimage_pdf_lookup_object(st->xref, st->document, st->document_size,
+                                                      target, value);
+            } else if (ok > 0 && value) {
                 value->data = entries.data + pos;
                 value->len = entries.len - pos;
                 value->xref = entries.xref;
@@ -54,7 +57,7 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
                     value->owned = node.owned;
                     node.owned = NULL;
                 }
-            } else if (ok)
+            } else if (ok > 0)
                 ok = 0;
             cupidimage_pdf_object_view_release(&entries);
             cupidimage_pdf_object_view_release(&resources);
@@ -66,7 +69,12 @@ int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *categor
         cupidimage_pdf_object_view_release(&node);
         object = parent;
     }
-    return 0;
+    return object > 0 || override ? -1 : 0;
+}
+
+int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category, const char *name,
+                                 pdf_object_view *value, pdf_object_id *reference) {
+    return cupidimage_pdf_find_resource_checked(st, category, name, value, reference) == 1;
 }
 
 int cupidimage_pdf_state_object(const pdf_render_state *st, pdf_object_id object,

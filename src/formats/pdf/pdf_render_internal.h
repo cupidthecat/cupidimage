@@ -274,6 +274,10 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
 
 int cupidimage_pdf_state_object(const pdf_render_state *st, pdf_object_id object,
                                 pdf_object_view *view);
+/* Returns 1 for a resource, 0 for absence, and -1 for malformed/failed lookup. */
+int cupidimage_pdf_find_resource_checked(const pdf_render_state *st, const char *category,
+                                         const char *name, pdf_object_view *value,
+                                         pdf_object_id *reference);
 int cupidimage_pdf_find_resource(const pdf_render_state *st, const char *category, const char *name,
                                  pdf_object_view *value, pdf_object_id *reference);
 
