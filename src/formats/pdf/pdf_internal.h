@@ -273,6 +273,7 @@ size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program);
 void cupidimage_pdf_font_program_free(pdf_font_program *program);
 int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code);
 unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code);
-double cupidimage_pdf_font_program_advance(const pdf_font_program *program, unsigned glyph);
+int cupidimage_pdf_font_program_advance(pdf_font_program *program, unsigned glyph,
+                                        size_t *cache_bytes_left, double *advance);
 
 #endif

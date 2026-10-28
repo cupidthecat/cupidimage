@@ -523,3 +523,8 @@ two owned bearing assets with `scripts/generate_pdf_bearing_fixtures.py`.
 text objects, empty/invisible text and clipping. The allocation harness compares
 lazy text surfaces against eager backdrop initialization and verifies that group
 work bounds include zero-alpha shape and explicit backgrounds.
+
+`make test-pdf-font-advances` tests fallback CFF/Type 1 metrics, zero and negative
+advances, composite widths, all text modes and the page glyph-operation limit.
+Fault injection requires a failed width decode to fail the page, never silently
+move later characters by zero.

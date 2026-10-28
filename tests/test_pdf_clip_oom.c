@@ -31,7 +31,17 @@
 #include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_outline.c"
+static int test_outline_cache_enabled = 1;
+
+static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_outline *truetype,
+                             pdf_cff_outline *postscript, size_t *budget, int *borrowed) {
+    return cupidimage_pdf_font_outline(program, glyph, truetype, postscript,
+                                       test_outline_cache_enabled ? budget : NULL, borrowed);
+}
+
+#define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_font_program.c"
+#undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
 #include "../src/formats/pdf/pdf_fonts.c"
@@ -67,14 +77,6 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #define cupidimage_pdf_group_surface test_text_surface
 #include "../src/formats/pdf/pdf_text_groups.c"
 #undef cupidimage_pdf_group_surface
-static int test_outline_cache_enabled = 1;
-
-static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_outline *truetype,
-                             pdf_cff_outline *postscript, size_t *budget, int *borrowed) {
-    return cupidimage_pdf_font_outline(program, glyph, truetype, postscript,
-                                       test_outline_cache_enabled ? budget : NULL, borrowed);
-}
-
 #define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_text_outline.c"
 #undef cupidimage_pdf_font_outline

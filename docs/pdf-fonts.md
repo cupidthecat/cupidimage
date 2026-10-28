@@ -542,3 +542,24 @@ injection compares lazy surfaces with an eager-backdrop baseline. Separate bound
 checks cover empty surfaces, zero opacity, disjoint painted pixels and explicit
 backgrounds. Existing nested-group, soft-mask, pattern and knockout tests remain
 part of the aggregate suite.
+
+## Fallback advance failures
+
+For the damaged-input case where a simple embedded font omits both Widths and
+MissingWidth, CFF and Type 1 advances come from the decoded charstring width.
+Advance lookup shares the page's outline cache with painting and preserves the
+composite glyph's own width. Type 1 width vectors are transformed by FontMatrix.
+PDF-provided metrics still take precedence.
+
+A decoding or allocation failure now fails the page instead of substituting a
+zero advance and shifting later characters. A genuine zero or negative width
+remains valid. Fallback advance requests count against the existing per-page
+65,536 glyph-operation budget, including invisible text; this bounds charstring
+work even when no glyph pixels are painted.
+
+`make test-pdf-font-advances` compares fallback positioning with explicit PDF
+metrics across all eight text modes, signed/zero widths, composite accents and
+transformed Type 1 width vectors. Allocation tests compare cached and uncached
+renders. A failed allocation must either fail page loading cleanly or recover
+with identical pixels. This compatibility path does not make omitted required
+font metrics conforming.

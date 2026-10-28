@@ -369,8 +369,17 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         }
         if (font && font->program) {
             glyph = cupidimage_pdf_font_program_glyph(font->program, encoded);
-            if (!font->cid && !font->has_widths && !font->has_missing_width)
-                width = cupidimage_pdf_font_program_advance(font->program, glyph);
+            if (!font->cid && !font->has_widths && !font->has_missing_width) {
+                if (!st->form_budget->glyph_calls_left ||
+                    !cupidimage_pdf_font_program_advance(
+                        font->program, glyph, &st->form_budget->outline_cache_bytes_left, &width)) {
+                    st->image_failed = 1;
+                    cupidimage_set_err(st->error, st->error_capacity,
+                                       "pdf: font advance decoding failed or exceeded limits");
+                    break;
+                }
+                st->form_budget->glyph_calls_left--;
+            }
         }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
