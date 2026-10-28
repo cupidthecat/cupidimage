@@ -48,7 +48,8 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
     int hmax = 0;
     int vmax = 0;
     int restart_interval = 0;
-    int progressive = 0;
+    int progressive = 0, arithmetic = 0;
+    jpeg_arithmetic_conditioning conditioning = {{0, 0, 0, 0}, {1, 1, 1, 1}, {5, 5, 5, 5}};
     int adobe_transform = -1;
     int coeffs_allocated = 0;
     int mcu_cols = 0;
@@ -197,7 +198,7 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                     goto fail;
                 }
                 sequential_seen |= seen_components;
-                if (ns != num_comp || sequential_buffered) {
+                if (arithmetic || ns != num_comp || sequential_buffered) {
                     sequential_buffered = 1;
                     if (!coeffs_allocated) {
                         coeffs_allocated = 1;
@@ -205,10 +206,16 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                                                         errcap))
                             goto fail;
                     }
-                    if (!cupidimage_jpeg_decode_coefficient_scan(
-                            data + pos, size - pos, comps, num_comp, scan_comp, ns, ss, se, ah, al,
-                            width, height, mcu_cols, mcu_rows, hmax, vmax, dc_tables, ac_tables,
-                            restart_interval, &consumed, err, errcap, 1))
+                    if (arithmetic) {
+                        if (!cupidimage_jpeg_decode_arithmetic_scan(
+                                data + pos, size - pos, comps, num_comp, scan_comp, ns, ss, se, ah,
+                                al, width, height, mcu_cols, mcu_rows, hmax, vmax, &conditioning,
+                                restart_interval, &consumed, err, errcap, 1))
+                            goto fail;
+                    } else if (!cupidimage_jpeg_decode_coefficient_scan(
+                                   data + pos, size - pos, comps, num_comp, scan_comp, ns, ss, se,
+                                   ah, al, width, height, mcu_cols, mcu_rows, hmax, vmax, dc_tables,
+                                   ac_tables, restart_interval, &consumed, err, errcap, 1))
                         goto fail;
                 } else {
                     if (!cupidimage_jpeg_decode_scan(
@@ -234,10 +241,16 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                 }
             }
 
-            if (!cupidimage_jpeg_decode_coefficient_scan(
-                    data + pos, size - pos, comps, num_comp, scan_comp, ns, ss, se, ah, al, width,
-                    height, mcu_cols, mcu_rows, hmax, vmax, dc_tables, ac_tables, restart_interval,
-                    &consumed, err, errcap, 0)) {
+            if (arithmetic) {
+                if (!cupidimage_jpeg_decode_arithmetic_scan(
+                        data + pos, size - pos, comps, num_comp, scan_comp, ns, ss, se, ah, al,
+                        width, height, mcu_cols, mcu_rows, hmax, vmax, &conditioning,
+                        restart_interval, &consumed, err, errcap, 0))
+                    goto fail;
+            } else if (!cupidimage_jpeg_decode_coefficient_scan(
+                           data + pos, size - pos, comps, num_comp, scan_comp, ns, ss, se, ah, al,
+                           width, height, mcu_cols, mcu_rows, hmax, vmax, dc_tables, ac_tables,
+                           restart_interval, &consumed, err, errcap, 0)) {
                 goto fail;
             }
             JPEG_DEBUG("jpeg: progressive scan consumed %zu bytes\n", consumed);
@@ -343,7 +356,28 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                     JPEG_DEBUG("jpeg: Adobe APP14 transform=%d\n", adobe_transform);
                 }
             }
-        } else if (marker == 0xC2 || marker == 0xC0) {
+        } else if (marker == 0xCC) {
+            if (length < 4 || (length & 1)) {
+                cupidimage_jpeg_set_error(err, errcap, "invalid arithmetic conditioning length");
+                goto fail;
+            }
+            for (unsigned offset = 0; offset < (unsigned)length - 2; offset += 2) {
+                unsigned selector = seg[offset], value = seg[offset + 1];
+                unsigned table = selector & 15;
+                if (table > 3 || selector > 0x13 ||
+                    (selector < 0x10 ? (value & 15) > (value >> 4) : (value < 1 || value > 63))) {
+                    cupidimage_jpeg_set_error(err, errcap, "invalid arithmetic conditioning table");
+                    goto fail;
+                }
+                if (selector < 0x10) {
+                    conditioning.lower[table] = value & 15;
+                    conditioning.upper[table] = value >> 4;
+                } else {
+                    conditioning.ac[table] = value;
+                }
+            }
+        } else if (marker == 0xC2 || marker == 0xC0 || marker == 0xC1 || marker == 0xC9 ||
+                   marker == 0xCA) {
             if (saw_sof) {
                 cupidimage_jpeg_set_error(err, errcap, "multiple JPEG frames unsupported");
                 goto fail;
@@ -353,7 +387,8 @@ static int jpeg_load(const unsigned char *data, size_t size, cupidimage_image *o
                 cupidimage_jpeg_set_error(err, errcap, "invalid SOF");
                 goto fail;
             }
-            progressive = (marker == 0xC2);
+            progressive = (marker == 0xC2 || marker == 0xCA);
+            arithmetic = (marker == 0xC9 || marker == 0xCA);
             precision = seg[0];
             height = (seg[1] << 8) | seg[2];
             width = (seg[3] << 8) | seg[4];

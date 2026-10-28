@@ -669,3 +669,10 @@ groups. The decoder tracks component coverage, rejects duplicate or incomplete
 sequential data, and shares coefficient decoding with the progressive path.
 Interleaved single-scan images keep their streaming path; images needing several
 scans are reconstructed after all components arrive.
+
+
+Arithmetic-coded sequential and progressive DCT streams now share the native PDF
+image path. Focused tests compare 60 independently encoded pairs, including
+restart intervals, odd image dimensions and subsampled color components. The
+8-bit extended sequential Huffman frame marker is also supported. This closes
+another image-decoding gap, but does not establish complete DCT or PDF coverage.

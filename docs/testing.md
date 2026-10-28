@@ -431,10 +431,19 @@ reference probes are separate from scaled raw-sample-equivalence checks; see
 
 `make test-jpeg-math` checks coefficient and refinement bounds, dense inverse
 transform inputs, and sequential zero-run boundaries. These tests protect the
-shared JPEG decoder used by PDF DCT streams.
+shared JPEG decoder used by PDF DCT streams. It also decodes all 256 decisions
+in the published ISO/IEC 10918-1 K.4.1 arithmetic test sequence.
 
 `make test-pdf-jpeg-sampling` generates varied component block grids for sampling
 factors through four, edge blocks, restart wrapping, mixed/separate component
 scans and per-component quantizer lifetimes. PDF cases compare with equivalent raw-sample images and exercise
 allocation failures. The optional `--reference` pass checks selected grayscale
 and RGB grids without claiming agreement for differing upsampling algorithms.
+
+
+`make test-pdf-dct-arithmetic` compares paired arithmetic/Huffman streams before
+color conversion and through complete PDF image rendering. It includes restart
+markers, progressive refinement, separate scans, conditioning selectors, filter
+chains, Decode inversion and allocation failures. The checked-in fixtures avoid
+an encoder dependency in CI. Use `--reference` with the script for independent
+paired-image comparisons; see [PDF images](pdf-images.md) for their scope.

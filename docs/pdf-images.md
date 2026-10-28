@@ -54,8 +54,8 @@ not replace the PDF image's Decode array.
 The decoded sample buffer is limited to 64 MiB. Image dimensions, component count
 and bit depth are checked against the JPEG frame before decoding its samples.
 Progressive and multi-scan sequential images buffer coefficients before producing
-samples. Allocation failures release partial coefficient and output buffers. Every filter stage retains its
-own decoded-size bounds. Each component retains the quantization table selected
+samples. Allocation failures release partial coefficient and output buffers.
+Every filter stage retains its own decoded-size bounds. Each component retains the quantization table selected
 by its first scan. Table definitions may arrive before the component that needs
 them, and a selector may be reused after that component's scans finish. A
 conflicting table at a later scan of the same component is rejected.
@@ -66,14 +66,16 @@ value of 536,870,911 so the complete fixed-point inverse transform fits in a
 signed 64-bit accumulator. Values outside that implementation bound fail rather
 than wrapping. Sample clipping happens before narrowing the accumulator result.
 
-The current DCT path supports 8-bit, Huffman-coded baseline and progressive
-frames. Horizontal and vertical sampling factors from one through four are
+The current DCT path supports 8-bit Huffman-coded baseline, extended sequential
+and progressive frames, plus arithmetic-coded sequential and progressive frames. Horizontal and vertical sampling factors from one through four are
 supported, including 4:1:1 and fractional component ratios. Interleaved scans are
 limited to ten data units per MCU; a one-component scan always uses one block per
 MCU. Sequential color images may use separate component scans or a mixture of
 interleaved and separate scans. Every component must be supplied exactly once in
-a sequential frame. Other DCT coding modes need an applicability and implementation
-audit. JPXDecode and JBIG2Decode remain unsupported. These limits are distinct from
+a sequential frame. Arithmetic scans use the conditioning tables, adaptive
+probability states, fixed-probability decisions and restart resets specified in
+ISO/IEC 10918-1, Annexes D, F and G. Higher sample precision, hierarchical frames
+and other coding modes still need an applicability audit. JPXDecode and JBIG2Decode remain unsupported. These limits are distinct from
 image placement, interpolation and color-management work.
 
 Images currently use nearest-neighbor sampling. Scaled-image edge coverage and
@@ -109,3 +111,21 @@ The governing rules are in [ISO 32000-1, sections 7.4 and
 including the ColorTransform precedence in Table 13. The DCT section also refers
 to Adobe Technical Note 5116 for its marker conventions. See the
 [conformance tracker](format-conformance.md) for the wider PDF work.
+
+
+`make test-pdf-dct-arithmetic` checks 60 owned pairs of arithmetic- and
+Huffman-coded images. Both members use the same pixels, quantization and sampling;
+their native samples and rendered PDF images must agree exactly. Cases cover
+sequential/progressive scans, grayscale/RGB/CMYK, odd edges, subsampling, restart
+markers, filter chains and reversed Decode arrays. Separate-component fixtures
+also exercise two-component native output and all four conditioning selectors.
+The optional `--reference` pass compares each encoded pair with an independent
+decoder. This verifies entropy-code equivalence without attributing shared IDCT
+rounding or upsampling differences to arithmetic decoding.
+
+The fixture generator needs ImageMagick, but ordinary tests use the checked-in
+fixture data and need no external image codec. See
+[ITU-T T.81 / ISO/IEC 10918-1](https://www.w3.org/Graphics/JPEG/itu-t81.pdf)
+for the arithmetic coding procedures and probability state table.
+`make test-jpeg-math` also checks the standard's complete 256-decision arithmetic
+test sequence from K.4.1.

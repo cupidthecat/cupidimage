@@ -57,6 +57,18 @@ typedef struct {
     int *marker;
 } jpeg_sample_profile;
 
+typedef struct {
+    uint8_t lower[4], upper[4], ac[4];
+} jpeg_arithmetic_conditioning;
+
+int cupidimage_jpeg_decode_arithmetic_scan(const uint8_t *data, size_t size, jpeg_comp *components,
+                                           int count, const int *scan, int scan_count, int ss,
+                                           int se, int ah, int al, int width, int height,
+                                           int columns, int rows, int hmax, int vmax,
+                                           const jpeg_arithmetic_conditioning *conditioning,
+                                           int restart_interval, size_t *consumed, char *error,
+                                           size_t capacity, int sequential);
+
 extern const uint8_t cupidimage_jpeg_zigzag[64];
 
 int cupidimage_jpeg_huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int num);

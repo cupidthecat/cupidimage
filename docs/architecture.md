@@ -26,7 +26,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
 
 - JPEG: `cupidimage_jpeg.c` handles markers, frame/scan lifecycle and the public
   wrappers. `jpeg_entropy.c` owns Huffman tables and shared sequential/progressive
-  coefficient decoding. `jpeg_output.c` reconstructs samples and provides native
+  coefficient decoding. `jpeg_arithmetic.c` implements arithmetic probability
+  states and sequential/progressive coefficient scans. `jpeg_output.c` reconstructs
+  samples and provides native
   component or RGBA output. `jpeg_internal.h` defines their private contracts.
 - PDF: public page APIs, document/object parsing and streams, font maps and the
   bitmap fallback, image samples and masks, and graphics/content rendering.
