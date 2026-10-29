@@ -9,6 +9,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [PDF objects and revisions](pdf-objects.md): cross-reference tables, streams, generations and limits.
 - [PDF content syntax](pdf-content.md): names, text strings, operands and parser limits.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
+- [TrueType instruction engine](pdf-truetype-vm.md): tested foundations and the unfinished hinting integration.
 - [PDF colors](pdf-colors.md): device and calibrated source conversion, tests and limits.
 - [PDF images](pdf-images.md): native samples, DCT transforms, filter chains and image limits.
 - [PDF patterns](pdf-patterns.md): tiling, backdrop-dependent evaluation and cache limits.

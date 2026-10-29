@@ -149,3 +149,8 @@ storage without duplicating the curve equations or interpolation code.
 renderers retain geometry and clipping ownership; the helper borrows the caller's
 mask, redirects painting into a bounded surface, then restores state and applies
 the mask once to the completed object.
+
+`fonts/truetype_vm` separates instruction dispatch/control flow from stack and
+storage operations. Instances own their mutable state but borrow immutable program
+bodies. This foundation is currently exercised by tests, not the page renderer;
+see [its scope and ownership rules](pdf-truetype-vm.md) before integrating hinting.

@@ -28,15 +28,16 @@ int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t len
     unsigned count = tt_u16(data + 4);
     if (!count || count > 4096 || count > (length - 12) / 16)
         return 0;
-    const char *tags[] = {"head", "maxp", "loca", "glyf", "hhea", "hmtx", "cmap", "post"};
-    pdf_tt_table *tables[] = {&f->head, &f->maxp, &f->loca, &f->glyf,
-                              &f->hhea, &f->hmtx, &f->cmap, &f->post};
+    const char *tags[] = {"head", "maxp", "loca", "glyf", "hhea", "hmtx",
+                          "cmap", "post", "cvt ", "fpgm", "prep"};
+    pdf_tt_table *tables[] = {&f->head, &f->maxp, &f->loca, &f->glyf, &f->hhea, &f->hmtx,
+                              &f->cmap, &f->post, &f->cvt,  &f->fpgm, &f->prep};
     for (unsigned i = 0; i < count; i++) {
         const unsigned char *record = data + 12 + i * 16;
         size_t offset = tt_u32(record + 8), size = tt_u32(record + 12);
         if (offset > length || size > length - offset)
             return 0;
-        for (unsigned j = 0; j < 8; j++)
+        for (unsigned j = 0; j < sizeof(tags) / sizeof(*tags); j++)
             if (!memcmp(record, tags[j], 4)) {
                 if (tables[j]->data)
                     return 0;

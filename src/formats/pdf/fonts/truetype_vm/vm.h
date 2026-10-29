@@ -1,0 +1,39 @@
+#ifndef CUPIDIMAGE_PDF_TT_VM_H
+#define CUPIDIMAGE_PDF_TT_VM_H
+#include <stddef.h>
+#include <stdint.h>
+
+typedef enum {
+    PDF_TT_VM_OK,
+    PDF_TT_VM_MEMORY,
+    PDF_TT_VM_PROGRAM,
+    PDF_TT_VM_STACK,
+    PDF_TT_VM_STORAGE,
+    PDF_TT_VM_FUNCTION,
+    PDF_TT_VM_ARITHMETIC,
+    PDF_TT_VM_BUDGET,
+    PDF_TT_VM_UNSUPPORTED
+} pdf_tt_vm_error;
+
+typedef struct {
+    const unsigned char *data;
+    size_t length;
+    int defined;
+} pdf_tt_vm_function;
+
+typedef struct {
+    int32_t *stack, *storage, *cvt;
+    pdf_tt_vm_function *functions;
+    unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
+    size_t work_left;
+    pdf_tt_vm_error error;
+    size_t error_offset;
+    unsigned error_opcode;
+} pdf_tt_vm;
+
+/* Definition bodies borrow program bytes, which must outlive the VM.
+ * A failed execution invalidates its state; destroy/reinitialize before reuse. */
+int cupidimage_pdf_tt_vm_init(pdf_tt_vm *, unsigned, unsigned, const int32_t *, unsigned, unsigned);
+void cupidimage_pdf_tt_vm_free(pdf_tt_vm *);
+int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, int, size_t);
+#endif

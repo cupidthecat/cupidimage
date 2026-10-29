@@ -603,3 +603,8 @@ allocation. Large-page and 5,000-object cases check that nonpainting glyphs do n
 consume implicit surfaces or clipping operations. Optional independent comparisons
 cover mixed text with nonempty glyphs; outline-less-only clipping uses the ISO rule
 as its oracle.
+
+`make test-pdf-tt-vm` checks the native instruction-engine foundation and initializes
+the 12 pinned font programs. These tests do not render hinted glyphs. The engine's
+unsupported instructions and unwired rendering path remain documented separately
+in [the TrueType VM guide](pdf-truetype-vm.md).

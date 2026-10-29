@@ -854,10 +854,14 @@
             "scripts/test_pdf_embedded_fonts.py",
             "scripts/test_pdf_truetype_bearings.py",
             "assets/pdf/reference/embedded-truetype-bearing.pdf",
-            "assets/pdf/reference/embedded-truetype-short-bearing.pdf"
+            "assets/pdf/reference/embedded-truetype-short-bearing.pdf",
+            "docs/pdf-truetype-vm.md",
+            "src/formats/pdf/fonts/truetype_vm/vm.c",
+            "tests/test_pdf_tt_vm.c"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "The native instruction-engine foundation is tested independently but is not connected to page rendering; glyph grid fitting remains unfinished."
           ],
           "dependencies": [
             "1",
@@ -969,10 +973,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-truetype-vm.md",
+            "src/formats/pdf/fonts/truetype_vm/vm.c",
+            "tests/test_pdf_tt_vm.c"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "The native instruction-engine foundation is tested independently but is not connected to page rendering; glyph grid fitting remains unfinished."
           ],
           "dependencies": [
             "1",

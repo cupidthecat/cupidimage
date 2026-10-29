@@ -1,0 +1,9 @@
+#ifndef CUPIDIMAGE_PDF_TT_VM_INTERNAL_H
+#define CUPIDIMAGE_PDF_TT_VM_INTERNAL_H
+#include "vm.h"
+
+int cupidimage_pdf_tt_vm_fail(pdf_tt_vm *, pdf_tt_vm_error);
+int cupidimage_pdf_tt_vm_push(pdf_tt_vm *, int64_t);
+int cupidimage_pdf_tt_vm_need(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *, unsigned);
+#endif

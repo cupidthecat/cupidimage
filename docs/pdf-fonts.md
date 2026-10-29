@@ -742,3 +742,12 @@ older test expectations were corrected accordingly, without changing the expecte
 rendering of nonempty glyphs. `make test-pdf-empty-glyphs` covers the distinction;
 two owned analytic assets cover clip preservation and a space code mapped to ink.
 Regenerate them with `scripts/generate_pdf_empty_glyph_fixtures.py`.
+
+
+## Native instruction-engine foundation
+
+The [TrueType instruction engine](pdf-truetype-vm.md) now has bounded stack,
+storage, control-flow and function-definition execution. Its tests initialize the
+font programs of the pinned Latin faces. It is not connected to page rendering;
+TrueType grid fitting, the remaining instructions and size-specific preparation
+are still unfinished. No hinted-glyph parity is claimed by those tests.

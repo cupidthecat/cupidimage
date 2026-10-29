@@ -9,7 +9,7 @@ typedef struct {
 } pdf_tt_table;
 
 typedef struct {
-    pdf_tt_table head, maxp, loca, glyf, hhea, hmtx, cmap, post;
+    pdf_tt_table head, maxp, loca, glyf, hhea, hmtx, cmap, post, cvt, fpgm, prep;
     unsigned units, glyphs, location_size, hmetrics;
 } pdf_tt_font;
 
