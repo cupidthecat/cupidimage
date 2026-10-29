@@ -2762,7 +2762,9 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "src/formats/pdf/pdf_paint_groups.c",
+            "scripts/test_pdf_combined_paint.py"
           ],
           "limitations": [
             "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
@@ -2774,7 +2776,9 @@
             "11"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 11.7.4.4"
+          ]
         },
         {
           "id": "14.5",
@@ -2783,7 +2787,9 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "src/formats/pdf/pdf_paint_groups.c",
+            "scripts/test_pdf_combined_paint.py"
           ],
           "limitations": [
             "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
@@ -2795,7 +2801,9 @@
             "11"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 11.7.4.4"
+          ]
         },
         {
           "id": "14.6",

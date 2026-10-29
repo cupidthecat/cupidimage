@@ -81,6 +81,7 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 }
 
 #define cupidimage_pdf_group_surface test_text_surface
+#include "../src/formats/pdf/pdf_paint_groups.c"
 #include "../src/formats/pdf/pdf_text_groups.c"
 #undef cupidimage_pdf_group_surface
 #define cupidimage_pdf_font_outline test_font_outline

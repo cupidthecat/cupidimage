@@ -589,3 +589,8 @@ clipping rule, with the raw-engine difference documented in the color guide.
 subset-prefixed aliases, metadata types and references, PDF layout and allocation
 recovery. It compares the chosen programs with explicitly embedded copies; it does
 not establish fidelity to unavailable original font designs.
+
+`make test-pdf-combined-paint` checks implicit fill/stroke knockout objects against
+explicit groups and analytic interior colors. Its optional `--reference` pass
+qualifies selected color samples, not whole-image edge coverage. Three owned
+assets cover alpha-as-shape, stroke-pattern holes and one-time mask application.

@@ -815,6 +815,10 @@
       "sha256": "184d7b5199997cdb70217ef777dcb3811ef1433eba479d988acfd1a5a252f6d0"
     },
     {
+      "path": "assets/pdf/reference/path-fill-stroke-pattern-holes.pdf",
+      "sha256": "a3769ebbdd11ba2a95827706f13964a2cdc82ce4cd0793f04fadb00d03be34e9"
+    },
+    {
       "path": "assets/pdf/reference/quadrants.pdf",
       "sha256": "9f2fa1b0e7eb0b0ea83b4795c449fd6f65bcf2c4e736f9cc60c624bd57fc118e"
     },
@@ -873,6 +877,14 @@
     {
       "path": "assets/pdf/reference/tensor-shared-edge.pdf",
       "sha256": "226865d40424d0ba68ab18340cae8a08e4e32e11651fccbfcb9a1a6a0b7febb0"
+    },
+    {
+      "path": "assets/pdf/reference/text-fill-stroke-mask-once.pdf",
+      "sha256": "487ea8f24fafdfb96a3d0abf01e224e45d0c9a1d948d5dfbff60342dc2c6d510"
+    },
+    {
+      "path": "assets/pdf/reference/text-fill-stroke-shape.pdf",
+      "sha256": "5cfcb733911139f756ef93dfe7a7e084d2d113a9e4dc1dc690eb44b20df51f89"
     },
     {
       "path": "assets/pdf/reference/text-object-knockout.pdf",

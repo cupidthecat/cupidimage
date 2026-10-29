@@ -313,6 +313,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     unsigned char *stroke = NULL;
     int ok = 0, borrowed = 0;
+    pdf_paint_group combined = {0};
     if (!cupidimage_pdf_font_outline(program, glyph, &outline, &cff_outline,
                                      &st->form_budget->outline_cache_bytes_left, &borrowed))
         goto done;
@@ -403,8 +404,10 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     if (edge_count && pixels > st->clip_budget->tests_left / edge_count)
         goto done;
     st->clip_budget->tests_left -= pixels * edge_count;
-    for (int y = top; y < bottom; y++)
-        for (int x = left; x < right; x++) {
+    if (mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined))
+        goto done;
+    for (int y = top; y < bottom && !st->image_failed; y++)
+        for (int x = left; x < right && !st->image_failed; x++) {
             int winding = outline_winding(edges, edge_count, x + .5, y + .5);
             size_t pixel = (size_t)y * st->img->width + x;
             unsigned bit = 1u << (pixel % 8);
@@ -418,13 +421,16 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                 else
                     st->text_clip->bits[pixel / 8] &= (unsigned char)~bit;
             }
-            if (stroke && (stroke[pixel / 8] & bit))
-                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
-            else if (winding && (mode == 0 || mode == 2))
+            int stroked = stroke && (stroke[pixel / 8] & bit);
+            if (winding && (mode == 0 || mode == 2) && (!stroked || combined.surface.image.rgba))
                 cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
+            if (stroked)
+                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
         }
     ok = !st->image_failed;
 done:
+    if (!cupidimage_pdf_fill_stroke_end(st, &combined, ok))
+        ok = 0;
     free(stroke);
     free(path);
     free(edges);

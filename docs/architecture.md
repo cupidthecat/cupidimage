@@ -144,3 +144,8 @@ ICC tone curves live in `pdf_icc_curve.c`; `pdf_icc_mab.c` composes those curves
 shared CLUT evaluation and matrix offsets for version 4 forward transforms.
 The old table and newer stage models share bounded parsing and immutable profile
 storage without duplicating the curve equations or interpolation code.
+
+`pdf_paint_groups.c` owns temporary combined fill/stroke groups. Path and glyph
+renderers retain geometry and clipping ownership; the helper borrows the caller's
+mask, redirects painting into a bounded surface, then restores state and applies
+the mask once to the completed object.

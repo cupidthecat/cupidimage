@@ -165,8 +165,13 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
         return;
     }
     st->clip_budget->tests_left -= area;
-    for (int y = y0; y < y1; y++)
-        for (int x = x0; x < x1; x++) {
+    pdf_paint_group combined = {0};
+    if (mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined)) {
+        free(stroke);
+        return;
+    }
+    for (int y = y0; y < y1 && !st->image_failed; y++)
+        for (int x = x0; x < x1 && !st->image_failed; x++) {
             double tx = st->page_x0_pts + (x + .5) / ratio - m[4];
             double ty = st->page_top_pts - (y + .5) / ratio - m[5];
             double gx = (m[3] * tx - m[2] * ty) / det, gy = (m[0] * ty - m[1] * tx) / det;
@@ -179,8 +184,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
                 int32_t value = st->text_winding[pixel];
                 if ((delta > 0 && value == INT32_MAX) || (delta < 0 && value == INT32_MIN)) {
                     st->image_failed = 1;
-                    free(stroke);
-                    return;
+                    goto done;
                 }
                 value += delta;
                 st->text_winding[pixel] = value;
@@ -189,11 +193,15 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
                 else
                     st->text_clip->bits[pixel / 8] &= (unsigned char)~bit;
             }
-            if (stroke && (stroke[pixel / 8] & bit))
-                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
-            else if (filled && (mode == 0 || mode == 2))
+            int stroked = stroke && (stroke[pixel / 8] & bit);
+            if (filled && (mode == 0 || mode == 2) && (!stroked || combined.surface.image.rgba))
                 cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
+            if (stroked)
+                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
         }
+done:
+    if (!cupidimage_pdf_fill_stroke_end(st, &combined, !st->image_failed))
+        st->image_failed = 1;
     free(stroke);
 }
 

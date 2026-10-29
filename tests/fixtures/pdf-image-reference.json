@@ -560,6 +560,27 @@
       "height": 120,
       "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/text-fill-stroke-shape.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt2zENwmAURlEfeGD6dWCgAvBUHRUIawcSoCW5KT3DEfAld3xvLPfHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/tJlWn6u3sRx6I+S/iitu7ld5130x7f0R0l/lF71N0/jY/pjD/1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UXJ/T0l/lPRH6d0v+Rb1Jo5Df5T0BwAAAAAAAAAAAAAAAAAAAAAAAAAAAABwDk/tIJiq",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/path-fill-stroke-pattern-holes.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0rENwkAABME+aOO7cQH0RB0uEMcm8Msy0sowwUQXnbRjfb4HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwkx7LuvPtHY7oj5L+KH3281rGztm9/sO96I+S/ijN+prRH1foj5L+KOmPkv4o6Y+S/ijpj5L+KOmPkv4o6Y+S/ijpj5L+KOmPkv4o6Y/SrL+ze/2He9EfJf1RmvVzdYcj+qOkPwAAAAAAAAAAAAAAAAAAAAAAAAAAAACA/7ABVyiyNg==",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/text-fill-stroke-mask-once.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt27ENggAURdFtXIAFXMA1qB3BisptGFBbCxJUTG7AU5wBXnLL/4d5fAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAhnab7z9Wb2A/9UdIfpdduztfbJvrjU/qjpD9KS/2N0+Vt+mML/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1Rcn9PSX+U9Edp7Zf8G/Um9kN/lPQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPAfnskGzMQ=",
+      "tolerance": 1
     }
   ]
 }

@@ -252,3 +252,43 @@ therefore preserves transparent knockout objects while skipping untouched pixels
 A supplied background initializes full-surface bounds. Implicit text groups defer
 backdrop initialization until a pixel is painted; other group surfaces retain
 their existing initialization. Nested backdrop lookup handles both forms.
+
+
+## Combined fill and stroke
+
+The path operators B, B*, b and b*, and glyph rendering modes 2 and 6, paint a
+single object. Without the still-unimplemented overprint special case, ISO
+32000-1 section 11.7.4.4 defines that object as a non-isolated knockout group.
+Its fill and stroke retain their respective alpha constants and blend mode;
+the completed object is composited with unit alpha and Normal blending.
+This grouping is independent of the text-knockout setting.
+
+Stroke precedence alone is sufficient when the stroke contributes full shape.
+It is not sufficient for alpha-as-shape strokes or patterned strokes with holes
+or partial shape. Those cases now retain the fill where stroke shape is absent
+or fractional. `pdf_paint_groups.c` supplies a bounded, lazily initialized implicit
+surface shared by paths, outline glyphs and the remaining bitmap fallback. It
+composites only the contributed bounds and releases the surface after each object.
+The existing transparency-memory budget applies.
+
+The graphics-state soft mask applies once to the completed object. It is cleared
+while the fill and stroke members are rendered, then restored for compositing.
+State, mask ownership and text-clipping accumulation survive the temporary group.
+Opaque/simple cases keep the existing direct path without an extra surface.
+
+`make test-pdf-combined-paint` compares combined operations with explicit knockout
+groups for TrueType, Type 1, CFF and fallback glyphs, patterns, masks, clipping,
+blend modes and nested groups. Separate interior-pixel equations and three analytic
+assets check the expected colors. Allocation-failure tests cover restoration and
+cleanup. The optional `--reference` pass checks selected interior color samples,
+not complete images or raster-edge equivalence.
+
+Independent implementations still differ on fractional AIS, text knockout and
+some pattern placement. In particular, ordinary sequential alpha compositing
+is not substituted for the specified knockout equations merely to match a renderer.
+Those differing configurations retain explicit-group and analytic oracles rather
+than being counted as independent matches.
+
+    python3 scripts/test_pdf_combined_paint.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
+
+Regenerate the three owned assets with `scripts/generate_pdf_combined_fixtures.py`.

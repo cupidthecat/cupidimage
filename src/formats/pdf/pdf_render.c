@@ -400,13 +400,19 @@ static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
         return;
     }
     cupidimage_pdf_stroke_segments(st, &st->path, stroke);
-    for (size_t pixel = 0; pixel < pixels; pixel++) {
-        unsigned bit = 1u << (pixel % 8);
-        int x = (int)(pixel % st->img->width), y = (int)(pixel / st->img->width);
-        if (stroke[pixel / 8] & bit)
-            cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
-        else if (masks[pixel / 8] & bit)
-            cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
+    pdf_paint_group combined = {0};
+    if (!st->image_failed && cupidimage_pdf_fill_stroke_begin(st, &combined)) {
+        for (size_t pixel = 0; pixel < pixels && !st->image_failed; pixel++) {
+            unsigned bit = 1u << (pixel % 8);
+            int x = (int)(pixel % st->img->width), y = (int)(pixel / st->img->width);
+            int stroked = (stroke[pixel / 8] & bit) != 0;
+            if ((masks[pixel / 8] & bit) && (!stroked || combined.surface.image.rgba))
+                cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
+            if (stroked)
+                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
+        }
+        if (!cupidimage_pdf_fill_stroke_end(st, &combined, 1))
+            st->image_failed = 1;
     }
     free(masks);
 }

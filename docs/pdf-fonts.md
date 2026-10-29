@@ -704,3 +704,12 @@ equivalence checks, not independent proof that the missing original font looks t
 same. The visible 12-face asset remains decoded-unverified; a separate invisible-text
 advance marker has an analytic pixel reference. Regenerate both with
 `scripts/generate_pdf_descriptor_fixtures.py`.
+
+
+## Combined glyph fill and stroke
+
+Text rendering modes 2 and 6 use the combined-object grouping described in the
+[transparency guide](pdf-transparency.md#combined-fill-and-stroke), independently
+of TK. Partial stroke shape and gaps in stroke patterns no longer discard the
+underlying fill. The temporary group does not change advances, glyph selection
+or the text clip accumulated for ET.

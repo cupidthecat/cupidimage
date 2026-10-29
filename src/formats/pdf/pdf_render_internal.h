@@ -197,6 +197,13 @@ struct pdf_transparency_group {
     size_t bytes;
 };
 
+typedef struct {
+    pdf_transparency_group surface;
+    pdf_soft_mask *mask;
+} pdf_paint_group;
+
+int cupidimage_pdf_fill_stroke_begin(pdf_render_state *, pdf_paint_group *);
+int cupidimage_pdf_fill_stroke_end(pdf_render_state *, pdf_paint_group *, int);
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
                                 double alpha, double shape, int blend_mode);
 int cupidimage_pdf_intent_name(const char *);
