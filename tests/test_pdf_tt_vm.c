@@ -52,6 +52,7 @@ static void vm_test_free(void *value) {
 #include "../src/formats/pdf/fonts/truetype_vm/movement.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
 #include "../src/formats/pdf/fonts/truetype_vm/points.c"
+#include "../src/formats/pdf/fonts/truetype_vm/relative.c"
 #include "../src/formats/pdf/fonts/truetype_vm/size.c"
 #include "../src/formats/pdf/fonts/truetype_vm/stack.c"
 #include "../src/formats/pdf/fonts/truetype_vm/vector.c"
@@ -182,6 +183,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
 #include "pdf_tt_vm/lifecycle.c"
 #include "pdf_tt_vm/movement.c"
 #include "pdf_tt_vm/points.c"
+#include "pdf_tt_vm/relative.c"
 #include "pdf_tt_vm/size.c"
 
 #include "pdf_tt_vm/graphics.c"
@@ -499,6 +501,7 @@ int main(int argc, char **argv) {
     point_tests();
     lifecycle_tests();
     movement_tests();
+    relative_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;
 }

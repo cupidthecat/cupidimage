@@ -19,7 +19,7 @@ value and function-definition state. It supports:
 - Axis-aligned, stack-defined and point-derived projection/freedom vectors,
   dual projection, vector reads and copying projection to freedom.
 - Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
-  MDAP, MIAP, UTP, DELTAP1/2/3, SHP and SHPIX.
+  MDAP, MIAP, MIRP, MSIRP, ALIGNRP, UTP, DELTAP1/2/3, SHP and SHPIX.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -65,7 +65,7 @@ truncates toward zero. Multiplication quantizes to the nearest F26Dot6 value, wi
 ties away from zero; this precision choice is independent of the graphics rounding
 mode. Engine-color compensation is zero. Rounding is symmetric around zero, with
 half-grid and phased modes preserving their nearest valid signed value. Reserved
-ROUND/NROUND color operands and the reserved SROUND period are rejected.
+ROUND/NROUND/MIRP color selectors and the reserved SROUND period are rejected.
 
 SROUND uses exact F26Dot6 periods of 32, 64 or 128 units, including all four phases
 and sixteen threshold selections. S45ROUND is still unsupported: its diagonal
@@ -152,6 +152,15 @@ along the freedom vector without using projection. SHP and SHPIX reset the loop
 count after successful execution. Every target is bounded and charged to the work
 budget, even when a size-specific exception does not match.
 
+MIRP applies single-width substitution, automatic sign selection, same-zone CVT
+cut-in, optional rounding and minimum distance in instruction order. It reads
+original distance through dual projection and current distance through projection.
+The compatibility CVT index -1 supplies zero without accessing the table; other
+invalid indices fail. MSIRP takes an unrounded distance from the stack, without
+applying CVT cut-in or minimum distance. Both update reference points as requested
+and construct twilight originals before the current move. ALIGNRP moves a looped
+set of points to the projected coordinate of reference point 0.
+
 Movement uses checked fixed-point projection and division. A changing-coordinate
 request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
 vector pairs need separate qualification. These operators are tested on supplied
@@ -185,9 +194,10 @@ after preparation so each CVT entry can be observed independently. That extra
 instruction does not change the CVT. Only the independent interpreter executes the
 probe glyphs in this CVT comparison.
 
-`scripts/test_pdf_tt_points_reference.py` separately compares 15,175 authored
+`scripts/test_pdf_tt_points_reference.py` separately compares 19,473 authored
 programs on supplied triangle/twilight geometry. It covers point movement, CVT
-cut-in boundaries, all delta size/step selections, looped shifts, rounding,
+cut-in boundaries, all delta size/step selections, looped shifts, relative
+positioning flags, single-width boundaries, mixed-zone/twilight cases, rounding,
 original-coordinate reads and stack/line vector selection. It does not run the
 pinned fonts' full glyph programs or the PDF renderer.
 
@@ -196,12 +206,20 @@ nonuniform sizing, phantom-point construction, the remaining point instructions 
 Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
 
-`scripts/test_pdf_tt_state_reference.py` checks 102 paired-glyph sequences against
-an independent legacy monochrome interpreter. The sequences check prepared CVT and
-storage isolation, entry defaults, instruction controls, definitions and persistent
-twilight coordinates. Targeted allocation-failure tests cover snapshots and glyph
-replacement. Controls that affect unfinished movement or scan-conversion features
-still need rendering-level verification.
+`scripts/test_pdf_tt_state_reference.py` checks paired-glyph sequences for prepared
+CVT/storage isolation, entry defaults, instruction controls, definitions and
+persistent twilight coordinates. In the tested configurations, 103 sequences match
+independently and one specified-defaults case differs. Targeted allocation-failure
+tests cover snapshots and glyph replacement. Controls affecting unfinished
+movement or scan-conversion features still need rendering-level verification.
+
+The differing case sets a three-pixel minimum distance in preparation, then uses
+INSTCTRL selector 2 to request implementation defaults. CupidImage restores the
+one-pixel default, as required by the [instruction contract](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_instructions).
+The tested comparison engines retain the modified minimum. The regression test
+checks the specified native result and reports that reference difference separately;
+it does not count it as agreement. A comparison engine that produces the specified
+result is also accepted.
 
 The instruction contracts follow the [OpenType instruction set](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_instructions),
 its [graphics-state defaults](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_graphics_state)

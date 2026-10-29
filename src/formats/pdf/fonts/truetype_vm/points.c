@@ -71,6 +71,18 @@ int cupidimage_pdf_tt_vm_project(pdf_tt_vm *vm, const int32_t point[2], const in
     return 1;
 }
 
+int cupidimage_pdf_tt_vm_distance(pdf_tt_vm *vm, const int32_t a[2], const int32_t b[2],
+                                  const int32_t vector[2], int32_t *result) {
+    int64_t x = (int64_t)a[0] - b[0], y = (int64_t)a[1] - b[1];
+    int64_t value = cupidimage_pdf_tt_vm_divide(x * vector[0] + y * vector[1], 16384);
+    if (value < INT32_MIN || value > INT32_MAX) {
+        cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
+        return 0;
+    }
+    *result = (int32_t)value;
+    return 1;
+}
+
 int cupidimage_pdf_tt_vm_move(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t distance) {
     const int32_t *freedom = vm->graphics.freedom, *projection = vm->graphics.projection;
     int64_t dot = cupidimage_pdf_tt_vm_divide(

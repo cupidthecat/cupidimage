@@ -173,6 +173,12 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
                 return 0;
             continue;
         }
+        handled = cupidimage_pdf_tt_vm_relative_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
         if (op == 0x58) {
             if (!cupidimage_pdf_tt_vm_need(vm, 1))
                 return 0;

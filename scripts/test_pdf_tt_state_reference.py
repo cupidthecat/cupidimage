@@ -67,6 +67,12 @@ def cases():
     prep = push(0) + bytes([0x2c]) + push(42) + bytes([0x2d])
     call = push(0, 0) + bytes([0x2b, 0x48])
     result.append((prep, call, call))
+    # The explicit implementation-defaults request has a specification oracle.
+    # Some comparison engines retain the prep minimum-distance setting instead.
+    minimum = push(192) + bytes([0x1a])
+    move = push(1, 0) + bytes([0xec])
+    result.append((minimum, move, move))
+    result.append((minimum + push(2, 2) + bytes([0x8e]), move, move))
     return result
 
 
@@ -122,6 +128,7 @@ def main():
     native = [list(map(int, line.split())) for line in result.stdout.splitlines()]
     assert len(native) == len(programs)
     failures = []
+    specified_defaults_differences = []
     with tempfile.TemporaryDirectory(prefix='cupid-tt-state-') as directory:
         for i, case in enumerate(programs):
             path = Path(directory) / f'state-{i}.ttf'
@@ -133,11 +140,18 @@ def main():
                 face.load_glyph(glyph, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
                                 freetype.FT_LOAD_TARGET_MONO)
                 actual.extend(value for point in face.glyph.outline.points for value in point)
-            if native[i] != actual:
+            if i >= len(programs) - 2:
+                expected_x = 95 if i == len(programs) - 1 else 223
+                expected = [31, 35, expected_x, 0, 0, 100] * 2
+                assert native[i] == expected, (i, native[i], expected)
+            if i == len(programs) - 1 and actual == [31, 35, 223, 0, 0, 100] * 2:
+                specified_defaults_differences.append(i)
+            elif native[i] != actual:
                 failures.append((i, [code.hex() for code in case], native[i], actual))
             del face
     assert not failures, failures[:20]
-    print(f'TrueType state reference: {len(programs)} paired-glyph sequences, 0 failures; '
+    print(f'TrueType state reference: {len(programs) - len(specified_defaults_differences)} matches, '
+          f'{len(specified_defaults_differences)} specified-defaults difference(s), 0 unexpected failures; '
           f'engine {freetype.version()}; legacy monochrome; supplied geometry only')
 
 

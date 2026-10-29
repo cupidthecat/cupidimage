@@ -141,6 +141,96 @@ def cases():
                 code = push(0, 97) + bytes([0x48]) + push(0) + bytes([setter])
                 code += push(*projection) + bytes([0x0a]) + push(*freedom) + bytes([0x0b])
                 programs.append(code + push(2) + bytes([op]))
+    for op in range(0xe0, 0x100):
+        if op & 3 == 3:
+            continue
+        for axis in (0, 1):
+            for value in (-129, -65, 0, 31, 64, 97, 145, 257):
+                for cutin in (0, 68, 76, 256):
+                    for flip in (0x4d, 0x4e):
+                        code = bytes([axis, flip]) + push(0, value) + bytes([0x44])
+                        code += push(cutin) + bytes([0x1d]) + push(1, 0) + bytes([op])
+                        programs.append(code)
+        for minimum in (0, 16, 128):
+            for value in (-97, 0, 31, 97):
+                code = push(minimum) + bytes([0x1a]) + push(0, value) + bytes([0x44])
+                programs.append(code + push(1, 0) + bytes([op]))
+        programs.append(push(1, -1) + bytes([op]))
+        # Observe all three reference-point assignments through later operations.
+        for follow in (0x32, 0x33, 0x3c):
+            code = bytes([0x00]) + push(2, 123) + bytes([0x48])
+            code += push(2) + bytes([0x10]) + push(1, 0) + bytes([op])
+            programs.append(code + push(0) + bytes([follow]))
+    for op in (0xe0, 0xe4, 0xec, 0xf4):
+        for width in (0, 32, 64, 128):
+            for cutin in (0, 1, 16, 64):
+                values = (width - cutin - 1, width - cutin, width - cutin + 1,
+                          width, width + cutin - 1, width + cutin, width + cutin + 1, -width - 1)
+                for value in sorted(set(values)):
+                    code = push(width) + bytes([0x1f]) + push(cutin) + bytes([0x1e])
+                    code += push(0, value) + bytes([0x44]) + push(1, 0) + bytes([op])
+                    programs.append(code)
+    for op in (0x3a, 0x3b):
+        for axis in (0, 1):
+            for value in (-257, -97, -1, 0, 1, 31, 64, 97, 257):
+                code = bytes([axis, 0x19]) + push(1, value) + bytes([op])
+                programs.append(code)
+                for getter in (0x46, 0x47):
+                    code = push(0, 97) + bytes([0x48]) + push(0) + bytes([0x14])
+                    code += push(1, value) + bytes([op]) + push(2, 1) + push(0) + bytes([0x15, getter])
+                    code += push(1) + bytes([0x15, 0x48])
+                    programs.append(code)
+    for axis in (0, 1):
+        for reference in range(3):
+            for indices in ((0,), (1,), (2,), (0, 1, 2), (2, 2, 0)):
+                code = bytes([axis]) + push(reference) + bytes([0x10])
+                code += push(len(indices)) + bytes([0x17]) + push(*indices) + bytes([0x3c])
+                programs.append(code)
+    for op in (0xe0, 0xe4, 0xec, 0xf4, 0xfc):
+        for value in (-129, -31, 0, 31, 97, 145):
+            for context in range(4):
+                for getter in (0x46, 0x47):
+                    code = push(0, value) + bytes([0x44])
+                    if context == 0:
+                        # Glyph reference, twilight destination.
+                        code += push(0, 97) + bytes([0x48]) + push(0) + bytes([0x14])
+                        target = 1
+                    else:
+                        code += push(0) + bytes([0x16]) + push(0, 31) + bytes([0x48])
+                        code += push(0) + bytes([0x2f])
+                        target = 0 if context == 3 else 1
+                        if context == 1:
+                            # Twilight reference, glyph destination.
+                            code += push(1) + bytes([0x14])
+                    code += push(target, 0) + bytes([op])
+                    source_zone = 1 if context == 1 else 0
+                    code += push(2, target) + push(source_zone) + bytes([0x15, getter, 0x01])
+                    code += push(1) + bytes([0x15, 0x48])
+                    programs.append(code)
+        # Distinct current/original vector directions and disabled cut-in.
+        code = push(1, -100) + bytes([0x48]) + push(0, 1) + bytes([0x86, 0x0e])
+        code += push(256) + bytes([0x1d]) + push(2, 0) + bytes([op])
+        programs.append(code)
+    for op in (0x3a, 0x3b):
+        for distance in (-129, -31, 0, 31, 97):
+            for getter in (0x46, 0x47):
+                code = push(0, 97) + bytes([0x48]) + push(0) + bytes([0x14])
+                code += push(3, 5) + bytes([0x0b]) + push(1, distance) + bytes([op])
+                code += push(2, 1) + push(0) + bytes([0x15, getter, 0x01])
+                code += push(1) + bytes([0x15, 0x48])
+                programs.append(code)
+    for op in (0xe0, 0xe4, 0xec, 0xf4):
+        for value in (-145, -31, 31, 145):
+            for getter in (0x46, 0x47):
+                code = push(0, value) + bytes([0x44]) + push(0) + bytes([0x16])
+                code += push(0, 31) + bytes([0x48]) + push(0) + bytes([0x2f])
+                code += push(3, 5) + bytes([0x0b]) + push(1, 0) + bytes([op])
+                code += push(2, 1) + bytes([getter, 0x01]) + push(1) + bytes([0x15, 0x48])
+                programs.append(code)
+    for freedom in ((16384, 0), (3, 5), (-3, 5)):
+        code = push(1, 97) + bytes([0x48]) + push(1) + bytes([0x10])
+        code += push(*freedom) + bytes([0x0b]) + push(3) + bytes([0x17])
+        programs.append(code + push(0, 1, 2) + bytes([0x3c]))
     # The reference face can retain twilight storage between glyph loads.
     # Give both engines the same explicit initial coordinates for each program.
     reset = push(0) + bytes([0x16, 0x01])
@@ -194,17 +284,19 @@ def main():
     assert len(native) == len(programs)
     failures = []
     with tempfile.TemporaryDirectory(prefix='cupid-tt-points-') as directory:
-        path = Path(directory) / 'points.ttf'
-        build_font(programs, path)
-        face = freetype.Face(str(path))
-        face.set_pixel_sizes(64, 64)
-        for i, code in enumerate(programs):
-            face.load_glyph(i + 1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
-                            freetype.FT_LOAD_TARGET_MONO)
-            actual = [value for point in face.glyph.outline.points for value in point]
-            if native[i] != actual:
-                failures.append((i, code.hex(), native[i], actual))
-        del face
+        for start in range(0, len(programs), 20000):
+            batch = programs[start:start + 20000]
+            path = Path(directory) / f'points-{start}.ttf'
+            build_font(batch, path)
+            face = freetype.Face(str(path))
+            face.set_pixel_sizes(64, 64)
+            for i, code in enumerate(batch):
+                face.load_glyph(i + 1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
+                                freetype.FT_LOAD_TARGET_MONO)
+                actual = [value for point in face.glyph.outline.points for value in point]
+                if native[start + i] != actual:
+                    failures.append((start + i, code.hex(), native[start + i], actual))
+            del face
     assert not failures, failures[:20]
     print(f'TrueType point reference: {len(programs)} programs, 0 failures; '
           f'engine {freetype.version()}; page renderer not involved')
