@@ -931,6 +931,10 @@
       "sha256": "b5fc95c62142d2f0cfdda6184af2faa6acc9d15b6e27ac88a1619b6e2a3d3d51"
     },
     {
+      "path": "assets/pdf/text-coverage.pdf",
+      "sha256": "e1b32500626a5044fdcd4d8dc2d27502d448a656c901f6aacafcc49021937590"
+    },
+    {
       "path": "assets/pdf/zlib.3.pdf",
       "sha256": "eb4f00b53c69ca487158c89e9214b8d1018946bf90756179437e9ffdf3863b25"
     },

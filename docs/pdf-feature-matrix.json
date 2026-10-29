@@ -4279,10 +4279,12 @@
             "tests/test_pdf_coverage.c",
             "tests/test_pdf_coverage_oom.c",
             "scripts/test_pdf_coverage_reference.py",
-            "scripts/test_pdf_tt_bitmap_reference.py"
+            "scripts/test_pdf_tt_bitmap_reference.py",
+            "src/formats/pdf/raster/font_coverage.c",
+            "scripts/test_pdf_text_antialias.py"
           ],
           "limitations": [
-            "The bounded line/quadratic/cubic converter is tested independently and with native hinted glyphs, but is not connected to PDF page painting. Text clipping, stroke coverage, image resampling, thin-line behavior and broader raster fidelity remain incomplete."
+            "Opt-in TrueType/CFF/Type 1 fill coverage is tested on pages. Defaults retain center-point fill. Hinting remains separate from page rendering; fractional clipping, stroke coverage, image resampling, thin-line behavior and broader raster fidelity remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -4292,7 +4294,7 @@
             "10",
             "14"
           ],
-          "audit": "selected scan-conversion foundation reviewed; page integration and detailed audit pending",
+          "audit": "selected scan-conversion and opt-in page fill evidence reviewed; detailed audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 10.6.1",
             "ISO 32000-1:2008 10.6.4"

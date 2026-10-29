@@ -8,9 +8,15 @@ ISO 32000-1 sections 10.6.1 and 10.6.4 describe scan conversion but do not
 prescribe a single glyph raster algorithm. Independent bitmap checks therefore
 complement the PDF semantics tests.
 
-It is not connected to PDF page painting yet. Page text still uses center-point
-coverage, and the native TrueType instruction path still needs page integration.
-This module does not establish complete font rendering or visual parity.
+PDF page text can now use this converter for TrueType, CFF and Type 1 fills.
+Enable it with `--pdf-text-aa`, or set `cupidimage_pdf_options.text_antialias` to 1
+when calling a page loader with options. Omitted options and zero retain the
+existing center-point fill path while the wider raster pipeline is qualified.
+
+Stroke and clip coverage remain binary, as do bitmap fallback glyphs and the
+ordinary graphics in Type 3 programs. Text inside a Form, a pattern or a soft-mask
+form inherits the option. The native TrueType instruction path still needs page
+integration; this option does not enable hinting or establish full font fidelity.
 
 ## Coordinates and output
 
@@ -66,5 +72,26 @@ exercise the legacy instruction profile and transformed-outline adapter. Neither
 set tests PDF font selection, page text placement, clipping composition, stroke
 coverage or page pixels.
 
-Remaining integration includes outline conversion, page paint and clipping,
-fill/stroke composition, hinted glyph selection and targeted PDF pixel assets.
+## Page checks and remaining work
+
+`make test-pdf-text-antialias` adds 182 page/API/CLI checks and 201 allocation,
+cache and eager-surface checks. With the optional comparison engine, another 36
+page cases compare authored quadratic/cubic glyphs under scale, reflection,
+rotation and shear with independently rasterized geometry. Analytic rectangle
+cases cover fractional positions, clipping at the page edge, opacity and all
+three outline formats. Form inheritance, alpha/luminosity masks, patterned text
+and forced Sixel output are checked separately.
+
+The glyph adapter preserves font-space orientation before writing top-down page
+rows. It rounds transformed coordinates to the nearest 1/64 pixel, with halfway
+values rounded toward positive infinity. PDF widths and text advancement are
+unchanged. CFF and Type 1 FontMatrix transformations remain part of placement.
+
+The owned `assets/pdf/text-coverage.pdf` sample shows geometry and ordinary text
+at several sizes and transforms. Its complete page raster is decoded-unverified;
+the focused analytic and independent cases above are the pixel evidence. Rebuild
+it with `scripts/generate_pdf_text_coverage_fixture.py`.
+
+Fractional text clipping, stroke coverage, complete combined-paint behavior,
+hinted page glyphs and a qualified default smoothing policy remain open. The
+coverage option is deliberately explicit until those paths have broader tests.

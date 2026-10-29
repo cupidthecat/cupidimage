@@ -76,7 +76,8 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 
 PDF pages support text positioning and clipping, unhinted TrueType/CFF/Type 1
 outlines, Type 3 glyph programs, standard-font substitutes and horizontal/vertical
-CID metrics. Paths, styled strokes, forms, tiling patterns and all seven shading
+CID metrics. `--pdf-text-aa` enables grayscale outline fills; stroke and clip
+coverage remain binary. Paths, styled strokes, forms, tiling patterns and all seven shading
 geometries share the graphics pipeline. RGB/gray transparency groups, text
 knockout and graphics-state soft masks are implemented within the limits below.
 

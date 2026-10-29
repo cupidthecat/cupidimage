@@ -100,9 +100,10 @@ operator executes or `n` applies pending clipping. Flatness changes between path
 construction and painting therefore use the setting in effect at paint time.
 Later CTM changes do not move an already constructed path. `pdf_path.c` owns
 construction, closure and bounded subdivision; flattened paths are shared by
-fill, stroke and clipping for that operation. Native font fill and text-clip
-coverage use analytic curve intersections rather than flattened edges.
-These controls do not add font hinting or antialiasing.
+fill, stroke and clipping for that operation. Default font fill and text-clip
+coverage use analytic curve intersections rather than flattened edges. Opt-in
+[glyph fill coverage](pdf-coverage.md) uses a separate font scan converter. These
+flatness controls do not enable font hinting or change that converter.
 
 The implementation follows ISO 32000-1:2008, Tables 57 and 58 and section 10.6.2,
 and the corresponding flatness rules in ISO 32000-2:2020 section 10.7.2.

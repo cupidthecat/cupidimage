@@ -655,3 +655,12 @@ work limits, empty glyphs and overflow. MPS and first-write WCVTF lifetime
 differences are reported separately. The four rejected pinned musical-note
 programs reference IP points 32 and 33 despite having only 32 points, including
 phantoms; they are not zero-span failures or successful matches.
+
+## PDF text coverage
+
+`make test-pdf-coverage` tests the bounded scan converter and native glyph bitmap
+pipeline. `make test-pdf-text-antialias` tests the explicit page option with
+analytic rectangle areas, opacity, Form inheritance, soft masks, patterns and
+Sixel output. Optional curve comparisons use an independent font engine. Default
+rendering and existing asset oracles remain unchanged; the new full-page sample
+is decoded-unverified. See [coverage details](pdf-coverage.md).

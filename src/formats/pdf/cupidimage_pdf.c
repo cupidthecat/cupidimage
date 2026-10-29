@@ -46,12 +46,16 @@ static int pdf_rotate_page(cupidimage_image *img, int rotation) {
 
 static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
                                         cupidimage_image *img, int page_index, char *err,
-                                        size_t errcap) {
+                                        size_t errcap, const cupidimage_pdf_options *opts) {
     if (!data || !img) {
         cupidimage_set_err(err, errcap, "pdf: null pointer");
         return 0;
     }
     memset(img, 0, sizeof(*img));
+    if (opts && opts->text_antialias != 0 && opts->text_antialias != 1) {
+        cupidimage_set_err(err, errcap, "pdf: invalid text antialias option");
+        return 0;
+    }
     if (!cupidimage_pdf_check_header(data, size)) {
         cupidimage_set_err(err, errcap, "pdf: invalid header");
         return 0;
@@ -177,9 +181,9 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
             render_len = inflated_len;
         }
 
-        if (!cupidimage_pdf_render_content_stream_indexed(render_data, render_len, data, size,
+        if (!cupidimage_pdf_render_content_stream_options(render_data, render_len, data, size,
                                                           page_obj, &fonts, img, &geometry, err,
-                                                          errcap, &xref)) {
+                                                          errcap, &xref, opts)) {
             free(inflated);
             free(stream_data);
             cupidimage_pdf_font_table_free(&fonts);
@@ -211,12 +215,19 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
 
 int cupidimage_load_pdf(const unsigned char *data, size_t size, cupidimage_image *img, char *err,
                         size_t errcap) {
-    return cupidimage_load_pdf_internal(data, size, img, 0, err, errcap);
+    return cupidimage_load_pdf_internal(data, size, img, 0, err, errcap, NULL);
 }
 
 int cupidimage_load_pdf_page(const unsigned char *data, size_t size, cupidimage_image *img,
                              int page_index, char *err, size_t errcap) {
-    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap);
+    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap, NULL);
+}
+
+int cupidimage_load_pdf_page_with_options(const unsigned char *data, size_t size,
+                                          cupidimage_image *img, int page_index,
+                                          const cupidimage_pdf_options *opts, char *err,
+                                          size_t errcap) {
+    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap, opts);
 }
 
 int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
@@ -278,6 +289,18 @@ int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *img, int p
         return 0;
     }
     int ok = cupidimage_load_pdf_page(buf, size, img, page_index, err, errcap);
+    free(buf);
+    return ok;
+}
+
+int cupidimage_load_pdf_page_file_with_options(const char *path, cupidimage_image *img,
+                                               int page_index, const cupidimage_pdf_options *opts,
+                                               char *err, size_t errcap) {
+    unsigned char *buf = NULL;
+    size_t size = 0;
+    if (!cupidimage_read_file_bytes(path, &buf, &size, err, errcap))
+        return 0;
+    int ok = cupidimage_load_pdf_page_with_options(buf, size, img, page_index, opts, err, errcap);
     free(buf);
     return ok;
 }

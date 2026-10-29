@@ -61,6 +61,19 @@ All library page indices are **zero-based**.
 The directory entry width/height bytes use zero for 256 pixels. Directory fields
 are metadata, not proof that the embedded image is valid; decoding can still fail.
 
+## PDF text coverage
+
+`cupidimage_load_pdf_page_with_options` and
+`cupidimage_load_pdf_page_file_with_options` accept a `cupidimage_pdf_options`
+pointer. Set `text_antialias` to 1 for grayscale TrueType/CFF/Type 1 fill coverage.
+The field accepts only 0 or 1. A null options pointer and zero preserve the
+existing center-point fill path. Page indices remain zero-based.
+
+The option propagates into Forms, patterns and soft masks. It does not change
+PDF metrics, enable font hinting or antialias strokes, clipping and bitmap glyphs.
+See [coverage limits and checks](pdf-coverage.md) before treating it as complete
+font rendering. All returned images use the ordinary ownership rules above.
+
 ## GIF animation
 
 `cupidimage_load_gif_animation` and `_file` return `cupidimage_animation`.

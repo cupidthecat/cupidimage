@@ -1,5 +1,6 @@
 #include "fonts/program.h"
 #include "pdf_render_internal.h"
+#include "raster/font_coverage.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -312,7 +313,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     outline_edge *edges = NULL;
     unsigned edge_count = 0;
     int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
-    unsigned char *stroke = NULL;
+    unsigned char *stroke = NULL, *fill = NULL;
     int ok = 0, borrowed = 0;
     pdf_paint_group combined = {0};
     if (!cupidimage_pdf_font_outline(program, glyph, &outline, &cff_outline,
@@ -410,16 +411,26 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     int top = (int)fmax(0, fmin(st->img->height, floor(y0))),
         bottom = (int)fmax(0, fmin(st->img->height, ceil(y1)));
     size_t pixels = (size_t)(right - left) * (bottom - top);
-    if (edge_count && pixels > st->clip_budget->tests_left / edge_count)
+    int need_winding = clipping || !st->text_antialias;
+    if (need_winding) {
+        if (edge_count && pixels > st->clip_budget->tests_left / edge_count)
+            goto done;
+        st->clip_budget->tests_left -= pixels * edge_count;
+    }
+    if (st->text_antialias && pixels && (mode == 0 || mode == 2) &&
+        !cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern) &&
+        !cupidimage_pdf_font_coverage(program->is_cff || program->is_type1 ? NULL : &outline,
+                                      program->is_cff || program->is_type1 ? &cff_outline : NULL, m,
+                                      left, top, right, bottom, &st->clip_budget->tests_left,
+                                      &fill))
         goto done;
-    st->clip_budget->tests_left -= pixels * edge_count;
     if (pixels && mode != 3 && !cupidimage_pdf_text_group_begin(st))
         goto done;
     if (pixels && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined))
         goto done;
     for (int y = top; y < bottom && !st->image_failed; y++)
         for (int x = left; x < right && !st->image_failed; x++) {
-            int winding = outline_winding(edges, edge_count, x + .5, y + .5);
+            int winding = need_winding ? outline_winding(edges, edge_count, x + .5, y + .5) : 0;
             size_t pixel = (size_t)y * st->img->width + x;
             unsigned bit = 1u << (pixel % 8);
             if (clipping && winding) {
@@ -433,8 +444,12 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                     st->text_clip->bits[pixel / 8] &= (unsigned char)~bit;
             }
             int stroked = stroke && (stroke[pixel / 8] & bit);
-            if (winding && (mode == 0 || mode == 2) && (!stroked || combined.surface.image.rgba))
-                cupidimage_pdf_paint_pixel(st, x, y, 0, 1);
+            unsigned coverage =
+                st->text_antialias
+                    ? (fill ? fill[(size_t)(bottom - y - 1) * (right - left) + x - left] : 0)
+                    : ((mode == 0 || mode == 2) && winding ? 255 : 0);
+            if (coverage && (!stroked || combined.surface.image.rgba))
+                cupidimage_pdf_paint_pixel(st, x, y, 0, coverage / 255.0);
             if (stroked)
                 cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
         }
@@ -442,6 +457,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
 done:
     if (!cupidimage_pdf_fill_stroke_end(st, &combined, ok))
         ok = 0;
+    free(fill);
     free(stroke);
     free(path);
     free(edges);

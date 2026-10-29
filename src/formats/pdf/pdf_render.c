@@ -1484,14 +1484,13 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, size_t stream_len,
-                                                 const unsigned char *document,
-                                                 size_t document_size, pdf_object_id page_object,
-                                                 const pdf_font_table *font_table,
-                                                 cupidimage_image *img,
-                                                 const pdf_page_geometry *geometry, char *err,
-                                                 size_t errcap, const pdf_xref *xref) {
+int cupidimage_pdf_render_content_stream_options(
+    const unsigned char *stream, size_t stream_len, const unsigned char *document,
+    size_t document_size, pdf_object_id page_object, const pdf_font_table *font_table,
+    cupidimage_image *img, const pdf_page_geometry *geometry, char *err, size_t errcap,
+    const pdf_xref *xref, const cupidimage_pdf_options *opts) {
     pdf_render_state st = {0};
+    st.text_antialias = opts ? opts->text_antialias : 0;
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
     st.xref = xref;
@@ -1556,6 +1555,18 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
         cupidimage_set_err(err, errcap,
                            "pdf: unsupported page group or transparency limit exceeded");
     return ok;
+}
+
+int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, size_t stream_len,
+                                                 const unsigned char *document,
+                                                 size_t document_size, pdf_object_id page_object,
+                                                 const pdf_font_table *font_table,
+                                                 cupidimage_image *img,
+                                                 const pdf_page_geometry *geometry, char *err,
+                                                 size_t errcap, const pdf_xref *xref) {
+    return cupidimage_pdf_render_content_stream_options(stream, stream_len, document, document_size,
+                                                        page_object, font_table, img, geometry, err,
+                                                        errcap, xref, NULL);
 }
 
 int cupidimage_pdf_render_content_stream(const unsigned char *stream, size_t stream_len,

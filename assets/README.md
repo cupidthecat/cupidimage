@@ -18,3 +18,8 @@ The standard spacing-mark sample exercises all eight Courier/Times variants and
 the compact/extended/mark fallback chain. Its raster is unverified. The companion
 `pdf/reference/standard-spacing-advance.pdf` checks AFM-controlled placement with
 an analytic marker oracle. Regenerate them with `scripts/generate_pdf_spacing_fixtures.py`.
+
+`pdf/text-coverage.pdf` is an owned geometric/standard-font sample for the opt-in
+text coverage path. Its complete raster is decoded-unverified. Rebuild it with
+`scripts/generate_pdf_text_coverage_fixture.py`; the separate page coverage tests
+use analytic areas and independent curve masks.

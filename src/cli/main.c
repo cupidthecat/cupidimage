@@ -15,9 +15,13 @@
 static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
-            "number] [--sixel] [--sixel-colors N] [--sixel-dither MODE] [--ansi] <image-file> "
+            "number] [--pdf-text-aa] [--sixel] [--sixel-colors N] [--sixel-dither MODE] [--ansi] "
+            "<image-file> "
             "[max_width] [max_height]\n",
             prog);
+    fprintf(
+        stderr,
+        "  --pdf-text-aa: enable grayscale PDF outline text fill (strokes/clips remain binary)\n");
     fprintf(stderr, "  --sixel: force Sixel output\n");
     fprintf(stderr, "  --sixel-colors N: set max palette colors (2-256, default 256)\n");
     fprintf(stderr, "  --sixel-dither MODE: none, floyd-steinberg, atkinson, ordered (default: "
@@ -762,6 +766,7 @@ int main(int argc, char **argv) {
     int fit = 0;
     int has_svg_time = 0;
     float svg_time = 0.0f;
+    cupidimage_pdf_options pdf_options = {0};
     int has_pdf_page = 0;
     int pdf_page = 0;
     int width_cols = 0;  /* For --width */
@@ -839,6 +844,10 @@ int main(int argc, char **argv) {
             }
             has_svg_time = 1;
             i++;
+            continue;
+        }
+        if (strcmp(argv[i], "--pdf-text-aa") == 0) {
+            pdf_options.text_antialias = 1;
             continue;
         }
         if (strcmp(argv[i], "--pdf-page") == 0) {
@@ -971,7 +980,8 @@ int main(int argc, char **argv) {
 
         for (int page = start_page; page <= end_page; page++) {
             cupidimage_image img;
-            if (!cupidimage_load_pdf_page_file(path, &img, page, err, sizeof(err))) {
+            if (!cupidimage_load_pdf_page_file_with_options(path, &img, page, &pdf_options, err,
+                                                            sizeof(err))) {
                 fprintf(stderr, "load error: %s\n", err);
                 return 1;
             }

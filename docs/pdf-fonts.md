@@ -807,6 +807,8 @@ These outline tests do not establish complete hinted-glyph raster fidelity.
 ## Glyph edge coverage
 
 A bounded line/quadratic/cubic [coverage converter](pdf-coverage.md) now has
-analytic area, independent bitmap and allocation-failure tests. A separate test
-pipeline joins it to native hinted outlines. Page painting does not call it yet;
-page rendering remains unhinted and uses center-point coverage.
+analytic area, independent bitmap and allocation-failure tests. Page painting can
+use it for TrueType/CFF/Type 1 fills through `--pdf-text-aa` or the PDF options API.
+The default remains center-point coverage. Page glyphs are still unhinted, and
+stroke/clip coverage is still binary. A separate test pipeline joins the converter
+to native hinted outlines; that test does not enable hinted page rendering.

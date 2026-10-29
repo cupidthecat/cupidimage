@@ -167,6 +167,11 @@ int cupidimage_pdf_render_content_stream_indexed(const unsigned char *stream, si
                                                  cupidimage_image *img,
                                                  const pdf_page_geometry *geometry, char *err,
                                                  size_t errcap, const pdf_xref *xref);
+int cupidimage_pdf_render_content_stream_options(
+    const unsigned char *stream, size_t stream_len, const unsigned char *document,
+    size_t document_size, pdf_object_id page_object, const pdf_font_table *font_table,
+    cupidimage_image *img, const pdf_page_geometry *geometry, char *err, size_t errcap,
+    const pdf_xref *xref, const cupidimage_pdf_options *opts);
 int cupidimage_pdf_get_pages_count_indexed(const unsigned char *data, size_t size,
                                            pdf_object_id page, int *count, char *error,
                                            size_t capacity, const pdf_xref *xref);

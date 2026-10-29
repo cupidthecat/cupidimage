@@ -86,6 +86,8 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #undef cupidimage_pdf_group_surface
 #define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_text_outline.c"
+#include "../src/formats/pdf/raster/coverage.c"
+#include "../src/formats/pdf/raster/font_coverage.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/pdf_intents.c"
 #include "../src/formats/pdf/pdf_transparency.c"
@@ -98,7 +100,7 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #undef realloc
 #undef free
 
-static int test_document_allocations(const char *path, int expected_failure) {
+static int test_document_allocations(const char *path, int expected_failure, int antialias) {
     FILE *file = fopen(path, "rb");
     if (!file || fseek(file, 0, SEEK_END))
         return 2;
@@ -114,6 +116,7 @@ static int test_document_allocations(const char *path, int expected_failure) {
         return 2;
     }
     fclose(file);
+    cupidimage_pdf_options options = {antialias};
     size_t total = 0, checks = 0, failures = 0, expected_size = 0;
     unsigned char *expected = NULL;
     unsigned width = 0, height = 0;
@@ -124,8 +127,8 @@ static int test_document_allocations(const char *path, int expected_failure) {
     allocation_count = 0;
     cupidimage_image uncached = {0};
     char baseline_error[256];
-    int baseline_ok = cupidimage_load_pdf_page(document, (size_t)length, &uncached, 0,
-                                               baseline_error, sizeof(baseline_error));
+    int baseline_ok = cupidimage_load_pdf_page_with_options(
+        document, (size_t)length, &uncached, 0, &options, baseline_error, sizeof(baseline_error));
     if (baseline_ok == expected_failure)
         failures++;
     if (baseline_ok) {
@@ -150,8 +153,8 @@ static int test_document_allocations(const char *path, int expected_failure) {
         fail_at = failure;
         cupidimage_image image = {0};
         char error[256];
-        int ok =
-            cupidimage_load_pdf_page(document, (size_t)length, &image, 0, error, sizeof(error));
+        int ok = cupidimage_load_pdf_page_with_options(document, (size_t)length, &image, 0,
+                                                       &options, error, sizeof(error));
         if (!failure) {
             total = allocation_count;
             if (ok == expected_failure)
@@ -176,8 +179,8 @@ static int test_document_allocations(const char *path, int expected_failure) {
 }
 
 int main(int argc, char **argv) {
-    if (argc == 3)
-        return test_document_allocations(argv[1], atoi(argv[2]));
+    if (argc == 3 || argc == 4)
+        return test_document_allocations(argv[1], atoi(argv[2]), argc == 4 ? atoi(argv[3]) : 0);
 
     static const struct {
         const char *content;

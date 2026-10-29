@@ -19,6 +19,7 @@ nonzero status.
 | `--sixel-dither MODE` | `none`, `floyd-steinberg`, `atkinson`, or `ordered`; default Floyd–Steinberg. |
 | `--svg-time seconds` | Render a sampled SVG animation time instead of autoplay. |
 | `--pdf-page number` | Render one PDF page, numbered from 1. |
+| `--pdf-text-aa` | Enable grayscale outline text fills. Stroke and clip coverage remain binary; hinting is unchanged. |
 
 If both `--ansi` and `--sixel` are present, ANSI wins. Without an explicit output
 choice, the CLI tries detected Sixel support, then detected Kitty support, then
@@ -32,6 +33,7 @@ including its pixel/cell aspect handling.
 ./bin/cupidimage --sixel-colors 128 --sixel-dither atkinson assets/png/basic.png
 ./bin/cupidimage --svg-time 1.5 assets/svg/animation_basic.svg
 ./bin/cupidimage --pdf-page 2 assets/pdf/pdfjs/basicapi.pdf
+./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-coverage.pdf
 ```
 
 ## Animation and pages
