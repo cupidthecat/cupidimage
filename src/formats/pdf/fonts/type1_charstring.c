@@ -7,11 +7,36 @@
 typedef struct {
     const pdf_type1_font *font;
     pdf_cff_outline *outline;
+    pdf_type1_hint_trace *trace;
+    size_t *work_left;
     double stack[24], other[24], flex_points[7][2], flex_start[2];
     double x, y, start_x, start_y, sbx, sby;
     unsigned count, other_count, flex_count, work;
     int started, open, flex;
 } t1_state;
+
+static int t1_cs_hint(t1_state *st, unsigned kind, unsigned vertical, const double *values,
+                      unsigned count) {
+    if (!st->trace)
+        return 1;
+    pdf_type1_hint_event event = {0};
+    event.kind = kind;
+    event.segment = st->outline->count;
+    event.vertical = vertical;
+    for (unsigned i = 0; i < count; i++) {
+        double value = values[i];
+        if ((kind == PDF_T1_HINT_STEM || kind == PDF_T1_HINT_STEM3) && !(i % 2))
+            value += vertical ? st->sbx : st->sby;
+        if (!isfinite(value) || fabs(value) > 1e30)
+            return 0;
+        event.values[i] = value;
+    }
+    if (kind == PDF_T1_HINT_STEM || kind == PDF_T1_HINT_STEM3)
+        for (unsigned i = 1; i < count; i += 2)
+            if (values[i] < 0 && (vertical || (values[i] != -20 && values[i] != -21)))
+                st->trace->diagnostics |= PDF_T1_HINT_BAD_WIDTH;
+    return cupidimage_pdf_type1_trace_append(st->trace, &event);
+}
 
 static int t1_cs_int(double n, int low, int high, int *out) {
     if (!isfinite(n) || n < low || n > high || floor(n) != n)
@@ -120,6 +145,8 @@ static int t1_other(t1_state *st) {
     } else if (id == 0) {
         if (args != 3 || !st->flex || st->flex_count != 7)
             return 0;
+        if (!t1_cs_hint(st, PDF_T1_HINT_FLEX, 0, values, 3))
+            return 0;
         st->flex = 0;
         st->x = st->flex_start[0];
         st->y = st->flex_start[1];
@@ -139,7 +166,7 @@ static int t1_other(t1_state *st) {
         st->other[1] = values[1];
         st->other_count = 2;
     } else {
-        if (args != 1)
+        if (args != 1 || !t1_cs_hint(st, PDF_T1_HINT_REPLACE, 0, values, 1))
             return 0;
         st->other[0] = values[0];
         st->other_count = 1;
@@ -152,8 +179,10 @@ static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth) {
         return 0;
     size_t pos = 0;
     while (pos < code.length) {
-        if (!st->work--)
+        if (!st->work || !*st->work_left)
             return 0;
+        st->work--;
+        (*st->work_left)--;
         unsigned op = code.data[pos++];
         if (op >= 32) {
             double value;
@@ -241,13 +270,13 @@ static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth) {
                 st->outline->accent_y = s[2];
                 return 2;
             } else if (op == 1 || op == 3) {
-                if (n != 2)
+                if (n != 2 || !t1_cs_hint(st, PDF_T1_HINT_STEM, op == 3, s, n))
                     return 0;
             } else if (op == 257 || op == 258) {
-                if (n != 6)
+                if (n != 6 || !t1_cs_hint(st, PDF_T1_HINT_STEM3, op == 257, s, n))
                     return 0;
             } else if (op == 256) {
-                if (n)
+                if (n || !t1_cs_hint(st, PDF_T1_HINT_DOTSECTION, 0, NULL, 0))
                     return 0;
             } else if (op == 9) {
                 if (n || st->flex || !t1_cs_close(st, 1))
@@ -292,17 +321,40 @@ static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth) {
     return 0;
 }
 
-static int t1_glyph(const pdf_type1_font *font, unsigned glyph, pdf_cff_outline *outline,
-                    unsigned depth) {
+int cupidimage_pdf_type1_outline_budget(const pdf_type1_font *font, unsigned glyph,
+                                        pdf_cff_outline *outline, pdf_type1_hint_trace *trace,
+                                        size_t *work_left) {
+    if (trace)
+        memset(trace, 0, sizeof(*trace));
+    if (!outline)
+        return 0;
     memset(outline, 0, sizeof(*outline));
-    if (glyph >= font->glyph_count || depth > 1)
+    if (!font || !font->glyphs || glyph >= font->glyph_count || !work_left)
         return 0;
     t1_state st = {0};
     st.font = font;
     st.outline = outline;
+    st.trace = trace;
+    st.work_left = work_left;
     st.work = 65536;
-    if (t1_cs_run(&st, font->glyphs[glyph].code, 0) != 2)
-        goto fail;
+    if (t1_cs_run(&st, font->glyphs[glyph].code, 0) == 2)
+        return 1;
+    cupidimage_pdf_type2_free(outline);
+    cupidimage_pdf_type1_trace_free(trace);
+    return 0;
+}
+
+int cupidimage_pdf_type1_outline_hints(const pdf_type1_font *font, unsigned glyph,
+                                       pdf_cff_outline *outline, pdf_type1_hint_trace *trace) {
+    size_t work = 65536;
+    return cupidimage_pdf_type1_outline_budget(font, glyph, outline, trace, &work);
+}
+
+static int t1_glyph(const pdf_type1_font *font, unsigned glyph, pdf_cff_outline *outline,
+                    unsigned depth) {
+    memset(outline, 0, sizeof(*outline));
+    if (depth > 1 || !cupidimage_pdf_type1_outline_hints(font, glyph, outline, NULL))
+        return 0;
     if (!outline->composite)
         return 1;
     if (depth)

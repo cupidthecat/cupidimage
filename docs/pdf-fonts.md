@@ -256,9 +256,13 @@ kept distinct from literal names, but their dictionary lookup is not executed.
 
 Type 1 outlines support sidebearings and width vectors, line/cubic paths,
 subroutines, division, seac accents, and standard OtherSubrs 0 through 3 for flex
-and hint replacement. Stems and hint replacement are parsed but not grid-fitted.
+and hint replacement. Literal [private hint parameters](pdf-postscript-hints.md)
+are retained, with diagnostics for unresolved expressions. Optional traces retain
+stems, replacements, dotsection and flex inputs, but are not yet grid-fitted.
 Open strokes remain open; explicit closepath closes the path without resetting
 the charstring's current point. Accents use StandardEncoding component names.
+The embedded program's PaintType is ignored as required by ISO 32000-1 section
+9.9; PDF text rendering mode decides whether to fill or stroke the outlines.
 PDF encodings can override the program's vector, including MacExpertEncoding's
 165 named entries from ISO 32000-1 Annex D.4.
 

@@ -1,5 +1,6 @@
 #include "type1.h"
 #include "encoding.h"
+#include "type1/hints.h"
 #include "type1/lexer.h"
 #include <math.h>
 #include <stdlib.h>
@@ -8,6 +9,8 @@
 typedef struct {
     char readers[16][128];
     unsigned reader_count;
+    char definers[16][128];
+    unsigned definer_count;
 } t1_syntax;
 
 static int t1_int(pdf_type1_token token, int low, int high, int *result) {
@@ -40,6 +43,16 @@ static int t1_reader_proc(pdf_type1_token token) {
         if (!t1_word(cupidimage_pdf_type1_lex(token.body, &pos, 0), words[i]))
             return 0;
     return cupidimage_pdf_type1_lex(token.body, &pos, 0).type == PDF_T1_EOF;
+}
+
+static int t1_definer_proc(pdf_type1_token token) {
+    if (token.type != PDF_T1_PROC)
+        return 0;
+    size_t pos = 0;
+    pdf_type1_token word = cupidimage_pdf_type1_lex(token.body, &pos, 0);
+    if (t1_word(word, "noaccess") || t1_word(word, "readonly"))
+        word = cupidimage_pdf_type1_lex(token.body, &pos, 0);
+    return t1_word(word, "def") && cupidimage_pdf_type1_lex(token.body, &pos, 0).type == PDF_T1_EOF;
 }
 
 static int t1_binary(pdf_cff_slice source, size_t *pos, int length, pdf_cff_slice *out) {
@@ -236,13 +249,45 @@ static int t1_charstrings(pdf_type1_font *font, pdf_cff_slice source, size_t *po
 static int t1_private(pdf_type1_font *font) {
     pdf_cff_slice source = {font->private_data + 4, font->private_length - 4};
     size_t pos = 0;
-    t1_syntax syntax = {{{"RD"}, {"-|"}}, 2};
+    t1_syntax syntax = {0};
+    strcpy(syntax.readers[0], "RD");
+    strcpy(syntax.readers[1], "-|");
+    syntax.reader_count = 2;
+    unsigned scope = 0, private_scope = 0, private_pending = 0, literal_depth = 0;
     while (pos < source.length) {
         pdf_type1_token token = cupidimage_pdf_type1_lex(source, &pos, 0);
         if (token.type == PDF_T1_ERROR)
             return 0;
-        if (token.type == PDF_T1_NAME) {
-            if (!strcmp(token.text, "lenIV")) {
+        if (token.type == PDF_T1_OTHER) {
+            if (!strcmp(token.text, "<<") || !strcmp(token.text, "[")) {
+                if (++literal_depth > 64)
+                    return 0;
+            } else if ((!strcmp(token.text, ">>") || !strcmp(token.text, "]")) && literal_depth)
+                literal_depth--;
+        }
+        if (!literal_depth && t1_word(token, "begin")) {
+            if (++scope > 64)
+                return 0;
+            if (private_pending) {
+                private_scope = scope;
+                private_pending = 0;
+                cupidimage_pdf_ps_hints_init(&font->hints);
+                font->unresolved_hints = 0;
+                syntax.definer_count = 0;
+            }
+        } else if (!literal_depth && t1_word(token, "end") && scope) {
+            if (scope == private_scope)
+                private_scope = 0;
+            scope--;
+        }
+        if (token.type == PDF_T1_NAME && !literal_depth) {
+            unsigned field = cupidimage_pdf_type1_hint_field(token.text);
+            if (!private_scope && !strcmp(token.text, "Private"))
+                private_pending = 1;
+            if (private_scope && scope == private_scope && field < PDF_PS_HINT_FIELDS) {
+                cupidimage_pdf_type1_hint_read(&font->hints, &font->unresolved_hints, field, source,
+                                               &pos, syntax.definers, syntax.definer_count);
+            } else if (!strcmp(token.text, "lenIV")) {
                 if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), -1, 255, &font->len_iv))
                     return 0;
             } else if (!strcmp(token.text, "Subrs")) {
@@ -254,12 +299,38 @@ static int t1_private(pdf_type1_font *font) {
             } else {
                 size_t saved = pos;
                 pdf_type1_token value = cupidimage_pdf_type1_lex(source, &pos, 0);
+                for (unsigned i = 0;
+                     private_scope && scope == private_scope && i < syntax.definer_count; i++)
+                    if (!strcmp(syntax.definers[i], token.text)) {
+                        memcpy(syntax.definers[i], syntax.definers[--syntax.definer_count], 128);
+                        break;
+                    }
                 if (t1_reader_proc(value)) {
                     if (syntax.reader_count == 16)
                         return 0;
                     strcpy(syntax.readers[syntax.reader_count++], token.text);
-                } else
+                } else {
+                    size_t after_value = pos;
+                    pdf_type1_token defined = cupidimage_pdf_type1_lex(source, &after_value, 0);
+                    for (unsigned i = 0;
+                         i < 3 &&
+                         (t1_word(defined, "executeonly") || t1_word(defined, "readonly") ||
+                          t1_word(defined, "noaccess") || t1_word(defined, "bind"));
+                         i++)
+                        defined = cupidimage_pdf_type1_lex(source, &after_value, 0);
+                    if (private_scope && scope == private_scope && t1_definer_proc(value) &&
+                        t1_word(defined, "def")) {
+                        unsigned i = 0;
+                        while (i < syntax.definer_count && strcmp(syntax.definers[i], token.text))
+                            i++;
+                        if (i == 16)
+                            return 0;
+                        strcpy(syntax.definers[i], token.text);
+                        if (i == syntax.definer_count)
+                            syntax.definer_count++;
+                    }
                     pos = saved;
+                }
             }
         }
         if (t1_word(token, "closefile"))
@@ -316,6 +387,7 @@ int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, s
                               size_t clear_length, size_t encrypted_length) {
     memset(font, 0, sizeof(*font));
     font->len_iv = 4;
+    cupidimage_pdf_ps_hints_init(&font->hints);
     font->matrix[0] = font->matrix[3] = .001;
     if (length > 16u * 1024u * 1024u || clear_length > length ||
         encrypted_length > length - clear_length || (encrypted_length && encrypted_length < 4))

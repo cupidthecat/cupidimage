@@ -16,7 +16,7 @@ TEST_TARGETS = test-pdf-cff-page-hinting test-pdf-ps-gridfit test-pdf-page-hinti
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
-TEST_BINS = test_pdf_type1_lexer test_pdf_ps_gridfit test_pdf_page_hint test_pdf_coverage test_pdf_coverage_oom test_pdf_tt_loader test_pdf_tt_glyphs test_pdf_tt_vm test_pdf_icc_mab test_pdf_icc_lut test_pdf_flatness test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+TEST_BINS = test_pdf_type1_trace test_pdf_type1_lexer test_pdf_ps_gridfit test_pdf_page_hint test_pdf_coverage test_pdf_coverage_oom test_pdf_tt_loader test_pdf_tt_glyphs test_pdf_tt_vm test_pdf_icc_mab test_pdf_icc_lut test_pdf_flatness test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
@@ -269,9 +269,15 @@ $(BINDIR)/test_pdf_type1: tests/test_pdf_type1.c $(LIB)
 $(BINDIR)/test_pdf_type1_lexer: tests/test_pdf_type1_lexer.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
-test-pdf-type1: $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_type1_lexer $(BINDIR)/test_pdf_pages
+$(BINDIR)/test_pdf_type1_trace: tests/test_pdf_type1_trace.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-type1: $(BINDIR)/test_pdf_type1_trace $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_type1_lexer $(BINDIR)/test_pdf_pages
 	$(BINDIR)/test_pdf_type1_lexer
+	$(BINDIR)/test_pdf_type1_trace
 	python3 scripts/test_pdf_type1.py $(BINDIR)/test_pdf_type1
+	python3 scripts/test_pdf_type1_hints.py $(BINDIR)/test_pdf_type1
+	python3 scripts/test_pdf_type1_trace.py $(BINDIR)/test_pdf_type1
 	python3 scripts/test_pdf_type1_charstrings.py $(BINDIR)/test_pdf_type1
 	python3 scripts/test_pdf_type1_render.py $(BINDIR)/test_pdf_pages
 

@@ -1,6 +1,7 @@
 #include "formats/pdf/fonts/type1.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char **argv) {
     if (argc != 4 && argc != 5)
@@ -51,10 +52,23 @@ int main(int argc, char **argv) {
             printf("%02x", font.subrs[i].data[j]);
         putchar('\n');
     }
-    if (argc == 5) {
+    if (argc == 5 && !strcmp(argv[4], "--hints")) {
+        printf("hints %u %u %u\n", font.hints.seen, font.hints.invalid, font.unresolved_hints);
+        for (unsigned i = 0; i < 6; i++) {
+            printf("hint-array %u", i);
+            for (unsigned j = 0; j < font.hints.counts[i]; j++)
+                printf(" %.17g", font.hints.arrays[i][j]);
+            putchar('\n');
+        }
+        for (unsigned i = 0; i < 8; i++)
+            printf("hint-scalar %u %.17g\n", i + 6, font.hints.scalars[i]);
+    } else if (argc == 5) {
         for (unsigned i = 0; i < font.glyph_count; i++) {
             pdf_cff_outline out;
-            if (!cupidimage_pdf_type1_outline(&font, i, &out)) {
+            pdf_type1_hint_trace trace = {0};
+            int tracing = !strcmp(argv[4], "--hint-outline");
+            if (!(tracing ? cupidimage_pdf_type1_outline_hints(&font, i, &out, &trace)
+                          : cupidimage_pdf_type1_outline(&font, i, &out))) {
                 cupidimage_pdf_type1_free(&font);
                 free(data);
                 return 3;
@@ -66,6 +80,21 @@ int main(int argc, char **argv) {
                     printf(" %.9g", out.segments[j].points[k]);
                 putchar('\n');
             }
+            if (tracing) {
+                printf("hint-trace %u %u %u\n", i, trace.count, trace.diagnostics);
+                for (unsigned j = 0; j < trace.count; j++) {
+                    pdf_type1_hint_event *event = trace.events + j;
+                    printf("hint-event %u %u %u %u", i, event->kind, event->segment,
+                           event->vertical);
+                    for (unsigned k = 0; k < 6; k++)
+                        printf(" %.17g", event->values[k]);
+                    putchar('\n');
+                }
+                if (out.composite)
+                    printf("composite %u %u %u %.17g %.17g\n", i, out.base, out.accent,
+                           out.accent_x, out.accent_y);
+            }
+            cupidimage_pdf_type1_trace_free(&trace);
             cupidimage_pdf_type2_free(&out);
         }
     }

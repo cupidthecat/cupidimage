@@ -320,7 +320,11 @@ encodings, sidebearings, paths, standard subroutines and malformed input. Its
 lexer tests cover all radices from 2 through 36, decimal fractions and exponents,
 string and dictionary boundaries, form-feed comments and 10,000 deterministic
 byte mutations. Comma-decimal locale checks run when a suitable locale is
-installed and report a skip otherwise. The
+installed and report a skip otherwise. Private-hint checks distinguish literal
+definitions, invalid values and unresolved computed expressions; they do not
+claim Type 1 grid fitting. Trace cases cover stem groups, replacements, flex,
+composite boundaries and shared execution budgets. Independent installed-font
+checks are documented in [PostScript hint data](pdf-postscript-hints.md). The
 owned geometric fixtures include encrypted and filtered font streams. Run
 `python3 scripts/test_pdf_type1_render.py bin/test_pdf_pages --reference` for the
 selected independent comparisons. Clear private dictionaries and a FontMatrix

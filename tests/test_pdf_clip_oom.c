@@ -27,7 +27,9 @@
 #include "../src/formats/pdf/fonts/truetype_cmap.c"
 #include "../src/formats/pdf/fonts/truetype_names.c"
 #include "../src/formats/pdf/fonts/type1.c"
+#include "../src/formats/pdf/fonts/type1/hints.c"
 #include "../src/formats/pdf/fonts/type1/lexer.c"
+#include "../src/formats/pdf/fonts/type1/trace.c"
 #include "../src/formats/pdf/fonts/type1_charstring.c"
 #include "../src/formats/pdf/fonts/type2.c"
 #include "../src/formats/pdf/pdf_calculator.c"
@@ -309,6 +311,46 @@ int main(int argc, char **argv) {
                 if (!ok && (hints.events || hints.event_count || outline.segments || outline.count))
                     failures++;
                 cupidimage_pdf_ps_hint_program_free(&hints);
+                cupidimage_pdf_type2_free(&outline);
+                if (live_count)
+                    failures++;
+            }
+        }
+        fail_at = 0;
+    }
+
+    {
+        unsigned char code[512] = {139, 248, 236, 13};
+        size_t length = 4;
+        for (unsigned i = 0; i < 40; i++) {
+            const unsigned char event[] = {149, 159, 1, 139, 139, 21};
+            memcpy(code + length, event, sizeof(event));
+            length += sizeof(event);
+        }
+        code[length++] = 14;
+        pdf_type1_glyph glyph = {0};
+        pdf_type1_font font = {0};
+        font.glyphs = &glyph;
+        font.glyph_count = 1;
+        for (unsigned truncated = 0; truncated < 2; truncated++) {
+            glyph.code = (pdf_cff_slice){code, length - truncated};
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                allocation_count = 0;
+                fail_at = failure;
+                pdf_cff_outline outline;
+                pdf_type1_hint_trace trace;
+                int ok = cupidimage_pdf_type1_outline_hints(&font, 0, &outline, &trace);
+                if (!failure)
+                    total = allocation_count;
+                checks++;
+                if (ok != (!failure && !truncated))
+                    failures++;
+                if (ok && (trace.count != 40 || outline.count != 80))
+                    failures++;
+                if (!ok && (trace.events || trace.count || outline.segments || outline.count))
+                    failures++;
+                cupidimage_pdf_type1_trace_free(&trace);
                 cupidimage_pdf_type2_free(&outline);
                 if (live_count)
                     failures++;
