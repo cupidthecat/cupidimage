@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Optional comparisons of authored point programs on one scaled triangle."""
+from array import array
 import random
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from pathlib import Path
 try:
     import freetype
     from fontTools.fontBuilder import FontBuilder
+    from fontTools.ttLib import newTable
     from fontTools.pens.ttGlyphPen import TTGlyphPen
     from fontTools.ttLib.tables.ttProgram import Program
 except ImportError:
@@ -81,6 +83,64 @@ def cases():
         extract = bytes([0x23, 0x21]) if component else bytes([0x21])
         programs.append(coincident + push(0) + bytes([0x0c]) + extract + bytes([0x01, 0x48]))
     programs.append(coincident + push(0, 2) + bytes([0x47, 0x01, 0x48]))
+    # MIAP cut-in boundaries, both coordinate axes and all predefined rounds.
+    for axis in (0, 1):
+        for rounding in (0x18, 0x19, 0x3d, 0x7a, 0x7c, 0x7d):
+            for target in (-257, -38, -37, -1, 0, 31, 32, 63, 64, 99, 100, 257):
+                for cutin in (-1, 0, 16, 68, 257):
+                    for op in (0x3e, 0x3f):
+                        code = bytes([axis, rounding]) + push(0, target) + bytes([0x44])
+                        code += push(cutin) + bytes([0x1d]) + push(0, 0) + bytes([op])
+                        programs.append(code)
+    for op in (0x3e, 0x3f):
+        for target in (-257, -37, 0, 31, 32, 97, 257):
+            for getter in (0x46, 0x47):
+                code = push(0, target) + bytes([0x44]) + push(0) + bytes([0x16])
+                code += push(3, 5) + bytes([0x0a, 0x0e]) + push(1, 0) + bytes([op])
+                code += push(0, 1) + bytes([getter, 0x01]) + push(1) + bytes([0x15, 0x48])
+                programs.append(code)
+    for band, op in enumerate((0x5d, 0x71, 0x72)):
+        for shift in range(7):
+            for argument in range(256):
+                base = 64 - band * 16 - (argument >> 4)
+                for matching in (True, False):
+                    code = push(base if matching else base + 1) + bytes([0x5e])
+                    code += push(shift) + bytes([0x5f]) + push(argument, 1, 1) + bytes([op])
+                    programs.append(code)
+        # DELTA movement uses projection, unlike SHPIX's direct freedom movement.
+        code = push(64 - band * 16) + bytes([0x5e]) + push(3, 5) + bytes([0x0b])
+        programs.append(code + push(8, 0, 1) + bytes([op]))
+        for getter in (0x46, 0x47):
+            code = push(64 - band * 16) + bytes([0x5e]) + push(0) + bytes([0x16])
+            code += push(8, 1, 1) + bytes([op]) + push(0, 1) + bytes([getter])
+            code += push(1) + bytes([0x15, 0x48])
+            programs.append(code)
+    for freedom in ((16384, 0), (0, 16384), (9830, 13107), (-9830, 13107)):
+        for distance in (-257, -97, -64, -1, 0, 1, 31, 64, 97, 257):
+            for count in (0, 1, 3):
+                code = push(*freedom) + bytes([0x0b]) + push(count) + bytes([0x17])
+                code += push(*tuple(range(count)), distance) + bytes([0x38])
+                programs.append(code)
+    for op in (0x32, 0x33):
+        setter = 0x11 if op & 1 else 0x12
+        for axis in (0, 1):
+            for distance in (-257, -65, -1, 0, 1, 31, 64, 257):
+                for indices in ((0,), (1,), (2,), (0, 1, 2), (1, 1, 0)):
+                    code = bytes([axis]) + push(1, distance) + bytes([0x48])
+                    code += push(1) + bytes([setter]) + push(len(indices)) + bytes([0x17])
+                    code += push(*indices) + bytes([op])
+                    programs.append(code)
+        code = push(0) + bytes([0x16]) + push(1, 31) + bytes([0x48])
+        code += push(1) + bytes([0x2f]) + push(1) + bytes([setter])
+        code += push(1) + bytes([0x15]) + push(1) + bytes([0x14 if op & 1 else 0x13])
+        code += push(0) + bytes([op])
+        programs.append(code)
+        programs.append(push(0) + bytes([0x17, op]))
+        for projection in ((16384, 0), (3, 4)):
+            for freedom in ((3, 5), (-3, 5)):
+                code = push(0, 97) + bytes([0x48]) + push(0) + bytes([setter])
+                code += push(*projection) + bytes([0x0a]) + push(*freedom) + bytes([0x0b])
+                programs.append(code + push(2) + bytes([op]))
     # The reference face can retain twilight storage between glyph loads.
     # Give both engines the same explicit initial coordinates for each program.
     reset = push(0) + bytes([0x16, 0x01])
@@ -104,8 +164,8 @@ def build_font(programs, path):
             glyph.program = Program()
             glyph.program.fromBytecode(programs[i - 1])
         glyphs[name] = glyph
-    # At 1 ppem, 64 units per em gives an exact design-unit-to-F26Dot6 mapping.
-    font = FontBuilder(64, isTTF=True)
+    # At 64 ppem, 4096 units per em gives an exact design-unit-to-F26Dot6 mapping.
+    font = FontBuilder(4096, isTTF=True)
     font.setupGlyphOrder(order)
     font.setupCharacterMap({65: 'g0'})
     font.setupGlyf(glyphs)
@@ -119,6 +179,8 @@ def build_font(programs, path):
     font.setupMaxp()
     font.font['maxp'].maxStackElements = 64
     font.font['maxp'].maxTwilightPoints = 2
+    font.font['cvt '] = newTable('cvt ')
+    font.font['cvt '].values = array('h', [64, 128, -64, 0])
     font.save(path)
 
 
@@ -135,7 +197,7 @@ def main():
         path = Path(directory) / 'points.ttf'
         build_font(programs, path)
         face = freetype.Face(str(path))
-        face.set_pixel_sizes(1, 1)
+        face.set_pixel_sizes(64, 64)
         for i, code in enumerate(programs):
             face.load_glyph(i + 1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
                             freetype.FT_LOAD_TARGET_MONO)

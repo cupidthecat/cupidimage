@@ -19,7 +19,7 @@ value and function-definition state. It supports:
 - Axis-aligned, stack-defined and point-derived projection/freedom vectors,
   dual projection, vector reads and copying projection to freedom.
 - Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
-  MDAP and UTP.
+  MDAP, MIAP, UTP, DELTAP1/2/3, SHP and SHPIX.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -135,11 +135,22 @@ until the invalidated instance is destroyed. Limits are 65,535 twilight points a
 
 GC selects current or original coordinates and the corresponding projection.
 SCFS moves along the freedom vector and records touched axes; twilight movement
-also establishes the original coordinate. MDAP applies optional rounding and sets
-reference points 0 and 1. UTP clears touched axes selected by the freedom vector.
+also establishes the original coordinate. MDAP applies optional rounding and sets reference points 0 and 1. MIAP uses a CVT
+coordinate, with optional cut-in and rounding based on the coordinate entering the
+instruction. In the twilight zone it creates the original coordinate from the CVT
+and freedom vector before applying the final move. UTP clears touched axes selected
+by the freedom vector.
 Line-vector instructions use their selected zones and preserve the distinct
 original/current directions for dual projection. Coincident lines use a horizontal
 fallback. A zero stack-defined vector preserves the existing direction.
+
+DELTAP1/2/3 use the selected size range, delta base and shift to move only matching
+points. They preserve original coordinates. SHP computes the reference point's
+displacement once, then applies it to the selected points, including repeated
+indices or the reference point itself if listed. SHPIX measures its displacement
+along the freedom vector without using projection. SHP and SHPIX reset the loop
+count after successful execution. Every target is bounded and charged to the work
+budget, even when a size-specific exception does not match.
 
 Movement uses checked fixed-point projection and division. A changing-coordinate
 request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
@@ -174,8 +185,9 @@ after preparation so each CVT entry can be observed independently. That extra
 instruction does not change the CVT. Only the independent interpreter executes the
 probe glyphs in this CVT comparison.
 
-`scripts/test_pdf_tt_points_reference.py` separately compares 2,654 authored
-programs on supplied triangle/twilight geometry. It covers point movement, rounding,
+`scripts/test_pdf_tt_points_reference.py` separately compares 15,175 authored
+programs on supplied triangle/twilight geometry. It covers point movement, CVT
+cut-in boundaries, all delta size/step selections, looped shifts, rounding,
 original-coordinate reads and stack/line vector selection. It does not run the
 pinned fonts' full glyph programs or the PDF renderer.
 

@@ -49,6 +49,7 @@ static void vm_test_free(void *value) {
 #define free vm_test_free
 #include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
 #include "../src/formats/pdf/fonts/truetype_vm/lifecycle.c"
+#include "../src/formats/pdf/fonts/truetype_vm/movement.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
 #include "../src/formats/pdf/fonts/truetype_vm/points.c"
 #include "../src/formats/pdf/fonts/truetype_vm/size.c"
@@ -157,6 +158,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
     if (ok && ppem)
         ok = cupidimage_pdf_tt_vm_set_size(&vm, font.units, (int32_t)ppem * 64, (int32_t)ppem * 64,
                                            grayscale, font_cvt) &&
+             cupidimage_pdf_tt_vm_set_zones(&vm, read16(font.maxp.data + 16), NULL, 0, 0) &&
              cupidimage_pdf_tt_vm_run(&vm, font.prep.data, font.prep.length, PDF_TT_VM_PREP,
                                       1000000);
     if (ok && ppem) {
@@ -178,6 +180,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
 }
 
 #include "pdf_tt_vm/lifecycle.c"
+#include "pdf_tt_vm/movement.c"
 #include "pdf_tt_vm/points.c"
 #include "pdf_tt_vm/size.c"
 
@@ -257,9 +260,14 @@ static int expression_programs(int geometry) {
         if (!decode_hex_program(line, code, &bytes))
             return 2;
         pdf_tt_vm vm;
-        if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, NULL, 0, 0))
+        const int32_t raw[] = {64, 128, -64, 0};
+        if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, geometry ? raw : NULL, geometry ? 4 : 0, 0))
             return 2;
         if (geometry) {
+            if (!cupidimage_pdf_tt_vm_set_size(&vm, 4096, 4096, 4096, 0, raw)) {
+                cupidimage_pdf_tt_vm_free(&vm);
+                return 2;
+            }
             const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
                                               {{100, 0}, {100, 0}, 0, 1, 0},
                                               {{0, 100}, {0, 100}, 0, 1, 1}};
@@ -490,6 +498,7 @@ int main(int argc, char **argv) {
     size_tests();
     point_tests();
     lifecycle_tests();
+    movement_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;
 }

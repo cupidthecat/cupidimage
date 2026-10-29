@@ -607,7 +607,8 @@ as its oracle.
 `make test-pdf-tt-vm` checks the native instruction-engine foundation and initializes
 the 12 pinned font programs. Numeric tests cover signed F26Dot6 arithmetic, all
 predefined rounding modes and 192 SROUND selectors; state tests cover defaults,
-axis vectors and scalar setters. Preparation checks run both monochrome and
+axis vectors and scalar setters. Point cases cover CVT cut-ins, all three delta
+ranges, reference-point shifts and direct freedom-vector shifts. Preparation checks run both monochrome and
 grayscale configurations at 1–96 ppem. Optional independent probes compare numeric
 results, prepared CVT values, authored point programs and paired-glyph state
 sequences using temporary glyphs. These tests do not render hinted glyphs. The engine's

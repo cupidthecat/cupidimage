@@ -16,4 +16,11 @@ int cupidimage_pdf_tt_vm_normalize(pdf_tt_vm *, int32_t, int32_t, int32_t[2]);
 int cupidimage_pdf_tt_vm_point_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_load_glyph_points(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned,
                                            unsigned);
+pdf_tt_vm_point *cupidimage_pdf_tt_vm_get_point(pdf_tt_vm *, unsigned, int32_t);
+/* Bounded coordinate/F2Dot14 products; denominator must be nonzero. */
+int64_t cupidimage_pdf_tt_vm_divide(int64_t, int64_t);
+int cupidimage_pdf_tt_vm_project(pdf_tt_vm *, const int32_t[2], const int32_t[2], int32_t *);
+int cupidimage_pdf_tt_vm_move(pdf_tt_vm *, pdf_tt_vm_point *, int64_t);
+int cupidimage_pdf_tt_vm_shift(pdf_tt_vm *, pdf_tt_vm_point *, int64_t, int64_t);
+int cupidimage_pdf_tt_vm_movement_op(pdf_tt_vm *, unsigned);
 #endif

@@ -748,7 +748,7 @@ Regenerate them with `scripts/generate_pdf_empty_glyph_fixtures.py`.
 
 The [TrueType instruction engine](pdf-truetype-vm.md) now has bounded stack,
 storage, control-flow and function-definition execution, plus fixed-point rounding,
-graphics-state setters and an initial set of point/zone operations. Its tests
+graphics-state setters, absolute/CVT positioning, delta moves and point shifts. Its tests
 initialize the pinned Latin font programs and execute their uniform-size preparation
 programs. Prepared state and glyph entry are tested separately. The PDF renderer
 does not invoke this engine yet. Complete glyph-program

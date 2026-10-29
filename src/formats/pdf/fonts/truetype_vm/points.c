@@ -43,7 +43,7 @@ int cupidimage_pdf_tt_vm_load_glyph_points(pdf_tt_vm *vm, const pdf_tt_vm_point 
     return 1;
 }
 
-static pdf_tt_vm_point *vm_point(pdf_tt_vm *vm, unsigned zone, int32_t index) {
+pdf_tt_vm_point *cupidimage_pdf_tt_vm_get_point(pdf_tt_vm *vm, unsigned zone, int32_t index) {
     if (zone > 1 || index < 0 || (uint32_t)index >= vm->zones[zone].count) {
         cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_POINT);
         return NULL;
@@ -51,7 +51,7 @@ static pdf_tt_vm_point *vm_point(pdf_tt_vm *vm, unsigned zone, int32_t index) {
     return &vm->zones[zone].points[index];
 }
 
-static int64_t vm_nearest_div(int64_t numerator, int64_t denominator) {
+int64_t cupidimage_pdf_tt_vm_divide(int64_t numerator, int64_t denominator) {
     int negative = (numerator < 0) != (denominator < 0);
     uint64_t n = (uint64_t)(numerator < 0 ? -numerator : numerator);
     uint64_t d = (uint64_t)(denominator < 0 ? -denominator : denominator);
@@ -59,10 +59,10 @@ static int64_t vm_nearest_div(int64_t numerator, int64_t denominator) {
     return negative ? -value : value;
 }
 
-static int vm_project(pdf_tt_vm *vm, const int32_t point[2], const int32_t vector[2],
-                      int32_t *result) {
+int cupidimage_pdf_tt_vm_project(pdf_tt_vm *vm, const int32_t point[2], const int32_t vector[2],
+                                 int32_t *result) {
     int64_t dot = (int64_t)point[0] * vector[0] + (int64_t)point[1] * vector[1];
-    int64_t value = vm_nearest_div(dot, 16384);
+    int64_t value = cupidimage_pdf_tt_vm_divide(dot, 16384);
     if (value < INT32_MIN || value > INT32_MAX) {
         cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
         return 0;
@@ -71,22 +71,29 @@ static int vm_project(pdf_tt_vm *vm, const int32_t point[2], const int32_t vecto
     return 1;
 }
 
-static int vm_move(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t distance) {
+int cupidimage_pdf_tt_vm_move(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t distance) {
     const int32_t *freedom = vm->graphics.freedom, *projection = vm->graphics.projection;
-    int64_t dot = vm_nearest_div(
+    int64_t dot = cupidimage_pdf_tt_vm_divide(
         (int64_t)freedom[0] * projection[0] + (int64_t)freedom[1] * projection[1], 16384);
     if (!dot && distance)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
-    int32_t result[2];
-    for (unsigned axis = 0; axis < 2; axis++) {
-        int64_t move = distance ? vm_nearest_div(distance * freedom[axis], dot) : 0;
-        int64_t value = (int64_t)point->current[axis] + move;
-        if (value < INT32_MIN || value > INT32_MAX)
-            return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
-        result[axis] = (int32_t)value;
-    }
-    memcpy(point->current, result, sizeof(result));
-    point->touched |= (freedom[0] != 0 ? 1 : 0) | (freedom[1] != 0 ? 2 : 0);
+    int64_t x = distance ? cupidimage_pdf_tt_vm_divide(distance * freedom[0], dot) : 0;
+    int64_t y = distance ? cupidimage_pdf_tt_vm_divide(distance * freedom[1], dot) : 0;
+    return cupidimage_pdf_tt_vm_shift(vm, point, x, y);
+}
+
+int cupidimage_pdf_tt_vm_shift(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t x, int64_t y) {
+    if (x < -INT64_C(4294967295) || x > INT64_C(4294967295) || y < -INT64_C(4294967295) ||
+        y > INT64_C(4294967295))
+        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
+    x += point->current[0];
+    y += point->current[1];
+    if (x < INT32_MIN || x > INT32_MAX || y < INT32_MIN || y > INT32_MAX)
+        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
+    point->current[0] = (int32_t)x;
+    point->current[1] = (int32_t)y;
+    point->touched |=
+        (vm->graphics.freedom[0] != 0 ? 1 : 0) | (vm->graphics.freedom[1] != 0 ? 2 : 0);
     return 1;
 }
 
@@ -139,8 +146,8 @@ int cupidimage_pdf_tt_vm_point_op(pdf_tt_vm *vm, unsigned op) {
         }
     }
     if (op <= 0x09 || op == 0x86 || op == 0x87) {
-        pdf_tt_vm_point *from = vm_point(vm, g->zone[2], a);
-        pdf_tt_vm_point *to = vm_point(vm, g->zone[1], b);
+        pdf_tt_vm_point *from = cupidimage_pdf_tt_vm_get_point(vm, g->zone[2], a);
+        pdf_tt_vm_point *to = cupidimage_pdf_tt_vm_get_point(vm, g->zone[1], b);
         if (!from || !to)
             return 0;
         int perpendicular = op & 1;
@@ -157,23 +164,24 @@ int cupidimage_pdf_tt_vm_point_op(pdf_tt_vm *vm, unsigned op) {
             memcpy(g->dual_projection, g->projection, sizeof(g->projection));
         }
     } else if (op == 0x46 || op == 0x47) {
-        pdf_tt_vm_point *point = vm_point(vm, g->zone[2], a);
+        pdf_tt_vm_point *point = cupidimage_pdf_tt_vm_get_point(vm, g->zone[2], a);
         int32_t value;
-        if (!point || !vm_project(vm, op & 1 ? point->original : point->current,
-                                  op & 1 ? g->dual_projection : g->projection, &value))
+        if (!point ||
+            !cupidimage_pdf_tt_vm_project(vm, op & 1 ? point->original : point->current,
+                                          op & 1 ? g->dual_projection : g->projection, &value))
             return 0;
         vm->stack[vm->stack_size - 1] = value;
         return 1;
     } else if (op == 0x48) {
-        pdf_tt_vm_point *point = vm_point(vm, g->zone[2], b);
+        pdf_tt_vm_point *point = cupidimage_pdf_tt_vm_get_point(vm, g->zone[2], b);
         int32_t current;
-        if (!point || !vm_project(vm, point->current, g->projection, &current) ||
-            !vm_move(vm, point, (int64_t)a - current))
+        if (!point || !cupidimage_pdf_tt_vm_project(vm, point->current, g->projection, &current) ||
+            !cupidimage_pdf_tt_vm_move(vm, point, (int64_t)a - current))
             return 0;
         if (!g->zone[2])
             memcpy(point->original, point->current, sizeof(point->current));
     } else {
-        pdf_tt_vm_point *point = vm_point(vm, g->zone[0], a);
+        pdf_tt_vm_point *point = cupidimage_pdf_tt_vm_get_point(vm, g->zone[0], a);
         if (!point)
             return 0;
         if (op == 0x29) {
@@ -183,14 +191,14 @@ int cupidimage_pdf_tt_vm_point_op(pdf_tt_vm *vm, unsigned op) {
             int32_t current = 0;
             int64_t distance = 0;
             if (op & 1) {
-                if (!vm_project(vm, point->current, g->projection, &current))
+                if (!cupidimage_pdf_tt_vm_project(vm, point->current, g->projection, &current))
                     return 0;
                 int64_t rounded = cupidimage_pdf_tt_vm_round(&g->rounding, current);
                 if (rounded < INT32_MIN || rounded > INT32_MAX)
                     return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
                 distance = rounded - current;
             }
-            if (!vm_move(vm, point, distance))
+            if (!cupidimage_pdf_tt_vm_move(vm, point, distance))
                 return 0;
             g->reference[0] = g->reference[1] = (uint32_t)a;
         }
