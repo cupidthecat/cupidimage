@@ -824,12 +824,18 @@
             "src/formats/pdf/fonts/type1/trace.c",
             "scripts/test_pdf_type1_trace.py",
             "tests/test_pdf_type1_trace.c",
-            "scripts/compare_pdf_type1_trace.py"
+            "scripts/compare_pdf_type1_trace.py",
+            "src/formats/pdf/fonts/postscript/type1_gridfit.c",
+            "src/formats/pdf/fonts/postscript/type1_shape.c",
+            "tests/test_pdf_type1_gridfit.c",
+            "scripts/test_pdf_type1_gridfit_reference.py",
+            "scripts/test_pdf_type1_currentpoint.py",
+            "docs/pdf-postscript-gridfit.md"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution, computed font dictionaries and Type 1 grid fitting remain unsupported.",
-            "Literal private hint fields and ordered charstring hint traces are retained. Computed parameters carry unresolved diagnostics; Type 1 grid fitting remains unfinished."
+            "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution, computed font dictionaries and Type 1 page fitting remain unsupported.",
+            "Literal private hint fields and ordered charstring hint traces are retained. Computed parameters carry unresolved diagnostics; A bounded standalone fitter is tested; Type 1 page integration remains unfinished."
           ],
           "dependencies": [
             "1",

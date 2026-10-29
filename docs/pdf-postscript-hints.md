@@ -38,7 +38,8 @@ Computed expressions are marked unresolved and invalid rather than taking the
 first literal as their result. A later literal definition clears those flags.
 For example, a conditional StemSnap array remains unresolved. The unhinted
 outline path stays available. Arbitrary PostScript evaluation, inherited definer
-aliases and Type 1 grid fitting remain unfinished.
+aliases remain unfinished. The standalone [Type 1 fitting core](pdf-postscript-gridfit.md)
+uses the resolved fields required by its selected profile.
 
 ## Type 2 capture
 
@@ -88,7 +89,7 @@ masks. These checks establish agreement on decoded inputs, not rendered pixels.
 
 The separate grid-fitting core has bounded outline and glyph-bitmap tests.
 Composite placement and CFF page integration now have focused checks. Type 1
-computed parameters and grid fitting, flex-depth handling and broader profile
+computed parameters and page integration, flex-depth handling and broader profile
 qualification remain open.
 `--pdf-tt-hinting` applies only to TrueType and does not enable these stages.
 

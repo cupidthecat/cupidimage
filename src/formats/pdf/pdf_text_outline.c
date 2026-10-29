@@ -92,10 +92,9 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
             first = 1;
             continue;
         }
-        if (segment->kind == PDF_CFF_SETPOINT) {
-            current = p[0];
+        /* Charstring position changes are already reflected in later absolute endpoints. */
+        if (segment->kind == PDF_CFF_SETPOINT)
             continue;
-        }
         if (segment->kind == PDF_CFF_CURVE) {
             edges[(*count)++] = (outline_edge){current, p[0], p[2], 2, p[1]};
             if (path && !outline_cubic(path, current, p[0], p[1], p[2], first, 0, flatness_squared))

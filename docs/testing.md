@@ -710,7 +710,13 @@ ownership checks, not hinted-pixel comparisons. See
 
 `make test-pdf-ps-gridfit` adds bounded CFF fitting, allocation/cancellation and
 independent outline/bitmap checks. These exercise the standalone core rather
-than PDF pages. See [CFF grid-fitting scope](pdf-postscript-gridfit.md).
+than PDF pages. See [PostScript grid-fitting scope](pdf-postscript-gridfit.md).
+
+`make test-pdf-type1-gridfit` covers the standalone Type 1 profile, composite
+origins, open-contour preservation, selected private fields, allocation failure
+and shared budgets. Optional independent checks compare complete fitted fill
+contours and grayscale bitmaps. Installed PFB fonts can be added explicitly;
+the default suite uses authored programs. Type 1 page fitting is not yet enabled.
 
 `make test-pdf-cff-page-hinting` checks the CFF page option, composite/CID
 placement, FontMatrix rules, fallback programs, PDF advances, Sixel output and

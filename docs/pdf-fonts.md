@@ -207,7 +207,8 @@ captures stems and masks. A [standalone grid fitter](pdf-postscript-gridfit.md)
 also has an explicit [page integration](pdf-cff-page-hinting.md). Flex flattening
 is not applied by this profile.
 See [PostScript hint data](pdf-postscript-hints.md) for scope and tests.
-These remain unhinted outlines. The obsolete dotsection operator is a no-op.
+Without the CFF option, these outlines remain unhinted. The obsolete dotsection
+operator is a no-op.
 An empty hint mask found in a cached font is accepted without consuming bytes;
 this is malformed-input recovery, not valid hint syntax.
 
@@ -258,7 +259,9 @@ Type 1 outlines support sidebearings and width vectors, line/cubic paths,
 subroutines, division, seac accents, and standard OtherSubrs 0 through 3 for flex
 and hint replacement. Literal [private hint parameters](pdf-postscript-hints.md)
 are retained, with diagnostics for unresolved expressions. Optional traces retain
-stems, replacements, dotsection and flex inputs, but are not yet grid-fitted.
+stems, replacements, dotsection and flex inputs. A bounded
+[standalone fitter](pdf-postscript-gridfit.md) consumes them; Type 1 page integration
+is still pending.
 Open strokes remain open; explicit closepath closes the path without resetting
 the charstring's current point. Accents use StandardEncoding component names.
 The embedded program's PaintType is ignored as required by ISO 32000-1 section

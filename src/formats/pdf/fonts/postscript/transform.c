@@ -1,4 +1,4 @@
-#include "cff_shape.h"
+#include "gridfit.h"
 #include <limits.h>
 #include <math.h>
 
@@ -38,7 +38,7 @@ int cupidimage_pdf_ps_outline_transform(pdf_cff_outline *outline, const int32_t 
     *work_left -= cost;
     for (unsigned i = 0; i < outline->count; i++) {
         const pdf_cff_segment *segment = outline->segments + i;
-        if (segment->kind > PDF_CFF_CLOSE)
+        if (segment->kind > PDF_CFF_END)
             return 0;
         for (unsigned j = 0; j < (segment->kind == PDF_CFF_CURVE ? 3u : 1u); j++) {
             double result[2];
