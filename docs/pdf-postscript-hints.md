@@ -2,8 +2,8 @@
 
 CFF version-1 fonts retain their Private DICT hint parameters. An optional Type 2
 interpreter entry point also captures stem declarations and hint masks. The page
-renderer still draws unhinted CFF and Type 1 outlines. These data structures are
-prerequisites for a grid fitter; they do not change page pixels.
+renderer still draws unhinted CFF and Type 1 outlines. A separate [grid-fitting core](pdf-postscript-gridfit.md) now consumes them,
+but it is not connected to pages and does not change page pixels.
 
 ## Private dictionaries
 
@@ -57,9 +57,9 @@ With FontTools installed, the suite compares 308 private fields from 22 pinned
 fonts and independently decodes 3,226 glyphs containing 13,717 stems and 2,759
 masks. These checks establish agreement on decoded inputs, not rendered pixels.
 
-Still needed: Type 1 private-parameter capture, flex-depth capture and flattening,
-blue-zone alignment, stem-width adjustment, counter control, point fitting,
-component placement, page integration and independent hinted-raster tests.
+The separate grid-fitting core has bounded outline and glyph-bitmap tests.
+Still needed: Type 1 private-parameter capture, flex-depth handling, component
+placement, page integration and broader profile qualification.
 `--pdf-tt-hinting` applies only to TrueType and does not enable these stages.
 
 ## Specifications

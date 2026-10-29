@@ -936,11 +936,15 @@
             "src/formats/pdf/fonts/postscript/private.c",
             "scripts/test_pdf_cff_hints.py",
             "scripts/test_pdf_type2_hints.py",
-            "scripts/compare_pdf_cff_hints.py"
+            "scripts/compare_pdf_cff_hints.py",
+            "docs/pdf-postscript-gridfit.md",
+            "src/formats/pdf/fonts/postscript/gridfit.c",
+            "tests/test_pdf_ps_gridfit.c",
+            "scripts/test_pdf_ps_gridfit_reference.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, but CFF/Type 1 grid fitting and flex flattening remain unimplemented."
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. Page integration, Type 1 fitting and flex policy remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -1014,12 +1018,16 @@
             "src/formats/pdf/fonts/postscript/private.c",
             "scripts/test_pdf_cff_hints.py",
             "scripts/test_pdf_type2_hints.py",
-            "scripts/compare_pdf_cff_hints.py"
+            "scripts/compare_pdf_cff_hints.py",
+            "docs/pdf-postscript-gridfit.md",
+            "src/formats/pdf/fonts/postscript/gridfit.c",
+            "tests/test_pdf_ps_gridfit.c",
+            "scripts/test_pdf_ps_gridfit_reference.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, but CFF/Type 1 grid fitting and flex flattening remain unimplemented."
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. Page integration, Type 1 fitting and flex policy remain unfinished."
           ],
           "dependencies": [
             "1",

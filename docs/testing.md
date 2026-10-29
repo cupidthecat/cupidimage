@@ -682,3 +682,7 @@ using pinned fonts. Trace-on and trace-off outlines must match. Fault injection
 checks cleanup after trace growth and malformed programs. These are input and
 ownership checks, not hinted-pixel comparisons. See
 [PostScript hint data](pdf-postscript-hints.md).
+
+`make test-pdf-ps-gridfit` adds bounded CFF fitting, allocation/cancellation and
+independent outline/bitmap checks. These exercise the standalone core rather
+than PDF pages. See [CFF grid-fitting scope](pdf-postscript-gridfit.md).

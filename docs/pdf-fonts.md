@@ -202,7 +202,8 @@ Type 2 programs support line and cubic path operators, local/global subroutines,
 widths, arithmetic, stack manipulation, transient storage, conditionals and flex
 curves. Subroutine bias depends on the number of subroutines. Private hint
 parameters are retained per font dictionary, and an optional interpreter trace
-captures stems and masks. Grid fitting and flex flattening are not applied.
+captures stems and masks. A [standalone grid fitter](pdf-postscript-gridfit.md)
+is tested, but page grid fitting and flex flattening are not applied.
 See [PostScript hint data](pdf-postscript-hints.md) for scope and tests.
 These remain unhinted outlines. The obsolete dotsection operator is a no-op.
 An empty hint mask found in a cached font is accepted without consuming bytes;

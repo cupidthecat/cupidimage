@@ -1,0 +1,17 @@
+#ifndef CUPIDIMAGE_PDF_POSTSCRIPT_GRIDFIT_H
+#define CUPIDIMAGE_PDF_POSTSCRIPT_GRIDFIT_H
+#include "../type2.h"
+
+/* Positive 16.16 font-unit-to-device-pixel scales. Translation is applied later. */
+typedef struct {
+    int32_t x_scale, y_scale;
+} pdf_ps_gridfit_size;
+
+/* Returns an owned, device-pixel outline, quantized down to the 1/64-pixel grid.
+ * Inputs are borrowed and unchanged. Composite components need separate calls.
+ * The budget is shared with the caller and consumed on both success and failure. */
+int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
+                              const pdf_ps_hint_program *hints, const pdf_cff_outline *source,
+                              const pdf_ps_gridfit_size *size, pdf_cff_outline *output,
+                              size_t *work);
+#endif

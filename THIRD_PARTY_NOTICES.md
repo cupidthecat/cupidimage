@@ -280,3 +280,15 @@ The glyph coverage scan converter is adapted from FreeType 2.15.0 under the
 FreeType Project License. The original license, source hashes and modification
 notes are in `third_party/freetype-raster`. Include this notice with binary
 distributions and retain that directory with source distributions.
+
+## FreeType PostScript outline hinting
+
+Portions of this software are copyright © 2000-2026 The FreeType Project
+(https://freetype.org). All rights reserved.
+
+The blue-zone and hint-map components are adapted from FreeType 2.15.0 under the
+FreeType Project License. They include Adobe Systems Incorporated's copyright
+and additional patent-license terms, retained in their source headers. The
+license, source hashes and adaptation notes are in `third_party/freetype-pshinter`.
+Include this notice with binary distributions and retain the component's license
+and source notices with source distributions.
