@@ -416,6 +416,14 @@ test-pdf-tt-loader: $(BINDIR)/test_pdf_tt_loader $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_composites_reference.py $(BINDIR)/test_pdf_tt_glyphs --gray
 	python3 scripts/test_pdf_tt_composite_transforms.py $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_instructions_reference.py $(BINDIR)/test_pdf_tt_glyphs
+	python3 scripts/test_pdf_tt_nonuniform_reference.py $(BINDIR)/test_pdf_tt_glyphs
+	python3 scripts/test_pdf_tt_fractional_reference.py $(BINDIR)/test_pdf_tt_glyphs
+	python3 scripts/test_pdf_tt_transform_reference.py $(BINDIR)/test_pdf_tt_glyphs
+	python3 scripts/test_pdf_tt_glyphs_reference.py $(BINDIR)/test_pdf_tt_glyphs --native --nonuniform
+	python3 scripts/test_pdf_tt_glyphs_reference.py $(BINDIR)/test_pdf_tt_glyphs --native --nonuniform --gray
+	python3 scripts/test_pdf_tt_composites_reference.py $(BINDIR)/test_pdf_tt_glyphs --nonuniform
+	python3 scripts/test_pdf_tt_composites_reference.py $(BINDIR)/test_pdf_tt_glyphs --nonuniform --gray
+	python3 scripts/test_pdf_tt_composite_transforms.py $(BINDIR)/test_pdf_tt_glyphs --nonuniform
 
 $(BINDIR)/test_pdf_tt_loader: tests/test_pdf_tt_loader.c $(wildcard tests/pdf_tt_loader/*.c) tests/fault_alloc.h tests/fixtures/pdf-truetype.inc $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
@@ -429,6 +437,7 @@ test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_prep_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_points_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_state_reference.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_cvt_lifetime.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_glyphs_reference.py $(BINDIR)/test_pdf_tt_glyphs
 
 test-pdf-empty-glyphs: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom

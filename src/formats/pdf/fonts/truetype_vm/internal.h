@@ -33,4 +33,8 @@ int cupidimage_pdf_tt_vm_interpolate_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_contour_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_flags_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_intersection_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_current_ppem(pdf_tt_vm *, unsigned *);
+int cupidimage_pdf_tt_vm_cvt_read(pdf_tt_vm *, int32_t, int32_t *);
+int cupidimage_pdf_tt_vm_cvt_write(pdf_tt_vm *, int32_t, int32_t);
+int cupidimage_pdf_tt_vm_cvt_delta(pdf_tt_vm *, int32_t, int32_t);
 #endif

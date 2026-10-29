@@ -865,7 +865,12 @@
             "src/formats/pdf/fonts/truetype_hint/composite.c",
             "scripts/test_pdf_tt_instructions_reference.py",
             "src/formats/pdf/fonts/truetype_vm/intersection.c",
-            "src/formats/pdf/fonts/truetype_vm/flags.c"
+            "src/formats/pdf/fonts/truetype_vm/flags.c",
+            "src/formats/pdf/fonts/truetype_vm/cvt_access.c",
+            "src/formats/pdf/fonts/truetype_hint/transform.c",
+            "scripts/test_pdf_tt_nonuniform_reference.py",
+            "scripts/test_pdf_tt_fractional_reference.py",
+            "scripts/test_pdf_tt_transform_reference.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",

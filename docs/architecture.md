@@ -162,11 +162,12 @@ Raw font metrics remain separate from component-inherited metrics and PDF overri
 
 `fonts/truetype_vm` separates instruction dispatch/control flow from stack and
 storage operations, fixed-point arithmetic/rounding, graphics-state setters and
-uniform size preparation, vector normalization, point zones, original design coordinates, movement/interpolation operators, exact line intersections, curve flags and
+axis-size preparation and projection-dependent CVT access, vector normalization, point zones, original design coordinates, movement/interpolation operators, exact line intersections, curve flags and
 prepared-state lifetimes. Instances own their mutable state but borrow immutable program
 bodies. This foundation is currently exercised by tests, not the page renderer;
 see [its scope and ownership rules](pdf-truetype-vm.md) before integrating hinting.
 `fonts/truetype_hint` connects the shared outline/component decoders to size preparation,
 phantom construction, bounded composite assembly and glyph execution. Its owned VM borrows the checked font's
 backing bytes; [the loader guide](pdf-truetype-loader.md) describes that lifetime and
-component state sharing.
+component state sharing. Its final affine adapter returns owned device-pixel
+points without altering the instruction state or PDF advances.

@@ -37,6 +37,8 @@ int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *vm, unsigned op) {
         case 0x43:
         case 0x45:
         case 0x4f:
+        case 0x7e:
+        case 0x7f:
         case 0x5c:
         case 0x64:
         case 0x65:
@@ -77,6 +79,8 @@ int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *vm, unsigned op) {
             return cupidimage_pdf_tt_vm_push(vm, a);
         case 0x21:
         case 0x4f:
+        case 0x7e: /* Retired angle-weight/adjust-angle instructions consume their operand. */
+        case 0x7f:
             vm->stack_size--;
             return 1;
         case 0x23:
@@ -106,7 +110,11 @@ int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *vm, unsigned op) {
             int32_t *destination = op == 0x42 ? vm->storage : vm->cvt;
             if (b < 0 || (uint64_t)b >= count)
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_STORAGE);
-            destination[b] = (int32_t)a;
+            if (op == 0x44) {
+                if (!cupidimage_pdf_tt_vm_cvt_write(vm, (int32_t)b, (int32_t)a))
+                    return 0;
+            } else
+                destination[b] = (int32_t)a;
             vm->stack_size -= 2;
             return 1;
         }
@@ -116,7 +124,13 @@ int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *vm, unsigned op) {
             const int32_t *source = op == 0x43 ? vm->storage : vm->cvt;
             if (a < 0 || (uint64_t)a >= count)
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_STORAGE);
-            stack[n - 1] = source[a];
+            if (op == 0x45) {
+                int32_t value = 0;
+                if (!cupidimage_pdf_tt_vm_cvt_read(vm, (int32_t)a, &value))
+                    return 0;
+                stack[n - 1] = value;
+            } else
+                stack[n - 1] = source[a];
             return 1;
         }
         case 0x50:

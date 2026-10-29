@@ -89,14 +89,17 @@ def main():
         for index, (matrix, offset, child, parent) in enumerate(itertools.product(matrices, ((0, 0), (33, -17), (100, 200)), codes, parents)):
             build(path, matrix, offset, child, parent, index)
             face = freetype.Face(str(path))
-            for ppem in (13, 37, 64):
-                result = subprocess.run([sys.argv[1], str(path), '--native', str(ppem), '3'],
+            pairs = ((13, 37), (37, 13), (24, 12)) if '--nonuniform' in sys.argv else ((13, 13), (37, 37), (64, 64))
+            for x_ppem, ppem in pairs:
+                mode = '--native-xy' if '--nonuniform' in sys.argv else '--native'
+                sizes = [str(x_ppem), str(ppem)] if '--nonuniform' in sys.argv else [str(ppem)]
+                result = subprocess.run([sys.argv[1], str(path), mode, *sizes, '3'],
                                         capture_output=True, text=True, timeout=20)
                 assert result.returncode == 0, result.stderr
                 lines = result.stdout.splitlines()
                 assert list(map(int, lines[0].split()))[:4] == [1, 0, 0, 0], (index, ppem, result.stdout)
                 native = [tuple(map(int, line.split())) for line in lines[1:]]
-                face.set_pixel_sizes(ppem, ppem)
+                face.set_pixel_sizes(x_ppem, ppem)
                 face.load_glyph(3, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT | freetype.FT_LOAD_TARGET_MONO)
                 actual = outline_state(face)
                 if native != actual:
@@ -155,7 +158,8 @@ def main():
         del face
     assert not failures, (len(failures), failures[:20])
     print(f'TrueType composite transforms: {checked - scaled_differences} independent matches, '
-          f'{scaled_differences} specified-scaled-offset difference(s); engine {freetype.version()}')
+          f'{scaled_differences} specified-scaled-offset difference(s); engine {freetype.version()}; '
+          f'{"nonuniform" if "--nonuniform" in sys.argv else "uniform"} transform sweep')
 
 
 if __name__ == '__main__':

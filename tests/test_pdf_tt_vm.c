@@ -48,6 +48,7 @@ static void vm_test_free(void *value) {
 #define calloc vm_test_calloc
 #define free vm_test_free
 #include "../src/formats/pdf/fonts/truetype_vm/contours.c"
+#include "../src/formats/pdf/fonts/truetype_vm/cvt_access.c"
 #include "../src/formats/pdf/fonts/truetype_vm/design.c"
 #include "../src/formats/pdf/fonts/truetype_vm/direct.c"
 #include "../src/formats/pdf/fonts/truetype_vm/flags.c"
@@ -194,6 +195,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
 #include "pdf_tt_vm/points.c"
 #include "pdf_tt_vm/relative.c"
 #include "pdf_tt_vm/size.c"
+#include "pdf_tt_vm/size_xy.c"
 
 #include "pdf_tt_vm/flags.c"
 #include "pdf_tt_vm/graphics.c"
@@ -528,6 +530,7 @@ int main(int argc, char **argv) {
     numeric_tests();
     graphics_tests();
     size_tests();
+    size_xy_tests();
     point_tests();
     projection_precision_tests();
     lifecycle_tests();

@@ -16,7 +16,9 @@ static int vm_miap(pdf_tt_vm *vm, unsigned op) {
         return 0;
     if (cvt < 0 || (uint32_t)cvt >= vm->cvt_count)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_STORAGE);
-    int32_t target = vm->cvt[cvt];
+    int32_t target = 0;
+    if (!cupidimage_pdf_tt_vm_cvt_read(vm, cvt, &target))
+        return 0;
     if (g->zone[0] == 0) {
         int32_t original[2];
         for (unsigned axis = 0; axis < 2; axis++) {
@@ -50,8 +52,9 @@ static int vm_miap(pdf_tt_vm *vm, unsigned op) {
 }
 
 static int vm_delta_point(pdf_tt_vm *vm, unsigned band) {
-    if (!vm->size.configured)
-        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_SIZE);
+    unsigned ppem;
+    if (!cupidimage_pdf_tt_vm_current_ppem(vm, &ppem))
+        return 0;
     if (!cupidimage_pdf_tt_vm_need(vm, 1))
         return 0;
     int32_t count = vm->stack[--vm->stack_size];
@@ -72,7 +75,7 @@ static int vm_delta_point(pdf_tt_vm *vm, unsigned band) {
         if (!point)
             return 0;
         uint64_t target = (uint64_t)vm->graphics.delta_base + band * 16 + (argument >> 4);
-        if (target == vm->size.ppem) {
+        if (target == ppem) {
             int step = (int)(argument & 15) - 8;
             if (step >= 0)
                 step++;

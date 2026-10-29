@@ -88,3 +88,7 @@ complete PDF/font fidelity.
 
 The data and placement rules follow the official [OpenType glyph table](https://learn.microsoft.com/en-us/typography/opentype/spec/glyf).
 Instruction contracts follow the [OpenType instruction set](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_instructions).
+
+The selected outline sweep also runs six unequal x/y size pairs in monochrome and
+grayscale. Authored transform cases exercise unequal sizes separately from the
+post-instruction device matrix. These remain geometry tests, not PDF raster tests.

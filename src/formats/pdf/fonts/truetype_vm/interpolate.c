@@ -24,9 +24,14 @@ static int vm_ip(pdf_tt_vm *vm) {
     int design = g->zone[0] == 1 && g->zone[1] == 1 && g->zone[2] == 1 && vm->zones[1].design;
     const int32_t *original_a = design ? vm->zones[1].design[g->reference[1]] : a->original;
     const int32_t *original_b = design ? vm->zones[1].design[g->reference[2]] : b->original;
+    int scaled_design = design && vm->zones[1].design_scale != vm->zones[1].design_scale_y;
     int32_t old_range, new_range;
-    if (!cupidimage_pdf_tt_vm_distance(vm, original_b, original_a, g->dual_projection,
-                                       &old_range) ||
+    int measured = scaled_design
+                       ? cupidimage_pdf_tt_vm_design_distance(vm, 1, (int32_t)g->reference[2], 1,
+                                                              (int32_t)g->reference[1], &old_range)
+                       : cupidimage_pdf_tt_vm_distance(vm, original_b, original_a,
+                                                       g->dual_projection, &old_range);
+    if (!measured ||
         !cupidimage_pdf_tt_vm_distance(vm, b->current, a->current, g->projection, &new_range))
         return 0;
     if (!old_range)
@@ -38,8 +43,11 @@ static int vm_ip(pdf_tt_vm *vm) {
             return 0;
         const int32_t *original = design ? vm->zones[1].design[index] : point->original;
         int32_t old_distance, current;
-        if (!cupidimage_pdf_tt_vm_distance(vm, original, original_a, g->dual_projection,
-                                           &old_distance) ||
+        measured = scaled_design ? cupidimage_pdf_tt_vm_design_distance(
+                                       vm, 1, index, 1, (int32_t)g->reference[1], &old_distance)
+                                 : cupidimage_pdf_tt_vm_distance(vm, original, original_a,
+                                                                 g->dual_projection, &old_distance);
+        if (!measured ||
             !cupidimage_pdf_tt_vm_distance(vm, point->current, a->current, g->projection, &current))
             return 0;
         int64_t distance =

@@ -29,7 +29,10 @@ static int vm_mirp(pdf_tt_vm *vm, unsigned op) {
     /* MIRP's compatibility index -1 denotes an implicit zero, not an array slot. */
     if (cvt < -1 || (cvt >= 0 && (uint32_t)cvt >= vm->cvt_count))
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_STORAGE);
-    int64_t value = cvt == -1 ? 0 : vm->cvt[cvt];
+    int32_t cvt_value = 0;
+    if (cvt >= 0 && !cupidimage_pdf_tt_vm_cvt_read(vm, cvt, &cvt_value))
+        return 0;
+    int64_t value = cvt_value;
     int64_t difference = value - g->single_width;
     if (difference < 0)
         difference = -difference;

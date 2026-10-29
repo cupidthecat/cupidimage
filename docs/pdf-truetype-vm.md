@@ -118,21 +118,25 @@ table and the tested engines: the top operand belongs to `zp0`, the next to `zp1
 The current Microsoft table reverses the operand labels; mixed-zone tests pin this
 choice rather than relying on same-zone examples.
 
-## Uniform size preparation
+## Size preparation
 
-`cupidimage_pdf_tt_vm_set_size` takes units per em, F26Dot6 pixel and point sizes,
-a grayscale flag and unscaled control values. It forms a checked 16.16 scaling
-coefficient and converts the control values to F26Dot6, rounding ties away from
-zero. Size changes reset graphics state and storage, clear twilight coordinates and
+`cupidimage_pdf_tt_vm_set_size` wraps `cupidimage_pdf_tt_vm_set_size_xy` with equal
+axis sizes. The latter takes separate F26Dot6 pixel sizes, a point size, grayscale
+and transform flags, and unscaled control values. It forms checked 16.16 axis
+scales. CVT storage uses the scale for the larger integer ppem axis (x on a tie);
+projection-dependent reads, pixel writes and deltas convert through the integer
+ppem ratios. Fractional outline scales remain distinct from those ratios.
+Conversion rounds ties away from zero. Size changes reset graphics state and storage, clear twilight coordinates and
 release the previous glyph geometry. Function definitions remain available.
 WCVTF and SSW use the same coefficient. DELTAC1/2/3 apply only at the selected ppem
 and support delta shifts 0 through 6. Every pair is bounded and charged to the
 execution budget, including pairs that do not match the current size.
 
-This interface currently represents uniform, unrotated sizing. GETINFO exposes the
-legacy version-35 configuration and its grayscale flag; it does not advertise
-variations or LCD rendering. MPS returns the supplied F26Dot6 point size. Nonuniform
-transforms, projection-dependent CVT scaling and rotation metadata remain open.
+GETINFO exposes the legacy version-35 configuration, grayscale and explicit
+rotation/stretch flags; it does not advertise variations or LCD rendering.
+Different device-axis sizes do not infer an additional transform flag. MPPEM and
+DELTA size selection follow the current projection; MPS returns the supplied
+F26Dot6 point size. These interfaces are tested separately from PDF text painting.
 
 Execution distinguishes font, preparation and glyph stages. Font and preparation
 streams may define functions. INSTCTRL records valid flags in the permitted stage;
@@ -253,8 +257,38 @@ coefficient uses explicit floor division, including for negative vector products
 request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
 vector pairs need separate qualification. These operators are tested on supplied
 geometry. Native simple/composite loading and phantom construction are tested separately.
-The remaining point operators and rasterization work are still required before
-rendering integration.
+Rasterization and page-level integration are still required. Retired angle-weight
+and adjust-angle instructions consume their operand without changing geometry.
+
+## Unequal sizes and device-space outlines
+
+Original design distances use separately scaled x/y differences for unequal axis
+scales. IP uses the same scaled differences in its interpolation ratio; uniform
+sizes retain design-space ratios without premature device-coordinate rounding.
+CVT access, MIAP/MIRP and both DELTA families use projection-dependent sizes.
+
+The native loader honors the `head` flag that requires integer ppem scaling.
+Its separate device-shape adapter applies a 16.16 matrix and an F26Dot6 offset
+only after glyph instructions complete. It preserves curve flags and contour
+boundaries, removes the horizontal phantom origin, and returns an owned copy in
+device pixels. It neither changes PDF advances nor rasterizes a page. Points are
+charged to the remaining glyph budget, and allocation/overflow failure returns
+no partial shape.
+
+The unequal-size suite compares 9,330 simple and 4,242 composite outlines across
+six axis-size pairs in each mono/grayscale configuration. The authored operator
+suite adds 4,092 matches and 12 separately checked MPS differences: the tested
+legacy mode returns integer projected ppem for MPS, rather than the specified
+F26Dot6 point size. Another 252 cases cover fractional requests with `head` rounding
+on/off, and 432 compare post-hint rotations, reflections, shear, translation and
+degenerate transforms on simple and composite outlines.
+
+The CVT lifetime probe checks 24 paired-glyph sequences. Twelve match independently;
+twelve expose carry-over when WCVTF is the first CVT write in a comparison glyph.
+Native glyph entry restores prepared CVT values for both pixel- and font-unit
+writes. The instruction-comparison probes use fresh preparation per case so that
+this state difference cannot contaminate later measurements. Neither this choice
+nor an outline match is a claim of complete renderer parity.
 
 ## Verification
 
@@ -303,8 +337,8 @@ the 12 pinned fonts, selecting Unicode mappings U+0020 through U+00FF, at 6, 9,
 It supplies independently extracted geometry, original design points and phantom
 points, then runs the original font, preparation and glyph instruction streams.
 The comparison checks every resulting outline coordinate, on-curve flag and contour boundary. A broader diagnostic at
-`--all-simple` mode at 16 ppem matched 17,462 simple-glyph outlines and rejected four programs with a zero
-original reference span at IP, which the instruction contract declares invalid.
+`--all-simple` mode at 16 ppem matched 17,462 simple-glyph outlines and rejected four programs whose IP references 32 and 33 exceed the 32 available points,
+including phantom points. Those references are invalid.
 Those rejected programs are not counted as matched or fully supported. Neither probe
 tests the native glyph loader, composite assembly, grayscale execution or PDF rasterization.
 
@@ -318,8 +352,8 @@ perpendicular-vector movement failure, one had a truncated glyph description,
 13 font containers were rejected and three failed the diagnostic parser. These
 are diagnostic results, not a corpus-wide pass or PDF rendering qualification.
 
-Remaining work includes nonuniform sizing, the remaining point instructions, scan conversion and integration
-with transformed outline rendering.
+Remaining work includes broader font-program qualification, variation and LCD
+behavior, scan conversion and integration with PDF text rendering.
 Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
 

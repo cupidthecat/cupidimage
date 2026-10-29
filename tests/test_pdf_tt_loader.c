@@ -1,6 +1,7 @@
 #include "fault_alloc.h"
 #include "fixtures/pdf-truetype.inc"
 #include <limits.h>
+#include <math.h>
 #include <stdint.h>
 #define malloc fault_malloc
 #define calloc fault_calloc
@@ -13,7 +14,9 @@
 #include "../src/formats/pdf/fonts/truetype_hint/metrics.c"
 #include "../src/formats/pdf/fonts/truetype_hint/prepare.c"
 #include "../src/formats/pdf/fonts/truetype_hint/simple.c"
+#include "../src/formats/pdf/fonts/truetype_hint/transform.c"
 #include "../src/formats/pdf/fonts/truetype_vm/contours.c"
+#include "../src/formats/pdf/fonts/truetype_vm/cvt_access.c"
 #include "../src/formats/pdf/fonts/truetype_vm/design.c"
 #include "../src/formats/pdf/fonts/truetype_vm/direct.c"
 #include "../src/formats/pdf/fonts/truetype_vm/flags.c"
@@ -62,10 +65,14 @@ static void write16(unsigned char *p, unsigned value) {
 
 #include "pdf_tt_loader/composites.c"
 #include "pdf_tt_loader/simple.c"
+#include "pdf_tt_loader/size_xy.c"
+#include "pdf_tt_loader/transform.c"
 
 int main(void) {
     simple_loader_tests();
     composite_loader_tests();
+    nonuniform_loader_tests();
+    device_shape_tests();
     printf("TrueType loader aggregate: %u checks, 0 failures\n", checks);
     return 0;
 }

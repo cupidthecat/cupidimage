@@ -2,8 +2,9 @@
 #include <limits.h>
 #include <stdlib.h>
 
-int cupidimage_pdf_tt_hint_scale(pdf_tt_hint *hint, int32_t value, int32_t *scaled) {
-    int64_t result = cupidimage_pdf_tt_vm_divide((int64_t)value * hint->vm.size.scale, 65536);
+int cupidimage_pdf_tt_hint_scale(pdf_tt_hint *hint, unsigned axis, int32_t value, int32_t *scaled) {
+    int64_t result =
+        cupidimage_pdf_tt_vm_divide((int64_t)value * hint->vm.size.axis_scale[axis], 65536);
     if (result < INT32_MIN || result > INT32_MAX)
         return cupidimage_pdf_tt_vm_fail(&hint->vm, PDF_TT_VM_ARITHMETIC);
     *scaled = (int32_t)result;
@@ -58,7 +59,8 @@ int cupidimage_pdf_tt_hint_simple(pdf_tt_hint *hint, unsigned glyph, const pdf_t
             design[i][1] = phantom[i - outline][1];
         }
         for (unsigned axis = 0; ok && axis < 2; axis++) {
-            ok = cupidimage_pdf_tt_hint_scale(hint, design[i][axis], &points[i].original[axis]);
+            ok = cupidimage_pdf_tt_hint_scale(hint, axis, design[i][axis],
+                                              &points[i].original[axis]);
             points[i].current[axis] = points[i].original[axis];
             if (ok && !(vm->prepared_graphics.instruction_control & 1) && i >= outline &&
                 axis == (i - outline < 2 ? 0u : 1u))
@@ -68,7 +70,8 @@ int cupidimage_pdf_tt_hint_simple(pdf_tt_hint *hint, unsigned glyph, const pdf_t
     }
     if (ok)
         ok = cupidimage_pdf_tt_vm_begin_component(vm, points, count, outline) &&
-             cupidimage_pdf_tt_vm_set_design(vm, design, count, vm->size.scale) &&
+             cupidimage_pdf_tt_vm_set_design_xy(vm, design, count, vm->size.axis_scale[0],
+                                                vm->size.axis_scale[1]) &&
              cupidimage_pdf_tt_vm_run(vm, program.data, program.length, PDF_TT_VM_GLYPH, remaining);
     if (ok)
         *work = vm->work_left;

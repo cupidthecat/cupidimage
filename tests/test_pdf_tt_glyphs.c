@@ -2,6 +2,7 @@
 #include "formats/pdf/fonts/truetype.h"
 #include "formats/pdf/fonts/truetype_hint/hint.h"
 #include "formats/pdf/fonts/truetype_vm/vm.h"
+#include <errno.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -45,10 +46,14 @@ static unsigned char *read_file(const char *path, size_t *length) {
     return p;
 }
 
-static int native_probe(const char *path, const char *size, const char *index, int grayscale) {
+static int native_probe(const char *path, const char *size, const char *y_size, const char *index,
+                        int grayscale, int factor, const int32_t *matrix, const int32_t *offset) {
     char *end;
     long ppem = strtol(size, &end, 10);
-    if (!*size || *end || ppem < 1 || ppem > 96)
+    if (!*size || *end || ppem < 1 || ppem > 96 * 64 / factor)
+        return 2;
+    long y_ppem = strtol(y_size, &end, 10);
+    if (!*y_size || *end || y_ppem < 1 || y_ppem > 96 * 64 / factor)
         return 2;
     unsigned long glyph = strtoul(index, &end, 10);
     if (!*index || *end || glyph > 65535)
@@ -61,14 +66,22 @@ static int native_probe(const char *path, const char *size, const char *index, i
         return 2;
     }
     pdf_tt_hint hint;
-    int ok = cupidimage_pdf_tt_hint_init(&hint, &font, (int32_t)ppem * 64, (int32_t)ppem * 64,
-                                         grayscale, 1000000);
+    int ok = cupidimage_pdf_tt_hint_init_xy(&hint, &font, (int32_t)ppem * factor,
+                                            (int32_t)y_ppem * factor, (int32_t)y_ppem * factor,
+                                            grayscale, 0, 1000000);
     if (ok)
         ok = cupidimage_pdf_tt_hint_glyph(&hint, (unsigned)glyph);
+    pdf_tt_hint_shape shape = {0};
+    if (ok && matrix)
+        ok = cupidimage_pdf_tt_hint_shape_build(&hint, matrix, offset, &shape);
     pdf_tt_vm *vm = &hint.vm;
     printf("%d %u %u %zu %u\n", ok, vm->error, vm->error_opcode, vm->error_offset,
            vm->zones[1].count);
-    if (ok) {
+    if (ok && matrix) {
+        for (unsigned i = 0; i < shape.count; i++)
+            printf("%ld %ld %u %u\n", (long)(shape.points[i].x * 64),
+                   (long)(shape.points[i].y * 64), shape.points[i].on, shape.points[i].end);
+    } else if (ok) {
         unsigned outline = vm->zones[1].outline_count;
         for (unsigned i = 0; i < outline; i++)
             printf("%lld %ld %u %u\n",
@@ -77,14 +90,35 @@ static int native_probe(const char *path, const char *size, const char *index, i
                    (long)vm->zones[1].points[i].current[1], vm->zones[1].points[i].on,
                    vm->zones[1].points[i].end);
     }
+    cupidimage_pdf_tt_hint_shape_free(&shape);
     cupidimage_pdf_tt_hint_free(&hint);
     free(data);
     return 0;
 }
 
 int main(int argc, char **argv) {
+    if (argc == 12 &&
+        (!strcmp(argv[2], "--native-matrix") || !strcmp(argv[2], "--native-matrix-gray"))) {
+        int32_t values[6];
+        for (unsigned i = 0; i < 6; i++) {
+            char *end;
+            errno = 0;
+            long long value = strtoll(argv[6 + i], &end, 10);
+            if (!*argv[6 + i] || *end || errno == ERANGE || value < INT32_MIN || value > INT32_MAX)
+                return 2;
+            values[i] = (int32_t)value;
+        }
+        return native_probe(argv[1], argv[3], argv[4], argv[5],
+                            !strcmp(argv[2], "--native-matrix-gray"), 64, values, values + 4);
+    }
+    if (argc == 6 && (!strcmp(argv[2], "--native-xy") || !strcmp(argv[2], "--native-xy-gray") ||
+                      !strcmp(argv[2], "--native-f26-xy")))
+        return native_probe(argv[1], argv[3], argv[4], argv[5],
+                            !strcmp(argv[2], "--native-xy-gray"),
+                            !strcmp(argv[2], "--native-f26-xy") ? 1 : 64, NULL, NULL);
     if (argc == 5 && (!strcmp(argv[2], "--native") || !strcmp(argv[2], "--native-gray")))
-        return native_probe(argv[1], argv[3], argv[4], !strcmp(argv[2], "--native-gray"));
+        return native_probe(argv[1], argv[3], argv[3], argv[4], !strcmp(argv[2], "--native-gray"),
+                            64, NULL, NULL);
     if (argc != 4)
         return 2;
     char *end;

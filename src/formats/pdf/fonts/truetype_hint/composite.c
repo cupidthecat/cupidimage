@@ -72,11 +72,11 @@ static int tt_hint_offset(pdf_tt_hint *hint, const pdf_tt_component *record, int
         if (record->flags & 0x800) {
             int64_t transformed = (int64_t)record->argument[0] * record->matrix[axis] +
                                   (int64_t)record->argument[1] * record->matrix[axis + 2];
-            value =
-                cupidimage_pdf_tt_vm_divide(transformed * hint->vm.size.scale, INT64_C(1073741824));
+            value = cupidimage_pdf_tt_vm_divide(transformed * hint->vm.size.axis_scale[axis],
+                                                INT64_C(1073741824));
         } else {
             value = cupidimage_pdf_tt_vm_divide(
-                (int64_t)record->argument[axis] * hint->vm.size.scale, 65536);
+                (int64_t)record->argument[axis] * hint->vm.size.axis_scale[axis], 65536);
         }
         if (value < INT32_MIN || value > INT32_MAX)
             return cupidimage_pdf_tt_vm_fail(&hint->vm, PDF_TT_VM_ARITHMETIC);
@@ -103,7 +103,7 @@ int cupidimage_pdf_tt_hint_composite(pdf_tt_hint *hint, unsigned glyph, const pd
     int ok = cupidimage_pdf_tt_hint_phantoms(hint, glyph, view, design_phantoms);
     for (unsigned i = 0; ok && i < 4; i++)
         for (unsigned axis = 0; ok && axis < 2; axis++)
-            ok = cupidimage_pdf_tt_hint_scale(hint, design_phantoms[i][axis],
+            ok = cupidimage_pdf_tt_hint_scale(hint, axis, design_phantoms[i][axis],
                                               &points[total + i].current[axis]);
     size_t at = 10;
     unsigned used = 0, ordinal = 0;

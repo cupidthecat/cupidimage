@@ -645,3 +645,13 @@ compares the pinned original OTFs; the generator checks hashes before reuse.
 
 The visible spacing sample is decoded-unverified. Its companion advance-marker
 asset has an analytic pixel oracle, which tests layout rather than glyph fidelity.
+
+## TrueType sizing and device transforms
+
+The loader target includes unequal-size simple/composite sweeps, authored
+projection-dependent CVT/DELTA/positioning cases, fractional sizes with head flags,
+and post-hint affine outlines. Device-shape tests cover ownership, allocation and
+work limits, empty glyphs and overflow. MPS and first-write WCVTF lifetime
+differences are reported separately. The four rejected pinned musical-note
+programs reference IP points 32 and 33 despite having only 32 points, including
+phantoms; they are not zero-span failures or successful matches.

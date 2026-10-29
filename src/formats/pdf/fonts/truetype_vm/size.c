@@ -16,16 +16,42 @@ static int vm_scale(pdf_tt_vm *vm, int32_t value, int32_t *scaled) {
 
 int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *vm, unsigned units, int32_t pixels, int32_t points,
                                   int grayscale, const int32_t *font_cvt) {
+    return cupidimage_pdf_tt_vm_set_size_xy(vm, units, pixels, pixels, points, grayscale, 0,
+                                            font_cvt);
+}
+
+int cupidimage_pdf_tt_vm_set_size_xy(pdf_tt_vm *vm, unsigned units, int32_t x_pixels,
+                                     int32_t y_pixels, int32_t points, int grayscale,
+                                     unsigned transform_flags, const int32_t *font_cvt) {
     if (vm->error != PDF_TT_VM_OK)
         return 0;
-    if (units < 16 || units > 16384 || pixels <= 0 || pixels > 32767 * 64 || points <= 0 ||
+    if (units < 16 || units > 16384 || x_pixels <= 0 || y_pixels <= 0 || x_pixels > 32767 * 64 ||
+        y_pixels > 32767 * 64 || points <= 0 ||
+        (transform_flags & ~(PDF_TT_VM_ROTATED | PDF_TT_VM_STRETCHED)) ||
         (vm->cvt_count && !font_cvt))
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_SIZE);
-    int64_t scale = ((int64_t)pixels * 65536 + units / 2) / units;
-    if (scale > INT32_MAX)
-        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_SIZE);
-    vm->size = (pdf_tt_vm_size_state){(int32_t)scale, points, (unsigned)(pixels + 32) / 64, 1,
-                                      !!grayscale};
+    int32_t pixels[2] = {x_pixels, y_pixels};
+    unsigned ppem[2] = {(unsigned)(x_pixels + 32) / 64, (unsigned)(y_pixels + 32) / 64};
+    unsigned major = ppem[0] >= ppem[1] ? 0 : 1;
+    pdf_tt_vm_size_state size = {0};
+    for (unsigned axis = 0; axis < 2; axis++) {
+        int64_t scale = ((int64_t)pixels[axis] * 65536 + units / 2) / units;
+        /* CVT projection uses integer ppem ratios; outline scales retain the
+         * requested fractions unless the font's head flags require rounding. */
+        int64_t ratio =
+            ppem[major] ? ((int64_t)ppem[axis] * 65536 + ppem[major] / 2) / ppem[major] : 65536;
+        if (scale <= 0 || scale > INT32_MAX || ratio <= 0)
+            return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_SIZE);
+        size.axis_scale[axis] = (int32_t)scale;
+        size.axis_ratio[axis] = (int32_t)ratio;
+    }
+    size.scale = size.axis_scale[major];
+    size.point_size = points;
+    size.ppem = ppem[major];
+    size.configured = 1;
+    size.grayscale = !!grayscale;
+    size.transform_flags = transform_flags;
+    vm->size = size;
     for (unsigned i = 0; i < vm->cvt_count; i++)
         if (!vm_scale(vm, font_cvt[i], &vm->cvt[i]))
             return 0;
@@ -44,6 +70,9 @@ int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *vm, unsigned units, int32_t pixels,
 }
 
 static int vm_delta_cvt(pdf_tt_vm *vm, unsigned op) {
+    unsigned ppem;
+    if (!cupidimage_pdf_tt_vm_current_ppem(vm, &ppem))
+        return 0;
     if (!cupidimage_pdf_tt_vm_need(vm, 1))
         return 0;
     int32_t count = vm->stack[--vm->stack_size];
@@ -60,14 +89,13 @@ static int vm_delta_cvt(pdf_tt_vm *vm, unsigned op) {
         if (index < 0 || (uint32_t)index >= vm->cvt_count)
             return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_STORAGE);
         uint64_t target = (uint64_t)vm->graphics.delta_base + (op - 0x73) * 16 + (argument >> 4);
-        if (target == vm->size.ppem) {
+        if (target == ppem) {
             int step = (int)(argument & 15) - 8;
             if (step >= 0)
                 step++;
-            int64_t value = (int64_t)vm->cvt[index] + step * (1 << (6 - vm->graphics.delta_shift));
-            if (value < INT32_MIN || value > INT32_MAX)
-                return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
-            vm->cvt[index] = (int32_t)value;
+            if (!cupidimage_pdf_tt_vm_cvt_delta(vm, index,
+                                                step * (1 << (6 - vm->graphics.delta_shift))))
+                return 0;
         }
     }
     return 1;
@@ -80,8 +108,12 @@ int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *vm, unsigned op) {
         case 0x4c:
             if (!vm->size.configured)
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_SIZE);
-            return cupidimage_pdf_tt_vm_push(vm, op == 0x4b ? (int32_t)vm->size.ppem
-                                                            : vm->size.point_size);
+            if (op == 0x4b) {
+                unsigned ppem;
+                return cupidimage_pdf_tt_vm_current_ppem(vm, &ppem) &&
+                       cupidimage_pdf_tt_vm_push(vm, ppem);
+            }
+            return cupidimage_pdf_tt_vm_push(vm, vm->size.point_size);
         case 0x73:
         case 0x74:
         case 0x75:
@@ -108,6 +140,10 @@ int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *vm, unsigned op) {
     if (op == 0x88) {
         /* Legacy grayscale configuration; no variations or LCD modes advertised. */
         unsigned info = (a & 1) ? 35 : 0;
+        if ((a & 2) && (vm->size.transform_flags & PDF_TT_VM_ROTATED))
+            info |= 256;
+        if ((a & 4) && (vm->size.transform_flags & PDF_TT_VM_STRETCHED))
+            info |= 512;
         if ((a & 32) && vm->size.grayscale)
             info |= 4096;
         vm->stack[vm->stack_size - 1] = (int32_t)info;

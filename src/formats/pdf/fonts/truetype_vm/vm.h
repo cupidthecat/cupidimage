@@ -44,6 +44,8 @@ typedef struct {
     int32_t scale, point_size;
     unsigned ppem;
     int configured, grayscale;
+    int32_t axis_scale[2], axis_ratio[2];
+    unsigned transform_flags;
 } pdf_tt_vm_size_state;
 
 typedef struct {
@@ -55,7 +57,7 @@ typedef struct {
     pdf_tt_vm_point *points;
     unsigned count, outline_count;
     int32_t (*design)[2];
-    int32_t design_scale;
+    int32_t design_scale, design_scale_y;
 } pdf_tt_vm_zone;
 
 typedef struct {
@@ -81,8 +83,14 @@ int cupidimage_pdf_tt_vm_init(pdf_tt_vm *, unsigned, unsigned, const int32_t *, 
                               unsigned);
 void cupidimage_pdf_tt_vm_free(pdf_tt_vm *);
 int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, pdf_tt_vm_stage, size_t);
-/* Uniform size preparation only. CVT inputs are unscaled font-unit values. */
+
+enum { PDF_TT_VM_ROTATED = 1, PDF_TT_VM_STRETCHED = 2 };
+
+/* CVT inputs are unscaled font units. Transform flags describe an additional
+ * transform; differing device-axis sizes do not infer those flags. */
 int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *, unsigned, int32_t, int32_t, int, const int32_t *);
+int cupidimage_pdf_tt_vm_set_size_xy(pdf_tt_vm *, unsigned, int32_t, int32_t, int32_t, int,
+                                     unsigned, const int32_t *);
 /* Geometry is already scaled to F26Dot6. Glyph count may include phantom points. */
 int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *, unsigned, const pdf_tt_vm_point *, unsigned,
                                    unsigned);
@@ -90,6 +98,8 @@ int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *, unsigned, const pdf_tt_vm_point 
  * Without it, original coordinates describe an already scaled outline (as for
  * a composite instruction phase). Installing new points clears this plane. */
 int cupidimage_pdf_tt_vm_set_design(pdf_tt_vm *, const int32_t (*)[2], unsigned, int32_t);
+int cupidimage_pdf_tt_vm_set_design_xy(pdf_tt_vm *, const int32_t (*)[2], unsigned, int32_t,
+                                       int32_t);
 int cupidimage_pdf_tt_vm_save_preparation(pdf_tt_vm *);
 int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned, unsigned);
 /* Component/parent instruction phases reset graphics and geometry but share

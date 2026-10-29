@@ -2,7 +2,7 @@
 
 The native hinting loader connects simple/composite glyph decoding to the
 [instruction engine](pdf-truetype-vm.md). It is tested separately from PDF rendering.
-**PDF pages still use unhinted outlines.** Remaining instruction coverage, transformed sizing and rasterization are unfinished,
+**PDF pages still use unhinted outlines.** Page-level integration, rasterization and broader font-program qualification are unfinished,
 so this API is not a complete hinted-font backend.
 
 ## Ownership and preparation
@@ -87,7 +87,7 @@ following the shortened `OS/2` table; changing the adjacent table changes their
 phantom coordinates. Native loading stays within the declared table and uses the
 `hhea` fallback. Those differences are reported separately, not accepted as matches.
 The all-simple mode at 16 ppem covers 17,462 matching
-outlines and four explicitly rejected zero-span IP programs. Rejections are not
+outlines and four explicitly rejected IP programs with out-of-range reference points. Rejections are not
 counted as matches or full font support.
 
 Composite probes separately compare 4,242 selected outlines at six sizes in each
@@ -96,7 +96,7 @@ cover nesting, transforms, metric inheritance, point attachments, private state,
 malformed graphs and allocation failures. See the composite guide for exact scope
 and known comparison differences.
 
-Nonuniform/rotated sizing, remaining VM instructions, antialiased coverage and PDF
+Antialiased coverage, broader instruction/variation qualification and PDF
 integration remain open. Existing unhinted rendering continues unchanged.
 
 The data contracts follow the official [glyph table](https://learn.microsoft.com/en-us/typography/opentype/spec/glyf),
@@ -104,3 +104,19 @@ The data contracts follow the official [glyph table](https://learn.microsoft.com
 [horizontal metrics](https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx)
 and [vertical metrics](https://learn.microsoft.com/en-us/typography/opentype/spec/vmtx)
 specifications. See [the font guide](pdf-fonts.md) for the wider PDF requirements.
+
+## Axis sizes and transformed output
+
+`cupidimage_pdf_tt_hint_init_xy` prepares independent device-axis sizes and honors
+integer-ppem requests in the font's head flags. Points, phantom metrics and
+component offsets use their own axis scales. Child instructions still run before
+component transforms and parent instructions. The uniform initializer remains a
+wrapper, and both paths preserve PDF-independent metric construction.
+
+After loading, `cupidimage_pdf_tt_hint_shape_build` copies the outline through a
+16.16 affine matrix and F26Dot6 translation into owned device-pixel points. The
+source VM geometry is unchanged, and the copy survives release of the loader.
+Free it with `cupidimage_pdf_tt_hint_shape_free`. Empty glyphs produce empty shapes;
+work, allocation or coordinate overflow fails without returning a partial shape.
+This adapter does not choose PDF text advances, rasterize, or connect the loader
+to the page renderer. See the VM guide for comparison scope and differences.
