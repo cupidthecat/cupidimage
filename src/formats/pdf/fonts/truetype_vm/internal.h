@@ -9,4 +9,5 @@ int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_numeric_op(pdf_tt_vm *, unsigned);
 void cupidimage_pdf_tt_vm_graphics_defaults(pdf_tt_vm_graphics *);
 int cupidimage_pdf_tt_vm_graphics_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *, unsigned);
 #endif

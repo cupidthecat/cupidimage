@@ -12,7 +12,8 @@ typedef enum {
     PDF_TT_VM_FUNCTION,
     PDF_TT_VM_ARITHMETIC,
     PDF_TT_VM_BUDGET,
-    PDF_TT_VM_UNSUPPORTED
+    PDF_TT_VM_UNSUPPORTED,
+    PDF_TT_VM_SIZE
 } pdf_tt_vm_error;
 
 typedef struct {
@@ -32,13 +33,25 @@ typedef struct {
     uint32_t reference[3], zone[3], loop, delta_base, delta_shift;
     int32_t minimum_distance, cvt_cut_in, single_width_cut_in;
     int auto_flip;
+    unsigned instruction_control, scan_flags, scan_type;
+    int32_t single_width;
 } pdf_tt_vm_graphics;
+
+typedef enum { PDF_TT_VM_GLYPH = 0, PDF_TT_VM_FONT = 1, PDF_TT_VM_PREP = 2 } pdf_tt_vm_stage;
+
+typedef struct {
+    int32_t scale, point_size;
+    unsigned ppem;
+    int configured, grayscale;
+} pdf_tt_vm_size_state;
 
 typedef struct {
     int32_t *stack, *storage, *cvt;
     pdf_tt_vm_function *functions;
     unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
     pdf_tt_vm_graphics graphics;
+    pdf_tt_vm_size_state size;
+    pdf_tt_vm_stage stage;
     size_t work_left;
     pdf_tt_vm_error error;
     size_t error_offset;
@@ -49,5 +62,7 @@ typedef struct {
  * A failed execution invalidates its state; destroy/reinitialize before reuse. */
 int cupidimage_pdf_tt_vm_init(pdf_tt_vm *, unsigned, unsigned, const int32_t *, unsigned, unsigned);
 void cupidimage_pdf_tt_vm_free(pdf_tt_vm *);
-int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, int, size_t);
+int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, pdf_tt_vm_stage, size_t);
+/* Uniform size preparation only. CVT inputs are unscaled font-unit values. */
+int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *, unsigned, int32_t, int32_t, int, const int32_t *);
 #endif

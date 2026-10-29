@@ -151,6 +151,7 @@ mask, redirects painting into a bounded surface, then restores state and applies
 the mask once to the completed object.
 
 `fonts/truetype_vm` separates instruction dispatch/control flow from stack and
-storage operations, fixed-point arithmetic/rounding and graphics-state setters. Instances own their mutable state but borrow immutable program
+storage operations, fixed-point arithmetic/rounding, graphics-state setters and
+uniform size preparation. Instances own their mutable state but borrow immutable program
 bodies. This foundation is currently exercised by tests, not the page renderer;
 see [its scope and ownership rules](pdf-truetype-vm.md) before integrating hinting.

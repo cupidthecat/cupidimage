@@ -10,6 +10,7 @@ from test_pdf_truetype import tables
 def main():
     probe=str(Path(sys.argv[1]).resolve())
     checked=0
+    prepared=0
     for filename in FONTS.values():
         result=subprocess.run([probe,'--font',str(SOURCE/filename)],capture_output=True,text=True,timeout=20)
         assert result.returncode==0,(filename,result.stdout,result.stderr)
@@ -18,7 +19,13 @@ def main():
         directory=tables((SOURCE/filename).read_bytes())
         assert (cvt,fpgm,prep)==tuple(directory[tag][2] for tag in (b'cvt ',b'fpgm',b'prep'))
         checked+=1
-    print(f'TrueType font-program initialization: {checked} pinned faces; 71 definitions each; glyph hinting not enabled')
+        for mode in ('--prep','--prep-gray'):
+            for ppem in range(1,97):
+                result=subprocess.run([probe,mode,str(SOURCE/filename),str(ppem)],capture_output=True,text=True,timeout=20)
+                assert result.returncode==0,(filename,mode,ppem,result.stdout,result.stderr)
+                assert tuple(map(int,result.stdout.split()[:5]))==(1,71,0,0,0),(filename,mode,ppem,result.stdout)
+                prepared+=1
+    print(f'TrueType font-program initialization: {checked} pinned faces; 71 definitions each; {prepared} uniform-size preparation runs; glyph hinting not enabled')
 
 
 if __name__=='__main__':main()

@@ -82,6 +82,8 @@ int cupidimage_pdf_tt_vm_graphics_op(pdf_tt_vm *vm, unsigned op) {
         } else if (op == 0x5e) {
             g->delta_base = (uint32_t)value;
         } else {
+            if (value > 6)
+                return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
             g->delta_shift = (uint32_t)value;
         }
     }

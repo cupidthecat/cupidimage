@@ -145,6 +145,12 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
                 return 0;
             continue;
         }
+        handled = cupidimage_pdf_tt_vm_size_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
         if (op == 0x58) {
             if (!cupidimage_pdf_tt_vm_need(vm, 1))
                 return 0;
@@ -164,6 +170,8 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
             size_t start = at;
             if (!vm_skip(vm, data, length, &at, 1, 0))
                 return 0;
+            if (at - start - 1 > 65536)
+                return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_FUNCTION);
             vm->functions[id] = (pdf_tt_vm_function){data + start, at - start - 1, 1};
         } else if (op == 0x2b || op == 0x2a) {
             if (!cupidimage_pdf_tt_vm_need(vm, op == 0x2b ? 1 : 2))
@@ -202,13 +210,18 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
 }
 
 int cupidimage_pdf_tt_vm_run(pdf_tt_vm *vm, const unsigned char *data, size_t length,
-                             int definitions, size_t work) {
+                             pdf_tt_vm_stage stage, size_t work) {
     if (vm->error != PDF_TT_VM_OK)
         return 0;
+    if (stage != PDF_TT_VM_GLYPH && stage != PDF_TT_VM_FONT && stage != PDF_TT_VM_PREP)
+        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
+    vm->stage = stage;
     vm->stack_size = 0;
     vm->work_left = work;
     vm->error_offset = vm->error_opcode = 0;
-    int ok = vm_execute(vm, data, length, definitions, 0);
+    if (stage == PDF_TT_VM_GLYPH && (vm->graphics.instruction_control & 1))
+        return 1;
+    int ok = vm_execute(vm, data, length, stage != PDF_TT_VM_GLYPH, 0);
     if (ok)
         vm->error_offset = vm->error_opcode = 0;
     return ok;

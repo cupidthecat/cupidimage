@@ -607,6 +607,8 @@ as its oracle.
 `make test-pdf-tt-vm` checks the native instruction-engine foundation and initializes
 the 12 pinned font programs. Numeric tests cover signed F26Dot6 arithmetic, all
 predefined rounding modes and 192 SROUND selectors; state tests cover defaults,
-axis vectors and scalar setters. These tests do not render hinted glyphs. The engine's
+axis vectors and scalar setters. Preparation checks run both monochrome and
+grayscale configurations at 1–96 ppem. Optional independent probes compare numeric
+results and prepared CVT values using temporary authored glyphs. These tests do not render hinted glyphs. The engine's
 unsupported instructions and unwired rendering path remain documented separately
 in [the TrueType VM guide](pdf-truetype-vm.md).

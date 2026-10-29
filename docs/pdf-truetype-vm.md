@@ -20,7 +20,10 @@ value and function-definition state. It supports:
   vector to the freedom vector.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
-- Storage reads/writes and pixel-unit control-value reads/writes.
+- Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
+  scaling and all three CVT delta instruction ranges.
+- Pixel/point-size queries, single-width scaling, legacy grayscale queries,
+  instruction-control flags and retained scan-conversion settings.
 - IF/ELSE/EIF, relative conditional/unconditional jumps, function definitions,
   calls and repeated calls.
 
@@ -34,7 +37,9 @@ as a deterministic implementation choice.
 The font loader retains immutable views of `cvt `, `fpgm` and `prep` alongside the
 other TrueType tables. This does not execute those tables during PDF loading.
 The standalone tests run the `fpgm` initialization stream of all 12 pinned Latin
-faces and install 71 function definitions from each. Point-manipulating instructions
+faces and install 71 function definitions from each. They also run the complete
+`prep` streams at sizes 1 through 96 ppem in monochrome and grayscale configurations,
+for 2,304 preparation runs. Point-manipulating instructions
 inside those function bodies have not been executed by this implementation.
 
 ## Ownership and limits
@@ -45,9 +50,10 @@ Initialization unwinds all allocations on failure. A failed execution invalidate
 the instance; callers must destroy and reinitialize it before reuse.
 
 Stack, storage, control-value and function limits are bounded to 65,535 entries.
-A program is limited to 1 MiB, and calls may nest up to 64 levels. A caller-supplied
+A program is limited to 1 MiB, individual function bodies to 64 KiB, and calls may
+nest up to 64 levels. A caller-supplied
 work budget covers execution, PUSH values, indexed stack movement, definition
-scans and repeated dispatch. Relative jumps cannot escape their current stream.
+scans, repeated dispatch and each CVT delta pair. Relative jumps cannot escape their current stream.
 Truncated operands, bad indices, undefined calls, overflow, exhausted work and
 unsupported instructions have distinct failure categories. The engine does not
 silently ignore an unsupported instruction.
@@ -67,8 +73,28 @@ projection updates also update the dual projection vector. Arbitrary and
 point-derived vectors remain unsupported. Point numbers are stored, but their
 zone bounds cannot be checked until point execution is implemented.
 
-Control values supplied to this foundation are already in pixel units; font-unit scaling
-and size-specific preparation remain future work.
+## Uniform size preparation
+
+`cupidimage_pdf_tt_vm_set_size` takes units per em, F26Dot6 pixel and point sizes,
+a grayscale flag and unscaled control values. It forms a checked 16.16 scaling
+coefficient and converts the control values to F26Dot6, rounding ties away from
+zero. Size changes reset graphics state while retaining storage and definitions.
+WCVTF and SSW use the same coefficient. DELTAC1/2/3 apply only at the selected ppem
+and support delta shifts 0 through 6. Every pair is bounded and charged to the
+execution budget, including pairs that do not match the current size.
+
+This interface currently represents uniform, unrotated sizing. GETINFO exposes the
+legacy version-35 configuration and its grayscale flag; it does not advertise
+variations or LCD rendering. MPS returns the supplied F26Dot6 point size. Nonuniform
+transforms, projection-dependent CVT scaling and rotation metadata remain open.
+
+Execution distinguishes font, preparation and glyph stages. Font and preparation
+streams may define functions. INSTCTRL records valid flags in the permitted stage;
+glyph execution is skipped when preparation has inhibited it. The defaults-selection
+flag is retained for future per-glyph setup, which is not implemented yet. SCANCTRL
+and SCANTYPE preserve their settings, but no scan converter consumes them. These
+low-level calls do not yet create glyph zones, restore prepared defaults for each
+glyph or run point instructions.
 
 ## Verification
 
@@ -88,9 +114,16 @@ using SCFS and checks that coordinate after monochrome hint execution. This
 qualifies the tested arithmetic and rounding instructions only; the native engine
 still does not execute SCFS or render hinted glyphs.
 
+`scripts/test_pdf_tt_prep_reference.py` checks 181,676 prepared control values across
+the 12 pinned faces, 22 sizes and both monochrome and grayscale configurations.
+Temporary, renamed copies of the fonts add probe glyphs and clear glyph inhibition
+after preparation so each CVT entry can be observed independently. That extra
+instruction does not change the CVT. Native point instructions remain untested by
+this comparison; only the independent interpreter executes the probe glyphs.
+
 Remaining work includes diagonal rounding, custom instruction definitions,
-size-dependent graphics state and arbitrary vectors, point zones, phantom points,
-CVT scaling, size preparation, glyph instructions and integration with transformed
+nonuniform sizing and arbitrary vectors, point zones, phantom points, per-glyph
+state restoration, glyph instructions and integration with transformed
 outline rendering. Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
 
