@@ -144,7 +144,33 @@ static int vm_shp(pdf_tt_vm *vm, unsigned op) {
     return 1;
 }
 
+static int vm_align_points(pdf_tt_vm *vm) {
+    if (!cupidimage_pdf_tt_vm_need(vm, 2))
+        return 0;
+    unsigned za = vm->graphics.zone[1], zb = vm->graphics.zone[0];
+    if (za > 1 || zb > 1)
+        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_POINT);
+    if (vm->stage == PDF_TT_VM_PREP && (za == 1 || zb == 1)) {
+        vm->stack_size -= 2;
+        return 1;
+    }
+    pdf_tt_vm_point *a = cupidimage_pdf_tt_vm_get_point(vm, za, vm->stack[vm->stack_size - 2]);
+    pdf_tt_vm_point *b = cupidimage_pdf_tt_vm_get_point(vm, zb, vm->stack[vm->stack_size - 1]);
+    int32_t distance;
+    if (!a || !b ||
+        !cupidimage_pdf_tt_vm_distance(vm, b->current, a->current, vm->graphics.projection,
+                                       &distance))
+        return 0;
+    int64_t half = distance / 2;
+    if (!cupidimage_pdf_tt_vm_move(vm, a, half) || !cupidimage_pdf_tt_vm_move(vm, b, -half))
+        return 0;
+    vm->stack_size -= 2;
+    return 1;
+}
+
 int cupidimage_pdf_tt_vm_movement_op(pdf_tt_vm *vm, unsigned op) {
+    if (op == 0x27)
+        return vm_align_points(vm);
     if (op == 0x32 || op == 0x33)
         return vm_shp(vm, op);
     if (op == 0x3e || op == 0x3f)

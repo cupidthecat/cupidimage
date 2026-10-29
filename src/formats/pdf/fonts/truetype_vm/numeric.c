@@ -35,17 +35,22 @@ int cupidimage_pdf_tt_vm_numeric_op(pdf_tt_vm *vm, unsigned op) {
         case 0x7d: /* RDTG */
             *r = (pdf_tt_vm_round){64, 0, 0, 0};
             return 1;
-        case 0x76: { /* SROUND */
+        case 0x76:   /* SROUND */
+        case 0x77: { /* S45ROUND */
             if (!cupidimage_pdf_tt_vm_need(vm, 1))
                 return 0;
             unsigned selector = (unsigned)vm->stack[--vm->stack_size] & 255;
             unsigned period_bits = selector >> 6;
             if (period_bits == 3)
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
-            int period = 32 << period_bits;
+            /* Derive phase/threshold before reducing F2Dot14 to F26Dot6.
+             * 11585 is sqrt(2)/2 represented in F2Dot14. */
+            int period = ((op == 0x77 ? 11585 : 16384) << period_bits) / 2;
+            int phase = (int)((selector >> 4) & 3) * period / 4;
             int threshold = (int)(selector & 15);
-            *r = (pdf_tt_vm_round){period, (int)((selector >> 4) & 3) * period / 4,
-                                   threshold ? (threshold - 4) * period / 8 : period - 1, 0};
+            threshold = threshold ? (threshold - 4) * period / 8 : period - 1;
+            int reduced = threshold / 256 - (threshold < 0 && threshold % 256 != 0);
+            *r = (pdf_tt_vm_round){period / 256, phase / 256, reduced, 0};
             return 1;
         }
         default:

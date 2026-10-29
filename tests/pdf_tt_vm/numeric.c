@@ -46,29 +46,33 @@ static void numeric_tests(void) {
             }
         }
     }
-    for (unsigned selector = 0; selector < 192; selector++) {
-        vm.stack_size = 0;
-        CHECK(cupidimage_pdf_tt_vm_push(&vm, selector | 0x100));
-        CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x76));
-        int period = 32 << (selector >> 6);
-        int phase = ((selector >> 4) & 3) * period / 4;
-        int threshold = selector & 15;
-        threshold = threshold ? (threshold - 4) * period / 8 : period - 1;
-        for (int n = -1024; n <= 1024; n++) {
-            /* Locate the containing threshold interval by enumeration, without
-             * sharing the implementation's signed division/floor calculation. */
-            int magnitude = n < 0 ? -n : n;
-            int expected = phase;
-            while (expected + period - threshold <= magnitude)
-                expected += period;
-            if (n < 0)
-                expected = -expected;
+    for (unsigned diagonal = 0; diagonal < 2; diagonal++)
+        for (unsigned selector = 0; selector < 192; selector++) {
             vm.stack_size = 0;
-            CHECK(cupidimage_pdf_tt_vm_push(&vm, n));
-            CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x68));
-            CHECK(vm.stack[0] == expected);
+            CHECK(cupidimage_pdf_tt_vm_push(&vm, selector | 0x100));
+            CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x76 + diagonal));
+            int fine_period =
+                (int)floor((diagonal ? 11585.0 : 16384.0) * pow(2.0, (int)(selector >> 6) - 1));
+            int period = (int)floor(fine_period / 256.0);
+            int phase = (int)floor(floor(((selector >> 4) & 3) * fine_period / 4.0) / 256.0);
+            int threshold = selector & 15;
+            threshold = threshold ? (int)floor(trunc((threshold - 4) * fine_period / 8.0) / 256.0)
+                                  : (fine_period - 1) / 256;
+            for (int n = -1024; n <= 1024; n++) {
+                /* Locate the containing threshold interval by enumeration, without
+                 * sharing the implementation's signed division/floor calculation. */
+                int magnitude = n < 0 ? -n : n;
+                int expected = phase;
+                while (expected + period - threshold <= magnitude)
+                    expected += period;
+                if (n < 0)
+                    expected = -expected;
+                vm.stack_size = 0;
+                CHECK(cupidimage_pdf_tt_vm_push(&vm, n));
+                CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x68));
+                CHECK(vm.stack[0] == expected);
+            }
         }
-    }
     finish(&vm);
     for (unsigned i = 0; i < 4000; i++) {
         int32_t a = random_value(), b = random_value();
@@ -116,12 +120,13 @@ static void numeric_tests(void) {
         CHECK(vm.error == PDF_TT_VM_ARITHMETIC);
         finish(&vm);
     }
-    for (unsigned selector = 192; selector < 256; selector++) {
-        unsigned char code[] = {0xb0, (unsigned char)selector, 0x76};
-        error(code, sizeof(code), PDF_TT_VM_PROGRAM, 100);
-    }
+    for (unsigned op = 0x76; op <= 0x77; op++)
+        for (unsigned selector = 192; selector < 256; selector++) {
+            unsigned char code[] = {0xb0, (unsigned char)selector, (unsigned char)op};
+            error(code, sizeof(code), PDF_TT_VM_PROGRAM, 100);
+        }
     const unsigned char underflows[] = {0x56, 0x57, 0x62, 0x63, 0x68, 0x69,
-                                        0x6a, 0x6c, 0x6d, 0x6e, 0x76};
+                                        0x6a, 0x6c, 0x6d, 0x6e, 0x76, 0x77};
     for (unsigned i = 0; i < sizeof(underflows); i++)
         error(underflows + i, 1, PDF_TT_VM_STACK, 100);
     const unsigned char reserved[] = {0x6b, 0x6f};

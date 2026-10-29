@@ -15,11 +15,11 @@ value, function-definition and instruction-definition state. It supports:
 - Signed comparisons, Boolean operations, minimum/maximum, checked addition,
   subtraction, multiplication, division, absolute value and negation, plus F26Dot6
   floor and ceiling.
-- The six predefined rounding modes, SROUND, ROUND/NROUND and ODD/EVEN.
+- The six predefined rounding modes, SROUND, S45ROUND, ROUND/NROUND and ODD/EVEN.
 - Axis-aligned, stack-defined and point-derived projection/freedom vectors,
   dual projection, vector reads and copying projection to freedom.
 - Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
-  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, IP, IUP, UTP, DELTAP1/2/3, SHP, SHC, SHZ, SHPIX, FLIPPT, FLIPRGON, FLIPRGOFF and ISECT.
+  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, ALIGNPTS, IP, IUP, UTP, DELTAP1/2/3, SHP, SHC, SHZ, SHPIX, FLIPPT, FLIPRGON, FLIPRGOFF and ISECT.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -65,11 +65,13 @@ truncates toward zero. Multiplication quantizes to the nearest F26Dot6 value, wi
 ties away from zero; this precision choice is independent of the graphics rounding
 mode. Engine-color compensation is zero. Rounding is symmetric around zero, with
 half-grid and phased modes preserving their nearest valid signed value. Reserved
-ROUND/NROUND/MIRP color selectors and the reserved SROUND period are rejected.
+ROUND/NROUND/MIRP color selectors and the reserved SROUND/S45ROUND period are rejected.
 
 SROUND uses exact F26Dot6 periods of 32, 64 or 128 units, including all four phases
-and sixteen threshold selections. S45ROUND is still unsupported: its diagonal
-period and intermediate quantization need separate verification. Coordinate-axis
+and sixteen threshold selections. S45ROUND uses the diagonal grid period
+sqrt(2)/2, represented as 11585 in F2Dot14. Period, phase and threshold are derived
+at that precision before reduction to F26Dot6. This preserves threshold-boundary
+behavior that would be lost by computing everything from the reduced period. Coordinate-axis
 projection updates also update the dual projection vector. Stack-defined vectors
 use signed 2.14 components and bounded fixed-point normalization. The math routine
 has required attribution in [the third-party notices](../THIRD_PARTY_NOTICES.md).
@@ -108,6 +110,13 @@ Twelve differ because those engines quantize determinant products before divisio
 These differences are checked and reported, not counted as parity. Analytic tests
 also cover nearly parallel lines, wide products, endpoint aliases, mixed zones,
 malformed definitions, allocation failures and recursive/work limits.
+
+ALIGNPTS moves both points by half their projected separation along the freedom
+vector. Original coordinates, curve flags, contour ends, reference points and the
+loop setting remain unchanged. The operand order follows the Apple instruction
+table and the tested engines: the top operand belongs to `zp0`, the next to `zp1`.
+The current Microsoft table reverses the operand labels; mixed-zone tests pin this
+choice rather than relying on same-zone examples.
 
 ## Uniform size preparation
 
@@ -160,6 +169,17 @@ Snapshot and geometry allocations have bounded sizes and unwind on failure.
 Repeated snapshots reuse their buffers. These are explicit low-level interfaces;
 the [native simple-glyph loader](pdf-truetype-loader.md) uses them, but the PDF
 renderer does not. Composite loading uses a separate component-entry path within that loader.
+
+Two precision probes keep known comparison differences explicit:
+
+- `test_pdf_tt_cvt_precision.py` checks 99 values with 1,000 font units per em.
+  All match interpreter version 2.13.3. Version 2.13.2 matches 53 and differs on
+  46 because it discards six bits from the scale before multiplying the CVT.
+  Native scaling retains the full 16.16 coefficient.
+- `test_pdf_tt_projection_precision.py` checks four normalized vectors whose main
+  component rounds to 16384 while the other remains nonzero. Native movement uses
+  both components; the tested engines select an axis-only shortcut. The four
+  differences are recorded separately, not counted as matching outlines.
 
 ## Point operations
 
@@ -242,14 +262,14 @@ rendering integration.
 failure recovery, then checks the pinned fonts' initialization streams and retained
 table extents. Randomized integer inputs are compared with explicit arithmetic and
 Boolean expectations. Rounding tests cover all six modes over signed distances,
-all 192 defined SROUND selectors, parity, halfway cases, overflow, reserved operands
+all 192 defined selectors for both SROUND and S45ROUND, parity, halfway cases, overflow, reserved operands
 and stack underflow. Graphics-state tests check defaults, changes and persistence.
 The point tests check coordinate/original-coordinate ownership, touched flags,
 reference points, bounds and allocation recovery. These are instruction-level
 oracles, not complete hinted-glyph comparisons.
 
 When the optional `fontTools` and `freetype-py` test packages are available,
-`scripts/test_pdf_tt_vm_reference.py` also compares 4,068 native expression results
+`scripts/test_pdf_tt_vm_reference.py` also compares 7,332 native expression results
 with a separate interpreter. It places each result in a synthetic outline point
 using SCFS and checks that coordinate after monochrome hint execution. This
 qualifies the tested arithmetic and rounding instructions only; page rendering
@@ -262,9 +282,9 @@ after preparation so each CVT entry can be observed independently. That extra
 instruction does not change the CVT. Only the independent interpreter executes the
 probe glyphs in this CVT comparison.
 
-`scripts/test_pdf_tt_points_reference.py` separately runs 24,069 authored
+`scripts/test_pdf_tt_points_reference.py` separately runs 24,119 authored
 programs at 13, 37, 64 and 97 ppem on supplied triangle/twilight geometry. There are
-96,252 matching comparisons and 24 recorded IUP/zone-selection differences in the tested engines. It covers point movement, CVT
+96,452 matching comparisons and 24 recorded IUP/zone-selection differences in the tested engines. It covers point movement, CVT
 cut-in boundaries, all delta size/step selections, looped shifts, relative
 positioning flags, design-space scaling, interpolation, single-width boundaries, mixed-zone/twilight cases, rounding,
 original-coordinate reads and stack/line vector selection. It does not run the
@@ -298,8 +318,7 @@ perpendicular-vector movement failure, one had a truncated glyph description,
 13 font containers were rejected and three failed the diagnostic parser. These
 are diagnostic results, not a corpus-wide pass or PDF rendering qualification.
 
-Remaining work includes diagonal rounding,
-nonuniform sizing, the remaining point instructions, scan conversion and integration
+Remaining work includes nonuniform sizing, the remaining point instructions, scan conversion and integration
 with transformed outline rendering.
 Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.

@@ -441,7 +441,7 @@ int main(int argc, char **argv) {
     error(backward, sizeof(backward), PDF_TT_VM_BUDGET, 50);
     static const unsigned char outside[] = {0xb8, 0xff, 0xfc, 0x1c};
     error(outside, sizeof(outside), PDF_TT_VM_PROGRAM, 100);
-    static const unsigned char unsupported[] = {0x77};
+    static const unsigned char unsupported[] = {0x7b};
     error(unsupported, sizeof(unsupported), PDF_TT_VM_UNSUPPORTED, 100);
     static const unsigned char conditional_true[] = {0xb1, 3, 1, 0x78, 0x20, 0x20, 0xb0, 42};
     static const unsigned char conditional_false[] = {0xb1, 3, 0, 0x79, 0x20, 0x20, 0xb0, 42};
@@ -529,8 +529,10 @@ int main(int argc, char **argv) {
     graphics_tests();
     size_tests();
     point_tests();
+    projection_precision_tests();
     lifecycle_tests();
     movement_tests();
+    align_points_tests();
     relative_tests();
     direct_tests();
     contour_tests();

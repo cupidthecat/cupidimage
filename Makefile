@@ -421,6 +421,8 @@ test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm $(BINDIR)/test_pdf_tt_glyphs
 	$(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm_reference.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_cvt_precision.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_projection_precision.py $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_prep_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_points_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_state_reference.py $(BINDIR)/test_pdf_tt_vm

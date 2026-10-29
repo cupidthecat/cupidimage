@@ -345,6 +345,20 @@ def cases():
                         code += push(0) + bytes([op])
                         code += push(2, 1) + bytes([0x46, 0x01]) + push(1) + bytes([0x15, 0x48])
                     programs.append(code)
+    for axis in (0, 1):
+        for a in range(3):
+            for b in range(3):
+                programs.append(bytes([axis]) + push(a, b) + bytes([0x27]))
+        for za in (0, 1):
+            for zb in (0, 1):
+                for a in range(2):
+                    for b in range(2):
+                        code = bytes([axis]) + push(za) + bytes([0x14]) + push(zb) + bytes([0x13])
+                        code += push(a, b) + bytes([0x27])
+                        # Copy the twilight result into a visible glyph point.
+                        code += push(2) + push(0) + bytes([0x15]) + push(a) + bytes([0x46])
+                        code += push(1) + bytes([0x15, 0x48])
+                        programs.append(code)
     # The reference face can retain twilight storage between glyph loads.
     # Give both engines the same explicit initial coordinates for each program.
     reset = push(0) + bytes([0x16, 0x01])

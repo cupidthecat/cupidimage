@@ -608,10 +608,10 @@ as its oracle.
 
 `make test-pdf-tt-vm` checks the native instruction-engine foundation and initializes
 the 12 pinned font programs. Numeric tests cover signed F26Dot6 arithmetic, all
-predefined rounding modes and 192 SROUND selectors; state tests cover defaults,
+predefined rounding modes and 192 selectors each for SROUND and S45ROUND; state tests cover defaults,
 axis vectors and scalar setters. Point cases cover CVT cut-ins, all three delta
 ranges, relative-positioning flags, original design distances, contour interpolation,
-reference-point shifts, whole-zone shifts, curve flags, line intersections and direct freedom-vector shifts. The specified-defaults
+paired-point alignment, reference-point shifts, whole-zone shifts, curve flags, line intersections and direct freedom-vector shifts. The specified-defaults
 state case, repeated single-anchor IUP, mixed-zone flags/shifts and determinant-quantization cases report their independent-engine
 differences separately. Point comparisons cover four uniform sizes. Preparation checks run both monochrome and
 grayscale configurations at 1–96 ppem. Optional independent probes compare numeric

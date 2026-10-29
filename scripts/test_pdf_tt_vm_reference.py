@@ -36,14 +36,18 @@ for op in (0x18, 0x19, 0x3d, 0x7a, 0x7c, 0x7d):
             0x7d: math.floor(a / 64) * 64,
         }[op]
         cases.append((bytes([op]) + push([value]) + bytes([0x68]), -rounded if value < 0 else rounded, f'{op:02x}:{value}'))
-for selector in range(192):
-    p = 32 << (selector >> 6)
-    phase = (selector >> 4 & 3) * p // 4
-    t = selector & 15
-    t = (t - 4) * p // 8 if t else p - 1
-    for value in (-513, -128, -65, -32, -1, 0, 1, 15, 16, 31, 32, 63, 64, 65, 127, 128, 513):
-        answer = max(phase, (abs(value) - phase + t) // p * p + phase)
-        cases.append((push([selector]) + bytes([0x76]) + push([value]) + bytes([0x68]), -answer if value < 0 else answer, f'S:{selector}:{value}'))
+for diagonal in (False, True):
+    for selector in range(192):
+        fine = (11585 if diagonal else 16384) * (1 << (selector >> 6)) // 2
+        p = fine // 256
+        phase = ((selector >> 4 & 3) * fine // 4) // 256
+        t = selector & 15
+        t = math.trunc((t - 4) * fine / 8) // 256 if t else (fine - 1) // 256
+        for value in (-513, -128, -65, -32, -1, 0, 1, 15, 16, 31, 32, 63, 64, 65, 127, 128, 513):
+            answer = max(phase, (abs(value) - phase + t) // p * p + phase)
+            opcode = 0x77 if diagonal else 0x76
+            cases.append((push([selector]) + bytes([opcode]) + push([value]) + bytes([0x68]),
+                          -answer if value < 0 else answer, f'S{opcode:02x}:{selector}:{value}'))
 for a in (-32768, -32767, -257, -65, -33, -32, -31, -1, 0, 1, 31, 32, 33, 63, 64, 65, 257, 32767):
     for b in (-257, -100, -65, -64, -33, -32, -31, -3, -1, 1, 3, 31, 32, 33, 64, 65, 100, 257):
         for op in (0x62, 0x63):

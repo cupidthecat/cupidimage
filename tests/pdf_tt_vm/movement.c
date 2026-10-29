@@ -166,3 +166,58 @@ static void movement_tests(void) {
         finish(&vm);
     }
 }
+
+static void align_points_tests(void) {
+    const pdf_tt_vm_point points[] = {{{-93, 35}, {20, 25}, 0, 1, 0},
+                                      {{100, -14}, {100, 0}, 0, 0, 1}};
+    for (unsigned axis = 0; axis < 2; axis++)
+        for (unsigned za = 0; za < 2; za++)
+            for (unsigned zb = 0; zb < 2; zb++)
+                for (unsigned a = 0; a < 2; a++)
+                    for (unsigned b = 0; b < 2; b++) {
+                        pdf_tt_vm vm;
+                        init(&vm, NULL, 0);
+                        CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 2, points, 2, 2));
+                        vm.zones[0].points[0] = points[1];
+                        vm.zones[0].points[1] = points[0];
+                        vm.graphics.zone[1] = za;
+                        vm.graphics.zone[0] = zb;
+                        vm.graphics.loop = 5;
+                        pdf_tt_vm_point before_a = vm.zones[za].points[a];
+                        pdf_tt_vm_point before_b = vm.zones[zb].points[b];
+                        int32_t half = (before_b.current[axis] - before_a.current[axis]) / 2;
+                        unsigned char code[] = {(unsigned char)(1 - axis), 0xb1, (unsigned char)a,
+                                                (unsigned char)b, 0x27};
+                        CHECK(cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+                        CHECK(vm.zones[za].points[a].current[axis] ==
+                              before_a.current[axis] + half);
+                        CHECK(vm.zones[zb].points[b].current[axis] ==
+                              before_b.current[axis] - half);
+                        CHECK(vm.zones[za].points[a].current[1 - axis] ==
+                              before_a.current[1 - axis]);
+                        CHECK(vm.zones[zb].points[b].current[1 - axis] ==
+                              before_b.current[1 - axis]);
+                        CHECK(vm.zones[za].points[a].touched == (1u << axis));
+                        CHECK(vm.zones[zb].points[b].touched == (1u << axis));
+                        CHECK(!memcmp(vm.zones[za].points[a].original, before_a.original,
+                                      sizeof(before_a.original)));
+                        CHECK(!memcmp(vm.zones[zb].points[b].original, before_b.original,
+                                      sizeof(before_b.original)));
+                        CHECK(vm.zones[za].points[a].on == before_a.on &&
+                              vm.zones[zb].points[b].end == before_b.end);
+                        CHECK(vm.graphics.loop == 5 && !vm.stack_size);
+                        finish(&vm);
+                    }
+    const unsigned char missing = 0x27;
+    error(&missing, 1, PDF_TT_VM_STACK, 100);
+    for (unsigned bad = 0; bad < 2; bad++) {
+        pdf_tt_vm vm;
+        init(&vm, NULL, 0);
+        CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, points, 2, 2));
+        unsigned char code[] = {0xb1, 0, 0, 0x27};
+        code[bad + 1] = 99;
+        CHECK(!cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+        CHECK(vm.error == PDF_TT_VM_POINT);
+        finish(&vm);
+    }
+}

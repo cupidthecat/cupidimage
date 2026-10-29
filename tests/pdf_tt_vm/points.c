@@ -145,3 +145,30 @@ static void point_tests(void) {
     }
     finish(&vm);
 }
+
+static void projection_precision_tests(void) {
+    for (unsigned axis = 0; axis < 2; axis++)
+        for (unsigned positive = 0; positive < 2; positive++) {
+            pdf_tt_vm vm;
+            init(&vm, NULL, 0);
+            pdf_tt_vm_point points[2] = {0};
+            points[0].current[axis] = 768;
+            points[1].current[axis] = 775;
+            points[1].current[1 - axis] = 704;
+            CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, points, 2, 2));
+            vm.graphics.freedom[axis] = 16384;
+            vm.graphics.freedom[1 - axis] = 0;
+            int32_t vector[2];
+            vector[axis] = 554;
+            vector[1 - axis] = positive ? 1 : -1;
+            CHECK(
+                cupidimage_pdf_tt_vm_normalize(&vm, vector[0], vector[1], vm.graphics.projection));
+            CHECK(vm.graphics.projection[axis] == 16384 &&
+                  vm.graphics.projection[1 - axis] == (positive ? 29 : -29));
+            static const unsigned char code[] = {0xb0, 1, 0x3c};
+            CHECK(cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+            CHECK(vm.zones[1].points[1].current[axis] == (positive ? 767 : 769));
+            CHECK(vm.zones[1].points[1].current[1 - axis] == 704);
+            finish(&vm);
+        }
+}
