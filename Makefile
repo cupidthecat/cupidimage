@@ -407,6 +407,7 @@ test-pdf-devicen: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm
 	$(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_vm_reference.py $(BINDIR)/test_pdf_tt_vm
 
 test-pdf-empty-glyphs: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_empty_glyphs.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom

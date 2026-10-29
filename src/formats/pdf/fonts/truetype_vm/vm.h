@@ -22,9 +22,23 @@ typedef struct {
 } pdf_tt_vm_function;
 
 typedef struct {
+    int period, phase, threshold;
+    int off;
+} pdf_tt_vm_round;
+
+typedef struct {
+    pdf_tt_vm_round rounding;
+    int32_t projection[2], freedom[2], dual_projection[2];
+    uint32_t reference[3], zone[3], loop, delta_base, delta_shift;
+    int32_t minimum_distance, cvt_cut_in, single_width_cut_in;
+    int auto_flip;
+} pdf_tt_vm_graphics;
+
+typedef struct {
     int32_t *stack, *storage, *cvt;
     pdf_tt_vm_function *functions;
     unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
+    pdf_tt_vm_graphics graphics;
     size_t work_left;
     pdf_tt_vm_error error;
     size_t error_offset;

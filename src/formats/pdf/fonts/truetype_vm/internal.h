@@ -6,4 +6,7 @@ int cupidimage_pdf_tt_vm_fail(pdf_tt_vm *, pdf_tt_vm_error);
 int cupidimage_pdf_tt_vm_push(pdf_tt_vm *, int64_t);
 int cupidimage_pdf_tt_vm_need(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_stack_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_numeric_op(pdf_tt_vm *, unsigned);
+void cupidimage_pdf_tt_vm_graphics_defaults(pdf_tt_vm_graphics *);
+int cupidimage_pdf_tt_vm_graphics_op(pdf_tt_vm *, unsigned);
 #endif

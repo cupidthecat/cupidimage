@@ -11,6 +11,7 @@ int cupidimage_pdf_tt_vm_init(pdf_tt_vm *vm, unsigned stack, unsigned storage, c
     if (stack > 65535 || storage > 65535 || cvt_count > 65535 || functions > 65535 ||
         (cvt_count && !cvt))
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_MEMORY);
+    cupidimage_pdf_tt_vm_graphics_defaults(&vm->graphics);
     vm->stack_limit = stack;
     vm->storage_count = storage;
     vm->cvt_count = cvt_count;
@@ -127,6 +128,18 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
             continue;
         }
         int handled = cupidimage_pdf_tt_vm_stack_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_numeric_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_graphics_op(vm, op);
         if (handled >= 0) {
             if (!handled)
                 return 0;

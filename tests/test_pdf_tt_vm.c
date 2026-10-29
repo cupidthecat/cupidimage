@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +47,8 @@ static void vm_test_free(void *value) {
 #define malloc vm_test_malloc
 #define calloc vm_test_calloc
 #define free vm_test_free
+#include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
+#include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
 #include "../src/formats/pdf/fonts/truetype_vm/stack.c"
 #include "../src/formats/pdf/fonts/truetype_vm/vm.c"
 #undef malloc
@@ -143,7 +146,249 @@ static int font_program(const char *path) {
     return ok ? 0 : 3;
 }
 
+static void graphics_tests(void) {
+    pdf_tt_vm vm;
+    init(&vm, NULL, 0);
+    pdf_tt_vm_graphics *g = &vm.graphics;
+    CHECK(g->rounding.period == 64 && g->rounding.phase == 0 && g->rounding.threshold == 32 &&
+          !g->rounding.off);
+    CHECK(g->projection[0] == 16384 && !g->projection[1]);
+    CHECK(g->freedom[0] == 16384 && !g->freedom[1]);
+    CHECK(g->dual_projection[0] == 16384 && !g->dual_projection[1]);
+    CHECK(g->zone[0] == 1 && g->zone[1] == 1 && g->zone[2] == 1);
+    CHECK(!g->reference[0] && !g->reference[1] && !g->reference[2]);
+    CHECK(g->loop == 1 && g->minimum_distance == 64 && g->cvt_cut_in == 68);
+    CHECK(g->delta_base == 9 && g->delta_shift == 3 && !g->single_width_cut_in && g->auto_flip);
+    static const unsigned char axis[] = {0x00, 0x0c, 0x0d, 0x03, 0x0c, 0x0d, 0x0e, 0x0d,
+                                         0x04, 0x0d, 0x01, 0x02, 0x05, 0x0c, 0x0d};
+    static const int32_t expected[] = {0,     16384, 0, 16384, 16384, 0,     0,     16384,
+                                       16384, 0,     0, 16384, 0,     16384, 16384, 0};
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, axis, sizeof(axis), 0, 100));
+    CHECK(vm.stack_size == sizeof(expected) / sizeof(*expected));
+    CHECK(!memcmp(vm.stack, expected, sizeof(expected)));
+    CHECK(g->dual_projection[0] == 0 && g->dual_projection[1] == 16384);
+    static const unsigned char setters[] = {
+        0xb0, 7,    0x10, 0xb0, 8,    0x11, 0xb0, 9,    0x12, 0xb0, 0,    0x16, 0xb0,
+        1,    0x14, 0xb0, 1,    0x15, 0xb0, 100,  0x17, 0xb0, 25,   0x1a, 0xb0, 16,
+        0x1d, 0xb0, 32,   0x1e, 0xb0, 12,   0x5e, 0xb0, 5,    0x5f, 0x4e};
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, setters, sizeof(setters), 0, 100));
+    CHECK(!vm.stack_size);
+    CHECK(g->reference[0] == 7 && g->reference[1] == 8 && g->reference[2] == 9);
+    CHECK(g->zone[0] == 0 && g->zone[1] == 1 && g->zone[2] == 1);
+    CHECK(g->loop == 100 && g->minimum_distance == 25 && g->cvt_cut_in == 16);
+    CHECK(g->delta_base == 12 && g->delta_shift == 5 && g->single_width_cut_in == 32 &&
+          !g->auto_flip);
+    static const unsigned char finish_set[] = {0xb0, 1, 0x13, 0xb0, 0, 0x17, 0x4d};
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, finish_set, sizeof(finish_set), 0, 100));
+    CHECK(g->zone[0] == 1 && g->loop == 0 && g->auto_flip);
+    finish(&vm);
+    const unsigned char pops[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+                                  0x17, 0x1a, 0x1d, 0x1e, 0x5e, 0x5f};
+    for (unsigned i = 0; i < sizeof(pops); i++) {
+        error(pops + i, 1, PDF_TT_VM_STACK, 100);
+        unsigned char negative[] = {0xb8, 0xff, 0xff, pops[i]};
+        if (pops[i] == 0x1a || pops[i] == 0x1d || pops[i] == 0x1e)
+            result(negative, sizeof(negative), NULL, 0);
+        else
+            error(negative, sizeof(negative), PDF_TT_VM_PROGRAM, 100);
+    }
+    for (unsigned op = 0x13; op <= 0x16; op++) {
+        unsigned char bad_zone[] = {0xb0, 2, (unsigned char)op};
+        error(bad_zone, sizeof(bad_zone), PDF_TT_VM_PROGRAM, 100);
+    }
+    for (unsigned op = 0x0c; op <= 0x0d; op++) {
+        CHECK(cupidimage_pdf_tt_vm_init(&vm, 1, 0, NULL, 0, 0));
+        unsigned char code = (unsigned char)op;
+        CHECK(!cupidimage_pdf_tt_vm_run(&vm, &code, 1, 0, 100));
+        CHECK(vm.error == PDF_TT_VM_STACK);
+        finish(&vm);
+    }
+}
+
+static void numeric_tests(void) {
+    pdf_tt_vm vm;
+    init(&vm, NULL, 0);
+    const unsigned modes[] = {0x18, 0x19, 0x3d, 0x7a, 0x7c, 0x7d};
+    for (unsigned m = 0; m < sizeof(modes) / sizeof(*modes); m++) {
+        CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, modes[m]));
+        for (int n = -4096; n <= 4096; n++) {
+            double magnitude = fabs((double)n);
+            double rounded;
+            switch (m) {
+                case 0:
+                    rounded = floor(magnitude / 64 + 0.5) * 64;
+                    break;
+                case 1:
+                    rounded = floor(magnitude / 64) * 64 + 32;
+                    break;
+                case 2:
+                    rounded = floor(magnitude / 32 + 0.5) * 32;
+                    break;
+                case 3:
+                    rounded = magnitude;
+                    break;
+                case 4:
+                    rounded = ceil(magnitude / 64) * 64;
+                    break;
+                default:
+                    rounded = floor(magnitude / 64) * 64;
+                    break;
+            }
+            int32_t expected = (int32_t)(n < 0 ? -rounded : rounded);
+            for (unsigned color = 0; color < 3; color++) {
+                vm.stack_size = 0;
+                CHECK(cupidimage_pdf_tt_vm_push(&vm, n));
+                CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x68 + color));
+                CHECK(vm.stack_size == 1 && vm.stack[0] == expected);
+                CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x6c + color));
+                CHECK(vm.stack[0] == expected);
+            }
+            for (unsigned parity = 0; parity < 2; parity++) {
+                vm.stack_size = 0;
+                CHECK(cupidimage_pdf_tt_vm_push(&vm, n));
+                CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x56 + parity));
+                int32_t remainder = expected % 128;
+                int match = parity ? remainder == 0 : remainder == 64 || remainder == -64;
+                CHECK(vm.stack[0] == match);
+            }
+        }
+    }
+    for (unsigned selector = 0; selector < 192; selector++) {
+        vm.stack_size = 0;
+        CHECK(cupidimage_pdf_tt_vm_push(&vm, selector | 0x100));
+        CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x76));
+        int period = 32 << (selector >> 6);
+        int phase = ((selector >> 4) & 3) * period / 4;
+        int threshold = selector & 15;
+        threshold = threshold ? (threshold - 4) * period / 8 : period - 1;
+        for (int n = -1024; n <= 1024; n++) {
+            /* Locate the containing threshold interval by enumeration, without
+             * sharing the implementation's signed division/floor calculation. */
+            int magnitude = n < 0 ? -n : n;
+            int expected = phase;
+            while (expected + period - threshold <= magnitude)
+                expected += period;
+            if (n < 0)
+                expected = -expected;
+            vm.stack_size = 0;
+            CHECK(cupidimage_pdf_tt_vm_push(&vm, n));
+            CHECK(cupidimage_pdf_tt_vm_numeric_op(&vm, 0x68));
+            CHECK(vm.stack[0] == expected);
+        }
+    }
+    finish(&vm);
+    for (unsigned i = 0; i < 4000; i++) {
+        int32_t a = random_value(), b = random_value();
+        int32_t values[] = {a, b};
+        unsigned char code[] = {0xb0, 0, 0x45, 0xb0, 1, 0x45, 0};
+        for (unsigned op = 0x62; op <= 0x63; op++) {
+            if (op == 0x62 && !b)
+                continue;
+            code[6] = (unsigned char)op;
+            int64_t expected = op == 0x62 ? (int64_t)trunc((double)a * 64 / b)
+                                          : (int64_t)round((double)a * b / 64);
+            init(&vm, values, 2);
+            CHECK(cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+            CHECK(vm.stack_size == 1 && vm.stack[0] == expected);
+            finish(&vm);
+        }
+    }
+    const int32_t boundaries[][4] = {{1, 32, 0x63, 1},
+                                     {-1, 32, 0x63, -1},
+                                     {1, -32, 0x63, -1},
+                                     {-1, -32, 0x63, 1},
+                                     {1, 31, 0x63, 0},
+                                     {-1, 31, 0x63, 0},
+                                     {INT32_MIN, 64, 0x63, INT32_MIN},
+                                     {INT32_MAX, 64, 0x63, INT32_MAX},
+                                     {INT32_MIN, 64, 0x62, INT32_MIN},
+                                     {INT32_MAX, 64, 0x62, INT32_MAX},
+                                     {-1, 100, 0x62, 0},
+                                     {1, -100, 0x62, 0},
+                                     {100, -3, 0x62, -2133}};
+    for (unsigned i = 0; i < sizeof(boundaries) / sizeof(*boundaries); i++) {
+        init(&vm, boundaries[i], 2);
+        unsigned char code[] = {0xb0, 0, 0x45, 0xb0, 1, 0x45, (unsigned char)boundaries[i][2]};
+        CHECK(cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+        CHECK(vm.stack_size == 1 && vm.stack[0] == boundaries[i][3]);
+        finish(&vm);
+    }
+    const int32_t failures[][3] = {
+        {0, 0, 0x62},           {INT32_MIN, -64, 0x62},       {INT32_MAX, 1, 0x62},
+        {INT32_MIN, -64, 0x63}, {INT32_MAX, INT32_MAX, 0x63}, {INT32_MIN, INT32_MIN, 0x63}};
+    for (unsigned i = 0; i < sizeof(failures) / sizeof(*failures); i++) {
+        init(&vm, failures[i], 2);
+        unsigned char code[] = {0xb0, 0, 0x45, 0xb0, 1, 0x45, (unsigned char)failures[i][2]};
+        CHECK(!cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+        CHECK(vm.error == PDF_TT_VM_ARITHMETIC);
+        finish(&vm);
+    }
+    for (unsigned selector = 192; selector < 256; selector++) {
+        unsigned char code[] = {0xb0, (unsigned char)selector, 0x76};
+        error(code, sizeof(code), PDF_TT_VM_PROGRAM, 100);
+    }
+    const unsigned char underflows[] = {0x56, 0x57, 0x62, 0x63, 0x68, 0x69,
+                                        0x6a, 0x6c, 0x6d, 0x6e, 0x76};
+    for (unsigned i = 0; i < sizeof(underflows); i++)
+        error(underflows + i, 1, PDF_TT_VM_STACK, 100);
+    const unsigned char reserved[] = {0x6b, 0x6f};
+    for (unsigned i = 0; i < sizeof(reserved); i++)
+        error(reserved + i, 1, PDF_TT_VM_UNSUPPORTED, 100);
+
+    for (unsigned op = 0x18; op <= 0x18; op++) {
+        int32_t extremes[] = {INT32_MAX};
+        init(&vm, extremes, 1);
+        unsigned char code[] = {(unsigned char)op, 0xb0, 0, 0x45, 0x68};
+        CHECK(!cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+        CHECK(vm.error == PDF_TT_VM_ARITHMETIC);
+        finish(&vm);
+    }
+    static const unsigned char set_half[] = {0x19};
+    static const unsigned char round_zero[] = {0xb0, 0, 0x68};
+    init(&vm, NULL, 0);
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, set_half, sizeof(set_half), 0, 100));
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, round_zero, sizeof(round_zero), 0, 100));
+    CHECK(vm.stack_size == 1 && vm.stack[0] == 32);
+    finish(&vm);
+}
+
+static int expression_programs(void) {
+    char line[1024];
+    while (fgets(line, sizeof(line), stdin)) {
+        size_t length = strcspn(line, "\r\n");
+        if (!length || length % 2 || length > 1000)
+            return 2;
+        unsigned char code[500];
+        for (size_t i = 0; i < length; i++) {
+            unsigned value;
+            if (line[i] >= '0' && line[i] <= '9')
+                value = (unsigned)(line[i] - '0');
+            else if (line[i] >= 'a' && line[i] <= 'f')
+                value = (unsigned)(line[i] - 'a') + 10;
+            else
+                return 2;
+            if (i & 1)
+                code[i / 2] |= (unsigned char)value;
+            else
+                code[i / 2] = (unsigned char)(value * 16);
+        }
+        pdf_tt_vm vm;
+        if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, NULL, 0, 0))
+            return 2;
+        int ok = cupidimage_pdf_tt_vm_run(&vm, code, length / 2, 0, 10000);
+        if (!ok || vm.stack_size != 1) {
+            cupidimage_pdf_tt_vm_free(&vm);
+            return 3;
+        }
+        printf("%ld\n", (long)vm.stack[0]);
+        cupidimage_pdf_tt_vm_free(&vm);
+    }
+    return ferror(stdin) ? 2 : 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc == 2 && !strcmp(argv[1], "--expressions"))
+        return expression_programs();
     if (argc == 3 && !strcmp(argv[1], "--font"))
         return font_program(argv[2]);
     if (argc != 1)
@@ -245,7 +490,7 @@ int main(int argc, char **argv) {
     error(backward, sizeof(backward), PDF_TT_VM_BUDGET, 50);
     static const unsigned char outside[] = {0xb8, 0xff, 0xfc, 0x1c};
     error(outside, sizeof(outside), PDF_TT_VM_PROGRAM, 100);
-    static const unsigned char unsupported[] = {0x62};
+    static const unsigned char unsupported[] = {0x77};
     error(unsupported, sizeof(unsupported), PDF_TT_VM_UNSUPPORTED, 100);
     static const unsigned char conditional_true[] = {0xb1, 3, 1, 0x78, 0x20, 0x20, 0xb0, 42};
     static const unsigned char conditional_false[] = {0xb1, 3, 0, 0x79, 0x20, 0x20, 0xb0, 42};
@@ -329,6 +574,8 @@ int main(int argc, char **argv) {
     }
     static const unsigned char absent_cvt[] = {0xb0, 0, 0x45};
     error(absent_cvt, sizeof(absent_cvt), PDF_TT_VM_STORAGE, 100);
+    numeric_tests();
+    graphics_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;
 }
