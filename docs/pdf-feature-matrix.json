@@ -870,11 +870,14 @@
             "src/formats/pdf/fonts/truetype_hint/transform.c",
             "scripts/test_pdf_tt_nonuniform_reference.py",
             "scripts/test_pdf_tt_fractional_reference.py",
-            "scripts/test_pdf_tt_transform_reference.py"
+            "scripts/test_pdf_tt_transform_reference.py",
+            "docs/pdf-page-hinting.md",
+            "src/formats/pdf/fonts/page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "The native instruction-engine foundation is tested independently but is not connected to page rendering; glyph grid fitting remains unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -997,11 +1000,14 @@
             "src/formats/pdf/fonts/truetype_hint/composite.c",
             "scripts/test_pdf_tt_instructions_reference.py",
             "src/formats/pdf/fonts/truetype_vm/intersection.c",
-            "src/formats/pdf/fonts/truetype_vm/flags.c"
+            "src/formats/pdf/fonts/truetype_vm/flags.c",
+            "docs/pdf-page-hinting.md",
+            "src/formats/pdf/fonts/page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "The native instruction-engine foundation is tested independently but is not connected to page rendering; glyph grid fitting remains unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -1053,10 +1059,13 @@
             "scripts/test_pdf_embedded_fonts.py",
             "src/formats/pdf/pdf_font_outline.c",
             "tests/test_pdf_font_cache.c",
-            "tests/test_pdf_clip_oom.c"
+            "tests/test_pdf_clip_oom.c",
+            "src/formats/pdf/fonts/page_hint.c",
+            "tests/test_pdf_page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
           ],
           "limitations": [
-            "Native unhinted TT/Type1/CFF outlines have per-program glyph-keyed caching and cached/uncached regression checks. Type 3 drawing and future hinted/rasterized glyph caches require separate state-sensitive treatment."
+            "Unhinted TT/Type1/CFF outlines have per-program glyph caching. A single page-owned prepared TrueType instance is keyed by retained program, ppem, physical point size and grayscale profile. Hinted/rasterized glyph-result caches and Type 3 drawing need further state-sensitive treatment."
           ],
           "dependencies": [
             "1",
@@ -4281,10 +4290,13 @@
             "scripts/test_pdf_coverage_reference.py",
             "scripts/test_pdf_tt_bitmap_reference.py",
             "src/formats/pdf/raster/font_coverage.c",
-            "scripts/test_pdf_text_antialias.py"
+            "scripts/test_pdf_text_antialias.py",
+            "docs/pdf-page-hinting.md",
+            "src/formats/pdf/fonts/page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
           ],
           "limitations": [
-            "Opt-in TrueType/CFF/Type 1 fill coverage is tested on pages. Defaults retain center-point fill. Hinting remains separate from page rendering; fractional clipping, stroke coverage, image resampling, thin-line behavior and broader raster fidelity remain incomplete."
+            "Opt-in outline fill coverage and a selected native legacy TrueType page profile are tested. Defaults retain unhinted center-point fill. Modern/subpixel profiles, variation behavior, CFF/Type 1 hinting, fractional clipping, stroke coverage, image resampling and wider raster fidelity remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -4294,7 +4306,7 @@
             "10",
             "14"
           ],
-          "audit": "selected scan-conversion and opt-in page fill evidence reviewed; detailed audit pending",
+          "audit": "selected scan-conversion and optional page hinting/fill evidence reviewed; detailed audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 10.6.1",
             "ISO 32000-1:2008 10.6.4"

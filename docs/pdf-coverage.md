@@ -15,8 +15,8 @@ existing center-point fill path while the wider raster pipeline is qualified.
 
 Stroke and clip coverage remain binary, as do bitmap fallback glyphs and the
 ordinary graphics in Type 3 programs. Text inside a Form, a pattern or a soft-mask
-form inherits the option. The native TrueType instruction path still needs page
-integration; this option does not enable hinting or establish full font fidelity.
+form inherits the option. Native TrueType page hinting has a separate
+[explicit option](pdf-page-hinting.md); smoothing alone does not enable it.
 
 ## Coordinates and output
 
@@ -93,5 +93,5 @@ the focused analytic and independent cases above are the pixel evidence. Rebuild
 it with `scripts/generate_pdf_text_coverage_fixture.py`.
 
 Fractional text clipping, stroke coverage, complete combined-paint behavior,
-hinted page glyphs and a qualified default smoothing policy remain open. The
+broader hinted-page qualification and a default smoothing policy remain open. The
 coverage option is deliberately explicit until those paths have broader tests.

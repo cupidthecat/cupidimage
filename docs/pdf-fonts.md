@@ -796,12 +796,12 @@ handling, interpolation, delta moves and point shifts. Its tests
 initialize the pinned Latin font programs and execute their uniform-size preparation
 programs. A separate probe compares 9,330 simple-glyph outlines at six sizes using
 supplied geometry for Unicode mappings U+0020 through U+00FF. Prepared state and
-glyph entry are tested separately. The PDF renderer
-does not invoke this engine yet. The [native loader](pdf-truetype-loader.md) now
+glyph entry are tested separately. The PDF renderer can invoke the engine through
+the explicit [native hinting option](pdf-page-hinting.md). The [native loader](pdf-truetype-loader.md) now
 constructs simple and composite glyphs, their phantom points and instruction
 phases. Selected simple and composite outlines match independently in monochrome
 and grayscale modes, including selected nonuniform sizes and post-hint affine
-transforms. Remaining instruction behavior and PDF integration are unfinished.
+transforms. Broader instruction behavior and page-level font fidelity remain unfinished.
 These outline tests do not establish complete hinted-glyph raster fidelity.
 
 ## Glyph edge coverage
@@ -809,6 +809,7 @@ These outline tests do not establish complete hinted-glyph raster fidelity.
 A bounded line/quadratic/cubic [coverage converter](pdf-coverage.md) now has
 analytic area, independent bitmap and allocation-failure tests. Page painting can
 use it for TrueType/CFF/Type 1 fills through `--pdf-text-aa` or the PDF options API.
-The default remains center-point coverage. Page glyphs are still unhinted, and
-stroke/clip coverage is still binary. A separate test pipeline joins the converter
-to native hinted outlines; that test does not enable hinted page rendering.
+The default remains center-point coverage. Page glyphs remain unhinted unless
+`--pdf-tt-hinting` is also enabled for TrueType programs. Stroke/clip coverage is
+still binary. Standalone bitmap tests and page tests have separate qualification
+scopes; neither establishes complete font fidelity.

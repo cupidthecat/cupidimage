@@ -307,7 +307,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     if (!st->form_budget->glyph_calls_left)
         return 0;
     st->form_budget->glyph_calls_left--;
-    pdf_tt_outline outline = {0};
+    pdf_tt_outline outline = {0}, device_outline = {0};
+    pdf_tt_hint_shape hinted = {0};
     pdf_cff_outline cff_outline = {0};
     pdf_path *path = NULL;
     outline_edge *edges = NULL;
@@ -324,15 +325,6 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         ok = 1;
         goto done;
     }
-    edges = malloc((size_t)count * 2 * sizeof(*edges));
-    if (!edges)
-        goto done;
-    if ((mode == 1 || mode == 2) &&
-        !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
-        path = calloc(1, sizeof(*path));
-        if (!path)
-            goto done;
-    }
     const double *t = st->text_matrix;
     const float *c = st->gs.ctm;
     double ratio = (double)(96.0f / 72.0f),
@@ -348,6 +340,32 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                    (st->page_top_pts - c[1] * (t[4] + st->gs.text_rise * t[2]) -
                     c[3] * (t[5] + st->gs.text_rise * t[3]) - c[5]) *
                        ratio};
+    const pdf_tt_outline *draw_outline = &outline;
+    double draw_matrix[6];
+    memcpy(draw_matrix, m, sizeof(m));
+    if (st->truetype_hinting && !zero_text_transform && !program->is_cff && !program->is_type1) {
+        if (!cupidimage_pdf_page_hint_shape(&st->form_budget->hint_cache, program, glyph, m,
+                                            st->text_antialias, &st->clip_budget->tests_left,
+                                            &hinted)) {
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: unable to grid-fit TrueType glyph");
+            goto done;
+        }
+        device_outline.points = hinted.points;
+        device_outline.count = hinted.count;
+        draw_outline = &device_outline;
+        count = hinted.count;
+        memcpy(draw_matrix, (double[6]){1, 0, 0, 1, 0, 0}, sizeof(draw_matrix));
+    }
+    edges = malloc((size_t)count * 2 * sizeof(*edges));
+    if (!edges)
+        goto done;
+    if ((mode == 1 || mode == 2) &&
+        !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
+        path = calloc(1, sizeof(*path));
+        if (!path)
+            goto done;
+    }
     double flatness = cupidimage_pdf_flatness(&st->gs, .125);
     double flatness_squared = flatness * flatness;
     if (program->is_cff || program->is_type1) {
@@ -364,7 +382,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         m[5] = a[1] * f[4] + a[3] * f[5] + a[5];
         if (!outline_cff_path(&cff_outline, path, edges, &edge_count, m, flatness_squared))
             goto done;
-    } else if (!outline_path(&outline, path, edges, &edge_count, m, flatness_squared))
+    } else if (!outline_path(draw_outline, path, edges, &edge_count, draw_matrix, flatness_squared))
         goto done;
     if (!edge_count) {
         ok = 1;
@@ -419,10 +437,10 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     }
     if (st->text_antialias && pixels && (mode == 0 || mode == 2) &&
         !cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern) &&
-        !cupidimage_pdf_font_coverage(program->is_cff || program->is_type1 ? NULL : &outline,
-                                      program->is_cff || program->is_type1 ? &cff_outline : NULL, m,
-                                      left, top, right, bottom, &st->clip_budget->tests_left,
-                                      &fill))
+        !cupidimage_pdf_font_coverage(program->is_cff || program->is_type1 ? NULL : draw_outline,
+                                      program->is_cff || program->is_type1 ? &cff_outline : NULL,
+                                      program->is_cff || program->is_type1 ? m : draw_matrix, left,
+                                      top, right, bottom, &st->clip_budget->tests_left, &fill))
         goto done;
     if (pixels && mode != 3 && !cupidimage_pdf_text_group_begin(st))
         goto done;
@@ -457,6 +475,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
 done:
     if (!cupidimage_pdf_fill_stroke_end(st, &combined, ok))
         ok = 0;
+    cupidimage_pdf_tt_hint_shape_free(&hinted);
     free(fill);
     free(stroke);
     free(path);

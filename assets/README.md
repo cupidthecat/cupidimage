@@ -23,3 +23,9 @@ an analytic marker oracle. Regenerate them with `scripts/generate_pdf_spacing_fi
 text coverage path. Its complete raster is decoded-unverified. Rebuild it with
 `scripts/generate_pdf_text_coverage_fixture.py`; the separate page coverage tests
 use analytic areas and independent curve masks.
+
+`pdf/native-truetype-hinting.pdf` embeds an owned instruction font. Its glyphs move
+outline points and a phantom advance, while PDF widths retain control of spacing.
+The full sample is decoded-unverified. Regenerate it with
+`scripts/generate_pdf_page_hinting_fixture.py`; its font source is in
+`scripts/generate_pdf_page_hinting_font.py`.

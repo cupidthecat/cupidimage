@@ -52,8 +52,9 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
         return 0;
     }
     memset(img, 0, sizeof(*img));
-    if (opts && opts->text_antialias != 0 && opts->text_antialias != 1) {
-        cupidimage_set_err(err, errcap, "pdf: invalid text antialias option");
+    if (opts && ((opts->text_antialias != 0 && opts->text_antialias != 1) ||
+                 (opts->truetype_hinting != 0 && opts->truetype_hinting != 1))) {
+        cupidimage_set_err(err, errcap, "pdf: invalid text rendering option");
         return 0;
     }
     if (!cupidimage_pdf_check_header(data, size)) {

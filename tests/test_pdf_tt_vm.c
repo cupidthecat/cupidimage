@@ -47,23 +47,7 @@ static void vm_test_free(void *value) {
 #define malloc vm_test_malloc
 #define calloc vm_test_calloc
 #define free vm_test_free
-#include "../src/formats/pdf/fonts/truetype_vm/contours.c"
-#include "../src/formats/pdf/fonts/truetype_vm/cvt_access.c"
-#include "../src/formats/pdf/fonts/truetype_vm/design.c"
-#include "../src/formats/pdf/fonts/truetype_vm/direct.c"
-#include "../src/formats/pdf/fonts/truetype_vm/flags.c"
-#include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
-#include "../src/formats/pdf/fonts/truetype_vm/interpolate.c"
-#include "../src/formats/pdf/fonts/truetype_vm/intersection.c"
-#include "../src/formats/pdf/fonts/truetype_vm/lifecycle.c"
-#include "../src/formats/pdf/fonts/truetype_vm/movement.c"
-#include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
-#include "../src/formats/pdf/fonts/truetype_vm/points.c"
-#include "../src/formats/pdf/fonts/truetype_vm/relative.c"
-#include "../src/formats/pdf/fonts/truetype_vm/size.c"
-#include "../src/formats/pdf/fonts/truetype_vm/stack.c"
-#include "../src/formats/pdf/fonts/truetype_vm/vector.c"
-#include "../src/formats/pdf/fonts/truetype_vm/vm.c"
+#include "pdf_tt_vm_sources.inc"
 #undef malloc
 #undef calloc
 #undef free

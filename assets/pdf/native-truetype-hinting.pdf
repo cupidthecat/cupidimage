@@ -1,0 +1,58 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R]  >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Contents 4 0 R /MediaBox [0 0 240 180]
+/Resources << /Font << /F 5 0 R /Label 11 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 437 >>
+stream
+1 0 0 1 1.125 0 cm 
+BT /Label 14 Tf 12 158 Td (Native TrueType instructions) Tj ET
+BT /Label 9 Tf 12 141 Td (Enable --pdf-tt-hinting and --pdf-text-aa.) Tj ET
+0.15 0.3 0.8 rg BT /F 12 Tf 12.1875 112.1875 Td (ABAB) Tj ET
+0.8 0.2 0.1 rg BT /F 18 Tf 12.375 76.375 Td (ABAB) Tj ET
+0.1 0.5 0.2 rg BT /F 18 Tf 1 .25 -.125 1 20 37 Tm (ABAB) Tj ET
+0 0 0 rg BT /Label 9 Tf 12 14 Td (Instructions move shapes; PDF widths still set spacing.) Tj ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /TrueType /BaseFont /CupidImageHintedShapes /FontDescriptor 8 0 R /Encoding /WinAnsiEncoding /FirstChar 65 /LastChar 71 /Widths [1000 1000 1000 1000 1000 1000 1000] >>
+endobj
+8 0 obj
+<< /Type /FontDescriptor /FontName /CupidImageHintedShapes /Flags 32 /FontBBox [-8 12 631 962] /Ascent 1000 /Descent -200 /CapHeight 835 /ItalicAngle 0.0 /StemV 80 /FontFile2 9 0 R >>
+endobj
+9 0 obj
+<< /Filter /FlateDecode /Length1 876 /Length 514 >> stream
+xœ…RMkQ=ï½IŒªbi«™Òª­Ò,kc°Ah\.ì³3Î2éĞ$´İˆˆ‚‹.º°;Á¥.Dºp#t!]W‚ –.â^¥›2™Lí(¢î{÷œûîç€cxóVeøréké> †ÈÎÎyÚGkÄÏ‰GÚòƒKû+ÄŸˆo»¶¶~|Î¼¥ı†:î’Hk•¢½KÍ»^s)3Šß?#ÎÖæç4ÎàñqÆÓK>n°D†Ø¬kÏ~z·ryrgıùFç1¨ëô!ì•ú²gûÅ½ãW¾C¨6||µƒƒ;ØCV.ªMB‰0FµƒÏ'D%¹eJŠŠƒw¨²E™Œ,%7Ä*Rôş_~Ë~•Âë¦âÚØúã½Éoœz¹¨CDõµ;î¬›uùŠ§á© sAğ!Q-Ü­à¾¸"#ûÄºÑûBªÉÂ{¤$
+8 ÌÂDÿÉşœ¼³ÿz@™ÌîíœÚ<õ¢üe'°nˆuGÈÃ¸Àé_J!ñy#a§ÑÃ8…q”ÌÆb[¢vl«o$ì4.¢QlùU«ìiÇ6§«õ¦m™WûvcÆvZ5½pèîx;NÑ‚*,”áAÃa1ÓdêhÒ¶ˆ*péñ‰˜áé0¦Ffá¯ÑÉØddüµş%á—Ìcğ'"­€k
+endstream
+endobj
+11 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000116 00000 n 
+0000000255 00000 n 
+0000000743 00000 n 
+0000000000 00000 f 
+0000000000 00000 f 
+0000000950 00000 n 
+0000001149 00000 n 
+0000000000 00000 f 
+0000001748 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+1819
+%%EOF

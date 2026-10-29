@@ -15,13 +15,15 @@
 static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
-            "number] [--pdf-text-aa] [--sixel] [--sixel-colors N] [--sixel-dither MODE] [--ansi] "
+            "number] [--pdf-text-aa] [--pdf-tt-hinting] [--sixel] [--sixel-colors N] "
+            "[--sixel-dither MODE] [--ansi] "
             "<image-file> "
             "[max_width] [max_height]\n",
             prog);
     fprintf(
         stderr,
         "  --pdf-text-aa: enable grayscale PDF outline text fill (strokes/clips remain binary)\n");
+    fprintf(stderr, "  --pdf-tt-hinting: execute the native legacy TrueType hinting profile\n");
     fprintf(stderr, "  --sixel: force Sixel output\n");
     fprintf(stderr, "  --sixel-colors N: set max palette colors (2-256, default 256)\n");
     fprintf(stderr, "  --sixel-dither MODE: none, floyd-steinberg, atkinson, ordered (default: "
@@ -116,7 +118,8 @@ static int path_has_pdf_extension(const char *path) {
     if (!dot) {
         return 0;
     }
-    return strcmp(dot, ".pdf") == 0 || strcmp(dot, ".PDF") == 0;
+    return strlen(dot) == 4 && tolower((unsigned char)dot[1]) == 'p' &&
+           tolower((unsigned char)dot[2]) == 'd' && tolower((unsigned char)dot[3]) == 'f';
 }
 
 static int read_file_text(const char *path, char **out_text, size_t *out_size) {
@@ -846,6 +849,10 @@ int main(int argc, char **argv) {
             i++;
             continue;
         }
+        if (strcmp(argv[i], "--pdf-tt-hinting") == 0) {
+            pdf_options.truetype_hinting = 1;
+            continue;
+        }
         if (strcmp(argv[i], "--pdf-text-aa") == 0) {
             pdf_options.text_antialias = 1;
             continue;
@@ -891,6 +898,55 @@ int main(int argc, char **argv) {
     }
 
     char err[128];
+    if (path_has_pdf_extension(path) || has_pdf_page || pdf_options.text_antialias ||
+        pdf_options.truetype_hinting) {
+        int page_count = 0;
+        if (!cupidimage_get_pdf_page_count_file(path, &page_count, err, sizeof(err))) {
+            fprintf(stderr, "load error: %s\n", err);
+            return 1;
+        }
+        if (page_count <= 0) {
+            fprintf(stderr, "load error: pdf has no pages\n");
+            return 1;
+        }
+
+        int start_page = 0;
+        int end_page = page_count - 1;
+        if (has_pdf_page) {
+            start_page = pdf_page - 1;
+            end_page = start_page;
+            if (start_page < 0 || start_page >= page_count) {
+                fprintf(stderr, "load error: pdf page out of range (1-%d)\n", page_count);
+                return 1;
+            }
+        }
+
+        for (int page = start_page; page <= end_page; page++) {
+            cupidimage_image img;
+            if (!cupidimage_load_pdf_page_file_with_options(path, &img, page, &pdf_options, err,
+                                                            sizeof(err))) {
+                fprintf(stderr, "load error: %s\n", err);
+                return 1;
+            }
+
+            if (page_count > 1 && !has_pdf_page) {
+                fprintf(stderr, "[pdf page %d/%d]\n", page + 1, page_count);
+            }
+            if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi,
+                                              sixel_colors, sixel_dither)) {
+                fprintf(stderr, "render error\n");
+                cupidimage_free(&img);
+                return 1;
+            }
+            cupidimage_free(&img);
+
+            if (page < end_page) {
+                fputc('\n', stdout);
+            }
+        }
+        return 0;
+    }
+
     if (is_gif_file(path)) {
         cupidimage_animation anim;
         if (!cupidimage_load_gif_animation_file(path, &anim, err, sizeof(err))) {
@@ -954,59 +1010,6 @@ int main(int argc, char **argv) {
         if (anim_res > 0) {
             return 0;
         }
-    }
-
-    if (path_has_pdf_extension(path)) {
-        int page_count = 0;
-        if (!cupidimage_get_pdf_page_count_file(path, &page_count, err, sizeof(err))) {
-            fprintf(stderr, "load error: %s\n", err);
-            return 1;
-        }
-        if (page_count <= 0) {
-            fprintf(stderr, "load error: pdf has no pages\n");
-            return 1;
-        }
-
-        int start_page = 0;
-        int end_page = page_count - 1;
-        if (has_pdf_page) {
-            start_page = pdf_page - 1;
-            end_page = start_page;
-            if (start_page < 0 || start_page >= page_count) {
-                fprintf(stderr, "load error: pdf page out of range (1-%d)\n", page_count);
-                return 1;
-            }
-        }
-
-        for (int page = start_page; page <= end_page; page++) {
-            cupidimage_image img;
-            if (!cupidimage_load_pdf_page_file_with_options(path, &img, page, &pdf_options, err,
-                                                            sizeof(err))) {
-                fprintf(stderr, "load error: %s\n", err);
-                return 1;
-            }
-
-            if (page_count > 1 && !has_pdf_page) {
-                fprintf(stderr, "[pdf page %d/%d]\n", page + 1, page_count);
-            }
-            if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi,
-                                              sixel_colors, sixel_dither)) {
-                fprintf(stderr, "render error\n");
-                cupidimage_free(&img);
-                return 1;
-            }
-            cupidimage_free(&img);
-
-            if (page < end_page) {
-                fputc('\n', stdout);
-            }
-        }
-        return 0;
-    }
-
-    if (has_pdf_page) {
-        fprintf(stderr, "load error: --pdf-page is only valid for PDF files\n");
-        return 1;
     }
 
     cupidimage_image img;

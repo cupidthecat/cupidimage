@@ -1,6 +1,7 @@
 #ifndef CUPIDIMAGE_PDF_RENDER_INTERNAL_H
 #define CUPIDIMAGE_PDF_RENDER_INTERNAL_H
 
+#include "fonts/page_hint.h"
 #include "pdf_internal.h"
 
 #define PDF_COLOR_COMPONENTS 32
@@ -137,6 +138,7 @@ typedef struct {
     size_t transparency_bytes_live;
     uint64_t paint_serial;
     size_t outline_cache_bytes_left;
+    pdf_page_hint *hint_cache;
 } pdf_form_budget;
 
 typedef struct pdf_transparency_group pdf_transparency_group;
@@ -153,7 +155,7 @@ typedef struct {
     pdf_object_id page_object;
     const pdf_object_view *resource_override;
     int image_failed;
-    int text_antialias;
+    int text_antialias, truetype_hinting;
     char *error;
     size_t error_capacity;
     float page_x0_pts;

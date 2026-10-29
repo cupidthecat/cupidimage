@@ -14,6 +14,7 @@ pdf_font_program *cupidimage_pdf_load_substitute_program(const char *name) {
     pdf_font_program *program = calloc(1, sizeof(*program));
     if (!program)
         return NULL;
+    program->references = 1;
     program->bytes = malloc(source->decoded_length);
     program->length = source->decoded_length;
     size_t decoded = 0;

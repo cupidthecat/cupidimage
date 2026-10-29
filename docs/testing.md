@@ -664,3 +664,12 @@ analytic rectangle areas, opacity, Form inheritance, soft masks, patterns and
 Sixel output. Optional curve comparisons use an independent font engine. Default
 rendering and existing asset oracles remain unchanged; the new full-page sample
 is decoded-unverified. See [coverage details](pdf-coverage.md).
+
+## PDF native page hinting
+
+`make test-pdf-page-hinting` covers the frame/cache adapter, PDF metrics independent
+of phantom advances, Form-local font lifetimes, physical point-size cache keys,
+invalid instructions and work exhaustion. Optional comparisons include authored
+glyphs, pinned Latin fonts and stroke/clip device outlines. Native VM/loader source
+includes are shared by the standalone and page allocation probes, so the new path
+is fault-instrumented throughout. See [page-hinting scope](pdf-page-hinting.md).

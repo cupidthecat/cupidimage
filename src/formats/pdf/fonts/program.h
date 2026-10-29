@@ -15,6 +15,7 @@ typedef struct {
 } pdf_cached_outline;
 
 struct pdf_font_program {
+    unsigned references;
     pdf_tt_font font;
     pdf_cff_font cff;
     int is_cff, is_type1;
@@ -31,6 +32,7 @@ struct pdf_font_program {
 struct pdf_font_program *cupidimage_pdf_font_program_select(struct pdf_font_program *, unsigned *);
 struct pdf_font_program *cupidimage_pdf_load_substitute_program(const char *);
 
+int cupidimage_pdf_font_program_retain(struct pdf_font_program *program);
 void cupidimage_pdf_font_outline_cache_clear(struct pdf_font_program *program);
 int cupidimage_pdf_font_outline(struct pdf_font_program *program, unsigned glyph,
                                 pdf_tt_outline *truetype, pdf_cff_outline *postscript,

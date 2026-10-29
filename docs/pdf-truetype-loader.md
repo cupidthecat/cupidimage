@@ -2,8 +2,9 @@
 
 The native hinting loader connects simple/composite glyph decoding to the
 [instruction engine](pdf-truetype-vm.md). It is tested separately from PDF rendering.
-**PDF pages still use unhinted outlines.** Page-level integration, rasterization and broader font-program qualification are unfinished,
-so this API is not a complete hinted-font backend.
+Default PDF pages still use unhinted outlines. An explicit [page option](pdf-page-hinting.md)
+now connects this loader to device outlines and coverage. Broader font-program and
+modern-profile qualification remain unfinished.
 
 ## Ownership and preparation
 
@@ -96,8 +97,9 @@ cover nesting, transforms, metric inheritance, point attachments, private state,
 malformed graphs and allocation failures. See the composite guide for exact scope
 and known comparison differences.
 
-Antialiased coverage, broader instruction/variation qualification and PDF
-integration remain open. Existing unhinted rendering continues unchanged.
+Selected page integration and antialiased fills are now tested separately. Broader
+instruction/variation qualification and complete raster fidelity remain open.
+Existing unhinted defaults continue unchanged.
 
 The data contracts follow the official [glyph table](https://learn.microsoft.com/en-us/typography/opentype/spec/glyf),
 [maximum profile](https://learn.microsoft.com/en-us/typography/opentype/spec/maxp),

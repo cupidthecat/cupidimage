@@ -15,7 +15,7 @@ from audit_pdf_corpus import read_ppm
 FONT=base64.b64decode(json.loads(Path('tests/fixtures/pdf-truetype.json').read_text())['font'])
 
 
-def fixture(content,cid=False,vertical=False,extra=None,encoding='/WinAnsiEncoding',font_data=FONT,flags=32,metrics=None):
+def fixture(content,cid=False,vertical=False,extra=None,encoding='/WinAnsiEncoding',font_data=FONT,flags=32,metrics=None,font_name='CupidImageTestShapes'):
     if metrics is None:metrics='' if cid else '/FirstChar 65 /LastChar 71 /Widths [1000 1000 1000 1000 1000 1000 1000]'
     descriptor='<< /Type /FontDescriptor /FontName /CupidImageTestShapes /Flags '+str(flags)+' /FontBBox [0 0 1000 1400] /ItalicAngle 0 /Ascent 1000 /Descent -200 /CapHeight 600 /StemV 80 /FontFile2 9 0 R >>'
     objects={8:descriptor.encode(),9:stream(zlib.compress(font_data),'/Filter /FlateDecode /Length1 '+str(len(font_data)))}
@@ -23,6 +23,9 @@ def fixture(content,cid=False,vertical=False,extra=None,encoding='/WinAnsiEncodi
         objects[5]=('<< /Type /Font /Subtype /Type0 /BaseFont /CupidImageTestShapes /Encoding /Identity-'+('V' if vertical else 'H')+' /DescendantFonts [6 0 R] >>').encode()
         objects[6]=('<< /Type /Font /Subtype /CIDFontType2 /BaseFont /CupidImageTestShapes /FontDescriptor 8 0 R /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /CIDToGIDMap /Identity '+metrics+' >>').encode()
     else:objects[5]=('<< /Type /Font /Subtype /TrueType /BaseFont /CupidImageTestShapes /FontDescriptor 8 0 R '+('/Encoding '+encoding if encoding else '')+' '+metrics+' >>').encode()
+    for key in (5,6,8):
+        if key in objects:
+            objects[key]=objects[key].replace(b'/CupidImageTestShapes',b'/'+font_name.encode('ascii'))
     objects.update(extra or {})
     return document('/MediaBox [0 0 120 90] /Resources << /Font << /F 5 0 R >> /ExtGState << /Half << /ca .5 /CA .5 >> >> >>',stream="1 0 0 1 1.125 0 cm "+content,extra=objects)
 

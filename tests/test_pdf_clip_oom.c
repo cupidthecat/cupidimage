@@ -15,6 +15,7 @@
 #include "../src/formats/pdf/fonts/cff.c"
 #include "../src/formats/pdf/fonts/cmap.c"
 #include "../src/formats/pdf/fonts/encoding.c"
+#include "../src/formats/pdf/fonts/page_hint.c"
 #include "../src/formats/pdf/fonts/standard.c"
 #include "../src/formats/pdf/fonts/standard_outlines.c"
 #include "../src/formats/pdf/fonts/truetype.c"
@@ -31,6 +32,7 @@
 #include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_outline.c"
+#include "pdf_tt_loader_sources.inc"
 static int test_outline_cache_enabled = 1;
 
 static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_outline *truetype,
@@ -100,7 +102,8 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #undef realloc
 #undef free
 
-static int test_document_allocations(const char *path, int expected_failure, int antialias) {
+static int test_document_allocations(const char *path, int expected_failure, int antialias,
+                                     int hinting) {
     FILE *file = fopen(path, "rb");
     if (!file || fseek(file, 0, SEEK_END))
         return 2;
@@ -116,7 +119,7 @@ static int test_document_allocations(const char *path, int expected_failure, int
         return 2;
     }
     fclose(file);
-    cupidimage_pdf_options options = {antialias};
+    cupidimage_pdf_options options = {antialias, hinting};
     size_t total = 0, checks = 0, failures = 0, expected_size = 0;
     unsigned char *expected = NULL;
     unsigned width = 0, height = 0;
@@ -179,8 +182,9 @@ static int test_document_allocations(const char *path, int expected_failure, int
 }
 
 int main(int argc, char **argv) {
-    if (argc == 3 || argc == 4)
-        return test_document_allocations(argv[1], atoi(argv[2]), argc == 4 ? atoi(argv[3]) : 0);
+    if (argc >= 3 && argc <= 5)
+        return test_document_allocations(argv[1], atoi(argv[2]), argc >= 4 ? atoi(argv[3]) : 0,
+                                         argc >= 5 ? atoi(argv[4]) : 0);
 
     static const struct {
         const char *content;
@@ -304,7 +308,7 @@ int main(int argc, char **argv) {
         image.width = 2;
         image.height = 2;
         image.rgba = pixels;
-        pdf_form_budget budget = {0, 3, 3, 0, 0, 0, 0, 0};
+        pdf_form_budget budget = {0, 3, 3, 0, 0, 0, 0, 0, NULL};
         pdf_render_state state = {0};
         state.img = &image;
         state.document = (const unsigned char *)shading_doc;

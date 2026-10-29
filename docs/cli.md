@@ -20,6 +20,7 @@ nonzero status.
 | `--svg-time seconds` | Render a sampled SVG animation time instead of autoplay. |
 | `--pdf-page number` | Render one PDF page, numbered from 1. |
 | `--pdf-text-aa` | Enable grayscale outline text fills. Stroke and clip coverage remain binary; hinting is unchanged. |
+| `--pdf-tt-hinting` | Execute the native legacy TrueType instruction profile. Off by default; CFF/Type 1 hinting is not added. |
 
 If both `--ansi` and `--sixel` are present, ANSI wins. Without an explicit output
 choice, the CLI tries detected Sixel support, then detected Kitty support, then
@@ -34,6 +35,7 @@ including its pixel/cell aspect handling.
 ./bin/cupidimage --svg-time 1.5 assets/svg/animation_basic.svg
 ./bin/cupidimage --pdf-page 2 assets/pdf/pdfjs/basicapi.pdf
 ./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-coverage.pdf
+./bin/cupidimage --pdf-text-aa --pdf-tt-hinting --sixel assets/pdf/native-truetype-hinting.pdf
 ```
 
 ## Animation and pages
@@ -46,6 +48,8 @@ SVG files containing recognized SMIL or CSS animation constructs autoplay in an
 interactive terminal unless `--svg-time` selects a sample. Redirected SVG output
 uses the initial state. SVG animation and text support remain subsets of SVG.
 
+PDF extensions are case-insensitive. Explicit PDF options select the PDF loader
+even without a filename extension; the loader still validates the document header.
 PDF files render every page unless `--pdf-page` is given. The CLI prints page
 progress to stderr and separates page output with newlines. PDF page numbers in
 the CLI are 1-based; the C page APIs are 0-based. Page previews use 96 DPI and preserve the page bounds, including whitespace.

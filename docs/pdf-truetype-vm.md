@@ -1,9 +1,9 @@
 # TrueType instruction engine
 
-The native instruction engine is a tested foundation for hinting. **The page
-renderer does not invoke it yet.** Glyphs still use unhinted outlines. Successful
-font-program initialization must not be reported as grid fitting or hinted-rendering
-support.
+The native instruction engine supports an opt-in [page hinting path](pdf-page-hinting.md)
+as well as standalone probes. Default page rendering remains unhinted. Successful
+font-program initialization alone is not evidence of complete grid fitting or
+hinted-rendering parity.
 
 ## Current scope
 
@@ -306,8 +306,8 @@ When the optional `fontTools` and `freetype-py` test packages are available,
 `scripts/test_pdf_tt_vm_reference.py` also compares 7,332 native expression results
 with a separate interpreter. It places each result in a synthetic outline point
 using SCFS and checks that coordinate after monochrome hint execution. This
-qualifies the tested arithmetic and rounding instructions only; page rendering
-remains unhinted.
+qualifies the tested arithmetic and rounding instructions only. Page qualification
+is recorded separately in the page-hinting guide.
 
 `scripts/test_pdf_tt_prep_reference.py` checks 181,676 prepared control values across
 the 12 pinned faces, 22 sizes and both monochrome and grayscale configurations.

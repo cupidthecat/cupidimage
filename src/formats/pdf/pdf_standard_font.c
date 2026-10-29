@@ -11,6 +11,7 @@ static pdf_font_program *standard_cff(const pdf_standard_outline *outline) {
     pdf_font_program *program = calloc(1, sizeof(*program));
     if (!program)
         return NULL;
+    program->references = 1;
     program->bytes = malloc(outline->length);
     program->length = outline->length;
     program->is_cff = 1;

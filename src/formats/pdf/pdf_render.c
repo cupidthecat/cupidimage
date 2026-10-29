@@ -1491,12 +1491,13 @@ int cupidimage_pdf_render_content_stream_options(
     const pdf_xref *xref, const cupidimage_pdf_options *opts) {
     pdf_render_state st = {0};
     st.text_antialias = opts ? opts->text_antialias : 0;
+    st.truetype_hinting = opts ? opts->truetype_hinting : 0;
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
     st.xref = xref;
     pdf_form_budget form_budget = {
         64u * 1024u * 1024u, 4096, 128u * 1024u * 1024u, 65536, 256u * 1024u * 1024u, 0, 0,
-        16u * 1024u * 1024u};
+        16u * 1024u * 1024u, NULL};
     st.form_budget = &form_budget;
     pdf_pattern_store patterns = {0};
     st.patterns = &patterns;
@@ -1551,6 +1552,7 @@ int cupidimage_pdf_render_content_stream_options(
     cupidimage_pdf_palettes_free(&palettes);
     cupidimage_pdf_tint_free(&tints);
     cupidimage_pdf_icc_free(&profiles);
+    cupidimage_pdf_page_hint_free(&form_budget.hint_cache);
     if (!ok && err && errcap && !err[0])
         cupidimage_set_err(err, errcap,
                            "pdf: unsupported page group or transparency limit exceeded");

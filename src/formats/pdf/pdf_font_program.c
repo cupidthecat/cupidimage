@@ -2,6 +2,7 @@
 #include "fonts/program.h"
 #include "fonts/truetype_data.h"
 #include "pdf_internal.h"
+#include <limits.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,8 +60,21 @@ size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
                : 0;
 }
 
+int cupidimage_pdf_font_program_retain(pdf_font_program *program) {
+    if (!program || program->references == UINT_MAX)
+        return 0;
+    if (!program->references)
+        program->references = 1;
+    program->references++;
+    return 1;
+}
+
 void cupidimage_pdf_font_program_free(pdf_font_program *program) {
     if (program) {
+        if (program->references > 1) {
+            program->references--;
+            return;
+        }
         cupidimage_pdf_font_program_free(program->extended);
         cupidimage_pdf_font_outline_cache_clear(program);
         cupidimage_pdf_cff_free(&program->cff);
@@ -229,6 +243,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
     program = calloc(1, sizeof(*program));
     if (!program)
         goto done;
+    program->references = 1;
     if (!cupidimage_pdf_object_stream(data, size, &stream, &bytes, &length) ||
         !cupidimage_pdf_decode_stream(&stream, bytes, length, &program->bytes, &program->length) ||
         program->length > 16u * 1024u * 1024u)
