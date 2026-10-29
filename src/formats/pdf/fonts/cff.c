@@ -127,7 +127,9 @@ static int cff_offset(double value, size_t *offset) {
 int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int private_dict) {
     memset(dict, 0, sizeof(*dict));
     dict->matrix[0] = dict->matrix[3] = .001;
+    cupidimage_pdf_ps_hints_init(&dict->hints);
     double operands[48];
+    unsigned char integer_operand[48];
     unsigned count = 0;
     size_t pos = 0;
     while (pos < source.length) {
@@ -135,6 +137,7 @@ int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int privat
         if (op >= 28) {
             if (count == 48 || !cff_number(source, &pos, operands + count))
                 return 0;
+            integer_operand[count] = op != 30;
             count++;
             continue;
         }
@@ -146,6 +149,19 @@ int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int privat
         }
         size_t *offset = NULL;
         if (private_dict) {
+            static const unsigned hint_ops[PDF_PS_HINT_FIELDS] = {6,   7,   8,  9,  268, 269, 265,
+                                                                  266, 267, 10, 11, 270, 273, 274};
+            for (unsigned field = 0; field < PDF_PS_HINT_FIELDS; field++) {
+                if (op != hint_ops[field])
+                    continue;
+                int valid = 1;
+                if (field == PDF_PS_OTHER_BLUES || field == PDF_PS_FAMILY_OTHER_BLUES)
+                    valid = (dict->hints.seen & (1u << (field - 1))) != 0;
+                if (field == PDF_PS_FORCE_BOLD && count == 1 && !integer_operand[0])
+                    valid = 0;
+                cupidimage_pdf_ps_hint_set(&dict->hints, field, operands, count, 1, valid);
+                break;
+            }
             if (op == 19)
                 offset = &dict->subrs;
             else if (op == 275) {
@@ -317,6 +333,7 @@ static int cff_private(pdf_cff_font *font, const pdf_cff_dict *owner, pdf_cff_pr
         if (!cupidimage_pdf_cff_index(font->source, &pos, &result->subrs))
             return 0;
     }
+    result->hints = dict.hints;
     result->random_seed = dict.random_seed ? (uint32_t)dict.random_seed : 1;
     result->default_width = dict.default_width;
     result->nominal_width = dict.nominal_width;

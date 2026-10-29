@@ -673,3 +673,12 @@ invalid instructions and work exhaustion. Optional comparisons include authored
 glyphs, pinned Latin fonts and stroke/clip device outlines. Native VM/loader source
 includes are shared by the standalone and page allocation probes, so the new path
 is fault-instrumented throughout. See [page-hinting scope](pdf-page-hinting.md).
+
+### CFF hint inputs
+
+`make test-pdf-cff` tests retained private parameters and optional Type 2 stem/mask
+capture. FontTools adds independent private-field and charstring-input comparisons
+using pinned fonts. Trace-on and trace-off outlines must match. Fault injection
+checks cleanup after trace growth and malformed programs. These are input and
+ownership checks, not hinted-pixel comparisons. See
+[PostScript hint data](pdf-postscript-hints.md).

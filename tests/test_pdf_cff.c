@@ -53,13 +53,30 @@ int main(int argc, char **argv) {
         for (unsigned i = 0; i < font.private_count; i++)
             printf("private %u %.9g %.9g %u\n", i, font.private_dicts[i].default_width,
                    font.private_dicts[i].nominal_width, font.private_dicts[i].subrs.count);
+        if (argc > 2 && !strcmp(argv[2], "--hints")) {
+            for (unsigned i = 0; i < font.private_count; i++) {
+                const pdf_ps_private_hints *hints = &font.private_dicts[i].hints;
+                printf("hints %u %u %u\n", i, hints->seen, hints->invalid);
+                for (unsigned j = 0; j < 6; j++) {
+                    printf("hint-array %u %u", i, j);
+                    for (unsigned k = 0; k < hints->counts[j]; k++)
+                        printf(" %.17g", hints->arrays[j][k]);
+                    putchar('\n');
+                }
+                for (unsigned j = 0; j < 8; j++)
+                    printf("hint-scalar %u %u %.17g\n", i, j, hints->scalars[j]);
+            }
+        }
         if (font.top.cid)
             for (unsigned i = 0; i < font.chars.count; i++)
                 printf("fd %u %u\n", i, font.fdselect[i]);
-        if (argc > 2 && !strcmp(argv[2], "--outline")) {
+        if (argc > 2 && (!strcmp(argv[2], "--outline") || !strcmp(argv[2], "--hint-outline"))) {
             for (unsigned gid = 0; gid < font.chars.count; gid++) {
                 pdf_cff_outline outline;
-                if (!cupidimage_pdf_type2_outline(&font, gid, &outline)) {
+                pdf_ps_hint_program hints = {0};
+                int trace = !strcmp(argv[2], "--hint-outline");
+                if (!cupidimage_pdf_type2_outline_hints(&font, gid, &outline,
+                                                        trace ? &hints : NULL)) {
                     cupidimage_pdf_cff_free(&font);
                     free(data);
                     return 3;
@@ -74,6 +91,21 @@ int main(int argc, char **argv) {
                         printf(" %.9g", seg->points[k]);
                     putchar('\n');
                 }
+                if (trace) {
+                    printf("hint-program %u %u %u\n", gid, hints.stem_count, hints.diagnostics);
+                    for (unsigned j = 0; j < hints.stem_count; j++)
+                        printf("stem %u %u %.17g %.17g\n", gid, hints.stems[j].vertical,
+                               hints.stems[j].start, hints.stems[j].width);
+                    for (unsigned j = 0; j < hints.event_count; j++) {
+                        const pdf_ps_hint_event *event = hints.events + j;
+                        printf("hint-event %u %u %u %u", gid, event->segment, event->stem_count,
+                               event->counter);
+                        for (unsigned k = 0; k < (event->stem_count + 7) / 8; k++)
+                            printf(" %02x", event->mask[k]);
+                        putchar('\n');
+                    }
+                }
+                cupidimage_pdf_ps_hint_program_free(&hints);
                 cupidimage_pdf_type2_free(&outline);
             }
         }
@@ -123,6 +155,45 @@ int main(int argc, char **argv) {
     }
     pdf_cff_dict dict;
     CHECK(dictionary(NULL, 0, &dict, 0) && dict.matrix[0] == .001 && dict.matrix[3] == .001);
+    CHECK(dict.hints.scalars[0] == .039625 && dict.hints.scalars[1] == 7 &&
+          dict.hints.scalars[2] == 1 && dict.hints.scalars[7] == .06);
+    CHECK(!dict.hints.seen && !dict.hints.invalid);
+    unsigned char blues[] = {129, 149, 239, 149, 6, 119, 144, 7};
+    CHECK(dictionary(blues, sizeof(blues), &dict, 1));
+    CHECK(dict.hints.counts[0] == 4 && dict.hints.arrays[0][0] == -10 &&
+          dict.hints.arrays[0][1] == 0 && dict.hints.arrays[0][2] == 100 &&
+          dict.hints.arrays[0][3] == 110);
+    CHECK(dict.hints.counts[1] == 2 && dict.hints.arrays[1][0] == -20 &&
+          dict.hints.arrays[1][1] == -15 && !dict.hints.invalid);
+    unsigned char unordered[] = {119, 144, 7, 129, 149, 6};
+    CHECK(dictionary(unordered, sizeof(unordered), &dict, 1));
+    CHECK(dict.hints.invalid == (1u << PDF_PS_OTHER_BLUES) && !dict.hints.counts[1]);
+    unsigned char repaired[] = {139, 6, 129, 149, 6, 140, 12, 14, 141, 12, 17};
+    CHECK(dictionary(repaired, sizeof(repaired), &dict, 1));
+    CHECK(dict.hints.counts[0] == 2 && dict.hints.scalars[5] == 1 && dict.hints.scalars[6] == 0 &&
+          dict.hints.invalid == (1u << PDF_PS_LANGUAGE_GROUP));
+    unsigned char invalid_bool[] = {30, 0x1f, 12, 14};
+    CHECK(dictionary(invalid_bool, sizeof(invalid_bool), &dict, 1));
+    CHECK(dict.hints.invalid == (1u << PDF_PS_FORCE_BOLD) && dict.hints.scalars[5] == 0);
+    for (unsigned field = 0; field < PDF_PS_HINT_FIELDS; field++) {
+        double values[48];
+        for (unsigned i = 0; i < 48; i++)
+            values[i] = i ? 1 : 0;
+        for (unsigned count = 0; count <= 48; count++) {
+            cupidimage_pdf_ps_hints_init(&dict.hints);
+            cupidimage_pdf_ps_hint_set(&dict.hints, field, values, count, 1, 1);
+            static const unsigned maximum[6] = {14, 10, 14, 10, 12, 12};
+            int valid =
+                field < 6 ? count <= maximum[field] && (field >= 4 || !(count % 2)) : count == 1;
+            CHECK(!!dict.hints.invalid == !valid);
+            CHECK(dict.hints.seen == (1u << field));
+            if (valid && field < 6 && count)
+                CHECK(dict.hints.arrays[field][count - 1] == count - 1);
+        }
+        double invalid_value = INFINITY;
+        cupidimage_pdf_ps_hint_set(&dict.hints, field, &invalid_value, 1, 0, 1);
+        CHECK(dict.hints.invalid & (1u << field));
+    }
     unsigned char offsets[] = {239, 15, 247, 0, 16, 28, 1, 0, 17, 149, 28, 2, 0, 18};
     CHECK(dictionary(offsets, sizeof(offsets), &dict, 0));
     CHECK(dict.charset == 100 && dict.encoding == 108 && dict.charstrings == 256 &&

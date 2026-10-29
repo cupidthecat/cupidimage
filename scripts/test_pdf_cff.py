@@ -28,7 +28,7 @@ def index(items):
     return struct.pack('>H',len(items))+b'\x04'+b''.join(struct.pack('>I',n) for n in offsets)+b''.join(items)
 
 
-def fixture(charset=None,encoding=None,glyphs=4,strings=(b'customShape',),cid=False,fdselect=None,private_count=1,subrs=True,programs=None,local_subrs=None,global_programs=(),matrix=None):
+def fixture(charset=None,encoding=None,glyphs=4,strings=(b'customShape',),cid=False,fdselect=None,private_count=1,subrs=True,programs=None,local_subrs=None,global_programs=(),matrix=None,private_prefixes=None):
     if charset is None:charset=b'\0\0\1\0\x22\x01\x87'
     if encoding is None:encoding=0
     parts={}
@@ -38,7 +38,8 @@ def fixture(charset=None,encoding=None,glyphs=4,strings=(b'customShape',),cid=Fa
     for i in range(private_count):
         # Subrs offset is relative to the beginning of its own Private DICT.
         private=integer(600+i)+b'\x14'+integer(100+i)+b'\x15'
-        if subrs:private+=integer(18)+b'\x13'
+        if private_prefixes is not None:private=private_prefixes[i]+private
+        if subrs:private+=integer(len(private)+6)+b'\x13'
         parts[f'private{i}']=private
         if subrs:parts[f'subrs{i}']=index(local_subrs if local_subrs is not None else [b'\x0b'])
     if cid:

@@ -1,8 +1,9 @@
 # PDF fonts and text
 
 PDF text is still a work in progress. Supported embedded TrueType, CFF and Type 1 fonts use
-their outlines instead of the bitmap fallback. This is unhinted rendering, not a
-claim of complete font support or identical pixels across rasterizers.
+their outlines instead of the bitmap fallback. Default rendering is unhinted;
+TrueType has an opt-in [native hinting path](pdf-page-hinting.md). Complete font
+support and identical pixels across rasterizers remain unverified.
 
 ## Glyph selection comes before Unicode
 
@@ -86,7 +87,8 @@ for the four Courier and four Times faces. All glyph names in the pinned standar
 AFMs therefore have an available outline. The fallback chain keeps the compact
 outlines first, the extended TrueType face second, and these spacing marks last.
 There is no claim that these substitute shapes are identical
-to every platform's font choice. Hinting remains unimplemented.
+to every platform's font choice. CFF substitutes remain unhinted; the TrueType
+fallback can use the explicit native hinting option.
 
 The pinned AFMs, original license, provenance and per-file hashes are in
 `third_party/adobe-core14`. The generated tables require no installed fonts or
@@ -169,7 +171,9 @@ USE_MY_METRICS carries the selected component's horizontal origin through nested
 composites. PDF Widths and CID metrics still determine text advances; moving an
 outline does not change the next character's position. Cached outlines retain
 this font-space normalization across text transforms, fill/stroke and clipping.
-This does not implement hint instructions, phantom-point attachment or grid fitting.
+These are the unhinted cache rules. The separate [native loader](pdf-truetype-loader.md)
+and [page hinting path](pdf-page-hinting.md) handle instruction execution and
+hinted phantom origins.
 
 The origin and metric rules follow the OpenType
 [hmtx](https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx) and
@@ -196,8 +200,10 @@ for simple fonts; ToUnicode does not replace those glyphs.
 
 Type 2 programs support line and cubic path operators, local/global subroutines,
 widths, arithmetic, stack manipulation, transient storage, conditionals and flex
-curves. Subroutine bias depends on the number of subroutines. Stem declarations
-and mask bytes are consumed, but grid fitting and flex flattening are not applied.
+curves. Subroutine bias depends on the number of subroutines. Private hint
+parameters are retained per font dictionary, and an optional interpreter trace
+captures stems and masks. Grid fitting and flex flattening are not applied.
+See [PostScript hint data](pdf-postscript-hints.md) for scope and tests.
 These remain unhinted outlines. The obsolete dotsection operator is a no-op.
 An empty hint mask found in a cached font is accepted without consuming bytes;
 this is malformed-input recovery, not valid hint syntax.
@@ -327,7 +333,7 @@ The allocation-failure suite exercises embedded and predefined encoding maps,
 including inherited maps and cleanup after decompression or parsing failures.
 
 
-`make test-pdf-cff` runs 56 data-primitive checks, 186 structure/truncation checks,
+`make test-pdf-cff` runs 1,501 data-primitive checks, 186 structure/truncation checks,
 152 Type 2 checks and 34 PDF rendering checks. The rendering tests cover cubic
 geometry, CID fonts, encoding overrides, accents, FontMatrix, all text modes and
 OpenType wrapping. Twenty-five optional independent comparisons use:

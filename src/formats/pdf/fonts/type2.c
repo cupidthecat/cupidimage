@@ -7,11 +7,62 @@ typedef struct {
     const pdf_cff_font *font;
     const pdf_cff_private *private_dict;
     pdf_cff_outline *outline;
+    pdf_ps_hint_program *hint_program;
+    unsigned vertical_stems, mask_seen;
     double stack[48], transient[32], x, y, start_x, start_y;
     uint32_t initialized, random;
     unsigned count, hints, work;
     int width_seen, open;
 } type2_state;
+
+static int t2_capture_hints(type2_state *st, unsigned op, const unsigned char *mask) {
+    pdf_ps_hint_program *hints = st->hint_program;
+    if (!hints)
+        return 1;
+    unsigned vertical = op != 1 && op != 18;
+    if (st->count && (st->outline->count || st->mask_seen))
+        hints->diagnostics |= PDF_PS_HINT_LATE_STEMS;
+    if (st->count && !vertical && st->vertical_stems)
+        hints->diagnostics |= PDF_PS_HINT_STEM_ORDER;
+    if (st->count && vertical)
+        st->vertical_stems = 1;
+    double end = 0;
+    for (unsigned i = 0; i < st->count; i += 2) {
+        double start = end + st->stack[i], width = st->stack[i + 1];
+        end = start + width;
+        if (!isfinite(start) || !isfinite(end) || fabs(start) > 1e30 || fabs(end) > 1e30)
+            return 0;
+        if (width < 0 && width != -20 && width != -21)
+            hints->diagnostics |= PDF_PS_HINT_BAD_WIDTH;
+        hints->stems[hints->stem_count++] = (pdf_ps_stem){start, width, vertical};
+    }
+    if (op != 19 && op != 20)
+        return 1;
+    st->mask_seen = 1;
+    if (!hints->stem_count)
+        hints->diagnostics |= PDF_PS_HINT_EMPTY_MASK;
+    unsigned bytes = (hints->stem_count + 7) / 8, tail = hints->stem_count % 8;
+    if (tail && (mask[bytes - 1] & ((1u << (8 - tail)) - 1)))
+        hints->diagnostics |= PDF_PS_HINT_MASK_PADDING;
+    if (hints->event_count == 65536)
+        return 0;
+    if (hints->event_count == hints->event_capacity) {
+        unsigned capacity = hints->event_capacity ? hints->event_capacity * 2 : 16;
+        pdf_ps_hint_event *events = realloc(hints->events, (size_t)capacity * sizeof(*events));
+        if (!events)
+            return 0;
+        hints->events = events;
+        hints->event_capacity = capacity;
+    }
+    pdf_ps_hint_event *event = hints->events + hints->event_count++;
+    memset(event, 0, sizeof(*event));
+    event->segment = st->outline->count;
+    event->stem_count = hints->stem_count;
+    event->counter = op == 20;
+    if (bytes)
+        memcpy(event->mask, mask, bytes);
+    return 1;
+}
 
 static int t2_integer(double x, int *n) {
     if (!isfinite(x) || x < -2147483648.0 || x > 2147483647.0 || floor(x) != x)
@@ -313,15 +364,13 @@ static int t2_run(type2_state *st, pdf_cff_slice code, unsigned depth) {
             if (!t2_width(st, st->count % 2))
                 return 0;
             st->hints += st->count / 2;
-            st->count = 0;
             if (st->hints > 96)
                 return 0;
-            if (op == 19 || op == 20) {
-                size_t mask = (st->hints + 7) / 8;
-                if (mask > code.length - pos)
-                    return 0;
-                pos += mask;
-            }
+            size_t mask = op == 19 || op == 20 ? (st->hints + 7) / 8 : 0;
+            if (mask > code.length - pos || !t2_capture_hints(st, op, code.data + pos))
+                return 0;
+            st->count = 0;
+            pos += mask;
             continue;
         }
         double *s = st->stack;
@@ -427,9 +476,11 @@ void cupidimage_pdf_type2_free(pdf_cff_outline *outline) {
     memset(outline, 0, sizeof(*outline));
 }
 
-int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph,
-                                 pdf_cff_outline *outline) {
+int cupidimage_pdf_type2_outline_hints(const pdf_cff_font *font, unsigned glyph,
+                                       pdf_cff_outline *outline, pdf_ps_hint_program *hints) {
     memset(outline, 0, sizeof(*outline));
+    if (hints)
+        memset(hints, 0, sizeof(*hints));
     pdf_cff_slice code;
     if (!cupidimage_pdf_cff_item(&font->chars, glyph, &code))
         return 0;
@@ -440,12 +491,20 @@ int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph,
     st.font = font;
     st.private_dict = font->private_dicts + fd;
     st.outline = outline;
+    st.hint_program = hints;
     st.random = st.private_dict->random_seed;
     st.work = 65536;
     if (t2_run(&st, code, 0) == 2)
         return 1;
     cupidimage_pdf_type2_free(outline);
+    if (hints)
+        cupidimage_pdf_ps_hint_program_free(hints);
     return 0;
+}
+
+int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph,
+                                 pdf_cff_outline *outline) {
+    return cupidimage_pdf_type2_outline_hints(font, glyph, outline, NULL);
 }
 
 static int t2_composite(const pdf_cff_font *font, unsigned glyph, pdf_cff_outline *out,

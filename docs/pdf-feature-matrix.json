@@ -931,10 +931,16 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-postscript-hints.md",
+            "src/formats/pdf/fonts/postscript/private.c",
+            "scripts/test_pdf_cff_hints.py",
+            "scripts/test_pdf_type2_hints.py",
+            "scripts/compare_pdf_cff_hints.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, but CFF/Type 1 grid fitting and flex flattening remain unimplemented."
           ],
           "dependencies": [
             "1",
@@ -1003,11 +1009,17 @@
             "src/formats/pdf/fonts/truetype_vm/flags.c",
             "docs/pdf-page-hinting.md",
             "src/formats/pdf/fonts/page_hint.c",
-            "scripts/test_pdf_page_hinting.py"
+            "scripts/test_pdf_page_hinting.py",
+            "docs/pdf-postscript-hints.md",
+            "src/formats/pdf/fonts/postscript/private.c",
+            "scripts/test_pdf_cff_hints.py",
+            "scripts/test_pdf_type2_hints.py",
+            "scripts/compare_pdf_cff_hints.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished.",
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, but CFF/Type 1 grid fitting and flex flattening remain unimplemented."
           ],
           "dependencies": [
             "1",

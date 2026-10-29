@@ -16,6 +16,7 @@
 #include "../src/formats/pdf/fonts/cmap.c"
 #include "../src/formats/pdf/fonts/encoding.c"
 #include "../src/formats/pdf/fonts/page_hint.c"
+#include "../src/formats/pdf/fonts/postscript/private.c"
 #include "../src/formats/pdf/fonts/standard.c"
 #include "../src/formats/pdf/fonts/standard_outlines.c"
 #include "../src/formats/pdf/fonts/truetype.c"
@@ -268,6 +269,48 @@ int main(int argc, char **argv) {
     if (document_size < 0 || (size_t)document_size >= sizeof(document))
         return 1;
     size_t checks = 0, failures = 0;
+    {
+        unsigned char code[256] = {139, 149, 18};
+        size_t length = 3;
+        for (unsigned i = 0; i < 40; i++) {
+            const unsigned char event[] = {19, 128, 139, 139, 21};
+            memcpy(code + length, event, sizeof(event));
+            length += sizeof(event);
+        }
+        code[length++] = 14;
+        unsigned char offsets[] = {1, (unsigned char)(length + 1)};
+        pdf_cff_private private_dict = {0};
+        pdf_cff_font font = {0};
+        font.chars = (pdf_cff_index){{offsets, sizeof(offsets)}, {code, length}, 1, 1};
+        font.private_dicts = &private_dict;
+        font.private_count = 1;
+        for (unsigned truncated = 0; truncated < 2; truncated++) {
+            offsets[1] = (unsigned char)(length + 1 - truncated);
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                allocation_count = 0;
+                fail_at = failure;
+                pdf_cff_outline outline;
+                pdf_ps_hint_program hints;
+                int ok = cupidimage_pdf_type2_outline_hints(&font, 0, &outline, &hints);
+                if (!failure)
+                    total = allocation_count;
+                checks++;
+                if (ok != (!failure && !truncated))
+                    failures++;
+                if (ok && (hints.event_count != 40 || hints.stem_count != 1 || outline.count != 80))
+                    failures++;
+                if (!ok && (hints.events || hints.event_count || outline.segments || outline.count))
+                    failures++;
+                cupidimage_pdf_ps_hint_program_free(&hints);
+                cupidimage_pdf_type2_free(&outline);
+                if (live_count)
+                    failures++;
+            }
+        }
+        fail_at = 0;
+    }
+
     for (size_t fixture = 0; fixture < sizeof(fixtures) / sizeof(fixtures[0]); fixture++) {
         size_t total = 0;
         for (size_t failure = 0; failure <= total; failure++) {

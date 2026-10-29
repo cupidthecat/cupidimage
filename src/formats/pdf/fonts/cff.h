@@ -1,5 +1,6 @@
 #ifndef CUPIDIMAGE_PDF_CFF_H
 #define CUPIDIMAGE_PDF_CFF_H
+#include "postscript/hints.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,6 +18,7 @@ typedef struct {
     size_t charset, encoding, charstrings, private_offset, private_size, subrs;
     size_t fdarray, fdselect;
     double matrix[6], default_width, nominal_width;
+    pdf_ps_private_hints hints;
     int32_t random_seed;
     unsigned cid, has_matrix;
 } pdf_cff_dict;
@@ -27,6 +29,7 @@ int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int privat
 
 typedef struct {
     pdf_cff_index subrs;
+    pdf_ps_private_hints hints;
     uint32_t random_seed;
     double matrix[6], default_width, nominal_width;
 } pdf_cff_private;

@@ -256,7 +256,10 @@ $(BINDIR)/test_pdf_cff: tests/test_pdf_cff.c $(LIB)
 test-pdf-cff: $(BINDIR)/test_pdf_cff $(BINDIR)/test_pdf_pages
 	$(BINDIR)/test_pdf_cff
 	python3 scripts/test_pdf_cff.py $(BINDIR)/test_pdf_cff
+	python3 scripts/test_pdf_cff_hints.py $(BINDIR)/test_pdf_cff
 	python3 scripts/test_pdf_type2.py $(BINDIR)/test_pdf_cff
+	python3 scripts/test_pdf_type2_hints.py $(BINDIR)/test_pdf_cff
+	python3 scripts/compare_pdf_cff_hints.py $(BINDIR)/test_pdf_cff
 	python3 scripts/test_pdf_cff_render.py $(BINDIR)/test_pdf_pages
 
 $(BINDIR)/test_pdf_type1: tests/test_pdf_type1.c $(LIB)
