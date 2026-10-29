@@ -150,6 +150,11 @@ renderers retain geometry and clipping ownership; the helper borrows the caller'
 mask, redirects painting into a bounded surface, then restores state and applies
 the mask once to the completed object.
 
+Standard-font programs can select a bounded fallback chain: compact CFF outlines,
+extended TrueType outlines, then the spacing-mark CFF subset. Encoded glyph tags
+select the program before outline lookup. Each program owns its bytes/cache and
+contributes to the same page budget; AFM/PDF widths remain outside that selection.
+
 Unhinted TrueType outlines carry their effective advance as well as points. The
 component walk resolves USE_MY_METRICS once; fallback-width lookup reuses the same
 bounded outline cache as painting. Glyphs without metric inheritance retain the direct metric lookup.

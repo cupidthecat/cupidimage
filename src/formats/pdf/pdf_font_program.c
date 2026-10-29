@@ -72,9 +72,9 @@ void cupidimage_pdf_font_program_free(pdf_font_program *program) {
 }
 
 pdf_font_program *cupidimage_pdf_font_program_select(pdf_font_program *program, unsigned *glyph) {
-    if (program->extended && *glyph >= PDF_FONT_EXTENDED_GLYPH) {
+    while (program->extended && *glyph >= PDF_FONT_EXTENDED_GLYPH) {
         *glyph -= PDF_FONT_EXTENDED_GLYPH;
-        return program->extended;
+        program = program->extended;
     }
     return program;
 }

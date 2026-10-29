@@ -13,3 +13,8 @@ Images and documents are organized by format: `png`, `jpeg`, `webp`, `gif`,
 Run `make test-assets` to catch mislabeled, changed, missing, or unlisted files.
 Run `make test-format-pixels test-webp-pixels test-pdf-corpus` for the reference image/page tests.
 See [provenance and validation details](../docs/test-assets.md) before reusing assets.
+
+The standard spacing-mark sample exercises all eight Courier/Times variants and
+the compact/extended/mark fallback chain. Its raster is unverified. The companion
+`pdf/reference/standard-spacing-advance.pdf` checks AFM-controlled placement with
+an analytic marker oracle. Regenerate them with `scripts/generate_pdf_spacing_fixtures.py`.

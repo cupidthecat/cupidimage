@@ -24,6 +24,7 @@ typedef struct {
 } pdf_standard_outline;
 
 const pdf_standard_outline *cupidimage_pdf_standard_outline(const char *name);
+const pdf_standard_outline *cupidimage_pdf_standard_mark(const char *name);
 
 typedef struct {
     const char *name;

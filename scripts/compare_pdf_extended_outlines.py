@@ -13,7 +13,7 @@ from generate_pdf_standard_outlines import FONTS as COMPACT, font_bytes
 from generate_pdf_standard_metrics import metrics, SOURCE as AFMS
 
 probe = str(Path(sys.argv[1]).resolve())
-checks = missing = 0
+checks = supplemented = 0
 for name, filename in sorted(FONTS.items()):
     compact = CFFFontSet()
     compact.decompile(io.BytesIO(font_bytes(COMPACT[name])), TTFont())
@@ -30,7 +30,7 @@ for name, filename in sorted(FONTS.items()):
                 selected = cmap.get(ord(scalar))
             if selected is None:
                 assert glyph_name == 'commaaccent' and name.startswith(('Courier', 'Times'))
-                missing += 1
+                supplemented += 1
                 continue
             glyph = font['glyf'][selected]
             coordinates, ends, flags = glyph.getCoordinates(font['glyf'], round=lambda x: x)
@@ -46,4 +46,4 @@ for name, filename in sorted(FONTS.items()):
             assert all(math.isclose(a, b, abs_tol=1e-8) for aa, bb in zip(actual, expected)
                        for a, b in zip(aa, bb)), (name, glyph_name, 'outline mismatch')
             checks += 1
-print(f'Independent extended-font geometry: {checks} outlines match; {missing} known gaps')
+print(f'Independent extended-font geometry: {checks} outlines match; {supplemented} spacing-mark fallbacks tested separately')

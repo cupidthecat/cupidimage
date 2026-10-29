@@ -867,6 +867,10 @@
       "sha256": "c11072cf01eb0d7b0d3b273d1068a306edbc1916a1e51ba18cab30dfed1aa5b7"
     },
     {
+      "path": "assets/pdf/reference/standard-spacing-advance.pdf",
+      "sha256": "e296c14aa984a91ada68cab6c20575c2a55be7abef6503eee35385fdb75b309e"
+    },
+    {
       "path": "assets/pdf/reference/stencil-mask.pdf",
       "sha256": "e2f2b9a55b1082b876d1b08395d8d935b9bfbcf9f7a14528603efd801efc2ed5"
     },
@@ -921,6 +925,10 @@
     {
       "path": "assets/pdf/standard-font-substitutes.pdf",
       "sha256": "e4a2c90a94b460408b2cbae92e4b9199e49c360488d1209f03ac6394ff1d4326"
+    },
+    {
+      "path": "assets/pdf/standard-spacing-marks.pdf",
+      "sha256": "b5fc95c62142d2f0cfdda6184af2faa6acc9d15b6e27ac88a1619b6e2a3d3d51"
     },
     {
       "path": "assets/pdf/zlib.3.pdf",

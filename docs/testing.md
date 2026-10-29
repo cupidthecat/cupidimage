@@ -633,3 +633,15 @@ font selection, sizes and remaining PDF integration limits. Composite probes als
 exercise authored transforms and state sharing, selected pinned outlines in
 monochrome/grayscale, and an optional all-composite sweep. Scaled-offset differences
 from the comparison engines are reported separately from matching results.
+
+## Standard spacing marks
+
+The standard-font target checks the eight final commaaccent fallbacks against
+embedded copies of their renamed CFF subsets. It covers all text modes, transforms,
+width overrides, AFM placement and compact/extended/mark program switching, with
+allocation failures and cached/uncached comparisons. An optional FontTools probe
+compares native curves and widths. Supplying `--sources` to the spacing tests also
+compares the pinned original OTFs; the generator checks hashes before reuse.
+
+The visible spacing sample is decoded-unverified. Its companion advance-marker
+asset has an analytic pixel oracle, which tests layout rather than glyph fidelity.

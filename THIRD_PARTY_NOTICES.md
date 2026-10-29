@@ -250,3 +250,23 @@ The TrueType vector-normalization routine is adapted from FreeType 2.13.3 under
 the FreeType Project License. The unmodified license and the source revision and
 modification details are in `third_party/freetype-math`. Include this notice with
 binary distributions. The adaptation adds no runtime font-library dependency.
+
+## Standard spacing-mark subsets
+
+The bundled CupidImageSpacing CFF programs are derived subsets of TeX Gyre Cursor
+and Termes 2.004 by Bogusław Jackowski and Janusz M. Nowacki, on behalf of TeX users
+groups. Original copyright notices are retained inside the CFF programs. Glyph
+sets and font names are changed; retained glyph drawing commands and widths are
+unchanged. These subsets are maintained by CupidImage, not the upstream authors.
+
+The font data is distributed under the GUST Font License / LPPL 1.3c or later,
+separately from CupidImage's code license. Include `third_party/standard-spacing-marks`,
+`scripts/generate_pdf_standard_marks.py` and
+`src/formats/pdf/fonts/standard_marks.inc` with binary distributions. Their
+manifest and README provide the change record, reproducible source and links to
+the complete original work at https://www.gust.org.pl/projects/e-foundry/tex-gyre
+and https://mirrors.ctan.org/fonts/tex-gyre.zip.
+
+The unchanged license texts are distributed in
+`third_party/standard-spacing-marks/GUST-FONT-LICENSE.txt` and
+`third_party/standard-spacing-marks/LPPL-1.3c.txt`.

@@ -1018,10 +1018,15 @@
             "third_party/extended-standard-fonts/manifest.json",
             "src/formats/pdf/pdf_font_substitution.c",
             "scripts/test_pdf_substitution.py",
-            "scripts/test_pdf_font_descriptors.py"
+            "scripts/test_pdf_font_descriptors.py",
+            "src/formats/pdf/pdf_standard_font.c",
+            "scripts/test_pdf_standard_marks.py",
+            "scripts/compare_pdf_standard_marks.py",
+            "third_party/standard-spacing-marks/manifest.json",
+            "assets/pdf/reference/standard-spacing-advance.pdf"
           ],
           "limitations": [
-            "Standard substitutes include 1,016 additional face/glyph combinations; named and eligible descriptor-selected Latin fonts use pinned vector programs with PDF widths preserved. Eight standalone commaaccent gaps, symbolic/script/CJK substitutes, stretch synthesis, complete missing-font matching/reporting, hinting and antialiasing remain incomplete."
+            "Standard substitutes include 1,016 extended TrueType and eight spacing-mark face/glyph combinations; named and eligible descriptor-selected Latin fonts use pinned vector programs with PDF widths preserved. Symbolic/script/CJK substitutes, stretch synthesis, complete missing-font matching/reporting, hinting and antialiasing remain incomplete."
           ],
           "dependencies": [
             "1",

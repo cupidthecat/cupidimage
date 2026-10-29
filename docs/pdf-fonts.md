@@ -80,9 +80,12 @@ Their outlines come from bundled, BSD-licensed CFF substitutes, not the bitmap
 fallback. Symbol and ZapfDingbats cover all named glyphs in the pinned AFMs.
 The compact Courier faces omit 84 extended AFM names and Helvetica/Times omit
 86. An additional pinned TrueType face now supplies 1,016 of these 1,024 missing
-face/glyph combinations. Existing compact outlines keep priority. The standalone
-commaaccent remains missing in the four Courier and four Times faces; these eight
-combinations retain .notdef while preserving the specified advance. There is no claim that these substitute shapes are identical
+face/glyph combinations. Existing compact outlines keep priority. Eight small,
+renamed CFF spacing-mark subsets now supply standalone commaaccent
+for the four Courier and four Times faces. All glyph names in the pinned standard
+AFMs therefore have an available outline. The fallback chain keeps the compact
+outlines first, the extended TrueType face second, and these spacing marks last.
+There is no claim that these substitute shapes are identical
 to every platform's font choice. Hinting remains unimplemented.
 
 The pinned AFMs, original license, provenance and per-file hashes are in
@@ -298,7 +301,7 @@ text fidelity in the current PDF work. The main gaps are:
 - CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- The eight remaining standard-font face/glyph gaps, symbolic/script/CJK substitutes and broader missing-font matching.
+- Symbolic/script/CJK substitutes and broader missing-font matching.
 
 The applicability of newer font formats and tables must be checked against the
 PDF version; this list is not a claim that every PDF version requires them.
@@ -615,6 +618,32 @@ against FontTools, including contour endpoints and on/off-curve flags:
 an analytic advance-marker asset. The visible sample is decoded-unverified until
 its raster is independently qualified; only the advance marker has an analytic
 pixel reference.
+
+## Standard spacing marks
+
+The eight spacing-mark subsets derive from TeX Gyre Cursor/Termes 2.004. They keep
+the original `space_uni0326` drawing commands and widths, prune other glyphs, and
+use new `CupidImageSpacing-` font names. Upstream character charts identify this
+spacing glyph as `commaaccent`; this is not a repositioned combining mark or a
+newly drawn approximation. The generator, original/subset hashes, change record
+and GUST Font License/LPPL texts are in `third_party/standard-spacing-marks`.
+
+Only an encoding that selects a missing `commaaccent` loads this final fallback.
+It shares the existing program-byte budget, outline cache and glyph-work limits.
+PDF advances still come from explicit widths, MissingWidth or the standard AFM;
+source-font spacing widths never replace them. The original compact and extended
+glyphs remain unchanged.
+
+`scripts/test_pdf_standard_marks.py` covers all eight faces, text modes, transforms,
+text state, explicit/negative/zero metrics, three-program fallback chains and
+allocation/cache failures. Optional original-OTF comparisons confirm that the
+subsets preserve rendering with those same source outlines. The independent
+geometry probe checks all eight curves and widths. These checks establish the
+selected substitutes' behavior, not identical pixels across platform font choices.
+
+`assets/pdf/standard-spacing-marks.pdf` is a visible sample whose raster remains
+unverified. `assets/pdf/reference/standard-spacing-advance.pdf` has an exact
+analytic marker-position oracle. Neither asset qualifies hinting or antialiasing.
 
 ## Selected nonembedded Latin families
 
