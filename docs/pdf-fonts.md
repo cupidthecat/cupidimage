@@ -246,6 +246,14 @@ the preceding Subrs or CharStrings dictionary. Glyph definitions are sorted and
 deduplicated once, then names use binary lookup rather than a growing linear scan. The lenIV=-1 convention is accepted
 without charstring decryption. The parser does not execute arbitrary PostScript.
 
+The bounded lexer follows the ASCII token rules in the
+[PostScript Language Reference, third edition, section 3.2.2](https://www.adobe.com/jp/print/postscript/pdfs/PLRM.pdf#page=41).
+Decimal fractions and exponents are independent of the process locale. Radix
+integers use a 32-bit two's-complement range; overflow is rejected. Comments end
+at a newline or form feed. Hexadecimal strings, ASCII85 strings, dictionary
+marks and nested procedures keep their token boundaries. Immediate names are
+kept distinct from literal names, but their dictionary lookup is not executed.
+
 Type 1 outlines support sidebearings and width vectors, line/cubic paths,
 subroutines, division, seac accents, and standard OtherSubrs 0 through 3 for flex
 and hint replacement. Stems and hint replacement are parsed but not grid-fitted.
@@ -369,8 +377,8 @@ An optional independent outline/advance comparison requires FontTools:
 This checks the actual Type 2 paths before rasterization. It does not treat
 unhinted raster output as identical to a hinted font rasterizer.
 
-`make test-pdf-type1` runs 40 structure checks, 66 charstring checks and 31
-rendering checks. Twenty-one selected raster comparisons run with:
+`make test-pdf-type1` runs lexical boundary, radix, locale and deterministic
+mutation checks, 46 structure checks, 66 charstring checks and 31 rendering checks. Twenty-one selected raster comparisons run with:
 
     python3 scripts/test_pdf_type1_render.py bin/test_pdf_pages --reference
 

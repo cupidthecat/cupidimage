@@ -27,6 +27,7 @@
 #include "../src/formats/pdf/fonts/truetype_cmap.c"
 #include "../src/formats/pdf/fonts/truetype_names.c"
 #include "../src/formats/pdf/fonts/type1.c"
+#include "../src/formats/pdf/fonts/type1/lexer.c"
 #include "../src/formats/pdf/fonts/type1_charstring.c"
 #include "../src/formats/pdf/fonts/type2.c"
 #include "../src/formats/pdf/pdf_calculator.c"

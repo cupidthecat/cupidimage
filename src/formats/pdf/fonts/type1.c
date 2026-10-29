@@ -1,136 +1,29 @@
 #include "type1.h"
 #include "encoding.h"
+#include "type1/lexer.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
-enum { T1_EOF, T1_WORD, T1_NAME, T1_NUMBER, T1_PROC, T1_OTHER, T1_ERROR };
-
-typedef struct {
-    unsigned type;
-    double number;
-    char text[128];
-    pdf_cff_slice body;
-} t1_token;
 
 typedef struct {
     char readers[16][128];
     unsigned reader_count;
 } t1_syntax;
 
-static int t1_space(unsigned char c) {
-    return c == 0 || c == 9 || c == 10 || c == 12 || c == 13 || c == 32;
-}
-
-static int t1_delimiter(unsigned char c) {
-    return t1_space(c) || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
-           c == '/' || c == '<' || c == '>' || c == '%';
-}
-
-static t1_token t1_lex(pdf_cff_slice source, size_t *position, unsigned depth) {
-    t1_token token = {0};
-    if (depth == 64) {
-        token.type = T1_ERROR;
-        return token;
-    }
-    size_t pos = *position;
-    while (pos < source.length) {
-        if (t1_space(source.data[pos])) {
-            pos++;
-            continue;
-        }
-        if (source.data[pos] != '%')
-            break;
-        while (pos < source.length && source.data[pos] != '\r' && source.data[pos] != '\n')
-            pos++;
-    }
-    if (pos == source.length) {
-        *position = pos;
-        return token;
-    }
-    unsigned c = source.data[pos++];
-    if (c == '(') {
-        unsigned nested = 1;
-        while (pos < source.length && nested) {
-            c = source.data[pos++];
-            if (c == '\\' && pos < source.length)
-                pos++;
-            else if (c == '(') {
-                if (++nested == 64)
-                    break;
-            } else if (c == ')')
-                nested--;
-        }
-        token.type = nested ? T1_ERROR : T1_OTHER;
-    } else if (c == '{') {
-        size_t start = pos;
-        while (pos < source.length) {
-            t1_token item = t1_lex(source, &pos, depth + 1);
-            if (item.type == T1_OTHER && item.text[0] == '}') {
-                token.type = T1_PROC;
-                token.body = (pdf_cff_slice){source.data + start, pos - start - 1};
-                break;
-            }
-            if (item.type == T1_ERROR || item.type == T1_EOF)
-                break;
-        }
-        if (token.type != T1_PROC)
-            token.type = T1_ERROR;
-    } else if (c == '<' && pos < source.length && source.data[pos] != '<') {
-        while (pos < source.length && source.data[pos] != '>')
-            pos++;
-        token.type = pos == source.length ? T1_ERROR : T1_OTHER;
-        if (pos < source.length)
-            pos++;
-    } else if (c != '/' && t1_delimiter((unsigned char)c)) {
-        token.type = T1_OTHER;
-        token.text[0] = (char)c;
-    } else {
-        unsigned used = 0;
-        token.type = c == '/' ? T1_NAME : T1_WORD;
-        if (c != '/')
-            pos--;
-        while (pos < source.length && !t1_delimiter(source.data[pos])) {
-            c = source.data[pos++];
-            if (used == 127 || !c) {
-                token.type = T1_ERROR;
-                break;
-            }
-            token.text[used++] = (char)c;
-        }
-        if (!used)
-            token.type = T1_ERROR;
-        if (token.type == T1_WORD) {
-            char *end;
-            double value = strtod(token.text, &end);
-            if (end != token.text && !*end) {
-                if (!isfinite(value))
-                    token.type = T1_ERROR;
-                else {
-                    token.type = T1_NUMBER;
-                    token.number = value;
-                }
-            }
-        }
-    }
-    *position = pos;
-    return token;
-}
-
-static int t1_int(t1_token token, int low, int high, int *result) {
-    if (token.type != T1_NUMBER || token.number < low || token.number > high ||
+static int t1_int(pdf_type1_token token, int low, int high, int *result) {
+    if (token.type != PDF_T1_NUMBER || token.number < low || token.number > high ||
         floor(token.number) != token.number)
         return 0;
     *result = (int)token.number;
     return 1;
 }
 
-static int t1_word(t1_token token, const char *word) {
-    return token.type == T1_WORD && !strcmp(token.text, word);
+static int t1_word(pdf_type1_token token, const char *word) {
+    return token.type == PDF_T1_WORD && !strcmp(token.text, word);
 }
 
-static int t1_reader(const t1_syntax *syntax, t1_token token) {
-    if (token.type != T1_WORD)
+static int t1_reader(const t1_syntax *syntax, pdf_type1_token token) {
+    if (token.type != PDF_T1_WORD)
         return 0;
     for (unsigned i = 0; i < syntax->reader_count; i++)
         if (!strcmp(token.text, syntax->readers[i]))
@@ -138,19 +31,19 @@ static int t1_reader(const t1_syntax *syntax, t1_token token) {
     return 0;
 }
 
-static int t1_reader_proc(t1_token token) {
+static int t1_reader_proc(pdf_type1_token token) {
     static const char *const words[] = {"string", "currentfile", "exch", "readstring", "pop"};
-    if (token.type != T1_PROC)
+    if (token.type != PDF_T1_PROC)
         return 0;
     size_t pos = 0;
     for (unsigned i = 0; i < 5; i++)
-        if (!t1_word(t1_lex(token.body, &pos, 0), words[i]))
+        if (!t1_word(cupidimage_pdf_type1_lex(token.body, &pos, 0), words[i]))
             return 0;
-    return t1_lex(token.body, &pos, 0).type == T1_EOF;
+    return cupidimage_pdf_type1_lex(token.body, &pos, 0).type == PDF_T1_EOF;
 }
 
 static int t1_binary(pdf_cff_slice source, size_t *pos, int length, pdf_cff_slice *out) {
-    if (*pos >= source.length || !t1_space(source.data[*pos]))
+    if (*pos >= source.length || !cupidimage_pdf_type1_space(source.data[*pos]))
         return 0;
     /* RD consumes the delimiter before readstring starts reading binary bytes. */
     (*pos)++;
@@ -171,17 +64,17 @@ static void t1_decrypt(unsigned char *data, size_t length, unsigned seed) {
 }
 
 static int t1_matrix(pdf_cff_slice source, size_t *pos, double matrix[6]) {
-    t1_token open = t1_lex(source, pos, 0);
-    if (open.type != T1_OTHER || open.text[0] != '[')
+    pdf_type1_token open = cupidimage_pdf_type1_lex(source, pos, 0);
+    if (open.type != PDF_T1_OTHER || open.text[0] != '[')
         return 0;
     for (unsigned i = 0; i < 6; i++) {
-        t1_token item = t1_lex(source, pos, 0);
-        if (item.type != T1_NUMBER || fabs(item.number) > 1e30)
+        pdf_type1_token item = cupidimage_pdf_type1_lex(source, pos, 0);
+        if (item.type != PDF_T1_NUMBER || fabs(item.number) > 1e30)
             return 0;
         matrix[i] = item.number;
     }
-    t1_token close = t1_lex(source, pos, 0);
-    return close.type == T1_OTHER && close.text[0] == ']';
+    pdf_type1_token close = cupidimage_pdf_type1_lex(source, pos, 0);
+    return close.type == PDF_T1_OTHER && close.text[0] == ']';
 }
 
 static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][128], int plain,
@@ -190,10 +83,10 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
     int scope = 0, font_scope = 0, encoding = 0, found_type = 0, found_eexec = 0;
     while (pos < source.length) {
         size_t token_start = pos;
-        t1_token token = t1_lex(source, &pos, 0);
-        if (token.type == T1_ERROR)
+        pdf_type1_token token = cupidimage_pdf_type1_lex(source, &pos, 0);
+        if (token.type == PDF_T1_ERROR)
             return 0;
-        if (plain && token.type == T1_NAME && !strcmp(token.text, "Private") &&
+        if (plain && token.type == PDF_T1_NAME && !strcmp(token.text, "Private") &&
             (scope == font_scope || scope == 0)) {
             *private_start = token_start;
             return found_type;
@@ -212,22 +105,23 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
         }
         if (scope != font_scope)
             continue;
-        if (token.type == T1_NAME && !strcmp(token.text, "FontType")) {
+        if (token.type == PDF_T1_NAME && !strcmp(token.text, "FontType")) {
             int type;
-            if (!t1_int(t1_lex(source, &pos, 0), 1, 1, &type))
+            if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), 1, 1, &type))
                 return 0;
             found_type = 1;
-        } else if (token.type == T1_NAME && !strcmp(token.text, "FontMatrix")) {
+        } else if (token.type == PDF_T1_NAME && !strcmp(token.text, "FontMatrix")) {
             if (!t1_matrix(source, &pos, font->matrix))
                 return 0;
-        } else if (token.type == T1_NAME && !strcmp(token.text, "Encoding")) {
-            t1_token value = t1_lex(source, &pos, 0);
+        } else if (token.type == PDF_T1_NAME && !strcmp(token.text, "Encoding")) {
+            pdf_type1_token value = cupidimage_pdf_type1_lex(source, &pos, 0);
             if (t1_word(value, "StandardEncoding")) {
                 for (unsigned i = 0; i < 256; i++)
                     strcpy(names[i], cupidimage_pdf_encoding_name("StandardEncoding", i));
             } else {
                 int count;
-                if (!t1_int(value, 256, 256, &count) || !t1_word(t1_lex(source, &pos, 0), "array"))
+                if (!t1_int(value, 256, 256, &count) ||
+                    !t1_word(cupidimage_pdf_type1_lex(source, &pos, 0), "array"))
                     return 0;
                 for (unsigned i = 0; i < 256; i++)
                     strcpy(names[i], ".notdef");
@@ -236,9 +130,10 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
         } else if (encoding && t1_word(token, "dup")) {
             size_t saved = pos;
             int code;
-            t1_token number = t1_lex(source, &pos, 0), name = t1_lex(source, &pos, 0),
-                     put = t1_lex(source, &pos, 0);
-            if (t1_int(number, 0, 255, &code) && name.type == T1_NAME && t1_word(put, "put"))
+            pdf_type1_token number = cupidimage_pdf_type1_lex(source, &pos, 0),
+                            name = cupidimage_pdf_type1_lex(source, &pos, 0),
+                            put = cupidimage_pdf_type1_lex(source, &pos, 0);
+            if (t1_int(number, 0, 255, &code) && name.type == PDF_T1_NAME && t1_word(put, "put"))
                 strcpy(names[code], name.text);
             else
                 pos = saved;
@@ -251,8 +146,8 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
 static int t1_subrs(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
                     const t1_syntax *syntax) {
     int count;
-    if (!t1_int(t1_lex(source, pos, 0), 0, 65536, &count) ||
-        !t1_word(t1_lex(source, pos, 0), "array"))
+    if (!t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 0, 65536, &count) ||
+        !t1_word(cupidimage_pdf_type1_lex(source, pos, 0), "array"))
         return 0;
     free(font->subrs);
     font->subrs = NULL;
@@ -265,14 +160,14 @@ static int t1_subrs(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
     font->subr_count = (unsigned)count;
     while (*pos < source.length) {
         size_t saved = *pos;
-        t1_token token = t1_lex(source, pos, 0);
-        if (token.type == T1_ERROR)
+        pdf_type1_token token = cupidimage_pdf_type1_lex(source, pos, 0);
+        if (token.type == PDF_T1_ERROR)
             return 0;
         if (t1_word(token, "dup")) {
             int index, length;
-            if (!t1_int(t1_lex(source, pos, 0), 0, count - 1, &index) ||
-                !t1_int(t1_lex(source, pos, 0), 0, 65535, &length) ||
-                !t1_reader(syntax, t1_lex(source, pos, 0)) ||
+            if (!t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 0, count - 1, &index) ||
+                !t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 0, 65535, &length) ||
+                !t1_reader(syntax, cupidimage_pdf_type1_lex(source, pos, 0)) ||
                 !t1_binary(source, pos, length, font->subrs + index))
                 return 0;
         } else if (t1_word(token, "NP") || t1_word(token, "noaccess") || t1_word(token, "put") ||
@@ -309,28 +204,28 @@ static int t1_add_glyph(pdf_type1_font *font, const char *name, pdf_cff_slice co
 static int t1_charstrings(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
                           const t1_syntax *syntax) {
     int count;
-    if (!t1_int(t1_lex(source, pos, 0), 1, 65535, &count) ||
-        !t1_word(t1_lex(source, pos, 0), "dict"))
+    if (!t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 1, 65535, &count) ||
+        !t1_word(cupidimage_pdf_type1_lex(source, pos, 0), "dict"))
         return 0;
-    t1_token token = t1_lex(source, pos, 0);
+    pdf_type1_token token = cupidimage_pdf_type1_lex(source, pos, 0);
     if (t1_word(token, "dup"))
-        token = t1_lex(source, pos, 0);
+        token = cupidimage_pdf_type1_lex(source, pos, 0);
     if (!t1_word(token, "begin"))
         return 0;
     free(font->glyphs);
     font->glyphs = NULL;
     font->glyph_count = font->glyph_capacity = 0;
     while (*pos < source.length) {
-        token = t1_lex(source, pos, 0);
-        if (token.type == T1_ERROR || token.type == T1_EOF)
+        token = cupidimage_pdf_type1_lex(source, pos, 0);
+        if (token.type == PDF_T1_ERROR || token.type == PDF_T1_EOF)
             return 0;
         if (t1_word(token, "end"))
             return 1;
-        if (token.type == T1_NAME) {
+        if (token.type == PDF_T1_NAME) {
             int length;
             pdf_cff_slice code;
-            if (!t1_int(t1_lex(source, pos, 0), 0, 65535, &length) ||
-                !t1_reader(syntax, t1_lex(source, pos, 0)) ||
+            if (!t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 0, 65535, &length) ||
+                !t1_reader(syntax, cupidimage_pdf_type1_lex(source, pos, 0)) ||
                 !t1_binary(source, pos, length, &code) || !t1_add_glyph(font, token.text, code))
                 return 0;
         }
@@ -343,12 +238,12 @@ static int t1_private(pdf_type1_font *font) {
     size_t pos = 0;
     t1_syntax syntax = {{{"RD"}, {"-|"}}, 2};
     while (pos < source.length) {
-        t1_token token = t1_lex(source, &pos, 0);
-        if (token.type == T1_ERROR)
+        pdf_type1_token token = cupidimage_pdf_type1_lex(source, &pos, 0);
+        if (token.type == PDF_T1_ERROR)
             return 0;
-        if (token.type == T1_NAME) {
+        if (token.type == PDF_T1_NAME) {
             if (!strcmp(token.text, "lenIV")) {
-                if (!t1_int(t1_lex(source, &pos, 0), -1, 255, &font->len_iv))
+                if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), -1, 255, &font->len_iv))
                     return 0;
             } else if (!strcmp(token.text, "Subrs")) {
                 if (!t1_subrs(font, source, &pos, &syntax))
@@ -358,7 +253,7 @@ static int t1_private(pdf_type1_font *font) {
                     return 0;
             } else {
                 size_t saved = pos;
-                t1_token value = t1_lex(source, &pos, 0);
+                pdf_type1_token value = cupidimage_pdf_type1_lex(source, &pos, 0);
                 if (t1_reader_proc(value)) {
                     if (syntax.reader_count == 16)
                         return 0;

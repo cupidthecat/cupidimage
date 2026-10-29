@@ -813,10 +813,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "src/formats/pdf/fonts/type1/lexer.c",
+            "tests/test_pdf_type1_lexer.c",
+            "scripts/test_pdf_type1.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution, computed font dictionaries and Type 1 grid fitting remain unsupported."
           ],
           "dependencies": [
             "1",

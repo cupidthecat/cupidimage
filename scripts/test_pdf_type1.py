@@ -45,6 +45,15 @@ def main():
             assert result.returncode==(0 if ok else 2),(result.returncode,result.stderr,result.stdout)
             for text in contains:assert text in result.stdout,(text,result.stdout)
             checks+=1
+        run(fixture(matrix='[1e-3 0 0 1e-3 16#10 8#10]'),contains=('matrix 0.001 0 0 0.001 16 8',))
+        run(fixture(matrix='[.001 0 0 .001 16#FFFFFFFF 16#80000000]'),contains=('matrix 0.001 0 0 0.001 -1 -2.14748365e+09',))
+        raw,l1,l2=fixture()
+        comment=b'% ignored comment\f'
+        raw=raw[:l1].replace(b'/FontType',comment+b'/FontType')+raw[l1:]
+        run((raw,l1+len(comment),l2),contains=('2 1 4',))
+        run(fixture(extra=b'/Ignored <~!!>!!~> def\n/Unused << /A 1 >> def\n'),contains=('2 1 4',))
+        for matrix in ('[0x1p-10 0 0 .001 0 0]', '[.001 0 0 .001 16#100000000 0]'):
+            run(fixture(matrix=matrix),False)
         run(fixture(outer_encrypted=False),contains=('glyph 0 .notdef 8bf8ec0d0e','subr 0 0b'))
         for iv in (-1,0,1,4,16):run(fixture(len_iv=iv),contains=('code 65 1','glyph 0 .notdef 8bf8ec0d0e','subr 0 0b'))
         run(fixture(separator=b'\r',iv_first=26),contains=('glyph 0 .notdef 8bf8ec0d0e',))
