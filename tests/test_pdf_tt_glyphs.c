@@ -1,10 +1,12 @@
-/* Test-only supplied geometry: this is not the PDF glyph loader. */
+/* Test-only native-loading and supplied-geometry instruction probes. */
 #include "formats/pdf/fonts/truetype.h"
+#include "formats/pdf/fonts/truetype_hint/hint.h"
 #include "formats/pdf/fonts/truetype_vm/vm.h"
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static unsigned u16(const unsigned char *p) {
     return (unsigned)p[0] * 256 + p[1];
@@ -43,7 +45,45 @@ static unsigned char *read_file(const char *path, size_t *length) {
     return p;
 }
 
+static int native_probe(const char *path, const char *size, const char *index) {
+    char *end;
+    long ppem = strtol(size, &end, 10);
+    if (!*size || *end || ppem < 1 || ppem > 96)
+        return 2;
+    unsigned long glyph = strtoul(index, &end, 10);
+    if (!*index || *end || glyph > 65535)
+        return 2;
+    size_t length;
+    unsigned char *data = read_file(path, &length);
+    pdf_tt_font font;
+    if (!data || !cupidimage_pdf_tt_init(&font, data, length)) {
+        free(data);
+        return 2;
+    }
+    pdf_tt_hint hint;
+    int ok = cupidimage_pdf_tt_hint_init(&hint, &font, (int32_t)ppem * 64, (int32_t)ppem * 64, 0,
+                                         1000000);
+    if (ok)
+        ok = cupidimage_pdf_tt_hint_glyph(&hint, (unsigned)glyph);
+    pdf_tt_vm *vm = &hint.vm;
+    printf("%d %u %u %zu %u\n", ok, vm->error, vm->error_opcode, vm->error_offset,
+           vm->zones[1].count);
+    if (ok) {
+        unsigned outline = vm->zones[1].outline_count;
+        for (unsigned i = 0; i < outline; i++)
+            printf("%lld %ld\n",
+                   (long long)vm->zones[1].points[i].current[0] -
+                       vm->zones[1].points[outline].current[0],
+                   (long)vm->zones[1].points[i].current[1]);
+    }
+    cupidimage_pdf_tt_hint_free(&hint);
+    free(data);
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc == 5 && !strcmp(argv[2], "--native"))
+        return native_probe(argv[1], argv[3], argv[4]);
     if (argc != 4)
         return 2;
     char *end;

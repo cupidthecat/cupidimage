@@ -620,3 +620,11 @@ Geometry and phantom points are supplied independently, so this does not qualify
 the native glyph loader, composite assembly or PDF rasterization. The engine's
 unsupported instructions and unwired rendering path remain documented separately
 in [the TrueType VM guide](pdf-truetype-vm.md).
+
+
+`make test-pdf-tt-loader` checks native simple-glyph loading and phantom construction,
+including malformed descriptions, allocation failures, shared initialization work
+limits, inhibited hinting and instructions on contour-less glyphs. Optional
+independent probes compare 9,330 complete native-loaded outlines and 576 authored
+metric/phantom cases, including separately reported shortened-table differences. See [native loader coverage](pdf-truetype-loader.md) for the
+font selection, sizes and remaining composite/PDF integration limits.

@@ -857,7 +857,10 @@
             "assets/pdf/reference/embedded-truetype-short-bearing.pdf",
             "docs/pdf-truetype-vm.md",
             "src/formats/pdf/fonts/truetype_vm/vm.c",
-            "tests/test_pdf_tt_vm.c"
+            "tests/test_pdf_tt_vm.c",
+            "docs/pdf-truetype-loader.md",
+            "src/formats/pdf/fonts/truetype_hint/simple.c",
+            "tests/test_pdf_tt_loader.c"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
@@ -976,7 +979,10 @@
             "scripts/test_pdf_embedded_fonts.py",
             "docs/pdf-truetype-vm.md",
             "src/formats/pdf/fonts/truetype_vm/vm.c",
-            "tests/test_pdf_tt_vm.c"
+            "tests/test_pdf_tt_vm.c",
+            "docs/pdf-truetype-loader.md",
+            "src/formats/pdf/fonts/truetype_hint/simple.c",
+            "tests/test_pdf_tt_loader.c"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",

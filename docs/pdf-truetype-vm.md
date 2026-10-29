@@ -120,8 +120,8 @@ stream also invalidates the previous snapshot.
 
 Snapshot and geometry allocations have bounded sizes and unwind on failure.
 Repeated snapshots reuse their buffers. These are explicit low-level interfaces;
-the PDF renderer still does not call them or load complete simple/composite glyph
-programs.
+the [native simple-glyph loader](pdf-truetype-loader.md) uses them, but the PDF
+renderer does not. Composite glyph loading remains open.
 
 ## Point operations
 
@@ -188,9 +188,9 @@ Movement uses checked fixed-point projection and division. Its 2.14 coupling
 coefficient uses explicit floor division, including for negative vector products. A changing-coordinate
 request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
 vector pairs need separate qualification. These operators are tested on supplied
-geometry; extracting and executing a font's simple/composite glyph programs,
-creating their phantom points and completing the remaining point operators are
-still required before rendering integration.
+geometry. Native simple-glyph extraction and phantom construction are tested
+separately. Composite loading and the remaining point operators are still required
+before rendering integration.
 
 ## Verification
 
@@ -245,7 +245,8 @@ Those rejected programs are not counted as matched or fully supported. Neither p
 tests the native glyph loader, composite assembly, grayscale execution or PDF rasterization.
 
 Remaining work includes diagonal rounding, custom instruction definitions,
-nonuniform sizing, phantom-point construction, the remaining point instructions and integration with transformed outline rendering.
+nonuniform sizing, composite assembly and phantom propagation, the remaining point
+instructions and integration with transformed outline rendering.
 Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
 

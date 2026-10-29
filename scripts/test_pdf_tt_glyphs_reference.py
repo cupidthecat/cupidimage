@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compare simple-glyph instruction results using independently supplied geometry."""
+import argparse
 import ctypes
 import struct
 import subprocess
@@ -57,9 +58,12 @@ def main():
     version = ctypes.c_uint(35)
     assert freetype.FT_Property_Set(freetype.get_handle(), b'truetype', b'interpreter-version',
                                    ctypes.byref(version)) == 0
-    if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3 and sys.argv[2] != '--all-simple'):
-        raise SystemExit('usage: test_pdf_tt_glyphs_reference.py PROBE [--all-simple]')
-    all_simple = len(sys.argv) == 3
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('probe')
+    parser.add_argument('--all-simple', action='store_true')
+    parser.add_argument('--native', action='store_true')
+    options = parser.parse_args()
+    all_simple = options.all_simple
     sizes = (16,) if all_simple else (6, 9, 13, 16, 24, 37)
     rejected = []
     checked = 0
@@ -79,9 +83,13 @@ def main():
                 for ppem in sizes:
                     face.set_pixel_sizes(ppem, ppem)
                     for name in names:
-                        path.write_bytes(fixture(font, name, ppem))
-                        result = subprocess.run([sys.argv[1], str(font_path), str(path), str(ppem)],
-                                                capture_output=True, text=True, timeout=20)
+                        if options.native:
+                            command = [options.probe, str(font_path), '--native', str(ppem),
+                                       str(font.getGlyphID(name))]
+                        else:
+                            path.write_bytes(fixture(font, name, ppem))
+                            command = [options.probe, str(font_path), str(path), str(ppem)]
+                        result = subprocess.run(command, capture_output=True, text=True, timeout=20)
                         assert result.returncode == 0, (filename, name, ppem, result.stderr)
                         lines = result.stdout.splitlines()
                         status = list(map(int, lines[0].split()))
@@ -105,7 +113,8 @@ def main():
     assert len(rejected) == (4 if all_simple else 0), rejected
     print(f'TrueType simple glyph reference: {checked} outline matches at {len(sizes)} sizes; '
           f'{len(rejected)} specified-invalid IP rejections; engine {freetype.version()}; '
-          'supplied geometry, no composites or PDF rendering')
+          f'{"native loading" if options.native else "supplied geometry"}; '
+          'no composites or PDF rendering')
 
 
 if __name__ == '__main__':

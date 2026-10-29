@@ -754,6 +754,7 @@ initialize the pinned Latin font programs and execute their uniform-size prepara
 programs. A separate probe compares 9,330 simple-glyph outlines at six sizes using
 supplied geometry for Unicode mappings U+0020 through U+00FF. Prepared state and
 glyph entry are tested separately. The PDF renderer
-does not invoke this engine yet. Native simple/composite glyph loading,
-the remaining point instructions and nonuniform sizing are still
-unfinished. No hinted-glyph parity is claimed by those tests.
+does not invoke this engine yet. The [native loader](pdf-truetype-loader.md) now
+constructs simple glyphs and their phantom points and matches the same outline
+comparisons. Composite loading, the remaining point instructions and nonuniform
+sizing are still unfinished. No hinted-glyph parity is claimed by those tests.

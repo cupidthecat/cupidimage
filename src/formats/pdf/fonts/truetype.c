@@ -1,4 +1,4 @@
-#include "truetype.h"
+#include "truetype_data.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,10 +28,10 @@ int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t len
     unsigned count = tt_u16(data + 4);
     if (!count || count > 4096 || count > (length - 12) / 16)
         return 0;
-    const char *tags[] = {"head", "maxp", "loca", "glyf", "hhea", "hmtx",
-                          "cmap", "post", "cvt ", "fpgm", "prep"};
-    pdf_tt_table *tables[] = {&f->head, &f->maxp, &f->loca, &f->glyf, &f->hhea, &f->hmtx,
-                              &f->cmap, &f->post, &f->cvt,  &f->fpgm, &f->prep};
+    const char *tags[] = {"head", "maxp", "loca", "glyf", "hhea", "hmtx", "cmap",
+                          "post", "cvt ", "fpgm", "prep", "OS/2", "vhea", "vmtx"};
+    pdf_tt_table *tables[] = {&f->head, &f->maxp, &f->loca, &f->glyf, &f->hhea, &f->hmtx, &f->cmap,
+                              &f->post, &f->cvt,  &f->fpgm, &f->prep, &f->os2,  &f->vhea, &f->vmtx};
     for (unsigned i = 0; i < count; i++) {
         const unsigned char *record = data + 12 + i * 16;
         size_t offset = tt_u32(record + 8), size = tt_u32(record + 12);
@@ -99,8 +99,9 @@ static int tt_reserve(pdf_tt_outline *o, unsigned added) {
     return 1;
 }
 
-static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt_outline *o) {
-    if (contours > 4096 || length < 10 + (size_t)contours * 2)
+static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt_outline *o,
+                     pdf_tt_table *program, int *memory_failed) {
+    if (contours > 32767 || length < 10 + (size_t)contours * 2)
         return 0;
     unsigned count = contours ? tt_u16(p + 10 + (contours - 1) * 2) + 1 : 0, previous = 0;
     for (int i = 0; i < contours; i++) {
@@ -118,10 +119,15 @@ static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt
     at += 2;
     if (instructions > length - at)
         return 0;
+    if (program)
+        *program = (pdf_tt_table){p + at, instructions};
     at += instructions;
     unsigned base = o->count;
-    if (!tt_reserve(o, count))
+    if (!tt_reserve(o, count)) {
+        if (memory_failed)
+            *memory_failed = 1;
         return 0;
+    }
     for (unsigned i = 0; i < count;) {
         if (at == length)
             return 0;
@@ -174,7 +180,36 @@ static int tt_simple(const unsigned char *p, size_t length, int contours, pdf_tt
     return 1;
 }
 
-static int tt_left_bearing(const pdf_tt_font *f, unsigned glyph) {
+int cupidimage_pdf_tt_glyph_data(const pdf_tt_font *font, unsigned glyph, pdf_tt_table *view) {
+    *view = (pdf_tt_table){0};
+    if (glyph >= font->glyphs)
+        return 0;
+    size_t start = tt_location(font, glyph), end = tt_location(font, glyph + 1);
+    if (start > end || end > font->glyf.length)
+        return 0;
+    *view = (pdf_tt_table){font->glyf.data + start, end - start};
+    return 1;
+}
+
+int cupidimage_pdf_tt_simple_points(const pdf_tt_table *view, pdf_tt_outline *outline,
+                                    pdf_tt_table *program) {
+    outline->count = 0;
+    *program = (pdf_tt_table){0};
+    if (!view->length)
+        return 1;
+    if (view->length < 10 || tt_i16(view->data) < 0)
+        return 0;
+    int memory_failed = 0;
+    if (!tt_simple(view->data, view->length, tt_i16(view->data), outline, program,
+                   &memory_failed)) {
+        outline->count = 0;
+        *program = (pdf_tt_table){0};
+        return memory_failed ? -1 : 0;
+    }
+    return 1;
+}
+
+int cupidimage_pdf_tt_left_bearing(const pdf_tt_font *f, unsigned glyph) {
     size_t offset = glyph < f->hmetrics ? (size_t)glyph * 4 + 2
                                         : (size_t)f->hmetrics * 4 + (glyph - f->hmetrics) * 2;
     return tt_i16(f->hmtx.data + offset);
@@ -196,10 +231,10 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
     if (length < 10)
         return 0;
     const unsigned char *p = f->glyf.data + start;
-    *origin = tt_i16(p + 2) - tt_left_bearing(f, glyph);
+    *origin = tt_i16(p + 2) - cupidimage_pdf_tt_left_bearing(f, glyph);
     int contours = tt_i16(p);
     if (contours >= 0)
-        return tt_simple(p, length, contours, o);
+        return tt_simple(p, length, contours, o, NULL, NULL);
     if (contours != -1)
         return 0;
     size_t at = 10;
