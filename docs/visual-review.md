@@ -74,6 +74,28 @@ Malformed assets under `negative/` are excluded unless `--include-negative` is
 set. TGA type-0 metadata-only assets have no image to rate and are recorded as such.
 SVG review uses its initial sampled state, not a browser animation timeline.
 
+## PDF rendering options
+
+PDF review defaults to the same unhinted, center-point text path as the library.
+To test an explicit grayscale/native-hinting configuration on a small selection:
+
+```sh
+python3 scripts/review_assets.py --pdfjs --range 1-20 --pages first \
+  --reference --backend sixel --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting \
+  --report .cache/visual-review/pdf-native-hinting-sixel.jsonl
+```
+
+The three switches can be used independently. They affect PDF decoding, not the
+PNG preview sent to the terminal, and do not change other formats in a mixed
+selection. They also do not change the independent renderer's settings. See the
+[TrueType](pdf-page-hinting.md), [CFF](pdf-cff-page-hinting.md) and
+[coverage](pdf-coverage.md) guides for profile limits.
+
+The runner checks that its copied probe supports requested PDF switches before
+opening the report. A stale probe gives a rebuild error instead of marking the
+selected documents wrong. Rebuild with `make cli bin/test_asset_probe` after
+pulling renderer changes. `--list` still needs no renderer and writes no ratings.
+
 ## Rate the result
 
 At each prompt:
@@ -117,14 +139,20 @@ python3 scripts/review_assets.py --pdfjs --reference --resume
 ```
 
 Resume skips ratings only when the file contents, selected page/frame, decoder
-binary, CLI binary, backend, reference mode, and reviewer label match. A rebuilt
+binary, CLI binary, backend, reference mode, reviewer label and PDF rendering
+options match. A rebuilt
 binary causes affected items to be reviewed again. Inputs and binaries are copied
 for the active review so a concurrent edit cannot silently change the rated data.
+Changing a PDF switch requires a new rating for affected PDF pages even when the
+input and binaries are unchanged. Keep the same switches when resuming a pass.
+Default-option fingerprints remain compatible with older logs.
 External resources referenced by an SVG are not included in its file hash; do a
-new pass rather than resuming if those resources change.
+new pass rather than resuming if those resources change. Installed reference-tool
+versions and system font configuration are not fingerprinted; use a new report
+when those change.
 
 Ratings include the source path/hash, dimensions, page/frame, available animation
-metadata, result status, note, and timestamp. `--reviewer` is an optional label,
+metadata, result status, PDF options, note, and timestamp. `--reviewer` is an optional label,
 not an authenticated identity. Treat logs from private documents as private too.
 You can send the JSONL file with a bug report to identify exactly what looked wrong.
 

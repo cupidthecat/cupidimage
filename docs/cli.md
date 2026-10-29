@@ -40,6 +40,10 @@ including its pixel/cell aspect handling.
 ./bin/cupidimage --pdf-text-aa --pdf-cff-hinting --sixel assets/pdf/native-cff-hinting.pdf
 ```
 
+The three PDF text-rendering switches are also available in the [visual reviewer](visual-review.md)
+and [corpus audit](testing.md). Those tools record the selected options with
+their results; rebuild the corresponding probes after pulling changes.
+
 ## Animation and pages
 
 GIFs with multiple frames animate when stdout is a terminal. A pipe or redirected

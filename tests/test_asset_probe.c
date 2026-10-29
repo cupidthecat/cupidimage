@@ -1,4 +1,5 @@
 #include "cupidimage.h"
+#include "pdf_probe_options.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +25,12 @@ static int read_input(const char *path, unsigned char **data, size_t *size) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 5)
+    if (argc == 2 && !strcmp(argv[1], "--capabilities"))
+        return pdf_probe_capabilities() ? 0 : 3;
+    if (argc < 5)
+        return 2;
+    cupidimage_pdf_options options = {0};
+    if ((argc > 5 && strcmp(argv[2], "pdf")) || !pdf_probe_options(argc, argv, 5, &options))
         return 2;
     const char *path = argv[1], *format = argv[2], *mode = argv[4];
     char *end = NULL;
@@ -60,7 +66,8 @@ int main(int argc, char **argv) {
         if (!cupidimage_get_pdf_page_count(data, size, &count, error, sizeof(error)))
             goto done;
         ok = !strcmp(mode, "count") ||
-             cupidimage_load_pdf_page(data, size, &image, page, error, sizeof(error));
+             cupidimage_load_pdf_page_with_options(data, size, &image, page, &options, error,
+                                                   sizeof(error));
     } else if (!strcmp(format, "tiff")) {
         if (!cupidimage_get_tiff_page_count(data, size, &count, error, sizeof(error)))
             goto done;

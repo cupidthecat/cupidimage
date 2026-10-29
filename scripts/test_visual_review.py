@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Offline tests for review selection, ratings, and resume fingerprints."""
 from pathlib import Path
+import argparse
+import hashlib
+import json
 import tempfile
 import unittest
 from review_assets import ask, automatic_failure, collect, label, review_key, select_range
+from pdf_render_options import OPTIONS, add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options
 
 
 class ReviewTests(unittest.TestCase):
@@ -46,6 +50,31 @@ class ReviewTests(unittest.TestCase):
         self.assertFalse(automatic_failure({'decode_status':'ok'}))
         self.assertTrue(automatic_failure({'decode_status':'ok','terminal_status':'error'}))
         self.assertTrue(automatic_failure({'decode_status':'ok','artifact_error':'invalid raster'}))
+
+    def test_pdf_options(self):
+        parser=argparse.ArgumentParser()
+        add_pdf_options(parser)
+        values=pdf_option_values(parser.parse_args(['--pdf-text-aa','--pdf-cff-hinting']))
+        self.assertEqual(values,{'text_antialias':True,'truetype_hinting':False,'cff_hinting':True})
+        self.assertEqual(pdf_option_arguments(values),['--pdf-text-aa','--pdf-cff-hinting'])
+        capabilities=json.dumps({'schema':1,'pdf_options':[flag for flag,_,_ in OPTIONS]})
+        self.assertTrue(supports_pdf_options(capabilities,values))
+        for bad in ('legacy probe', '{}', '[]', '{"schema":true,"pdf_options":[]}',
+                    '{"schema":1,"pdf_options":[[]]}', '{"schema":1,"pdf_options":["--pdf-text-aa"]}'):
+            self.assertFalse(supports_pdf_options(bad,values))
+        self.assertTrue(supports_pdf_options('legacy probe',{}))
+        base=review_key('/image','sha',0,'probe','cli','sixel')
+        legacy=hashlib.sha256(json.dumps(['/image','sha',0,'probe','cli','sixel',False,'local reviewer']).encode()).hexdigest()
+        self.assertEqual(base,legacy)
+        disabled={field:False for _,field,_ in OPTIONS}
+        self.assertEqual(base,review_key('/image','sha',0,'probe','cli','sixel',pdf_options=disabled))
+        keys=set()
+        for bits in range(1,8):
+            enabled={field:bool(bits&(1<<i)) for i,(_,field,_) in enumerate(OPTIONS)}
+            key=review_key('/image','sha',0,'probe','cli','sixel',pdf_options=enabled)
+            self.assertNotEqual(base,key);keys.add(key)
+            self.assertEqual(key,review_key('/image','sha',0,'probe','cli','sixel',pdf_options=dict(reversed(list(enabled.items())))))
+        self.assertEqual(len(keys),7)
 
     def test_fingerprints(self):
         base=review_key('/image','sha',0,'probe','cli','auto')

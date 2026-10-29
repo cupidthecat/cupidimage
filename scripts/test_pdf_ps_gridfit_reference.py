@@ -145,7 +145,7 @@ def main():
     print(f'CFF grid fitting: {matches} independent outline matches; '
           f'{"nonuniform" if args.nonuniform else "uniform"} sizing; engine {freetype.version()}; '
           f'{encoding_checks} native DICT-width equivalence checks; {bitmap_checks} exact grayscale bitmaps; '
-          'no darkening or PDF page integration')
+          'standalone glyph checks; page tests are separate')
 
 
 if __name__ == '__main__':

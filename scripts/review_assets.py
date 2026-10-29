@@ -2,6 +2,7 @@
 """Interactively render selected assets and save human visual-review ratings."""
 import argparse
 from collections import Counter
+from contextlib import ExitStack
 from datetime import datetime, timezone
 import fnmatch
 import glob
@@ -19,6 +20,7 @@ from audit_pdf_corpus import fetch, process, read_ppm
 from pdf_visuals import save_visuals, write_png
 from test_asset_corpus import bundle
 from test_assets import SUFFIXES
+from pdf_render_options import add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options
 
 ROOT = Path(__file__).resolve().parents[1]
 RATINGS = {'c': 'correct', 'correct': 'correct', '1': 'correct',
@@ -74,8 +76,11 @@ def collect(paths, assets=False, formats=(), pattern='*', include_negative=False
             (fnmatch.fnmatchcase(row['name'], pattern) or fnmatch.fnmatchcase(Path(row['name']).name, pattern))]
 
 
-def review_key(path, digest, page, probe_hash, cli_hash, backend, reference=False, reviewer="local reviewer"):
-    return hashlib.sha256(json.dumps([str(path), digest, page, probe_hash, cli_hash, backend, reference, reviewer]).encode()).hexdigest()
+def review_key(path, digest, page, probe_hash, cli_hash, backend, reference=False, reviewer="local reviewer", pdf_options=None):
+    values = [str(path), digest, page, probe_hash, cli_hash, backend, reference, reviewer]
+    if pdf_options and any(pdf_options.values()):
+        values.append({key: bool(value) for key, value in pdf_options.items()})
+    return hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
 
 
 def ask(input_fn=input):
@@ -128,7 +133,10 @@ def main():
     parser.add_argument('--memory-mib', type=int, default=1024)
     parser.add_argument('--max-pages', type=int, default=1000)
     parser.add_argument('--reviewer', default='local reviewer', help='Optional label saved with ratings')
+    add_pdf_options(parser)
     args = parser.parse_args()
+    pdf_options = pdf_option_values(args)
+    pdf_flags = pdf_option_arguments(pdf_options)
     if not math.isfinite(args.timeout) or args.timeout <= 0 or args.memory_mib < 0 or args.max_pages < 1:
         parser.error('Invalid resource limits')
     try:
@@ -160,16 +168,22 @@ def main():
                 if 'review_key' not in row: parser.error('Rating lacks its fingerprint; choose a new report')
                 previous.add(row['review_key'])
     counts = Counter(); stopped = False
-    with tempfile.TemporaryDirectory(prefix='cupidimage-review-') as temporary, args.report.open('a') as report:
+    with tempfile.TemporaryDirectory(prefix='cupidimage-review-') as temporary, ExitStack() as stack:
         directory = Path(temporary)
         probe = directory/'probe'; cli = directory/'cli'
         shutil.copy2(args.probe.resolve(),probe); shutil.copy2(args.cli.resolve(),cli)
         probe_hash = hashlib.sha256(probe.read_bytes()).hexdigest(); cli_hash = hashlib.sha256(cli.read_bytes()).hexdigest()
+        if pdf_flags and any(item['format'] == 'pdf' for _, item in selection):
+            result, capability = process([str(probe), '--capabilities'], directory,
+                                         args.timeout, args.memory_mib, 'capabilities')
+            if result['status'] != 'ok' or not supports_pdf_options(capability.read_bytes(), pdf_options):
+                parser.error('Selected probe cannot confirm the requested PDF options; rebuild bin/test_asset_probe')
+        report = stack.enter_context(args.report.open('a'))
         def emit(row):
             row['timestamp'] = datetime.now(timezone.utc).isoformat()
             report.write(json.dumps(row,sort_keys=True)+'\n'); report.flush()
         emit({'kind':'run','tool':'cupidimage-visual-review','schema':1,'selected_files':len(selection),'probe_sha256':probe_hash,'cli_sha256':cli_hash,
-              'backend':args.backend,'reviewer':args.reviewer,'pages':args.pages,'reference':args.reference})
+              'backend':args.backend,'reviewer':args.reviewer,'pages':args.pages,'reference':args.reference,'pdf_options':pdf_options})
         try:
             for ordinal,(number,item) in enumerate(selection,1):
                 print(f"\nFile {ordinal}/{len(selection)} (selection #{number}): {label(item['name'])}",flush=True)
@@ -187,7 +201,8 @@ def main():
                 if hashlib.sha256(input_path.read_bytes()).hexdigest()!=digest:
                     emit({'kind':'input-error','file':str(path),'error':'Input changed while being copied'});counts['input-error']+=1;continue
                 command=[str(probe),str(input_path),fmt]
-                result,output=process(command+['0','count'],directory,args.timeout,args.memory_mib,'count')
+                render_flags = pdf_flags if fmt == 'pdf' else []
+                result,output=process(command+['0','count']+render_flags,directory,args.timeout,args.memory_mib,'count')
                 page_count=1
                 if result['status']=='ok':
                     try: page_count=int(output.read_text())
@@ -205,15 +220,16 @@ def main():
                 if wanted<0 or wanted>args.max_pages:
                     print('Page count exceeds review limit.');emit({'kind':'page-limit','file':str(path),'count':wanted});counts['page-limit']+=1;continue
                 for page in select_range(args.pages,wanted):
-                    key=review_key(path,digest,page,probe_hash,cli_hash,args.backend,args.reference,args.reviewer)
+                    key=review_key(path,digest,page,probe_hash,cli_hash,args.backend,args.reference,args.reviewer,pdf_options if fmt == 'pdf' else None)
                     if args.resume and key in previous: counts['resumed']+=1;continue
                     target=directory/'images';target.mkdir(exist_ok=True)
                     for child in target.iterdir():
                         if child.is_file():child.unlink()
-                    result,raw=process(command+[str(page),'bundle'],directory,args.timeout,args.memory_mib,'page')
+                    result,raw=process(command+[str(page),'bundle']+render_flags,directory,args.timeout,args.memory_mib,'page')
                     details={'kind':'rating','file':str(path),'sha256':digest,'format':item['format'],'page':page+1,
                              'page_count':wanted,'review_key':key,'probe_sha256':probe_hash,'cli_sha256':cli_hash,
                              'backend':args.backend,'reviewer':args.reviewer,'decode_status':result['status'],'error':result['error']}
+                    if fmt == 'pdf': details['pdf_options'] = pdf_options
                     actual=None
                     if result['status']=='ok':
                         try:

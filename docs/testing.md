@@ -97,7 +97,24 @@ Each run writes JSON Lines records as work finishes, including document/page
 counts, errors, timeouts, output dimensions, pixel hashes, and a final summary.
 The probe is copied at startup so rebuilding the library during a long run does
 not silently mix results from different binaries. Resume requires the same
-binary and configuration; use a new report after changing the decoder.
+binary and configuration, including enabled PDF rendering options; use a new
+report after changing the decoder or those options. A probe that cannot confirm
+requested options fails before the report is opened.
+
+The audit accepts the same optional PDF text controls as the CLI and visual
+reviewer. For example, a small automated run with explicit native profiles is:
+
+```sh
+make bin/test_pdf_pages
+python3 scripts/audit_pdf_corpus.py --corpus assets/pdf/pdfjs --pages first \
+  --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting \
+  --report .cache/pdfjs-full/native-text.jsonl
+```
+
+The options are recorded in the run configuration and checked on resume. They
+apply only to actual output; independent reference settings are unchanged.
+`--download-only` does not accept rendering switches. A default-options run
+retains the previous configuration shape for compatibility with existing reports.
 
 The default timeout is 15 seconds per subprocess. Each document is capped at
 1,000 pages; raise `--max-pages` deliberately for larger documents. Untested pages
@@ -692,3 +709,10 @@ placement, FontMatrix rules, fallback programs, PDF advances, Sixel output and
 allocation cleanup. Optional independent page masks cover lines, cubic curves,
 rotations, reflections and shears. The default and hinted paths both test the
 CID FD-only matrix regression. See [CFF page hinting](pdf-cff-page-hinting.md).
+
+`make test-visual-review` includes offline option/fingerprint tests and 30 probe,
+audit and simulated-terminal checks using owned one-page fixtures. The tests
+compare named and positional PDF options, verify recorded pixel hashes, reject
+stale probes without changing reports, and ensure profile changes cannot reuse
+a previous rating. Simulated skips are kept only in temporary test reports; the
+suite does not perform a manual corpus rating pass.

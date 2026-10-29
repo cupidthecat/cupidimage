@@ -50,8 +50,9 @@ test-format-pixels: $(BINDIR)/test_format_pixels
 test-asset-corpus: $(BINDIR)/test_asset_probe
 	python3 scripts/test_asset_corpus.py --probe $< --memory-mib $(if $(findstring sanitize,$(CFLAGS)),0,1024) --timeout $(if $(findstring sanitize,$(CFLAGS)),30,10)
 
-test-visual-review:
+test-visual-review: $(BINDIR)/test_pdf_pages $(BINDIR)/test_asset_probe $(CLI)
 	python3 scripts/test_visual_review.py
+	python3 scripts/test_pdf_render_options.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_asset_probe $(CLI)
 
 test-pdf-audit:
 	python3 scripts/test_pdf_audit.py
@@ -517,3 +518,5 @@ test-pdf-ps-gridfit: $(BINDIR)/test_pdf_ps_gridfit
 test-pdf-cff-page-hinting: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
 	python3 scripts/generate_pdf_cff_page_hinting_fixture.py --check
 	python3 scripts/test_pdf_cff_page_hinting.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
+
+$(BINDIR)/test_asset_probe $(BINDIR)/test_pdf_pages: tests/pdf_probe_options.h

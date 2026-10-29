@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Opt-in PDF corpus audit. Downloaded documents are data, never executable code."""
 import argparse
+from contextlib import ExitStack
 from collections import Counter
 import fnmatch
 import hashlib
@@ -17,6 +18,8 @@ import sys
 from pdf_visuals import save_visuals, write_gallery
 import urllib.parse
 import urllib.request
+
+from pdf_render_options import add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_FILE = 64 * 1024 * 1024
@@ -177,10 +180,13 @@ def main():
     parser.add_argument('--pause', action='store_true', help='Wait for Enter after each terminal preview')
     parser.add_argument('--cli', type=Path, default=ROOT / 'bin/cupidimage')
     parser.add_argument('--keep-images', action='store_true', help='Retain raw probe output and reference PPMs beside the report')
+    add_pdf_options(parser)
     args = parser.parse_args()
+    pdf_options = pdf_option_values(args)
+    pdf_flags = pdf_option_arguments(pdf_options)
     if args.limit < 0 or args.max_pages < 1 or args.memory_mib < 0 or not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('Limits must be positive (limit/memory may be zero)')
-    if args.download_only and (args.corpus or args.reference or args.terminal_preview or args.pause or args.resume or args.keep_images):
+    if args.download_only and (args.corpus or args.reference or args.terminal_preview or args.pause or args.resume or args.keep_images or pdf_flags):
         parser.error('--download-only cannot be combined with local-corpus, rendering, or resume options')
     if args.pause and (not args.terminal_preview or not sys.stdin.isatty()):
         parser.error('--pause requires --terminal-preview and interactive stdin')
@@ -212,6 +218,8 @@ def main():
                      'max_pages': args.max_pages, 'timeout_seconds': args.timeout,
                      'memory_mib': args.memory_mib, 'reference_requested': args.reference,
                      'probe_sha256': hashlib.sha256(probe.read_bytes()).hexdigest()}
+    if pdf_flags:
+        configuration['pdf_options'] = pdf_options
     completed_files = set()
     if args.resume and args.report.exists():
         previous = [json.loads(line) for line in args.report.read_text().splitlines()]
@@ -221,10 +229,18 @@ def main():
             if record.get('kind') == 'completed':
                 completed_files.add(record['file']); counts.update(record['counts'])
     mode = 'a' if args.resume and args.report.exists() else 'w'
-    with tempfile.TemporaryDirectory(prefix='cupidimage-pdf-run-') as run_directory, args.report.open(mode) as report:
+    with tempfile.TemporaryDirectory(prefix='cupidimage-pdf-run-') as run_directory, ExitStack() as stack:
         snapshot = Path(run_directory) / 'probe'
         shutil.copy2(probe, snapshot)
         probe = snapshot
+        if hashlib.sha256(probe.read_bytes()).hexdigest() != configuration['probe_sha256']:
+            parser.error('Probe changed while being copied; try again')
+        if pdf_flags:
+            result, capability = process([str(probe), '--capabilities'], Path(run_directory),
+                                         args.timeout, args.memory_mib, 'capabilities')
+            if result['status'] != 'ok' or not supports_pdf_options(capability.read_bytes(), pdf_options):
+                parser.error('Selected probe cannot confirm the requested PDF options; rebuild bin/test_pdf_pages')
+        report = stack.enter_context(args.report.open(mode))
         def emit(row):
             report.write(json.dumps(row, sort_keys=True) + '\n'); report.flush()
         def finish(name, before):
@@ -252,7 +268,7 @@ def main():
                 continue
             with tempfile.TemporaryDirectory(prefix='cupidimage-pdf-audit-') as temporary:
                 directory = Path(temporary)
-                count_result, count_path = process([str(probe), str(path), 'count'], directory, args.timeout, args.memory_mib, 'count')
+                count_result, count_path = process([str(probe), str(path), 'count'] + pdf_flags, directory, args.timeout, args.memory_mib, 'count')
                 page_count = 0
                 if count_result['status'] == 'ok':
                     try: page_count = int(count_path.read_text())
@@ -276,7 +292,7 @@ def main():
                 if tested < wanted: counts['pages-not-tested'] += wanted - tested
                 for page in range(tested):
                     (directory / 'reference.ppm').unlink(missing_ok=True)
-                    result, raw = process([str(probe), str(path), str(page)], directory, args.timeout, args.memory_mib, 'page')
+                    result, raw = process([str(probe), str(path), str(page)] + pdf_flags, directory, args.timeout, args.memory_mib, 'page')
                     details = {'kind': 'page', 'file': name, 'page': page + 1, **result}
                     if result['status'] == 'ok':
                         try: details.update(inspect_output(raw))
