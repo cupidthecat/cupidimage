@@ -72,8 +72,7 @@ int main(int argc, char **argv) {
     pdf_tt_outline outline = {0};
     ok = cupidimage_pdf_tt_outline(&font, glyph, &outline);
     if (ok) {
-        printf("%u %u %u %u\n", font.units, font.glyphs, cupidimage_pdf_tt_advance(&font, glyph),
-               outline.count);
+        printf("%u %u %u %u\n", font.units, font.glyphs, outline.advance, outline.count);
         for (unsigned i = 0; i < outline.count; i++)
             printf("%.17g %.17g %u %u\n", outline.points[i].x, outline.points[i].y,
                    outline.points[i].on, outline.points[i].end);

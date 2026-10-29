@@ -1,5 +1,6 @@
 #include "fonts/encoding.h"
 #include "fonts/program.h"
+#include "fonts/truetype_data.h"
 #include "pdf_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -110,12 +111,38 @@ int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsig
     return glyph > 0 && glyph < program->font.glyphs;
 }
 
+static int tt_inherited_metrics(const pdf_tt_table *description) {
+    size_t at = 10;
+    unsigned records = 4096;
+    pdf_tt_component component;
+    do {
+        if (!records || !cupidimage_pdf_tt_component_read(description, &at, &component))
+            return -1;
+        records--;
+        if (component.flags & 512)
+            return 1;
+    } while (component.flags & 32);
+    return 0;
+}
+
 int cupidimage_pdf_font_program_advance(pdf_font_program *program, unsigned glyph,
                                         size_t *cache_bytes_left, double *advance) {
     program = cupidimage_pdf_font_program_select(program, &glyph);
     if (!program->is_type1 && !program->is_cff) {
-        *advance = (double)cupidimage_pdf_tt_advance(&program->font, glyph) / program->font.units;
-        return 1;
+        pdf_tt_table description;
+        if (!cupidimage_pdf_tt_glyph_data(&program->font, glyph, &description))
+            return 0;
+        int inherited = description.length >= 10 && (description.data[0] & 128)
+                            ? tt_inherited_metrics(&description)
+                            : 0;
+        if (inherited < 0)
+            return 0;
+        /* Avoid outline allocation when this glyph's own metrics suffice. */
+        if (!description.length || (description.length >= 10 && !inherited)) {
+            *advance =
+                (double)cupidimage_pdf_tt_advance(&program->font, glyph) / program->font.units;
+            return isfinite(*advance);
+        }
     }
     pdf_tt_outline truetype = {0};
     pdf_cff_outline outline = {0};
@@ -123,7 +150,9 @@ int cupidimage_pdf_font_program_advance(pdf_font_program *program, unsigned glyp
     int ok = cupidimage_pdf_font_outline(program, glyph, &truetype, &outline, cache_bytes_left,
                                          &borrowed);
     if (ok) {
-        if (program->is_type1)
+        if (!program->is_type1 && !program->is_cff)
+            *advance = (double)truetype.advance / program->font.units;
+        else if (program->is_type1)
             *advance = outline.width * program->type1.matrix[0] +
                        outline.width_y * program->type1.matrix[2];
         else {

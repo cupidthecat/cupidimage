@@ -147,9 +147,10 @@ All eight text rendering modes use the text matrix, current transform, font size
 horizontal scaling and rise. Closed glyph contours retain their winding, so
 holes and reflected clipping overlaps work without replacing glyphs by boxes.
 
-PDF Widths/MissingWidth and CID metrics control positioning. The font's hmtx
-advance is used for the existing fallback case where a simple font omits those
-PDF metrics. That fallback is not a substitute for correctly authored font
+PDF Widths/MissingWidth and CID metrics control positioning. The resolved, unhinted
+font advance is used for the existing fallback case where a simple font omits those
+PDF metrics. TrueType composites inherit the selected component's advance when
+USE_MY_METRICS is set, including through nested components. That fallback is not a substitute for correctly authored font
 metadata. Identity-V origin offsets and advances are applied before/after glyph
 painting, respectively.
 
@@ -550,19 +551,32 @@ part of the aggregate suite.
 
 For the damaged-input case where a simple embedded font omits both Widths and
 MissingWidth, CFF and Type 1 advances come from the decoded charstring width.
-Advance lookup shares the page's outline cache with painting and preserves the
-composite glyph's own width. Type 1 width vectors are transformed by FontMatrix.
-PDF-provided metrics still take precedence.
+TrueType glyphs without metric inheritance use their own `hmtx` entry directly,
+without allocating outlines. Composite metadata inspection is bounded. Glyphs with
+USE_MY_METRICS resolve it through the bounded outline walk, retaining the
+selected child's advance with the resulting geometry. Nested inheritance and the
+final selected component are handled in the same order as assembly. Empty metric
+components retain their side-bearing origin too.
+
+Where decoding is required, advance lookup shares the page's outline cache with
+painting. Cached and uncached results retain the same effective advance. Type 1
+width vectors are transformed by FontMatrix. PDF-provided Widths, MissingWidth and
+CID metrics still take precedence; the raw `hmtx` getter remains available for
+initial phantom construction, before component inheritance.
 
 A decoding or allocation failure now fails the page instead of substituting a
 zero advance and shifting later characters. A genuine zero or negative width
 remains valid. Fallback advance requests count against the existing per-page
-65,536 glyph-operation budget, including invisible text; this bounds charstring
-work even when no glyph pixels are painted.
+65,536 glyph-operation budget, including invisible text; this bounds glyph
+decoding even when no glyph pixels are painted. Composite decoding also retains
+its depth, call and point limits.
 
 `make test-pdf-font-advances` compares fallback positioning with explicit PDF
-metrics across all eight text modes, signed/zero widths, composite accents and
-transformed Type 1 width vectors. Allocation tests compare cached and uncached
+metrics across all eight text modes, signed/zero widths, composite accents,
+transformed Type 1 width vectors and inherited TrueType advances. It checks nested
+and final-component inheritance, explicit metric overrides, cyclic composites and
+invisible-text limits. Optional comparisons check unhinted font-program advances;
+they do not establish parity for damaged PDFs missing mandatory metric entries. Allocation tests compare cached and uncached
 renders. A failed allocation must either fail page loading cleanly or recover
 with identical pixels. This compatibility path does not make omitted required
 font metrics conforming.

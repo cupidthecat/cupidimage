@@ -49,10 +49,11 @@ instructions against its phantom points.
 
 The unhinted reader shares the component-record decoder, including negative contour
 counts, transform validation and conflicting-offset defaults. It does not yet use
-the native hinting assembly path or its phantom-attachment support. Unhinted PDF
-fallback-width queries still read the parent's `hmtx` advance directly; inheriting
-component advances in that separate path remains open. Explicit PDF widths retain
-precedence.
+the native hinting assembly path or its phantom-attachment support. It now retains
+the effective unhinted advance with the assembled outline, including nested
+USE_MY_METRICS inheritance. The PDF reader's existing damaged-input fallback uses that value
+when both Widths and MissingWidth are absent. Explicit PDF metrics retain
+precedence; missing required entries do not become conforming through this recovery.
 
 ## Bounds
 

@@ -376,6 +376,32 @@ static void composite_loader_tests(void) {
               (invalid == 3 || invalid == 4 ? PDF_TT_VM_POINT : PDF_TT_VM_PROGRAM));
         finish(&hint);
     }
+    composite_init(&fixture);
+    composite_add(&fixture, NULL, 0);
+    composite_simple(&fixture, NULL, 0);
+    write16(fixture.metrics, 333);
+    write16(fixture.metrics + 2, 19);
+    write16(fixture.metrics + 4, 512);
+    pdf_tt_component advance_records[2] = {{.flags = 3 | 512, .glyph = 0},
+                                           {.flags = 3, .glyph = 1}};
+    glyph = composite_parent(&fixture, advance_records, 2, NULL, 0);
+    write16(fixture.metrics + glyph * 4, 700);
+    pdf_tt_outline inherited_outline = {0};
+    CHECK(cupidimage_pdf_tt_outline(&fixture.font, glyph, &inherited_outline));
+    CHECK(inherited_outline.advance == 333 && inherited_outline.points[0].x == 19);
+    CHECK(cupidimage_pdf_tt_advance(&fixture.font, glyph) == 700);
+    cupidimage_pdf_tt_outline_free(&inherited_outline);
+    advance_records[1].flags |= 512;
+    unsigned last_metrics = composite_parent(&fixture, advance_records, 2, NULL, 0);
+    CHECK(cupidimage_pdf_tt_outline(&fixture.font, last_metrics, &inherited_outline));
+    CHECK(inherited_outline.advance == 512 && inherited_outline.points[0].x == 0);
+    cupidimage_pdf_tt_outline_free(&inherited_outline);
+    pdf_tt_component nested_advance = {.flags = 3 | 512, .glyph = last_metrics};
+    unsigned nested_metrics = composite_parent(&fixture, &nested_advance, 1, NULL, 0);
+    CHECK(cupidimage_pdf_tt_outline(&fixture.font, nested_metrics, &inherited_outline));
+    CHECK(inherited_outline.advance == 512);
+    cupidimage_pdf_tt_outline_free(&inherited_outline);
+    CHECK(live_count == 0);
     printf("TrueType composites: %u checks, %zu allocation failures, 0 failures\n", checks - before,
            allocations);
 }

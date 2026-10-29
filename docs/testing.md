@@ -526,8 +526,10 @@ text objects, empty/invisible text and clipping. The allocation harness compares
 lazy text surfaces against eager backdrop initialization and verifies that group
 work bounds include zero-alpha shape and explicit backgrounds.
 
-`make test-pdf-font-advances` tests fallback CFF/Type 1 metrics, zero and negative
-advances, composite widths, all text modes and the page glyph-operation limit.
+`make test-pdf-font-advances` tests fallback CFF/Type 1 metrics and inherited
+TrueType metrics, zero and negative advances, nested/final-component widths,
+explicit PDF overrides, all text modes and the page glyph-operation limit.
+Optional independent checks cover unhinted font advances, not damaged-PDF parity.
 Fault injection requires a failed width decode to fail the page, never silently
 move later characters by zero.
 

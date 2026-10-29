@@ -17,6 +17,7 @@ static void release_outline(pdf_tt_outline *tt, pdf_cff_outline *ps, int borrowe
 static void same_outline(const pdf_tt_outline *a, const pdf_tt_outline *b, const pdf_cff_outline *c,
                          const pdf_cff_outline *d) {
     assert(a->count == b->count && c->count == d->count);
+    assert(a->advance == b->advance);
     assert(c->width == d->width && c->width_y == d->width_y);
     for (unsigned i = 0; i < a->count; i++) {
         assert(a->points[i].x == b->points[i].x && a->points[i].y == b->points[i].y);
@@ -80,6 +81,37 @@ int main(void) {
     cupidimage_pdf_font_outline_cache_clear(&tt);
     assert(second_outline.points[0].x == 0);
     cupidimage_pdf_font_outline_cache_clear(&second);
+    checks++;
+
+    struct pdf_font_program inherited = {0};
+    assert(cupidimage_pdf_tt_init(&inherited.font, test_truetype_font, sizeof(test_truetype_font)));
+    unsigned char metrics[32] = {0};
+    for (unsigned i = 0; i < 8; i++) {
+        metrics[i * 4] = 3;
+        metrics[i * 4 + 1] = 232;
+    }
+    metrics[4] = 2;
+    metrics[5] = 0;
+    metrics[16] = 2;
+    metrics[17] = 188;
+    inherited.font.hmetrics = 8;
+    inherited.font.hmtx = (pdf_tt_table){metrics, sizeof(metrics)};
+    unsigned char glyph_data[512];
+    assert(inherited.font.glyf.length <= sizeof(glyph_data));
+    memcpy(glyph_data, inherited.font.glyf.data, inherited.font.glyf.length);
+    inherited.font.glyf.data = glyph_data;
+    const unsigned char *location = inherited.font.loca.data + 4 * 2;
+    size_t start = ((unsigned)location[0] * 256 + location[1]) * 2;
+    glyph_data[start + 10] |= 2;
+    checks += check_program(&inherited, 4);
+    pdf_tt_outline inherited_outline = {0};
+    pdf_cff_outline unused = {0};
+    budget = 1024u * 1024u;
+    assert(cupidimage_pdf_font_outline(&inherited, 4, &inherited_outline, &unused, &budget,
+                                       &borrowed));
+    assert(borrowed && inherited_outline.advance == 512);
+    assert(cupidimage_pdf_tt_advance(&inherited.font, 4) == 700);
+    cupidimage_pdf_font_outline_cache_clear(&inherited);
     checks++;
 
     struct pdf_font_program standard = {0};

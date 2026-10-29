@@ -194,6 +194,7 @@ int cupidimage_pdf_tt_glyph_data(const pdf_tt_font *font, unsigned glyph, pdf_tt
 int cupidimage_pdf_tt_simple_points(const pdf_tt_table *view, pdf_tt_outline *outline,
                                     pdf_tt_table *program) {
     outline->count = 0;
+    outline->advance = 0;
     *program = (pdf_tt_table){0};
     if (!view->length)
         return 1;
@@ -216,7 +217,7 @@ int cupidimage_pdf_tt_left_bearing(const pdf_tt_font *f, unsigned glyph) {
 }
 
 static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, unsigned chain[16],
-                    unsigned depth, unsigned *calls, double *origin) {
+                    unsigned depth, unsigned *calls, double *origin, unsigned *advance) {
     if (depth == 16 || glyph >= f->glyphs || !*calls)
         return 0;
     (*calls)--;
@@ -225,7 +226,8 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
             return 0;
     chain[depth] = glyph;
     size_t start = tt_location(f, glyph), end = tt_location(f, glyph + 1), length = end - start;
-    *origin = 0;
+    *origin = -cupidimage_pdf_tt_left_bearing(f, glyph);
+    *advance = cupidimage_pdf_tt_advance(f, glyph);
     if (!length)
         return 1;
     if (length < 10)
@@ -250,7 +252,8 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
                c = record.matrix[2] / 16384.0, d = record.matrix[3] / 16384.0;
         unsigned child = o->count;
         double child_origin;
-        if (!tt_glyph(f, component, o, chain, depth + 1, calls, &child_origin))
+        unsigned child_advance;
+        if (!tt_glyph(f, component, o, chain, depth + 1, calls, &child_origin, &child_advance))
             return 0;
         for (unsigned i = child; i < o->count; i++) {
             double x = o->points[i].x, y = o->points[i].y;
@@ -269,8 +272,10 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
             dx = o->points[base + arg1].x - o->points[child + arg2].x;
             dy = o->points[base + arg1].y - o->points[child + arg2].y;
         }
-        if (flags & 512)
+        if (flags & 512) {
             *origin = child_origin;
+            *advance = child_advance;
+        }
         for (unsigned i = child; i < o->count; i++) {
             o->points[i].x += dx;
             o->points[i].y += dy;
@@ -287,10 +292,12 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
 
 int cupidimage_pdf_tt_outline(const pdf_tt_font *font, unsigned glyph, pdf_tt_outline *outline) {
     outline->count = 0;
+    outline->advance = 0;
     unsigned chain[16], calls = 4096;
     double origin;
-    if (!tt_glyph(font, glyph, outline, chain, 0, &calls, &origin)) {
+    if (!tt_glyph(font, glyph, outline, chain, 0, &calls, &origin, &outline->advance)) {
         outline->count = 0;
+        outline->advance = 0;
         return 0;
     }
     /* The horizontal pen origin is the first phantom point, not necessarily x=0.

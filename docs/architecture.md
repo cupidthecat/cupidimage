@@ -150,6 +150,11 @@ renderers retain geometry and clipping ownership; the helper borrows the caller'
 mask, redirects painting into a bounded surface, then restores state and applies
 the mask once to the completed object.
 
+Unhinted TrueType outlines carry their effective advance as well as points. The
+component walk resolves USE_MY_METRICS once; fallback-width lookup reuses the same
+bounded outline cache as painting. Glyphs without metric inheritance retain the direct metric lookup.
+Raw font metrics remain separate from component-inherited metrics and PDF overrides.
+
 `fonts/truetype_vm` separates instruction dispatch/control flow from stack and
 storage operations, fixed-point arithmetic/rounding, graphics-state setters and
 uniform size preparation, vector normalization, point zones, original design coordinates, movement/interpolation operators and
