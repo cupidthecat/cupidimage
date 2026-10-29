@@ -270,3 +270,13 @@ and https://mirrors.ctan.org/fonts/tex-gyre.zip.
 The unchanged license texts are distributed in
 `third_party/standard-spacing-marks/GUST-FONT-LICENSE.txt` and
 `third_party/standard-spacing-marks/LPPL-1.3c.txt`.
+
+## FreeType glyph coverage
+
+Portions of this software are copyright © 2000-2026 The FreeType Project
+(https://freetype.org). All rights reserved.
+
+The glyph coverage scan converter is adapted from FreeType 2.15.0 under the
+FreeType Project License. The original license, source hashes and modification
+notes are in `third_party/freetype-raster`. Include this notice with binary
+distributions and retain that directory with source distributions.

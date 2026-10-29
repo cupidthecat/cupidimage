@@ -800,5 +800,13 @@ glyph entry are tested separately. The PDF renderer
 does not invoke this engine yet. The [native loader](pdf-truetype-loader.md) now
 constructs simple and composite glyphs, their phantom points and instruction
 phases. Selected simple and composite outlines match independently in monochrome
-and grayscale modes. Remaining instructions, transformed sizing, scan conversion
-and PDF integration are still unfinished. No hinted-glyph parity is claimed by those tests.
+and grayscale modes, including selected nonuniform sizes and post-hint affine
+transforms. Remaining instruction behavior and PDF integration are unfinished.
+These outline tests do not establish complete hinted-glyph raster fidelity.
+
+## Glyph edge coverage
+
+A bounded line/quadratic/cubic [coverage converter](pdf-coverage.md) now has
+analytic area, independent bitmap and allocation-failure tests. A separate test
+pipeline joins it to native hinted outlines. Page painting does not call it yet;
+page rendering remains unhinted and uses center-point coverage.
