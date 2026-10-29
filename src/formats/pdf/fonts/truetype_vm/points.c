@@ -26,6 +26,23 @@ int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *vm, unsigned twilight, const pdf_t
     return 1;
 }
 
+int cupidimage_pdf_tt_vm_load_glyph_points(pdf_tt_vm *vm, const pdf_tt_vm_point *glyph,
+                                           unsigned count, unsigned outline) {
+    if (vm->error != PDF_TT_VM_OK)
+        return 0;
+    if (count > 65540 || outline > count || outline > 65536 || count - outline > 4 ||
+        (count && !glyph))
+        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_POINT);
+    pdf_tt_vm_point *points = count ? malloc((size_t)count * sizeof(*points)) : NULL;
+    if (count && !points)
+        return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_MEMORY);
+    if (count)
+        memcpy(points, glyph, (size_t)count * sizeof(*points));
+    free(vm->zones[1].points);
+    vm->zones[1] = (pdf_tt_vm_zone){points, count, outline};
+    return 1;
+}
+
 static pdf_tt_vm_point *vm_point(pdf_tt_vm *vm, unsigned zone, int32_t index) {
     if (zone > 1 || index < 0 || (uint32_t)index >= vm->zones[zone].count) {
         cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_POINT);
@@ -104,6 +121,23 @@ int cupidimage_pdf_tt_vm_point_op(pdf_tt_vm *vm, unsigned op) {
     int32_t a = vm->stack[vm->stack_size - 1];
     int32_t b = count == 2 ? vm->stack[vm->stack_size - 2] : 0;
     pdf_tt_vm_graphics *g = &vm->graphics;
+    /* No glyph outline is associated with the preparation program. */
+    if (vm->stage == PDF_TT_VM_PREP) {
+        int missing_glyph;
+        if (op <= 0x09 || op == 0x86 || op == 0x87)
+            missing_glyph = g->zone[1] == 1 || g->zone[2] == 1;
+        else if (op == 0x46 || op == 0x47 || op == 0x48)
+            missing_glyph = g->zone[2] == 1;
+        else
+            missing_glyph = g->zone[0] == 1;
+        if (missing_glyph) {
+            if (op == 0x46 || op == 0x47)
+                vm->stack[vm->stack_size - 1] = 0;
+            else
+                vm->stack_size -= count;
+            return 1;
+        }
+    }
     if (op <= 0x09 || op == 0x86 || op == 0x87) {
         pdf_tt_vm_point *from = vm_point(vm, g->zone[2], a);
         pdf_tt_vm_point *to = vm_point(vm, g->zone[1], b);

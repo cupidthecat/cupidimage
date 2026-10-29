@@ -750,6 +750,7 @@ The [TrueType instruction engine](pdf-truetype-vm.md) now has bounded stack,
 storage, control-flow and function-definition execution, plus fixed-point rounding,
 graphics-state setters and an initial set of point/zone operations. Its tests
 initialize the pinned Latin font programs and execute their uniform-size preparation
-programs. It is not connected to page rendering;
-TrueType grid fitting, the remaining instructions, nonuniform sizing and per-glyph
-state setup are still unfinished. No hinted-glyph parity is claimed by those tests.
+programs. Prepared state and glyph entry are tested separately. The PDF renderer
+does not invoke this engine yet. Complete glyph-program
+execution, the remaining point instructions and nonuniform sizing are still
+unfinished. No hinted-glyph parity is claimed by those tests.

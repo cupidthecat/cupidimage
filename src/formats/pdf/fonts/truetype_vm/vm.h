@@ -58,9 +58,11 @@ typedef struct {
 
 typedef struct {
     int32_t *stack, *storage, *cvt;
+    int32_t *prepared_storage, *prepared_cvt;
     pdf_tt_vm_function *functions;
     unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
-    pdf_tt_vm_graphics graphics;
+    pdf_tt_vm_graphics graphics, prepared_graphics;
+    int prepared;
     pdf_tt_vm_size_state size;
     pdf_tt_vm_stage stage;
     pdf_tt_vm_zone zones[2];
@@ -80,4 +82,6 @@ int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *, unsigned, int32_t, int32_t, int, 
 /* Geometry is already scaled to F26Dot6. Glyph count may include phantom points. */
 int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *, unsigned, const pdf_tt_vm_point *, unsigned,
                                    unsigned);
+int cupidimage_pdf_tt_vm_save_preparation(pdf_tt_vm *);
+int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned, unsigned);
 #endif

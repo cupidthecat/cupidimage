@@ -32,9 +32,9 @@ value and function-definition state. It supports:
 PUSH payload bytes are decoded correctly while skipping branches or collecting
 function bodies. They cannot be mistaken for structural opcodes. Function IDs are
 bounded by the declared limit, nested definitions are rejected, and definitions
-survive between executions. Each top-level execution starts with an empty operand
-stack; storage, control values and graphics state persist. Storage starts at zero
-as a deterministic implementation choice.
+survive between executions. Each low-level execution starts with an empty operand stack. Other state persists
+until a size or glyph-entry operation resets it. Storage starts at zero as a
+deterministic implementation choice.
 
 The font loader retains immutable views of `cvt `, `fpgm` and `prep` alongside the
 other TrueType tables. This does not execute those tables during PDF loading.
@@ -79,7 +79,8 @@ has required attribution in [the third-party notices](../THIRD_PARTY_NOTICES.md)
 `cupidimage_pdf_tt_vm_set_size` takes units per em, F26Dot6 pixel and point sizes,
 a grayscale flag and unscaled control values. It forms a checked 16.16 scaling
 coefficient and converts the control values to F26Dot6, rounding ties away from
-zero. Size changes reset graphics state while retaining storage and definitions.
+zero. Size changes reset graphics state and storage, clear twilight coordinates and
+release the previous glyph geometry. Function definitions remain available.
 WCVTF and SSW use the same coefficient. DELTAC1/2/3 apply only at the selected ppem
 and support delta shifts 0 through 6. Every pair is bounded and charged to the
 execution budget, including pairs that do not match the current size.
@@ -92,10 +93,35 @@ transforms, projection-dependent CVT scaling and rotation metadata remain open.
 Execution distinguishes font, preparation and glyph stages. Font and preparation
 streams may define functions. INSTCTRL records valid flags in the permitted stage;
 glyph execution is skipped when preparation has inhibited it. The defaults-selection
-flag is retained for future per-glyph setup, which is not implemented yet. SCANCTRL
-and SCANTYPE preserve their settings, but no scan converter consumes them. These
-low-level size calls do not load glyph geometry or restore prepared defaults for
-each glyph. Geometry must be supplied separately to the point-zone interface.
+flag is applied at explicit glyph entry. SCANCTRL and
+SCANTYPE preserve their settings, but no scan converter consumes them. A preparation
+program has no associated glyph outline: glyph-coordinate queries return zero and
+outline-specific point operations have no effect. Twilight operations remain
+available when that zone has been allocated.
+
+## Prepared state and glyph entry
+
+After a successful preparation program, `cupidimage_pdf_tt_vm_save_preparation`
+records its control values, storage and graphics settings in owned snapshots.
+`cupidimage_pdf_tt_vm_begin_glyph` replaces only glyph-zone geometry and restores
+those snapshots. Writes made by one glyph therefore do not change the prepared
+CVT or storage seen by the next glyph.
+
+Glyph entry initializes vectors, reference points, zone selectors and loop count,
+and starts rounding at round-to-grid. Other prepared graphics settings are retained
+unless INSTCTRL requests implementation defaults. Glyph inhibition remains effective
+even when the other prepared settings are discarded. The operand stack is cleared.
+
+Twilight points deliberately persist between glyphs, as specified by the font
+instruction model. New glyph geometry must not reset that zone. A size change
+clears it and invalidates the saved preparation; a new preparation program and
+snapshot are required before another glyph entry. Running a new font/preparation
+stream also invalidates the previous snapshot.
+
+Snapshot and geometry allocations have bounded sizes and unwind on failure.
+Repeated snapshots reuse their buffers. These are explicit low-level interfaces;
+the PDF renderer still does not call them or load complete simple/composite glyph
+programs.
 
 ## Point operations
 
@@ -154,10 +180,16 @@ original-coordinate reads and stack/line vector selection. It does not run the
 pinned fonts' full glyph programs or the PDF renderer.
 
 Remaining work includes diagonal rounding, custom instruction definitions,
-nonuniform sizing, phantom-point construction, per-glyph state restoration, the
-remaining point instructions and integration with transformed outline rendering.
+nonuniform sizing, phantom-point construction, the remaining point instructions and integration with transformed outline rendering.
 Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
+
+`scripts/test_pdf_tt_state_reference.py` checks 102 paired-glyph sequences against
+an independent legacy monochrome interpreter. The sequences check prepared CVT and
+storage isolation, entry defaults, instruction controls, definitions and persistent
+twilight coordinates. Targeted allocation-failure tests cover snapshots and glyph
+replacement. Controls that affect unfinished movement or scan-conversion features
+still need rendering-level verification.
 
 The instruction contracts follow the [OpenType instruction set](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_instructions),
 its [graphics-state defaults](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_graphics_state)

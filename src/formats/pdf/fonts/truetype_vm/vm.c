@@ -38,6 +38,8 @@ void cupidimage_pdf_tt_vm_free(pdf_tt_vm *vm) {
     free(vm->stack);
     free(vm->storage);
     free(vm->cvt);
+    free(vm->prepared_storage);
+    free(vm->prepared_cvt);
     free(vm->functions);
     free(vm->zones[0].points);
     free(vm->zones[1].points);
@@ -230,6 +232,8 @@ int cupidimage_pdf_tt_vm_run(pdf_tt_vm *vm, const unsigned char *data, size_t le
     if (stage != PDF_TT_VM_GLYPH && stage != PDF_TT_VM_FONT && stage != PDF_TT_VM_PREP)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
     vm->stage = stage;
+    if (stage != PDF_TT_VM_GLYPH)
+        vm->prepared = 0;
     vm->stack_size = 0;
     vm->work_left = work;
     vm->error_offset = vm->error_opcode = 0;

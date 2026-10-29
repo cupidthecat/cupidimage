@@ -48,6 +48,7 @@ static void vm_test_free(void *value) {
 #define calloc vm_test_calloc
 #define free vm_test_free
 #include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
+#include "../src/formats/pdf/fonts/truetype_vm/lifecycle.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
 #include "../src/formats/pdf/fonts/truetype_vm/points.c"
 #include "../src/formats/pdf/fonts/truetype_vm/size.c"
@@ -158,8 +159,10 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
                                            grayscale, font_cvt) &&
              cupidimage_pdf_tt_vm_run(&vm, font.prep.data, font.prep.length, PDF_TT_VM_PREP,
                                       1000000);
-    if (ok && ppem)
+    if (ok && ppem) {
         CHECK(vm.size.grayscale == grayscale);
+        ok = cupidimage_pdf_tt_vm_save_preparation(&vm);
+    }
     unsigned defined = 0;
     for (unsigned i = 0; i < vm.function_count; i++)
         defined += vm.functions && vm.functions[i].defined;
@@ -174,6 +177,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
     return ok ? 0 : 3;
 }
 
+#include "pdf_tt_vm/lifecycle.c"
 #include "pdf_tt_vm/points.c"
 #include "pdf_tt_vm/size.c"
 
@@ -181,26 +185,77 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
 
 #include "pdf_tt_vm/numeric.c"
 
+static int decode_hex_program(const char *text, unsigned char code[500], size_t *bytes) {
+    size_t length = strlen(text);
+    if (length % 2 || length > 1000)
+        return 0;
+    for (size_t i = 0; i < length; i++) {
+        unsigned value;
+        if (text[i] >= '0' && text[i] <= '9')
+            value = (unsigned)(text[i] - '0');
+        else if (text[i] >= 'a' && text[i] <= 'f')
+            value = (unsigned)(text[i] - 'a') + 10;
+        else
+            return 0;
+        if (i & 1)
+            code[i / 2] |= (unsigned char)value;
+        else
+            code[i / 2] = (unsigned char)(value * 16);
+    }
+    *bytes = length / 2;
+    return 1;
+}
+
+static int state_programs(void) {
+    char line[4096];
+    while (fgets(line, sizeof(line), stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        char *parts[3] = {line, NULL, NULL};
+        for (unsigned i = 1; i < 3; i++) {
+            parts[i] = strchr(parts[i - 1], ':');
+            if (!parts[i])
+                return 2;
+            *parts[i]++ = 0;
+        }
+        unsigned char code[3][500];
+        size_t length[3];
+        for (unsigned i = 0; i < 3; i++)
+            if (!decode_hex_program(parts[i], code[i], &length[i]))
+                return 2;
+        const int32_t raw[] = {64};
+        const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
+                                          {{100, 0}, {100, 0}, 0, 1, 0},
+                                          {{0, 100}, {0, 100}, 0, 1, 1}};
+        pdf_tt_vm vm;
+        int ok = cupidimage_pdf_tt_vm_init(&vm, 64, 2, raw, 1, 16) &&
+                 cupidimage_pdf_tt_vm_set_size(&vm, 64, 64, 64, 0, raw) &&
+                 cupidimage_pdf_tt_vm_set_zones(&vm, 2, NULL, 0, 0) &&
+                 cupidimage_pdf_tt_vm_run(&vm, code[0], length[0], PDF_TT_VM_PREP, 10000) &&
+                 cupidimage_pdf_tt_vm_save_preparation(&vm);
+        for (unsigned i = 1; ok && i < 3; i++) {
+            ok = cupidimage_pdf_tt_vm_begin_glyph(&vm, points, 3, 3) &&
+                 cupidimage_pdf_tt_vm_run(&vm, code[i], length[i], PDF_TT_VM_GLYPH, 10000);
+            if (ok)
+                for (unsigned point = 0; point < 3; point++)
+                    printf("%ld %ld%s", (long)vm.zones[1].points[point].current[0],
+                           (long)vm.zones[1].points[point].current[1],
+                           i == 2 && point == 2 ? "\n" : " ");
+        }
+        cupidimage_pdf_tt_vm_free(&vm);
+        if (!ok)
+            return 3;
+    }
+    return ferror(stdin) ? 2 : 0;
+}
+
 static int expression_programs(int geometry) {
     char line[1024];
     while (fgets(line, sizeof(line), stdin)) {
-        size_t length = strcspn(line, "\r\n");
-        if (!length || length % 2 || length > 1000)
-            return 2;
+        line[strcspn(line, "\r\n")] = 0;
         unsigned char code[500];
-        for (size_t i = 0; i < length; i++) {
-            unsigned value;
-            if (line[i] >= '0' && line[i] <= '9')
-                value = (unsigned)(line[i] - '0');
-            else if (line[i] >= 'a' && line[i] <= 'f')
-                value = (unsigned)(line[i] - 'a') + 10;
-            else
-                return 2;
-            if (i & 1)
-                code[i / 2] |= (unsigned char)value;
-            else
-                code[i / 2] = (unsigned char)(value * 16);
-        }
+        size_t bytes;
+        if (!decode_hex_program(line, code, &bytes))
+            return 2;
         pdf_tt_vm vm;
         if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, NULL, 0, 0))
             return 2;
@@ -213,7 +268,7 @@ static int expression_programs(int geometry) {
                 return 2;
             }
         }
-        int ok = cupidimage_pdf_tt_vm_run(&vm, code, length / 2, 0, 10000);
+        int ok = cupidimage_pdf_tt_vm_run(&vm, code, bytes, 0, 10000);
         if (!ok || (!geometry && vm.stack_size != 1)) {
             cupidimage_pdf_tt_vm_free(&vm);
             return 3;
@@ -230,6 +285,8 @@ static int expression_programs(int geometry) {
 }
 
 int main(int argc, char **argv) {
+    if (argc == 2 && !strcmp(argv[1], "--state-programs"))
+        return state_programs();
     if (argc == 2 && !strcmp(argv[1], "--expressions"))
         return expression_programs(0);
     if (argc == 2 && !strcmp(argv[1], "--point-programs"))
@@ -432,6 +489,7 @@ int main(int argc, char **argv) {
     graphics_tests();
     size_tests();
     point_tests();
+    lifecycle_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;
 }

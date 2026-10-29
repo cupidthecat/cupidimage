@@ -14,4 +14,6 @@ int cupidimage_pdf_tt_vm_vector_op(pdf_tt_vm *, unsigned);
 int64_t cupidimage_pdf_tt_vm_round(const pdf_tt_vm_round *, int32_t);
 int cupidimage_pdf_tt_vm_normalize(pdf_tt_vm *, int32_t, int32_t, int32_t[2]);
 int cupidimage_pdf_tt_vm_point_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_load_glyph_points(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned,
+                                           unsigned);
 #endif

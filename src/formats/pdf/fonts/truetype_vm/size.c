@@ -1,5 +1,7 @@
 #include "internal.h"
 #include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int vm_scale(pdf_tt_vm *vm, int32_t value, int32_t *scaled) {
     if (!vm->size.configured)
@@ -28,6 +30,15 @@ int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *vm, unsigned units, int32_t pixels,
         if (!vm_scale(vm, font_cvt[i], &vm->cvt[i]))
             return 0;
     cupidimage_pdf_tt_vm_graphics_defaults(&vm->graphics);
+    vm->prepared = 0;
+    vm->stage = PDF_TT_VM_FONT;
+    vm->stack_size = 0;
+    if (vm->storage_count)
+        memset(vm->storage, 0, (size_t)vm->storage_count * sizeof(*vm->storage));
+    if (vm->zones[0].count)
+        memset(vm->zones[0].points, 0, (size_t)vm->zones[0].count * sizeof(*vm->zones[0].points));
+    free(vm->zones[1].points);
+    vm->zones[1] = (pdf_tt_vm_zone){0};
     return 1;
 }
 

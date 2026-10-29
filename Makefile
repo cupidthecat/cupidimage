@@ -410,6 +410,7 @@ test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_prep_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_points_reference.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_state_reference.py $(BINDIR)/test_pdf_tt_vm
 
 test-pdf-empty-glyphs: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_empty_glyphs.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
