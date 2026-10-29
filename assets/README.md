@@ -29,3 +29,8 @@ outline points and a phantom advance, while PDF widths retain control of spacing
 The full sample is decoded-unverified. Regenerate it with
 `scripts/generate_pdf_page_hinting_fixture.py`; its font source is in
 `scripts/generate_pdf_page_hinting_font.py`.
+
+`pdf/native-cff-hinting.pdf` embeds owned blue-zone and composite glyph programs.
+Use `--pdf-cff-hinting --pdf-text-aa` to exercise their fitted page path. Its
+complete raster remains decoded-unverified. Regenerate it with
+`scripts/generate_pdf_cff_page_hinting_fixture.py`.

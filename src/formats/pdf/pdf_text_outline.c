@@ -1,3 +1,4 @@
+#include "fonts/postscript/page.h"
 #include "fonts/program.h"
 #include "pdf_render_internal.h"
 #include "raster/font_coverage.h"
@@ -309,7 +310,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     st->form_budget->glyph_calls_left--;
     pdf_tt_outline outline = {0}, device_outline = {0};
     pdf_tt_hint_shape hinted = {0};
-    pdf_cff_outline cff_outline = {0};
+    pdf_cff_outline cff_outline = {0}, hinted_cff = {0};
+    const pdf_cff_outline *draw_cff = &cff_outline;
     pdf_path *path = NULL;
     outline_edge *edges = NULL;
     unsigned edge_count = 0;
@@ -357,17 +359,6 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         count = hinted.count;
         memcpy(draw_matrix, (double[6]){1, 0, 0, 1, 0, 0}, sizeof(draw_matrix));
     }
-    edges = malloc((size_t)count * 2 * sizeof(*edges));
-    if (!edges)
-        goto done;
-    if ((mode == 1 || mode == 2) &&
-        !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
-        path = calloc(1, sizeof(*path));
-        if (!path)
-            goto done;
-    }
-    double flatness = cupidimage_pdf_flatness(&st->gs, .125);
-    double flatness_squared = flatness * flatness;
     if (program->is_cff || program->is_type1) {
         unsigned fd = program->cff.fdselect ? program->cff.fdselect[glyph] : 0;
         const double *f =
@@ -380,7 +371,39 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         m[3] = a[1] * f[2] + a[3] * f[3];
         m[4] = a[0] * f[4] + a[2] * f[5] + a[4];
         m[5] = a[1] * f[4] + a[3] * f[5] + a[5];
-        if (!outline_cff_path(&cff_outline, path, edges, &edge_count, m, flatness_squared))
+        if (st->cff_hinting && program->is_cff && !zero_text_transform) {
+            int fitted = 0;
+            if (!cupidimage_pdf_cff_page_shape(&program->cff, glyph, draw_matrix,
+                                               &st->clip_budget->tests_left, &hinted_cff,
+                                               &fitted)) {
+                cupidimage_set_err(st->error, st->error_capacity,
+                                   "pdf: unable to grid-fit CFF glyph");
+                goto done;
+            }
+            if (fitted) {
+                draw_cff = &hinted_cff;
+                count = hinted_cff.count;
+                memcpy(m, (double[6]){1, 0, 0, 1, 0, 0}, sizeof(m));
+            }
+        }
+    }
+    if (!count) {
+        ok = !clipping || cupidimage_pdf_text_clip_prepare(st);
+        goto done;
+    }
+    edges = malloc((size_t)count * 2 * sizeof(*edges));
+    if (!edges)
+        goto done;
+    if ((mode == 1 || mode == 2) &&
+        !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
+        path = calloc(1, sizeof(*path));
+        if (!path)
+            goto done;
+    }
+    double flatness = cupidimage_pdf_flatness(&st->gs, .125);
+    double flatness_squared = flatness * flatness;
+    if (program->is_cff || program->is_type1) {
+        if (!outline_cff_path(draw_cff, path, edges, &edge_count, m, flatness_squared))
             goto done;
     } else if (!outline_path(draw_outline, path, edges, &edge_count, draw_matrix, flatness_squared))
         goto done;
@@ -438,7 +461,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     if (st->text_antialias && pixels && (mode == 0 || mode == 2) &&
         !cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern) &&
         !cupidimage_pdf_font_coverage(program->is_cff || program->is_type1 ? NULL : draw_outline,
-                                      program->is_cff || program->is_type1 ? &cff_outline : NULL,
+                                      program->is_cff || program->is_type1 ? draw_cff : NULL,
                                       program->is_cff || program->is_type1 ? m : draw_matrix, left,
                                       top, right, bottom, &st->clip_budget->tests_left, &fill))
         goto done;
@@ -476,6 +499,7 @@ done:
     if (!cupidimage_pdf_fill_stroke_end(st, &combined, ok))
         ok = 0;
     cupidimage_pdf_tt_hint_shape_free(&hinted);
+    cupidimage_pdf_type2_free(&hinted_cff);
     free(fill);
     free(stroke);
     free(path);

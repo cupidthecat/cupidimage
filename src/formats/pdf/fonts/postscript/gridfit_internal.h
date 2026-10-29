@@ -45,54 +45,54 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-typedef int32_t FT_Int32, FT_Int, FT_Fixed, CF2_F16Dot16, CF2_Int;
-typedef uint32_t FT_UInt32, FT_UInt, CF2_UInt;
-typedef int16_t FT_Short;
-typedef unsigned char FT_Byte;
-typedef int FT_Bool, FT_Error;
-typedef void *FT_Memory;
+typedef int32_t PSGF_FT_Int32, PSGF_FT_Int, PSGF_FT_Fixed, CF2_F16Dot16, CF2_Int;
+typedef uint32_t PSGF_FT_UInt32, PSGF_FT_UInt, CF2_UInt;
+typedef int16_t PSGF_FT_Short;
+typedef unsigned char PSGF_FT_Byte;
+typedef int PSGF_FT_Bool, PSGF_FT_Error;
+typedef void *PSGF_FT_Memory;
 
 typedef struct {
     int32_t x, y;
-} FT_Vector;
+} PSGF_FT_Vector;
 
-#define FT_UNUSED(x) (void)(x)
-#define FT_Err_Ok 0
-#define FT_BEGIN_HEADER
-#define FT_END_HEADER
-#define FT_LOCAL(x) static x
-#define FT_LOCAL_DEF(x) static x
-#define TRUE 1
-#define FALSE 0
-#define FT_BOOL(x) (!!(x))
-#define FT_ASSERT(x) ((void)0)
-#define FT_ZERO(x) memset(x, 0, sizeof(*(x)))
-#define FT_MEM_ZERO(x, n) memset(x, 0, n)
-#define FT_TRACE4(x) ((void)0)
-#define FT_TRACE5(x) ((void)0)
-#define FT_TRACE6(x) ((void)0)
-#define FT_TRACE7(x) ((void)0)
-#define FT_ERROR(x) ((void)0)
-#define FT_ABS(x) ((x) < 0 ? -(x) : (x))
-#define FT_MIN(x, y) ((x) < (y) ? (x) : (y))
-#define FT_MAX(x, y) ((x) > (y) ? (x) : (y))
-#define ADD_INT32(x, y) ((int32_t)((uint32_t)(x) + (uint32_t)(y)))
-#define SUB_INT32(x, y) ((int32_t)((uint32_t)(x) - (uint32_t)(y)))
-#define MUL_INT32(x, y) ((int32_t)((uint32_t)(x) * (uint32_t)(y)))
-#define NEG_INT32(x) ((int32_t)(0u - (uint32_t)(x)))
-#define FT_THROW(x) 1
+#define PSGF_FT_UNUSED(x) (void)(x)
+#define PSGF_FT_Err_Ok 0
+#define PSGF_FT_BEGIN_HEADER
+#define PSGF_FT_END_HEADER
+#define PSGF_FT_LOCAL(x) static x
+#define PSGF_FT_LOCAL_DEF(x) static x
+#define PSGF_TRUE 1
+#define PSGF_FALSE 0
+#define PSGF_FT_BOOL(x) (!!(x))
+#define PSGF_FT_ASSERT(x) ((void)0)
+#define PSGF_FT_ZERO(x) memset(x, 0, sizeof(*(x)))
+#define PSGF_FT_MEM_ZERO(x, n) memset(x, 0, n)
+#define PSGF_FT_TRACE4(x) ((void)0)
+#define PSGF_FT_TRACE5(x) ((void)0)
+#define PSGF_FT_TRACE6(x) ((void)0)
+#define PSGF_FT_TRACE7(x) ((void)0)
+#define PSGF_FT_ERROR(x) ((void)0)
+#define PSGF_FT_ABS(x) ((x) < 0 ? -(x) : (x))
+#define PSGF_FT_MIN(x, y) ((x) < (y) ? (x) : (y))
+#define PSGF_FT_MAX(x, y) ((x) > (y) ? (x) : (y))
+#define PSGF_ADD_INT32(x, y) ((int32_t)((uint32_t)(x) + (uint32_t)(y)))
+#define PSGF_SUB_INT32(x, y) ((int32_t)((uint32_t)(x) - (uint32_t)(y)))
+#define PSGF_MUL_INT32(x, y) ((int32_t)((uint32_t)(x) * (uint32_t)(y)))
+#define PSGF_NEG_INT32(x) ((int32_t)(0u - (uint32_t)(x)))
+#define PSGF_FT_THROW(x) 1
 #define CF2_SET_ERROR(p, e)                                                                        \
     do {                                                                                           \
         if (!*(p))                                                                                 \
             *(p) = 1;                                                                              \
     } while (0)
 
-static int32_t FT_MulFix(int32_t a, int32_t b) {
+static int32_t PSGF_FT_MulFix(int32_t a, int32_t b) {
     int64_t v = (int64_t)a * b;
     return (int32_t)(v < 0 ? -((-v + 32768) / 65536) : (v + 32768) / 65536);
 }
 
-static int32_t FT_DivFix(int32_t a, int32_t b) {
+static int32_t PSGF_FT_DivFix(int32_t a, int32_t b) {
     if (!b)
         return a < 0 ? -INT32_MAX : INT32_MAX;
     int64_t x = a, y = b;
@@ -105,7 +105,7 @@ static int32_t FT_DivFix(int32_t a, int32_t b) {
     return (int32_t)(sign ? -v : v);
 }
 
-static int32_t FT_MulDiv(int32_t a, int32_t b, int32_t c) {
+static int32_t PSGF_FT_MulDiv(int32_t a, int32_t b, int32_t c) {
     if (!c)
         return (a < 0) ^ (b < 0) ? -INT32_MAX : INT32_MAX;
     int64_t x = (int64_t)a * b, y = c;
@@ -129,7 +129,7 @@ typedef struct CF2_HintRec_ CF2_HintRec, *CF2_Hint;
 enum { CF2_PathOpMoveTo = 1, CF2_PathOpLineTo = 2, CF2_PathOpQuadTo = 3, CF2_PathOpCubeTo = 4 };
 
 typedef struct {
-    FT_Vector pt0, pt1, pt2, pt3;
+    PSGF_FT_Vector pt0, pt1, pt2, pt3;
     CF2_Int op;
 } CF2_CallbackParamsRec, *CF2_CallbackParams;
 typedef struct CF2_OutlineCallbacksRec_ *CF2_OutlineCallbacks;
@@ -138,20 +138,21 @@ typedef void (*CF2_Callback_Type)(CF2_OutlineCallbacks, const CF2_CallbackParams
 typedef struct CF2_OutlineCallbacksRec_ {
     CF2_Callback_Type moveTo, lineTo, quadTo, cubeTo;
     CF2_Int windingMomentum;
-    FT_Memory memory;
-    FT_Error *error;
+    PSGF_FT_Memory memory;
+    PSGF_FT_Error *error;
 } CF2_OutlineCallbacksRec;
 
-static void ps_gridfit_fail(FT_Memory memory);
+static void ps_gridfit_fail(PSGF_FT_Memory memory);
 
 typedef struct {
     void *ptr;
     size_t count, capacity, sizeItem;
-    FT_Error *error;
-    FT_Memory memory;
+    PSGF_FT_Error *error;
+    PSGF_FT_Memory memory;
 } CF2_ArrStackRec, *CF2_ArrStack;
 
-static void cf2_arrstack_init(CF2_ArrStack a, FT_Memory memory, FT_Error *error, size_t size) {
+static void cf2_arrstack_init(CF2_ArrStack a, PSGF_FT_Memory memory, PSGF_FT_Error *error,
+                              size_t size) {
     memset(a, 0, sizeof(*a));
     a->memory = memory;
     a->error = error;
@@ -195,16 +196,16 @@ static void cf2_arrstack_push(CF2_ArrStack a, const void *p) {
 #include "../../../../../third_party/freetype-pshinter/pshints.h"
 
 typedef struct {
-    FT_Fixed arrays[4][14];
+    PSGF_FT_Fixed arrays[4][14];
     size_t counts[4];
-    FT_Fixed scale, shift, fuzz;
+    PSGF_FT_Fixed scale, shift, fuzz;
     unsigned language;
 } PS_Decoder;
 
 struct CF2_FontRec_ {
-    FT_Memory memory;
-    FT_Error error;
-    FT_Bool isT1, hinted, darkened, stemDarkened, reverseWinding;
+    PSGF_FT_Memory memory;
+    PSGF_FT_Error error;
+    PSGF_FT_Bool isT1, hinted, darkened, stemDarkened, reverseWinding;
     CF2_Matrix innerTransform, outerTransform;
     CF2_Fixed darkenX, darkenY;
     CF2_BluesRec blues;
@@ -218,7 +219,7 @@ static void cf2_getBlueMetrics(PS_Decoder *d, CF2_Fixed *scale, CF2_Fixed *shift
 }
 
 #define BLUE_GETTER(name, idx)                                                                     \
-    static void name(PS_Decoder *d, size_t *n, FT_Fixed **p) {                                     \
+    static void name(PS_Decoder *d, size_t *n, PSGF_FT_Fixed **p) {                                \
         *n = d->counts[idx];                                                                       \
         *p = d->arrays[idx];                                                                       \
     }
@@ -231,24 +232,24 @@ static unsigned cf2_getLanguageGroup(PS_Decoder *d) {
     return d->language;
 }
 
-static void cf2_hintmask_init(CF2_HintMask m, FT_Error *e) {
+static void cf2_hintmask_init(CF2_HintMask m, PSGF_FT_Error *e) {
     memset(m, 0, sizeof(*m));
     m->error = e;
 }
 
-static FT_Bool cf2_hintmask_isValid(CF2_HintMask m) {
+static PSGF_FT_Bool cf2_hintmask_isValid(CF2_HintMask m) {
     return m->isValid;
 }
 
-static FT_Bool cf2_hintmask_isNew(CF2_HintMask m) {
+static PSGF_FT_Bool cf2_hintmask_isNew(CF2_HintMask m) {
     return m->isNew;
 }
 
-static void cf2_hintmask_setNew(CF2_HintMask m, FT_Bool v) {
+static void cf2_hintmask_setNew(CF2_HintMask m, PSGF_FT_Bool v) {
     m->isNew = v;
 }
 
-static FT_Byte *cf2_hintmask_getMaskPtr(CF2_HintMask m) {
+static PSGF_FT_Byte *cf2_hintmask_getMaskPtr(CF2_HintMask m) {
     return m->mask;
 }
 

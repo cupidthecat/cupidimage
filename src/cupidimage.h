@@ -69,6 +69,8 @@ typedef struct cupidimage_pdf_options {
     int text_antialias;
     /* 1 enables the bounded native legacy TrueType instruction profile. */
     int truetype_hinting;
+    /* 1 enables bounded CFF blue-zone/stem hinting without stem darkening. */
+    int cff_hinting;
 } cupidimage_pdf_options;
 
 typedef struct cupidimage_svg_options {

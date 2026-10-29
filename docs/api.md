@@ -61,18 +61,21 @@ All library page indices are **zero-based**.
 The directory entry width/height bytes use zero for 256 pixels. Directory fields
 are metadata, not proof that the embedded image is valid; decoding can still fail.
 
-## PDF text coverage
+## PDF text rendering options
 
 `cupidimage_load_pdf_page_with_options` and
 `cupidimage_load_pdf_page_file_with_options` accept a `cupidimage_pdf_options`
 pointer. Set `text_antialias` to 1 for grayscale TrueType/CFF/Type 1 fill coverage.
-Set `truetype_hinting` to 1 to execute the native legacy TrueType profile. Both
-fields accept only 0 or 1. A null options pointer and zero preserve the
-existing center-point fill path. Page indices remain zero-based.
+Set `truetype_hinting` to 1 to execute the native legacy TrueType profile, and
+`cff_hinting` to 1 for the bounded CFF profile. Each field accepts only 0 or 1.
+Initialize the options struct to zero before setting fields. A null pointer or
+all-zero fields preserve unhinted center-point fills. Page indices remain
+zero-based.
 
 The option propagates into Forms, patterns and soft masks. It does not change
 PDF metrics or antialias strokes, clipping and bitmap glyphs. Hinting must be
-requested separately and applies only to supported TrueType programs.
+requested separately for supported TrueType and CFF programs. Type 1 remains
+unhinted. See the [CFF page guide](pdf-cff-page-hinting.md) for its scope.
 See [coverage limits and checks](pdf-coverage.md) before treating it as complete
 font rendering. All returned images use the ordinary ownership rules above.
 

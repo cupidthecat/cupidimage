@@ -14,8 +14,9 @@ PDF previews include packed, indexed, fax- and JPEG-compressed images, inline
 images, image masks, filter chains, opacity and RGB blending. Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard and Latin vector font substitutes, and unhinted embedded
-TrueType, CFF and Type 1 outlines. Optional grayscale text fills and native
-TrueType grid fitting have [separate controls and limits](docs/pdf-page-hinting.md).
+TrueType, CFF and Type 1 outlines. Optional grayscale fills and selected
+[TrueType](docs/pdf-page-hinting.md) and [CFF](docs/pdf-cff-page-hinting.md) hinting
+profiles have separate controls and limits.
 Tiling/shading patterns, styled dashed strokes, RGB/gray transparency
 groups and graphics-state soft masks are also supported. Full font fidelity,
 additional transparency spaces, color management and annotations still need work.
@@ -36,7 +37,8 @@ make -j2
 ./bin/cupidimage --ansi assets/jpeg/cat.jpeg 120 60
 ./bin/cupidimage --pdf-page 2 assets/pdf/pdfjs/basicapi.pdf
 ./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-coverage.pdf
-./bin/cupidimage --pdf-text-aa --pdf-tt-hinting --sixel assets/pdf/native-truetype-hinting.pdf
+./bin/cupidimage --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting \
+  --sixel assets/pdf/native-cff-hinting.pdf
 ./bin/cupidimage --sixel assets/webp/reference/quadrants.webp
 ```
 

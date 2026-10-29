@@ -28,7 +28,7 @@ def index(items):
     return struct.pack('>H',len(items))+b'\x04'+b''.join(struct.pack('>I',n) for n in offsets)+b''.join(items)
 
 
-def fixture(charset=None,encoding=None,glyphs=4,strings=(b'customShape',),cid=False,fdselect=None,private_count=1,subrs=True,programs=None,local_subrs=None,global_programs=(),matrix=None,private_prefixes=None):
+def fixture(charset=None,encoding=None,glyphs=4,strings=(b'customShape',),cid=False,fdselect=None,private_count=1,subrs=True,programs=None,local_subrs=None,global_programs=(),matrix=None,private_prefixes=None,fd_matrices=None):
     if charset is None:charset=b'\0\0\1\0\x22\x01\x87'
     if encoding is None:encoding=0
     parts={}
@@ -47,7 +47,9 @@ def fixture(charset=None,encoding=None,glyphs=4,strings=(b'customShape',),cid=Fa
         parts['fdselect']=fdselect if fdselect is not None else b'\0'+bytes(glyphs)
     names=index([b'CupidShapes']);string_index=index(list(strings));global_subrs=index(global_programs)
     positions={key:0 for key in parts}
-    def fontdict(i):return integer(len(parts[f'private{i}']))+integer(positions[f'private{i}'])+b'\x12'
+    def fontdict(i):
+        prefix=b''.join(real(n) for n in fd_matrices[i])+bytes([12,7]) if fd_matrices is not None and fd_matrices[i] is not None else b''
+        return prefix+integer(len(parts[f'private{i}']))+integer(positions[f'private{i}'])+b'\x12'
     def top():
         data=(b''.join(real(n) for n in matrix)+bytes([12,7])) if matrix is not None else b''
         data+=integer(positions['charset'] if isinstance(charset,bytes) else charset)+b'\x0f'

@@ -223,6 +223,53 @@ int main(int argc, char **argv) {
     CHECK(!dictionary(overflow, sizeof(overflow), &dict, 0));
     pos = sizeof(data) + 1;
     CHECK(!cupidimage_pdf_cff_index((pdf_cff_slice){data, sizeof(data)}, &pos, &index));
+    {
+        const unsigned char program[] = {139, 159, 18, 19, 128, 139, 139, 21, 149, 139, 5, 14};
+        const unsigned char offsets[] = {1, sizeof(program) + 1};
+        pdf_cff_private private_dict = {0};
+        pdf_cff_font font = {0};
+        font.chars = (pdf_cff_index){{offsets, sizeof(offsets)}, {program, sizeof(program)}, 1, 1};
+        font.private_dicts = &private_dict;
+        font.private_count = 1;
+        for (size_t budget = 0; budget <= 12; budget++) {
+            pdf_cff_outline outline;
+            pdf_ps_hint_program hints;
+            size_t work = budget;
+            int ok = cupidimage_pdf_type2_outline_budget(&font, 0, &outline, &hints, &work);
+            CHECK(ok == (budget >= 11));
+            CHECK(work == (budget >= 11 ? budget - 11 : 0));
+            if (!ok)
+                CHECK(!outline.segments && !outline.count && !hints.events && !hints.event_count);
+            cupidimage_pdf_type2_free(&outline);
+            cupidimage_pdf_ps_hint_program_free(&hints);
+        }
+        unsigned char *subr = malloc(60001);
+        CHECK(subr != NULL);
+        if (subr) {
+            for (unsigned j = 0; j < 20000; j++) {
+                subr[j * 3] = 139;
+                subr[j * 3 + 1] = 12;
+                subr[j * 3 + 2] = 18;
+            }
+            subr[60000] = 11;
+            const unsigned char sub_offsets[] = {0, 0, 0, 1, 0, 0, 0xea, 0x62};
+            const unsigned char calls[] = {32, 10, 32, 10, 14};
+            const unsigned char call_offsets[] = {1, sizeof(calls) + 1};
+            private_dict.subrs =
+                (pdf_cff_index){{sub_offsets, sizeof(sub_offsets)}, {subr, 60001}, 1, 4};
+            font.chars =
+                (pdf_cff_index){{call_offsets, sizeof(call_offsets)}, {calls, sizeof(calls)}, 1, 1};
+            pdf_cff_outline outline;
+            pdf_ps_hint_program hints;
+            size_t work = 100000;
+            CHECK(!cupidimage_pdf_type2_outline_budget(&font, 0, &outline, &hints, &work));
+            CHECK(work == 100000 - 65536);
+            CHECK(!outline.segments && !hints.events);
+            cupidimage_pdf_type2_free(&outline);
+            cupidimage_pdf_ps_hint_program_free(&hints);
+            free(subr);
+        }
+    }
     printf("CFF data primitives: %u checks, %u failures\n", checks, failures);
     return failures != 0;
 }

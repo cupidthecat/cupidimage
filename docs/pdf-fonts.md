@@ -2,7 +2,8 @@
 
 PDF text is still a work in progress. Supported embedded TrueType, CFF and Type 1 fonts use
 their outlines instead of the bitmap fallback. Default rendering is unhinted;
-TrueType has an opt-in [native hinting path](pdf-page-hinting.md). Complete font
+TrueType and CFF have opt-in [TrueType](pdf-page-hinting.md) and
+[CFF](pdf-cff-page-hinting.md) hinting paths. Complete font
 support and identical pixels across rasterizers remain unverified.
 
 ## Glyph selection comes before Unicode
@@ -87,8 +88,8 @@ for the four Courier and four Times faces. All glyph names in the pinned standar
 AFMs therefore have an available outline. The fallback chain keeps the compact
 outlines first, the extended TrueType face second, and these spacing marks last.
 There is no claim that these substitute shapes are identical
-to every platform's font choice. CFF substitutes remain unhinted; the TrueType
-fallback can use the explicit native hinting option.
+to every platform's font choice. CFF substitutes and the TrueType fallback can use their respective explicit
+hinting options.
 
 The pinned AFMs, original license, provenance and per-file hashes are in
 `third_party/adobe-core14`. The generated tables require no installed fonts or
@@ -203,7 +204,8 @@ widths, arithmetic, stack manipulation, transient storage, conditionals and flex
 curves. Subroutine bias depends on the number of subroutines. Private hint
 parameters are retained per font dictionary, and an optional interpreter trace
 captures stems and masks. A [standalone grid fitter](pdf-postscript-gridfit.md)
-is tested, but page grid fitting and flex flattening are not applied.
+also has an explicit [page integration](pdf-cff-page-hinting.md). Flex flattening
+is not applied by this profile.
 See [PostScript hint data](pdf-postscript-hints.md) for scope and tests.
 These remain unhinted outlines. The obsolete dotsection operator is a no-op.
 An empty hint mask found in a cached font is accepted without consuming bytes;
@@ -334,7 +336,7 @@ The allocation-failure suite exercises embedded and predefined encoding maps,
 including inherited maps and cleanup after decompression or parsing failures.
 
 
-`make test-pdf-cff` runs 1,501 data-primitive checks, 186 structure/truncation checks,
+`make test-pdf-cff` runs 1,542 data-primitive checks, 186 structure/truncation checks,
 152 Type 2 checks and 34 PDF rendering checks. The rendering tests cover cubic
 geometry, CID fonts, encoding overrides, accents, FontMatrix, all text modes and
 OpenType wrapping. Twenty-five optional independent comparisons use:

@@ -940,11 +940,16 @@
             "docs/pdf-postscript-gridfit.md",
             "src/formats/pdf/fonts/postscript/gridfit.c",
             "tests/test_pdf_ps_gridfit.c",
-            "scripts/test_pdf_ps_gridfit_reference.py"
+            "scripts/test_pdf_ps_gridfit_reference.py",
+            "docs/pdf-cff-page-hinting.md",
+            "src/formats/pdf/fonts/postscript/page.c",
+            "src/formats/pdf/fonts/postscript/cff_shape.c",
+            "src/formats/pdf/fonts/postscript/transform.c",
+            "scripts/test_pdf_cff_page_hinting.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. Page integration, Type 1 fitting and flex policy remain unfinished."
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -1022,12 +1027,17 @@
             "docs/pdf-postscript-gridfit.md",
             "src/formats/pdf/fonts/postscript/gridfit.c",
             "tests/test_pdf_ps_gridfit.c",
-            "scripts/test_pdf_ps_gridfit_reference.py"
+            "scripts/test_pdf_ps_gridfit_reference.py",
+            "docs/pdf-cff-page-hinting.md",
+            "src/formats/pdf/fonts/postscript/page.c",
+            "src/formats/pdf/fonts/postscript/cff_shape.c",
+            "src/formats/pdf/fonts/postscript/transform.c",
+            "scripts/test_pdf_cff_page_hinting.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. Page integration, Type 1 fitting and flex policy remain unfinished."
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
           ],
           "dependencies": [
             "1",

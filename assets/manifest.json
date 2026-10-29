@@ -514,6 +514,10 @@
       "sha256": "5f17a9b5eded7a4192ba14ae35e55e45e213793a9f95f4dd4758814ca3ea27c8"
     },
     {
+      "path": "assets/pdf/native-cff-hinting.pdf",
+      "sha256": "397684a3ffa4db4f593904d164888c8629bafa16bcd687732c6e81e366510e0e"
+    },
+    {
       "path": "assets/pdf/native-truetype-hinting.pdf",
       "sha256": "30036c56c23458a8712cf0865c28ab0c8f8f0700bf76d0fce9d59590611171a1"
     },

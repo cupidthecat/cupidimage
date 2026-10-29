@@ -6,7 +6,7 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-    if (argc < 3 || argc > 5)
+    if (argc < 3 || argc > 6)
         return 2;
     cupidimage_image image = {0};
     char error[256] = {0};
@@ -19,7 +19,8 @@ int main(int argc, char **argv) {
         printf("%d\n", count);
         return 0;
     }
-    cupidimage_pdf_options options = {argc >= 4 ? atoi(argv[3]) : 0, argc >= 5 ? atoi(argv[4]) : 0};
+    cupidimage_pdf_options options = {argc >= 4 ? atoi(argv[3]) : 0, argc >= 5 ? atoi(argv[4]) : 0,
+                                      argc >= 6 ? atoi(argv[5]) : 0};
     int loaded =
         argc >= 4
             ? cupidimage_load_pdf_page_file_with_options(argv[1], &image, atoi(argv[2]), &options,

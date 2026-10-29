@@ -430,7 +430,10 @@ int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_
                 goto fail;
             if (!owner.has_matrix)
                 memcpy(owner.matrix, font->top.matrix, sizeof(owner.matrix));
-            else {
+            else if (font->top.has_matrix) {
+                /* A subsidiary matrix stands alone when the CIDFont has no
+                 * explicit top-level matrix. Applying the Type 1 default here
+                 * would shrink glyphs by an extra factor of 1000. */
                 double a[6];
                 memcpy(a, owner.matrix, sizeof(a));
                 const double *b = font->top.matrix;

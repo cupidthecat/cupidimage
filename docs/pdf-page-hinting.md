@@ -80,6 +80,6 @@ pixel evidence.
 
 This is a selected legacy profile, not complete TrueType or PDF rendering parity.
 Modern subpixel instruction policies, variation behavior, dropout scan conversion,
-CFF/Type 1 grid fitting, fractional clipping and full stroke/combined-paint coverage
-remain unfinished. The [VM](pdf-truetype-vm.md), [loader](pdf-truetype-loader.md) and
+Type 1 grid fitting, fractional clipping and full stroke/combined-paint coverage
+remain unfinished. CFF has its own [bounded page option](pdf-cff-page-hinting.md). The [VM](pdf-truetype-vm.md), [loader](pdf-truetype-loader.md) and
 [coverage](pdf-coverage.md) guides list the narrower contracts and known differences.

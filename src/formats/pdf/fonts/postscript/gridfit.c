@@ -14,7 +14,7 @@ typedef struct {
     int open;
 } pdf_ps_gridfit_context;
 
-static void ps_gridfit_fail(FT_Memory memory) {
+static void ps_gridfit_fail(PSGF_FT_Memory memory) {
     pdf_ps_gridfit_context *context = memory;
     longjmp(context->failure, 1);
 }
@@ -97,11 +97,15 @@ static int ps_gridfit_validate(const pdf_ps_private_hints *private_hints,
                                const pdf_ps_hint_program *hints, const pdf_cff_outline *source,
                                const pdf_ps_gridfit_size *size) {
     if (!private_hints || !hints || !source || !size || private_hints->invalid ||
-        hints->diagnostics || hints->stem_count > 96 || hints->event_count > 65536 ||
+        (hints->diagnostics & ~(PDF_PS_HINT_EMPTY_MASK | PDF_PS_HINT_MASK_PADDING)) ||
+        hints->stem_count > 96 || hints->event_count > 65536 ||
         (hints->event_count && !hints->events) || source->composite || source->count > 65536 ||
         (source->count && !source->segments) || size->x_scale <= 0 || size->y_scale <= 0 ||
-        size->x_scale > 2 * 65536 || size->y_scale > 2 * 65536)
+        size->x_scale > 2 * 65536 || size->y_scale > 2 * 65536 ||
+        (int64_t)size->origin_x < -4096 * 65536 || (int64_t)size->origin_x > 4096 * 65536 ||
+        (int64_t)size->origin_y < -4096 * 65536 || (int64_t)size->origin_y > 4096 * 65536)
         return 0;
+    double origin[2] = {size->origin_x / 65536.0, size->origin_y / 65536.0};
     static const unsigned limits[6] = {14, 10, 14, 10, 12, 12};
     int32_t value;
     for (unsigned i = 0; i < 6; i++) {
@@ -123,18 +127,19 @@ static int ps_gridfit_validate(const pdf_ps_private_hints *private_hints,
         const pdf_ps_stem *stem = hints->stems + i;
         if (stem->vertical > 1 || (vertical && !stem->vertical) ||
             !ps_gridfit_fixed(stem->start, &value) ||
-            !ps_gridfit_fixed(stem->start + stem->width, &value) || !isfinite(stem->width) ||
-            (stem->width < 0 && stem->width != -20 && stem->width != -21))
+            !ps_gridfit_fixed(stem->start + stem->width, &value) ||
+            !ps_gridfit_fixed(stem->start + origin[stem->vertical ? 0 : 1], &value) ||
+            !ps_gridfit_fixed(stem->start + stem->width + origin[stem->vertical ? 0 : 1], &value) ||
+            !isfinite(stem->width) || (stem->width < 0 && stem->width != -20 && stem->width != -21))
             return 0;
         vertical |= stem->vertical;
     }
     for (unsigned i = 0; i < hints->event_count; i++) {
         const pdf_ps_hint_event *event = hints->events + i;
-        unsigned tail = hints->stem_count % 8;
-        if (event->stem_count != hints->stem_count || !event->stem_count || event->counter > 1 ||
-            event->segment > source->count ||
-            (i && event->segment < hints->events[i - 1].segment) ||
-            (tail && (event->mask[hints->stem_count / 8] & ((1u << (8 - tail)) - 1))))
+        /* Empty masks and unused tail bits are retained as diagnosed recovery.
+         * The map consumes only the declared stem bits. */
+        if (event->stem_count != hints->stem_count || event->counter > 1 ||
+            event->segment > source->count || (i && event->segment < hints->events[i - 1].segment))
             return 0;
     }
     int open = 0;
@@ -144,7 +149,7 @@ static int ps_gridfit_validate(const pdf_ps_private_hints *private_hints,
             return 0;
         unsigned count = segment->kind == PDF_CFF_CURVE ? 6 : 2;
         for (unsigned j = 0; j < count; j++)
-            if (!ps_gridfit_fixed(segment->points[j], &value))
+            if (!ps_gridfit_fixed(segment->points[j] + origin[j % 2], &value))
                 return 0;
         open = segment->kind != PDF_CFF_CLOSE;
     }
@@ -206,10 +211,10 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
         ps_gridfit_callback;
     context->callbacks.error = &font->error;
     context->callbacks.memory = context;
-    FT_Vector translation = {0};
+    PSGF_FT_Vector translation = {0};
     cf2_glyphpath_init(&context->path, font, &context->callbacks, size->y_scale,
-                       &context->horizontal, &context->vertical, &context->mask, 0, &font->blues,
-                       &translation);
+                       &context->horizontal, &context->vertical, &context->mask, size->origin_y,
+                       &font->blues, &translation);
     unsigned event_index = 0;
     for (unsigned i = 0; i <= source->count; i++) {
         while (event_index < hints->event_count && hints->events[event_index].segment == i) {
@@ -237,7 +242,8 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
         const pdf_cff_segment *segment = source->segments + i;
         int32_t p[6] = {0};
         for (unsigned j = 0; j < (segment->kind == PDF_CFF_CURVE ? 6u : 2u); j++)
-            ps_gridfit_fixed(segment->points[j], p + j);
+            ps_gridfit_fixed(
+                segment->points[j] + (j % 2 ? size->origin_y : size->origin_x) / 65536.0, p + j);
         switch (segment->kind) {
             case PDF_CFF_MOVE:
                 cf2_glyphpath_moveTo(&context->path, p[0], p[1]);

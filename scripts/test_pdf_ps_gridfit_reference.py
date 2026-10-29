@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import subprocess
 import tempfile
-from generate_pdf_standard_outlines import FONTS, font_bytes
+from generate_pdf_standard_outlines import FONTS, ROOT, font_bytes
 from test_pdf_cff import fixture, real
 from test_pdf_cff_hints import entry as wide_entry
 from test_pdf_type2 import command, number
@@ -32,6 +32,9 @@ def authored_fonts(wide=False):
     for width in (-20, -21, 0, 20):
         programs.append((f'edge-{width}', zones, command([700, width], 18) + move + shape))
     programs += [
+        ('empty-mask-recovery', zones, bytes([19]) + move + shape),
+        ('empty-counter-recovery', zones, bytes([20]) + move + shape),
+        ('mask-padding-recovery', zones, stems + bytes([19, 0x81]) + move + shape),
         ('active-mask', zones, stems + bytes([19, 0x80]) + move + shape),
         ('inactive-mask', zones, stems + bytes([19, 0]) + move + shape),
         ('changing-mask', zones, stems + bytes([19, 0x80]) + move + command([100, 0], 5) +
@@ -39,8 +42,18 @@ def authored_fonts(wide=False):
         ('counter', zones, command([0, 20, 80, 20, 580, 20], 18) + bytes([20, 0xe0, 19, 0xe0]) + move + shape),
         ('vertical', zones, stems + command([10, 20, 50, 20], 23) + bytes([19, 0xf0]) + move + shape),
     ]
+    accent = command([0, 20, 60, 20], 18) + command([0, 0], 21) + command([100, 0, 0, 100, -100, 0], 5) + bytes([14])
+    base = command([0, 20, 580, 20], 18) + command([0, 0], 21) + command([400, 0, 0, 600, -400, 0], 5) + bytes([14])
+    composite_fonts = []
+    for x, y in [(100, 600), (10.25, 599.5), (-20, -200)]:
+        code = command([x, y, 65, 194], 14)
+        composite_fonts.append((f'composite-{x}-{y}', fixture(glyphs=5, charset=b'\0\0\1\0\x22\0\x7d\0\xab', strings=(),
+            programs=[bytes([14]), bytes([14]), base, accent, code], private_prefixes=[zones + families + other])))
+    cid_font = fixture(glyphs=3, cid=True, private_count=2, fdselect=b'\0\0\0\1', charset=b'\0\0\1\0\2',
+        programs=[bytes([14]), base, base], private_prefixes=[zones, zones + families + other])
+    composite_fonts.append(('cid-private-dictionaries', cid_font))
     return [(name, fixture(charset=0, strings=(), glyphs=2, programs=[bytes([14]), code],
-                           private_prefixes=[private])) for name, private, code in programs]
+                           private_prefixes=[private])) for name, private, code in programs] + composite_fonts
 
 
 
@@ -66,7 +79,9 @@ def main():
     wide_fonts = dict(authored_fonts(wide=True))
     with tempfile.TemporaryDirectory(prefix='cupid-ps-gridfit-') as tmp:
         path = Path(tmp) / 'font.cff'
-        fonts = [(name, font_bytes(stem)) for name, stem in FONTS.items()] + authored_fonts()
+        fonts = [(name, font_bytes(stem)) for name, stem in FONTS.items()]
+        fonts += [(p.name, p.read_bytes()) for p in sorted((ROOT / 'third_party/standard-spacing-marks').glob('*.cff'))]
+        fonts += authored_fonts()
         for name, data in fonts:
             path.write_bytes(data)
             face = freetype.Face(str(path))
@@ -130,7 +145,7 @@ def main():
     print(f'CFF grid fitting: {matches} independent outline matches; '
           f'{"nonuniform" if args.nonuniform else "uniform"} sizing; engine {freetype.version()}; '
           f'{encoding_checks} native DICT-width equivalence checks; {bitmap_checks} exact grayscale bitmaps; '
-          'no darkening, composite placement or PDF page integration')
+          'no darkening or PDF page integration')
 
 
 if __name__ == '__main__':

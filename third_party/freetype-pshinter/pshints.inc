@@ -41,12 +41,12 @@
 
   /**************************************************************************
    *
-   * The macro FT_COMPONENT is used in trace mode.  It is an implicit
-   * parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log
+   * The macro PSGF_FT_COMPONENT is used in trace mode.  It is an implicit
+   * parameter of the PSGF_FT_TRACE() and PSGF_FT_ERROR() macros, used to print/log
    * messages during execution.
    */
-#undef  FT_COMPONENT
-#define FT_COMPONENT  cf2hints
+#undef  PSGF_FT_COMPONENT
+#define PSGF_FT_COMPONENT  cf2hints
 
 
   typedef struct  CF2_HintMoveRec_
@@ -68,8 +68,8 @@
     /* cross product of pt1 position from origin with pt2 position from  */
     /* pt1; we reduce the precision so that the result fits into 32 bits */
 
-    return ( x1 >> 16 ) * ( SUB_INT32( y2, y1 ) >> 16 ) -
-           ( y1 >> 16 ) * ( SUB_INT32( x2, x1 ) >> 16 );
+    return ( x1 >> 16 ) * ( PSGF_SUB_INT32( y2, y1 ) >> 16 ) -
+           ( y1 >> 16 ) * ( PSGF_SUB_INT32( x2, x1 ) >> 16 );
   }
 
 
@@ -87,19 +87,19 @@
                  const CF2_Font      font,
                  CF2_Fixed           hintOrigin,
                  CF2_Fixed           scale,
-                 FT_Bool             bottom )
+                 PSGF_FT_Bool             bottom )
   {
     CF2_Fixed               width;
     const CF2_StemHintRec*  stemHint;
 
 
-    FT_ZERO( hint );
+    PSGF_FT_ZERO( hint );
 
     stemHint = (const CF2_StemHintRec*)cf2_arrstack_getPointer(
                                          stemHintArray,
                                          indexStemHint );
 
-    width = SUB_INT32( stemHint->max, stemHint->min );
+    width = PSGF_SUB_INT32( stemHint->max, stemHint->min );
 
     if ( width == cf2_intToFixed( -21 ) )
     {
@@ -179,9 +179,9 @@
     /* darkening.  Bottoms are not changed; tops are incremented by twice */
     /* `darkenY'.                                                         */
     if ( cf2_hint_isTop( hint ) )
-      hint->csCoord = ADD_INT32( hint->csCoord, 2 * font->darkenY );
+      hint->csCoord = PSGF_ADD_INT32( hint->csCoord, 2 * font->darkenY );
 
-    hint->csCoord = ADD_INT32( hint->csCoord, hintOrigin );
+    hint->csCoord = PSGF_ADD_INT32( hint->csCoord, hintOrigin );
     hint->scale   = scale;
     hint->index   = indexStemHint;   /* index in original stem hint array */
 
@@ -196,7 +196,7 @@
       cf2_hint_lock( hint );
     }
     else
-      hint->dsCoord = FT_MulFix( hint->csCoord, scale );
+      hint->dsCoord = PSGF_FT_MulFix( hint->csCoord, scale );
   }
 
 
@@ -204,74 +204,74 @@
   static void
   cf2_hint_initZero( CF2_Hint  hint )
   {
-    FT_ZERO( hint );
+    PSGF_FT_ZERO( hint );
   }
 
 
-  FT_LOCAL_DEF( FT_Bool )
+  PSGF_FT_LOCAL_DEF( PSGF_FT_Bool )
   cf2_hint_isValid( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags );
+    return PSGF_FT_BOOL( hint->flags );
   }
 
 
-  static FT_Bool
+  static PSGF_FT_Bool
   cf2_hint_isPair( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags & ( CF2_PairBottom | CF2_PairTop ) );
+    return PSGF_FT_BOOL( hint->flags & ( CF2_PairBottom | CF2_PairTop ) );
   }
 
 
-  static FT_Bool
+  static PSGF_FT_Bool
   cf2_hint_isPairTop( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags & CF2_PairTop );
+    return PSGF_FT_BOOL( hint->flags & CF2_PairTop );
   }
 
 
-  FT_LOCAL_DEF( FT_Bool )
+  PSGF_FT_LOCAL_DEF( PSGF_FT_Bool )
   cf2_hint_isTop( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags & ( CF2_PairTop | CF2_GhostTop ) );
+    return PSGF_FT_BOOL( hint->flags & ( CF2_PairTop | CF2_GhostTop ) );
   }
 
 
-  FT_LOCAL_DEF( FT_Bool )
+  PSGF_FT_LOCAL_DEF( PSGF_FT_Bool )
   cf2_hint_isBottom( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags & ( CF2_PairBottom | CF2_GhostBottom ) );
+    return PSGF_FT_BOOL( hint->flags & ( CF2_PairBottom | CF2_GhostBottom ) );
   }
 
 
-  static FT_Bool
+  static PSGF_FT_Bool
   cf2_hint_isLocked( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags & CF2_Locked );
+    return PSGF_FT_BOOL( hint->flags & CF2_Locked );
   }
 
 
-  static FT_Bool
+  static PSGF_FT_Bool
   cf2_hint_isSynthetic( const CF2_Hint  hint )
   {
-    return FT_BOOL( hint->flags & CF2_Synthetic );
+    return PSGF_FT_BOOL( hint->flags & CF2_Synthetic );
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_hint_lock( CF2_Hint  hint )
   {
     hint->flags |= CF2_Locked;
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_hintmap_init( CF2_HintMap   hintmap,
                     CF2_Font      font,
                     CF2_HintMap   initialMap,
                     CF2_ArrStack  hintMoves,
                     CF2_Fixed     scale )
   {
-    FT_ZERO( hintmap );
+    PSGF_FT_ZERO( hintmap );
 
     /* copy parameters from font instance */
     hintmap->hinted         = font->hinted;
@@ -283,7 +283,7 @@
   }
 
 
-  static FT_Bool
+  static PSGF_FT_Bool
   cf2_hintmap_isValid( const CF2_HintMap  hintmap )
   {
     return hintmap->isValid;
@@ -293,18 +293,18 @@
   static void
   cf2_hintmap_dump( CF2_HintMap  hintmap )
   {
-#ifdef FT_DEBUG_LEVEL_TRACE
+#ifdef PSGF_FT_DEBUG_LEVEL_TRACE
     CF2_UInt  i;
 
 
-    FT_TRACE6(( "  index  csCoord  dsCoord  scale  flags\n" ));
+    PSGF_FT_TRACE6(( "  index  csCoord  dsCoord  scale  flags\n" ));
 
     for ( i = 0; i < hintmap->count; i++ )
     {
       CF2_Hint  hint = &hintmap->edge[i];
 
 
-      FT_TRACE6(( "  %3zu    %7.2f  %7.2f  %5d  %s%s%s%s\n",
+      PSGF_FT_TRACE6(( "  %3zu    %7.2f  %7.2f  %5d  %s%s%s%s\n",
                   hint->index,
                   hint->csCoord / 65536.0,
                   hint->dsCoord / ( hint->scale * 1.0 ),
@@ -315,7 +315,7 @@
                   ( cf2_hint_isSynthetic( hint ) ? "S" : "" ) ));
     }
 #else
-    FT_UNUSED( hintmap );
+    PSGF_FT_UNUSED( hintmap );
 #endif
   }
 
@@ -328,7 +328,7 @@
     if ( hintmap->count == 0 || !hintmap->hinted )
     {
       /* there are no hints; use uniform scale and zero offset */
-      return FT_MulFix( csCoord, hintmap->scale );
+      return PSGF_FT_MulFix( csCoord, hintmap->scale );
     }
     else
     {
@@ -336,7 +336,7 @@
       CF2_UInt  i = hintmap->lastIndex;
 
 
-      FT_ASSERT( hintmap->lastIndex < CF2_MAX_HINT_EDGES );
+      PSGF_FT_ASSERT( hintmap->lastIndex < CF2_MAX_HINT_EDGES );
 
       /* search up */
       while ( i < hintmap->count - 1                  &&
@@ -352,7 +352,7 @@
       if ( i == 0 && csCoord < hintmap->edge[0].csCoord )
       {
         /* special case for points below first edge: use uniform scale */
-        return ADD_INT32( FT_MulFix( SUB_INT32( csCoord,
+        return PSGF_ADD_INT32( PSGF_FT_MulFix( PSGF_SUB_INT32( csCoord,
                                                 hintmap->edge[0].csCoord ),
                                      hintmap->scale ),
                           hintmap->edge[0].dsCoord );
@@ -363,7 +363,7 @@
          * Note: entries with duplicate csCoord are allowed.
          * Use edge[i], the highest entry where csCoord >= entry[i].csCoord
          */
-        return ADD_INT32( FT_MulFix( SUB_INT32( csCoord,
+        return PSGF_ADD_INT32( PSGF_FT_MulFix( PSGF_SUB_INT32( csCoord,
                                                 hintmap->edge[i].csCoord ),
                                      hintmap->edge[i].scale ),
                           hintmap->edge[i].dsCoord );
@@ -404,7 +404,7 @@
 
     for ( i = 0; i < hintmap->count; i++ )
     {
-      FT_Bool  isPair = cf2_hint_isPair( &hintmap->edge[i] );
+      PSGF_FT_Bool  isPair = cf2_hint_isPair( &hintmap->edge[i] );
 
       /* final amount to move edge or edge pair */
       CF2_Fixed  move = 0;
@@ -416,10 +416,10 @@
       /* index of upper edge (same value for ghost hint) */
       j = isPair ? i + 1 : i;
 
-      FT_ASSERT( j < hintmap->count );
-      FT_ASSERT( cf2_hint_isValid( &hintmap->edge[i] ) );
-      FT_ASSERT( cf2_hint_isValid( &hintmap->edge[j] ) );
-      FT_ASSERT( cf2_hint_isLocked( &hintmap->edge[i] ) ==
+      PSGF_FT_ASSERT( j < hintmap->count );
+      PSGF_FT_ASSERT( cf2_hint_isValid( &hintmap->edge[i] ) );
+      PSGF_FT_ASSERT( cf2_hint_isValid( &hintmap->edge[j] ) );
+      PSGF_FT_ASSERT( cf2_hint_isLocked( &hintmap->edge[i] ) ==
                    cf2_hint_isLocked( &hintmap->edge[j] ) );
 
       dsCoord_i = hintmap->edge[i].dsCoord;
@@ -442,13 +442,13 @@
                                     : cf2_intToFixed( 1 ) - fracUp;
 
         /* smallest move up */
-        CF2_Fixed  moveUp   = FT_MIN( downMoveUp, upMoveUp );
+        CF2_Fixed  moveUp   = PSGF_FT_MIN( downMoveUp, upMoveUp );
         /* smallest move down */
-        CF2_Fixed  moveDown = FT_MAX( downMoveDown, upMoveDown );
+        CF2_Fixed  moveDown = PSGF_FT_MAX( downMoveDown, upMoveDown );
 
         CF2_Fixed  downMinCounter = CF2_MIN_COUNTER;
         CF2_Fixed  upMinCounter   = CF2_MIN_COUNTER;
-        FT_Bool    saveEdge       = FALSE;
+        PSGF_FT_Bool    saveEdge       = PSGF_FALSE;
 
 
         /* minimum counter constraint doesn't apply when adjacent edges */
@@ -469,12 +469,12 @@
         /* beyond proposed move up?                                     */
         if ( j >= hintmap->count - 1                         ||
              hintmap->edge[j + 1].dsCoord >=
-               ADD_INT32( dsCoord_j, moveUp + upMinCounter ) )
+               PSGF_ADD_INT32( dsCoord_j, moveUp + upMinCounter ) )
         {
           /* there is room to move up; is there also room to move down? */
           if ( i == 0                                              ||
                hintmap->edge[i - 1].dsCoord <=
-                 ADD_INT32( dsCoord_i, moveDown - downMinCounter ) )
+                 PSGF_ADD_INT32( dsCoord_i, moveDown - downMinCounter ) )
           {
             /* move smaller absolute amount */
             move = ( -moveDown < moveUp ) ? moveDown : moveUp;  /* optimum */
@@ -487,18 +487,18 @@
           /* is there room to move down? */
           if ( i == 0                                              ||
                hintmap->edge[i - 1].dsCoord <=
-                 ADD_INT32( dsCoord_i, moveDown - downMinCounter ) )
+                 PSGF_ADD_INT32( dsCoord_i, moveDown - downMinCounter ) )
           {
             move     = moveDown;
             /* true if non-optimum move */
-            saveEdge = FT_BOOL( moveUp < -moveDown );
+            saveEdge = PSGF_FT_BOOL( moveUp < -moveDown );
           }
           else
           {
             /* no room to move either way without overlapping or reducing */
             /* the counter too much                                       */
             move     = 0;
-            saveEdge = TRUE;
+            saveEdge = PSGF_TRUE;
           }
         }
 
@@ -521,19 +521,19 @@
         }
 
         /* move the edge(s) */
-        hintmap->edge[i].dsCoord = ADD_INT32( dsCoord_i, move );
+        hintmap->edge[i].dsCoord = PSGF_ADD_INT32( dsCoord_i, move );
         if ( isPair )
-          hintmap->edge[j].dsCoord = ADD_INT32( dsCoord_j, move );
+          hintmap->edge[j].dsCoord = PSGF_ADD_INT32( dsCoord_j, move );
       }
 
       /* assert there are no overlaps in device space;     */
       /* ignore tests if there was overflow (that is, if   */
       /* operands have the same sign but the sum does not) */
-      FT_ASSERT( i == 0                                                   ||
+      PSGF_FT_ASSERT( i == 0                                                   ||
                  ( ( dsCoord_i ^ move ) >= 0                    &&
                    ( dsCoord_i ^ hintmap->edge[i].dsCoord ) < 0 )         ||
                  hintmap->edge[i - 1].dsCoord <= hintmap->edge[i].dsCoord );
-      FT_ASSERT( i < j                                                ||
+      PSGF_FT_ASSERT( i < j                                                ||
                  ( ( dsCoord_j ^ move ) >= 0                    &&
                    ( dsCoord_j ^ hintmap->edge[j].dsCoord ) < 0 )     ||
                  hintmap->edge[i].dsCoord <= hintmap->edge[j].dsCoord );
@@ -543,9 +543,9 @@
       {
         if ( hintmap->edge[i].csCoord != hintmap->edge[i - 1].csCoord )
           hintmap->edge[i - 1].scale =
-            FT_DivFix( SUB_INT32( hintmap->edge[i].dsCoord,
+            PSGF_FT_DivFix( PSGF_SUB_INT32( hintmap->edge[i].dsCoord,
                                   hintmap->edge[i - 1].dsCoord ),
-                       SUB_INT32( hintmap->edge[i].csCoord,
+                       PSGF_SUB_INT32( hintmap->edge[i].csCoord,
                                   hintmap->edge[i - 1].csCoord ) );
       }
 
@@ -553,9 +553,9 @@
       {
         if ( hintmap->edge[j].csCoord != hintmap->edge[j - 1].csCoord )
           hintmap->edge[j - 1].scale =
-            FT_DivFix( SUB_INT32( hintmap->edge[j].dsCoord,
+            PSGF_FT_DivFix( PSGF_SUB_INT32( hintmap->edge[j].dsCoord,
                                   hintmap->edge[j - 1].dsCoord ),
-                       SUB_INT32( hintmap->edge[j].csCoord,
+                       PSGF_SUB_INT32( hintmap->edge[j].csCoord,
                                   hintmap->edge[j - 1].csCoord ) );
 
         i += 1;     /* skip upper edge on next loop */
@@ -573,22 +573,22 @@
       j = hintMove->j;
 
       /* this was tested before the push, above */
-      FT_ASSERT( j < hintmap->count - 1 );
+      PSGF_FT_ASSERT( j < hintmap->count - 1 );
 
       /* is there room to move up? */
       if ( hintmap->edge[j + 1].dsCoord >=
-             ADD_INT32( hintmap->edge[j].dsCoord,
+             PSGF_ADD_INT32( hintmap->edge[j].dsCoord,
                         hintMove->moveUp + CF2_MIN_COUNTER ) )
       {
         /* there is more room now, move edge up */
-        hintmap->edge[j].dsCoord = ADD_INT32( hintmap->edge[j].dsCoord,
+        hintmap->edge[j].dsCoord = PSGF_ADD_INT32( hintmap->edge[j].dsCoord,
                                               hintMove->moveUp );
 
         if ( cf2_hint_isPair( &hintmap->edge[j] ) )
         {
-          FT_ASSERT( j > 0 );
+          PSGF_FT_ASSERT( j > 0 );
           hintmap->edge[j - 1].dsCoord =
-            ADD_INT32( hintmap->edge[j - 1].dsCoord, hintMove->moveUp );
+            PSGF_ADD_INT32( hintmap->edge[j - 1].dsCoord, hintMove->moveUp );
         }
       }
     }
@@ -604,14 +604,14 @@
     CF2_UInt  indexInsert;
 
     /* set default values, then check for edge hints */
-    FT_Bool   isPair         = TRUE;
+    PSGF_FT_Bool   isPair         = PSGF_TRUE;
     CF2_Hint  firstHintEdge  = bottomHintEdge;
     CF2_Hint  secondHintEdge = topHintEdge;
 
 
     /* one or none of the input params may be invalid when dealing with */
     /* edge hints; at least one edge must be valid                      */
-    FT_ASSERT( cf2_hint_isValid( bottomHintEdge ) ||
+    PSGF_FT_ASSERT( cf2_hint_isValid( bottomHintEdge ) ||
                cf2_hint_isValid( topHintEdge )    );
 
     /* determine how many and which edges to insert */
@@ -619,12 +619,12 @@
     {
       /* insert only the top edge */
       firstHintEdge = topHintEdge;
-      isPair        = FALSE;
+      isPair        = PSGF_FALSE;
     }
     else if ( !cf2_hint_isValid( topHintEdge ) )
     {
       /* insert only the bottom edge */
-      isPair = FALSE;
+      isPair = PSGF_FALSE;
     }
 
     /* paired edges must be in proper order */
@@ -640,11 +640,11 @@
         break;
     }
 
-    FT_TRACE7(( "  Got hint at %.2f (%.2f)\n",
+    PSGF_FT_TRACE7(( "  Got hint at %.2f (%.2f)\n",
                 firstHintEdge->csCoord / 65536.0,
                 firstHintEdge->dsCoord / 65536.0 ));
     if ( isPair )
-      FT_TRACE7(( "  Got hint at %.2f (%.2f)\n",
+      PSGF_FT_TRACE7(( "  Got hint at %.2f (%.2f)\n",
                   secondHintEdge->csCoord / 65536.0,
                   secondHintEdge->dsCoord / 65536.0 ));
 
@@ -687,18 +687,18 @@
         CF2_Fixed  midpoint =
                      cf2_hintmap_map(
                        hintmap->initialHintMap,
-                       ADD_INT32(
+                       PSGF_ADD_INT32(
                          firstHintEdge->csCoord,
-                         SUB_INT32 ( secondHintEdge->csCoord,
+                         PSGF_SUB_INT32 ( secondHintEdge->csCoord,
                                      firstHintEdge->csCoord ) / 2 ) );
         CF2_Fixed  halfWidth =
-                     FT_MulFix( SUB_INT32( secondHintEdge->csCoord,
+                     PSGF_FT_MulFix( PSGF_SUB_INT32( secondHintEdge->csCoord,
                                            firstHintEdge->csCoord ) / 2,
                                 hintmap->scale );
 
 
-        firstHintEdge->dsCoord  = SUB_INT32( midpoint, halfWidth );
-        secondHintEdge->dsCoord = ADD_INT32( midpoint, halfWidth );
+        firstHintEdge->dsCoord  = PSGF_SUB_INT32( midpoint, halfWidth );
+        secondHintEdge->dsCoord = PSGF_ADD_INT32( midpoint, halfWidth );
       }
       else
         firstHintEdge->dsCoord = cf2_hintmap_map( hintmap->initialHintMap,
@@ -758,7 +758,7 @@
 
       if ( iDst >= CF2_MAX_HINT_EDGES )
       {
-        FT_TRACE4(( "cf2_hintmap_insertHint: too many hintmaps\n" ));
+        PSGF_FT_TRACE4(( "cf2_hintmap_insertHint: too many hintmaps\n" ));
         return;
       }
 
@@ -769,7 +769,7 @@
       hintmap->edge[indexInsert] = *firstHintEdge;         /* copy struct */
       hintmap->count            += 1;
 
-      FT_TRACE7(( "  Inserting hint %.2f (%.2f)\n",
+      PSGF_FT_TRACE7(( "  Inserting hint %.2f (%.2f)\n",
                   firstHintEdge->csCoord / 65536.0,
                   firstHintEdge->dsCoord / 65536.0 ));
 
@@ -779,7 +779,7 @@
         hintmap->edge[indexInsert + 1] = *secondHintEdge;  /* copy struct */
         hintmap->count                += 1;
 
-        FT_TRACE7(( "  Inserting hint %.2f (%.2f)\n",
+        PSGF_FT_TRACE7(( "  Inserting hint %.2f (%.2f)\n",
                     secondHintEdge->csCoord / 65536.0,
                     secondHintEdge->dsCoord / 65536.0 ));
 
@@ -804,21 +804,21 @@
    * maps, including the initial one.
    *
    */
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_hintmap_build( CF2_HintMap   hintmap,
                      CF2_ArrStack  hStemHintArray,
                      CF2_ArrStack  vStemHintArray,
                      CF2_HintMask  hintMask,
                      CF2_Fixed     hintOrigin,
-                     FT_Bool       initialMap )
+                     PSGF_FT_Bool       initialMap )
   {
-    FT_Byte*  maskPtr;
+    PSGF_FT_Byte*  maskPtr;
 
     CF2_Font         font = hintmap->font;
     CF2_HintMaskRec  tempHintMask;
 
     size_t   bitCount, i;
-    FT_Byte  maskByte;
+    PSGF_FT_Byte  maskByte;
 
 
     /* check whether initial map is constructed */
@@ -832,7 +832,7 @@
                          vStemHintArray,
                          &tempHintMask,
                          hintOrigin,
-                         TRUE );
+                         PSGF_TRUE );
     }
 
     if ( !cf2_hintmask_isValid( hintMask ) )
@@ -846,8 +846,8 @@
         if ( font->isT1 )
         {
           /* no error, just continue unhinted */
-          *hintMask->error = FT_Err_Ok;
-          hintmap->hinted  = FALSE;
+          *hintMask->error = PSGF_FT_Err_Ok;
+          hintmap->hinted  = PSGF_FALSE;
         }
         return;                   /* too many stem hints */
       }
@@ -902,14 +902,14 @@
                        font,
                        hintOrigin,
                        hintmap->scale,
-                       TRUE /* bottom */ );
+                       PSGF_TRUE /* bottom */ );
         cf2_hint_init( &topHintEdge,
                        hStemHintArray,
                        i,
                        font,
                        hintOrigin,
                        hintmap->scale,
-                       FALSE /* top */ );
+                       PSGF_FALSE /* top */ );
 
         if ( cf2_hint_isLocked( &bottomHintEdge ) ||
              cf2_hint_isLocked( &topHintEdge )    ||
@@ -1002,14 +1002,14 @@
                          font,
                          hintOrigin,
                          hintmap->scale,
-                         TRUE /* bottom */ );
+                         PSGF_TRUE /* bottom */ );
           cf2_hint_init( &topHintEdge,
                          hStemHintArray,
                          i,
                          font,
                          hintOrigin,
                          hintmap->scale,
-                         FALSE /* top */ );
+                         PSGF_FALSE /* top */ );
 
           cf2_hintmap_insertHint( hintmap, &bottomHintEdge, &topHintEdge );
         }
@@ -1025,15 +1025,15 @@
       }
     }
 
-#ifdef FT_DEBUG_LEVEL_TRACE
+#ifdef PSGF_FT_DEBUG_LEVEL_TRACE
     if ( initialMap )
     {
-      FT_TRACE6(( "flags: [p]air [g]host [t]op"
+      PSGF_FT_TRACE6(( "flags: [p]air [g]host [t]op"
                   " [b]ottom [L]ocked [S]ynthetic\n" ));
-      FT_TRACE6(( "Initial hintmap:\n" ));
+      PSGF_FT_TRACE6(( "Initial hintmap:\n" ));
     }
     else
-      FT_TRACE6(( "Hints:\n" ));
+      PSGF_FT_TRACE6(( "Hints:\n" ));
 #endif
 
     cf2_hintmap_dump( hintmap );
@@ -1050,7 +1050,7 @@
     /* adjust positions of hint edges that are not locked to blue zones */
     cf2_hintmap_adjustHints( hintmap );
 
-    FT_TRACE6(( "Hints adjusted:\n" ));
+    PSGF_FT_TRACE6(( "Hints adjusted:\n" ));
     cf2_hintmap_dump( hintmap );
 
     /* save the position of all hints that were used in this hint map; */
@@ -1073,20 +1073,20 @@
           else
             stemhint->minDS = hintmap->edge[i].dsCoord;
 
-          stemhint->used = TRUE;
+          stemhint->used = PSGF_TRUE;
         }
       }
     }
 
     /* hint map is ready to use */
-    hintmap->isValid = TRUE;
+    hintmap->isValid = PSGF_TRUE;
 
     /* remember this mask has been used */
-    cf2_hintmask_setNew( hintMask, FALSE );
+    cf2_hintmask_setNew( hintMask, PSGF_FALSE );
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_glyphpath_init( CF2_GlyphPath         glyphpath,
                       CF2_Font              font,
                       CF2_OutlineCallbacks  callbacks,
@@ -1097,9 +1097,9 @@
                       CF2_HintMask          hintMask,
                       CF2_Fixed             hintOriginY,
                       const CF2_Blues       blues,
-                      const FT_Vector*      fractionalTranslation )
+                      const PSGF_FT_Vector*      fractionalTranslation )
   {
-    FT_ZERO( glyphpath );
+    PSGF_FT_ZERO( glyphpath );
 
     glyphpath->font      = font;
     glyphpath->callbacks = callbacks;
@@ -1143,21 +1143,21 @@
     glyphpath->darken         = font->darkened; /* TODO: should we make copies? */
     glyphpath->xOffset        = font->darkenX;
     glyphpath->yOffset        = font->darkenY;
-    glyphpath->miterLimit     = 2 * FT_MAX(
+    glyphpath->miterLimit     = 2 * PSGF_FT_MAX(
                                      cf2_fixedAbs( glyphpath->xOffset ),
                                      cf2_fixedAbs( glyphpath->yOffset ) );
 
     /* .1 character space unit */
     glyphpath->snapThreshold = cf2_doubleToFixed( 0.1 );
 
-    glyphpath->moveIsPending = TRUE;
-    glyphpath->pathIsOpen    = FALSE;
-    glyphpath->pathIsClosing = FALSE;
-    glyphpath->elemIsQueued  = FALSE;
+    glyphpath->moveIsPending = PSGF_TRUE;
+    glyphpath->pathIsOpen    = PSGF_FALSE;
+    glyphpath->pathIsClosing = PSGF_FALSE;
+    glyphpath->elemIsQueued  = PSGF_FALSE;
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_glyphpath_finalize( CF2_GlyphPath  glyphpath )
   {
     cf2_arrstack_finalize( &glyphpath->hintMoves );
@@ -1173,26 +1173,26 @@
   static void
   cf2_glyphpath_hintPoint( CF2_GlyphPath  glyphpath,
                            CF2_HintMap    hintmap,
-                           FT_Vector*     ppt,
+                           PSGF_FT_Vector*     ppt,
                            CF2_Fixed      x,
                            CF2_Fixed      y )
   {
-    FT_Vector  pt;   /* hinted point in upright DS */
+    PSGF_FT_Vector  pt;   /* hinted point in upright DS */
 
 
-    pt.x = ADD_INT32( FT_MulFix( glyphpath->scaleX, x ),
-                      FT_MulFix( glyphpath->scaleC, y ) );
+    pt.x = PSGF_ADD_INT32( PSGF_FT_MulFix( glyphpath->scaleX, x ),
+                      PSGF_FT_MulFix( glyphpath->scaleC, y ) );
     pt.y = cf2_hintmap_map( hintmap, y );
 
-    ppt->x = ADD_INT32(
-               FT_MulFix( glyphpath->font->outerTransform.a, pt.x ),
-               ADD_INT32(
-                 FT_MulFix( glyphpath->font->outerTransform.c, pt.y ),
+    ppt->x = PSGF_ADD_INT32(
+               PSGF_FT_MulFix( glyphpath->font->outerTransform.a, pt.x ),
+               PSGF_ADD_INT32(
+                 PSGF_FT_MulFix( glyphpath->font->outerTransform.c, pt.y ),
                  glyphpath->fractionalTranslation.x ) );
-    ppt->y = ADD_INT32(
-               FT_MulFix( glyphpath->font->outerTransform.b, pt.x ),
-               ADD_INT32(
-                 FT_MulFix( glyphpath->font->outerTransform.d, pt.y ),
+    ppt->y = PSGF_ADD_INT32(
+               PSGF_FT_MulFix( glyphpath->font->outerTransform.b, pt.x ),
+               PSGF_ADD_INT32(
+                 PSGF_FT_MulFix( glyphpath->font->outerTransform.d, pt.y ),
                  glyphpath->fractionalTranslation.y ) );
   }
 
@@ -1204,13 +1204,13 @@
    * too far away from the ends of the line segments, u2 and v1.
    *
    */
-  static FT_Bool
+  static PSGF_FT_Bool
   cf2_glyphpath_computeIntersection( CF2_GlyphPath     glyphpath,
-                                     const FT_Vector*  u1,
-                                     const FT_Vector*  u2,
-                                     const FT_Vector*  v1,
-                                     const FT_Vector*  v2,
-                                     FT_Vector*        intersection )
+                                     const PSGF_FT_Vector*  u1,
+                                     const PSGF_FT_Vector*  u2,
+                                     const PSGF_FT_Vector*  v1,
+                                     const PSGF_FT_Vector*  v2,
+                                     PSGF_FT_Vector*        intersection )
   {
     /*
      * Let `u' be a zero-based vector from the first segment, `v' from the
@@ -1233,34 +1233,34 @@
      */
 
 #define cf2_perp( a, b )                                    \
-          ( FT_MulFix( a.x, b.y ) - FT_MulFix( a.y, b.x ) )
+          ( PSGF_FT_MulFix( a.x, b.y ) - PSGF_FT_MulFix( a.y, b.x ) )
 
   /* round and divide by 32 */
 #define CF2_CS_SCALE( x )         \
           ( ( (x) + 0x10 ) >> 5 )
 
-    FT_Vector  u, v, w;      /* scaled vectors */
+    PSGF_FT_Vector  u, v, w;      /* scaled vectors */
     CF2_Fixed  denominator, s;
 
 
-    u.x = CF2_CS_SCALE( SUB_INT32( u2->x, u1->x ) );
-    u.y = CF2_CS_SCALE( SUB_INT32( u2->y, u1->y ) );
-    v.x = CF2_CS_SCALE( SUB_INT32( v2->x, v1->x ) );
-    v.y = CF2_CS_SCALE( SUB_INT32( v2->y, v1->y ) );
-    w.x = CF2_CS_SCALE( SUB_INT32( v1->x, u1->x ) );
-    w.y = CF2_CS_SCALE( SUB_INT32( v1->y, u1->y ) );
+    u.x = CF2_CS_SCALE( PSGF_SUB_INT32( u2->x, u1->x ) );
+    u.y = CF2_CS_SCALE( PSGF_SUB_INT32( u2->y, u1->y ) );
+    v.x = CF2_CS_SCALE( PSGF_SUB_INT32( v2->x, v1->x ) );
+    v.y = CF2_CS_SCALE( PSGF_SUB_INT32( v2->y, v1->y ) );
+    w.x = CF2_CS_SCALE( PSGF_SUB_INT32( v1->x, u1->x ) );
+    w.y = CF2_CS_SCALE( PSGF_SUB_INT32( v1->y, u1->y ) );
 
     denominator = cf2_perp( u, v );
 
     if ( denominator == 0 )
-      return FALSE;           /* parallel or coincident lines */
+      return PSGF_FALSE;           /* parallel or coincident lines */
 
-    s = FT_DivFix( cf2_perp( w, v ), denominator );
+    s = PSGF_FT_DivFix( cf2_perp( w, v ), denominator );
 
-    intersection->x = ADD_INT32( u1->x,
-                                 FT_MulFix( s, SUB_INT32( u2->x, u1->x ) ) );
-    intersection->y = ADD_INT32( u1->y,
-                                 FT_MulFix( s, SUB_INT32( u2->y, u1->y ) ) );
+    intersection->x = PSGF_ADD_INT32( u1->x,
+                                 PSGF_FT_MulFix( s, PSGF_SUB_INT32( u2->x, u1->x ) ) );
+    intersection->y = PSGF_ADD_INT32( u1->y,
+                                 PSGF_FT_MulFix( s, PSGF_SUB_INT32( u2->y, u1->y ) ) );
 
 
     /*
@@ -1273,31 +1273,31 @@
      */
 
     if ( u1->x == u2->x                                                &&
-         cf2_fixedAbs( SUB_INT32( intersection->x,
+         cf2_fixedAbs( PSGF_SUB_INT32( intersection->x,
                                   u1->x ) ) < glyphpath->snapThreshold )
       intersection->x = u1->x;
     if ( u1->y == u2->y                                                &&
-         cf2_fixedAbs( SUB_INT32( intersection->y,
+         cf2_fixedAbs( PSGF_SUB_INT32( intersection->y,
                                   u1->y ) ) < glyphpath->snapThreshold )
       intersection->y = u1->y;
 
     if ( v1->x == v2->x                                                &&
-         cf2_fixedAbs( SUB_INT32( intersection->x,
+         cf2_fixedAbs( PSGF_SUB_INT32( intersection->x,
                                   v1->x ) ) < glyphpath->snapThreshold )
       intersection->x = v1->x;
     if ( v1->y == v2->y                                                &&
-         cf2_fixedAbs( SUB_INT32( intersection->y,
+         cf2_fixedAbs( PSGF_SUB_INT32( intersection->y,
                                   v1->y ) ) < glyphpath->snapThreshold )
       intersection->y = v1->y;
 
     /* limit the intersection distance from midpoint of u2 and v1 */
-    if ( cf2_fixedAbs( intersection->x - ADD_INT32( u2->x, v1->x ) / 2 ) >
+    if ( cf2_fixedAbs( intersection->x - PSGF_ADD_INT32( u2->x, v1->x ) / 2 ) >
            glyphpath->miterLimit                                           ||
-         cf2_fixedAbs( intersection->y - ADD_INT32( u2->y, v1->y ) / 2 ) >
+         cf2_fixedAbs( intersection->y - PSGF_ADD_INT32( u2->y, v1->y ) / 2 ) >
            glyphpath->miterLimit                                           )
-      return FALSE;
+      return PSGF_FALSE;
 
-    return TRUE;
+    return PSGF_TRUE;
   }
 
 
@@ -1327,20 +1327,20 @@
   static void
   cf2_glyphpath_pushPrevElem( CF2_GlyphPath  glyphpath,
                               CF2_HintMap    hintmap,
-                              FT_Vector*     nextP0,
-                              FT_Vector      nextP1,
-                              FT_Bool        close )
+                              PSGF_FT_Vector*     nextP0,
+                              PSGF_FT_Vector      nextP1,
+                              PSGF_FT_Bool        close )
   {
     CF2_CallbackParamsRec  params;
 
-    FT_Vector*  prevP0;
-    FT_Vector*  prevP1;
+    PSGF_FT_Vector*  prevP0;
+    PSGF_FT_Vector*  prevP1;
 
-    FT_Vector  intersection    = { 0, 0 };
-    FT_Bool    useIntersection = FALSE;
+    PSGF_FT_Vector  intersection    = { 0, 0 };
+    PSGF_FT_Bool    useIntersection = PSGF_FALSE;
 
 
-    FT_ASSERT( glyphpath->prevElemOp == CF2_PathOpLineTo ||
+    PSGF_FT_ASSERT( glyphpath->prevElemOp == CF2_PathOpLineTo ||
                glyphpath->prevElemOp == CF2_PathOpCubeTo );
 
     if ( glyphpath->prevElemOp == CF2_PathOpLineTo )
@@ -1490,7 +1490,7 @@
   /* element                                                            */
   static void
   cf2_glyphpath_pushMove( CF2_GlyphPath  glyphpath,
-                          FT_Vector      start )
+                          PSGF_FT_Vector      start )
   {
     CF2_CallbackParamsRec  params;
 
@@ -1542,16 +1542,16 @@
                                CF2_Fixed*     x,
                                CF2_Fixed*     y )
   {
-    CF2_Fixed  dx = SUB_INT32( x2, x1 );
-    CF2_Fixed  dy = SUB_INT32( y2, y1 );
+    CF2_Fixed  dx = PSGF_SUB_INT32( x2, x1 );
+    CF2_Fixed  dy = PSGF_SUB_INT32( y2, y1 );
 
 
     /* note: negative offsets don't work here; negate deltas to change */
     /* quadrants, below                                                */
     if ( glyphpath->font->reverseWinding )
     {
-      dx = NEG_INT32( dx );
-      dy = NEG_INT32( dy );
+      dx = PSGF_NEG_INT32( dx );
+      dy = PSGF_NEG_INT32( dy );
     }
 
     *x = *y = 0;
@@ -1561,7 +1561,7 @@
 
     /* add momentum for this path element */
     glyphpath->callbacks->windingMomentum =
-      ADD_INT32( glyphpath->callbacks->windingMomentum,
+      PSGF_ADD_INT32( glyphpath->callbacks->windingMomentum,
                  cf2_getWindingMomentum( x1, y1, x2, y2 ) );
 
     /* note: allow mixed integer and fixed multiplication here */
@@ -1571,13 +1571,13 @@
       {
         /* first quadrant, +x +y */
 
-        if ( dx > MUL_INT32( 2, dy ) )
+        if ( dx > PSGF_MUL_INT32( 2, dy ) )
         {
           /* +x */
           *x = 0;
           *y = 0;
         }
-        else if ( dy > MUL_INT32( 2, dx ) )
+        else if ( dy > PSGF_MUL_INT32( 2, dx ) )
         {
           /* +y */
           *x = glyphpath->xOffset;
@@ -1586,9 +1586,9 @@
         else
         {
           /* +x +y */
-          *x = FT_MulFix( cf2_doubleToFixed( 0.7 ),
+          *x = PSGF_FT_MulFix( cf2_doubleToFixed( 0.7 ),
                           glyphpath->xOffset );
-          *y = FT_MulFix( cf2_doubleToFixed( 1.0 - 0.7 ),
+          *y = PSGF_FT_MulFix( cf2_doubleToFixed( 1.0 - 0.7 ),
                           glyphpath->yOffset );
         }
       }
@@ -1596,24 +1596,24 @@
       {
         /* fourth quadrant, +x -y */
 
-        if ( dx > MUL_INT32( -2, dy ) )
+        if ( dx > PSGF_MUL_INT32( -2, dy ) )
         {
           /* +x */
           *x = 0;
           *y = 0;
         }
-        else if ( NEG_INT32( dy ) > MUL_INT32( 2, dx ) )
+        else if ( PSGF_NEG_INT32( dy ) > PSGF_MUL_INT32( 2, dx ) )
         {
           /* -y */
-          *x = NEG_INT32( glyphpath->xOffset );
+          *x = PSGF_NEG_INT32( glyphpath->xOffset );
           *y = glyphpath->yOffset;
         }
         else
         {
           /* +x -y */
-          *x = FT_MulFix( cf2_doubleToFixed( -0.7 ),
+          *x = PSGF_FT_MulFix( cf2_doubleToFixed( -0.7 ),
                           glyphpath->xOffset );
-          *y = FT_MulFix( cf2_doubleToFixed( 1.0 - 0.7 ),
+          *y = PSGF_FT_MulFix( cf2_doubleToFixed( 1.0 - 0.7 ),
                           glyphpath->yOffset );
         }
       }
@@ -1624,13 +1624,13 @@
       {
         /* second quadrant, -x +y */
 
-        if ( NEG_INT32( dx ) > MUL_INT32( 2, dy ) )
+        if ( PSGF_NEG_INT32( dx ) > PSGF_MUL_INT32( 2, dy ) )
         {
           /* -x */
           *x = 0;
-          *y = MUL_INT32( 2, glyphpath->yOffset );
+          *y = PSGF_MUL_INT32( 2, glyphpath->yOffset );
         }
-        else if ( dy > MUL_INT32( -2, dx ) )
+        else if ( dy > PSGF_MUL_INT32( -2, dx ) )
         {
           /* +y */
           *x = glyphpath->xOffset;
@@ -1639,9 +1639,9 @@
         else
         {
           /* -x +y */
-          *x = FT_MulFix( cf2_doubleToFixed( 0.7 ),
+          *x = PSGF_FT_MulFix( cf2_doubleToFixed( 0.7 ),
                           glyphpath->xOffset );
-          *y = FT_MulFix( cf2_doubleToFixed( 1.0 + 0.7 ),
+          *y = PSGF_FT_MulFix( cf2_doubleToFixed( 1.0 + 0.7 ),
                           glyphpath->yOffset );
         }
       }
@@ -1649,24 +1649,24 @@
       {
         /* third quadrant, -x -y */
 
-        if ( NEG_INT32( dx ) > MUL_INT32( -2, dy ) )
+        if ( PSGF_NEG_INT32( dx ) > PSGF_MUL_INT32( -2, dy ) )
         {
           /* -x */
           *x = 0;
-          *y = MUL_INT32( 2, glyphpath->yOffset );
+          *y = PSGF_MUL_INT32( 2, glyphpath->yOffset );
         }
-        else if ( NEG_INT32( dy ) > MUL_INT32( -2, dx ) )
+        else if ( PSGF_NEG_INT32( dy ) > PSGF_MUL_INT32( -2, dx ) )
         {
           /* -y */
-          *x = NEG_INT32( glyphpath->xOffset );
+          *x = PSGF_NEG_INT32( glyphpath->xOffset );
           *y = glyphpath->yOffset;
         }
         else
         {
           /* -x -y */
-          *x = FT_MulFix( cf2_doubleToFixed( -0.7 ),
+          *x = PSGF_FT_MulFix( cf2_doubleToFixed( -0.7 ),
                           glyphpath->xOffset );
-          *y = FT_MulFix( cf2_doubleToFixed( 1.0 + 0.7 ),
+          *y = PSGF_FT_MulFix( cf2_doubleToFixed( 1.0 + 0.7 ),
                           glyphpath->yOffset );
         }
       }
@@ -1684,7 +1684,7 @@
    * Device Space (DS) and passing it on to the outline consumer.
    *
    */
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_glyphpath_moveTo( CF2_GlyphPath  glyphpath,
                         CF2_Fixed      x,
                         CF2_Fixed      y )
@@ -1697,7 +1697,7 @@
     glyphpath->currentCS.x = glyphpath->start.x = x;
     glyphpath->currentCS.y = glyphpath->start.y = y;
 
-    glyphpath->moveIsPending = TRUE;
+    glyphpath->moveIsPending = PSGF_TRUE;
 
     /* ensure we have a valid map with current mask */
     if ( !cf2_hintmap_isValid( &glyphpath->hintMap ) ||
@@ -1707,21 +1707,21 @@
                          glyphpath->vStemHintArray,
                          glyphpath->hintMask,
                          glyphpath->hintOriginY,
-                         FALSE );
+                         PSGF_FALSE );
 
     /* save a copy of current HintMap to use when drawing initial point */
     glyphpath->firstHintMap = glyphpath->hintMap;     /* structure copy */
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_glyphpath_lineTo( CF2_GlyphPath  glyphpath,
                         CF2_Fixed      x,
                         CF2_Fixed      y )
   {
     CF2_Fixed  xOffset, yOffset;
-    FT_Vector  P0, P1;
-    FT_Bool    newHintMap;
+    PSGF_FT_Vector  P0, P1;
+    PSGF_FT_Bool    newHintMap;
 
     /*
      * New hints will be applied after cf2_glyphpath_pushPrevElem has run.
@@ -1772,36 +1772,36 @@
                                  &yOffset );
 
     /* construct offset points */
-    P0.x = ADD_INT32( glyphpath->currentCS.x, xOffset );
-    P0.y = ADD_INT32( glyphpath->currentCS.y, yOffset );
-    P1.x = ADD_INT32( x, xOffset );
-    P1.y = ADD_INT32( y, yOffset );
+    P0.x = PSGF_ADD_INT32( glyphpath->currentCS.x, xOffset );
+    P0.y = PSGF_ADD_INT32( glyphpath->currentCS.y, yOffset );
+    P1.x = PSGF_ADD_INT32( x, xOffset );
+    P1.y = PSGF_ADD_INT32( y, yOffset );
 
     if ( glyphpath->moveIsPending )
     {
       /* emit offset 1st point as MoveTo */
       cf2_glyphpath_pushMove( glyphpath, P0 );
 
-      glyphpath->moveIsPending = FALSE;  /* adjust state machine */
-      glyphpath->pathIsOpen    = TRUE;
+      glyphpath->moveIsPending = PSGF_FALSE;  /* adjust state machine */
+      glyphpath->pathIsOpen    = PSGF_TRUE;
 
       glyphpath->offsetStart1 = P1;              /* record second point */
     }
 
     if ( glyphpath->elemIsQueued )
     {
-      FT_ASSERT( cf2_hintmap_isValid( &glyphpath->hintMap ) ||
+      PSGF_FT_ASSERT( cf2_hintmap_isValid( &glyphpath->hintMap ) ||
                  glyphpath->hintMap.count == 0              );
 
       cf2_glyphpath_pushPrevElem( glyphpath,
                                   &glyphpath->hintMap,
                                   &P0,
                                   P1,
-                                  FALSE );
+                                  PSGF_FALSE );
     }
 
     /* queue the current element with offset points */
-    glyphpath->elemIsQueued = TRUE;
+    glyphpath->elemIsQueued = PSGF_TRUE;
     glyphpath->prevElemOp   = CF2_PathOpLineTo;
     glyphpath->prevElemP0   = P0;
     glyphpath->prevElemP1   = P1;
@@ -1813,14 +1813,14 @@
                          glyphpath->vStemHintArray,
                          glyphpath->hintMask,
                          glyphpath->hintOriginY,
-                         FALSE );
+                         PSGF_FALSE );
 
     glyphpath->currentCS.x = x;     /* pre-offset current point */
     glyphpath->currentCS.y = y;
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_glyphpath_curveTo( CF2_GlyphPath  glyphpath,
                          CF2_Fixed      x1,
                          CF2_Fixed      y1,
@@ -1830,7 +1830,7 @@
                          CF2_Fixed      y3 )
   {
     CF2_Fixed  xOffset1, yOffset1, xOffset3, yOffset3;
-    FT_Vector  P0, P1, P2, P3;
+    PSGF_FT_Vector  P0, P1, P2, P3;
 
 
     /* TODO: ignore zero length portions of curve?? */
@@ -1851,45 +1851,45 @@
 
     /* add momentum from the middle segment */
     glyphpath->callbacks->windingMomentum =
-      ADD_INT32( glyphpath->callbacks->windingMomentum,
+      PSGF_ADD_INT32( glyphpath->callbacks->windingMomentum,
                  cf2_getWindingMomentum( x1, y1, x2, y2 ) );
 
     /* construct offset points */
-    P0.x = ADD_INT32( glyphpath->currentCS.x, xOffset1 );
-    P0.y = ADD_INT32( glyphpath->currentCS.y, yOffset1 );
-    P1.x = ADD_INT32( x1, xOffset1 );
-    P1.y = ADD_INT32( y1, yOffset1 );
+    P0.x = PSGF_ADD_INT32( glyphpath->currentCS.x, xOffset1 );
+    P0.y = PSGF_ADD_INT32( glyphpath->currentCS.y, yOffset1 );
+    P1.x = PSGF_ADD_INT32( x1, xOffset1 );
+    P1.y = PSGF_ADD_INT32( y1, yOffset1 );
     /* note: preserve angle of final segment by using offset3 at both ends */
-    P2.x = ADD_INT32( x2, xOffset3 );
-    P2.y = ADD_INT32( y2, yOffset3 );
-    P3.x = ADD_INT32( x3, xOffset3 );
-    P3.y = ADD_INT32( y3, yOffset3 );
+    P2.x = PSGF_ADD_INT32( x2, xOffset3 );
+    P2.y = PSGF_ADD_INT32( y2, yOffset3 );
+    P3.x = PSGF_ADD_INT32( x3, xOffset3 );
+    P3.y = PSGF_ADD_INT32( y3, yOffset3 );
 
     if ( glyphpath->moveIsPending )
     {
       /* emit offset 1st point as MoveTo */
       cf2_glyphpath_pushMove( glyphpath, P0 );
 
-      glyphpath->moveIsPending = FALSE;
-      glyphpath->pathIsOpen    = TRUE;
+      glyphpath->moveIsPending = PSGF_FALSE;
+      glyphpath->pathIsOpen    = PSGF_TRUE;
 
       glyphpath->offsetStart1 = P1;              /* record second point */
     }
 
     if ( glyphpath->elemIsQueued )
     {
-      FT_ASSERT( cf2_hintmap_isValid( &glyphpath->hintMap ) ||
+      PSGF_FT_ASSERT( cf2_hintmap_isValid( &glyphpath->hintMap ) ||
                  glyphpath->hintMap.count == 0              );
 
       cf2_glyphpath_pushPrevElem( glyphpath,
                                   &glyphpath->hintMap,
                                   &P0,
                                   P1,
-                                  FALSE );
+                                  PSGF_FALSE );
     }
 
     /* queue the current element with offset points */
-    glyphpath->elemIsQueued = TRUE;
+    glyphpath->elemIsQueued = PSGF_TRUE;
     glyphpath->prevElemOp   = CF2_PathOpCubeTo;
     glyphpath->prevElemP0   = P0;
     glyphpath->prevElemP1   = P1;
@@ -1903,14 +1903,14 @@
                          glyphpath->vStemHintArray,
                          glyphpath->hintMask,
                          glyphpath->hintOriginY,
-                         FALSE );
+                         PSGF_FALSE );
 
     glyphpath->currentCS.x = x3;       /* pre-offset current point */
     glyphpath->currentCS.y = y3;
   }
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_glyphpath_closeOpenPath( CF2_GlyphPath  glyphpath )
   {
     if ( glyphpath->pathIsOpen )
@@ -1920,7 +1920,7 @@
        * with `cf2_glyphPath_lineTo'.  It may be ignored later if it turns
        * out to be zero length in Device Space.
        */
-      glyphpath->pathIsClosing = TRUE;
+      glyphpath->pathIsClosing = PSGF_TRUE;
 
       cf2_glyphpath_lineTo( glyphpath,
                             glyphpath->start.x,
@@ -1932,13 +1932,13 @@
                                     &glyphpath->hintMap,
                                     &glyphpath->offsetStart0,
                                     glyphpath->offsetStart1,
-                                    TRUE );
+                                    PSGF_TRUE );
 
       /* reset state machine */
-      glyphpath->moveIsPending = TRUE;
-      glyphpath->pathIsOpen    = FALSE;
-      glyphpath->pathIsClosing = FALSE;
-      glyphpath->elemIsQueued  = FALSE;
+      glyphpath->moveIsPending = PSGF_TRUE;
+      glyphpath->pathIsOpen    = PSGF_FALSE;
+      glyphpath->pathIsClosing = PSGF_FALSE;
+      glyphpath->elemIsQueued  = PSGF_FALSE;
     }
   }
 

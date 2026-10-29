@@ -10,9 +10,13 @@ static void bitmap_free(void *buffer) {
 #define realloc fault_realloc
 #define free fault_free
 #include "../src/formats/pdf/fonts/cff.c"
+#include "../src/formats/pdf/fonts/postscript/cff_shape.c"
 #include "../src/formats/pdf/fonts/postscript/gridfit.c"
+#include "../src/formats/pdf/fonts/postscript/page.c"
 #include "../src/formats/pdf/fonts/postscript/private.c"
+#include "../src/formats/pdf/fonts/postscript/transform.c"
 #include "../src/formats/pdf/fonts/type2.c"
+#include "fixtures/pdf-cff.inc"
 
 static unsigned checks, failures;
 #define CHECK(test)                                                                                \
@@ -51,18 +55,11 @@ static int font_probe(const char *path, unsigned x_ppem, unsigned y_ppem, int bi
     }
     int32_t x_scale = (int32_t)(((uint64_t)x_ppem * 64 * 65536 + 500) / 1000);
     int32_t y_scale = (int32_t)(((uint64_t)y_ppem * 64 * 65536 + 500) / 1000);
-    pdf_ps_gridfit_size size = {(x_scale + 32) / 64, (y_scale + 32) / 64};
+    pdf_ps_gridfit_size size = {.x_scale = (x_scale + 32) / 64, .y_scale = (y_scale + 32) / 64};
     for (unsigned gid = 0; gid < font.chars.count; gid++) {
-        pdf_cff_outline source = {0}, output = {0};
-        pdf_ps_hint_program hints = {0};
-        if (!cupidimage_pdf_type2_outline_hints(&font, gid, &source, &hints)) {
-            ok = 0;
-            break;
-        }
-        unsigned fd = font.fdselect ? font.fdselect[gid] : 0;
+        pdf_cff_outline output = {0};
         size_t work = 10000000;
-        int fitted = cupidimage_pdf_ps_gridfit(&font.private_dicts[fd].hints, &hints, &source,
-                                               &size, &output, &work);
+        int fitted = cupidimage_pdf_cff_hint_outline(&font, gid, &size, &output, &work);
         printf("glyph %u %d %.17g %.17g\n", gid, fitted, output.width, output.width_y);
         if (fitted)
             for (unsigned i = 0; i < output.count; i++) {
@@ -110,8 +107,6 @@ static int font_probe(const char *path, unsigned x_ppem, unsigned y_ppem, int bi
             bitmap_free(mask);
         }
         cupidimage_pdf_type2_free(&output);
-        cupidimage_pdf_type2_free(&source);
-        cupidimage_pdf_ps_hint_program_free(&hints);
     }
     cupidimage_pdf_cff_free(&font);
     free(data);
@@ -137,7 +132,7 @@ int main(int argc, char **argv) {
     source.count = 5;
     source.width = 650;
     source.width_y = 12;
-    pdf_ps_gridfit_size size = {1049, 1049};
+    pdf_ps_gridfit_size size = {.x_scale = 1049, .y_scale = 1049};
     for (unsigned mode = 0; mode < 3; mode++) {
         hints.stem_count = mode ? 1 : 0;
         hints.stems[0] = (pdf_ps_stem){20, 200, 0};
@@ -265,6 +260,94 @@ int main(int argc, char **argv) {
     size_t work = 1000000;
     CHECK(!cupidimage_pdf_ps_gridfit(&priv, &hints, &source, &size, &source, &work));
     CHECK(source.segments == segments && source.count == 5);
+    {
+        const unsigned char *programs[] = {test_cff_font, test_cff_cid_font,
+                                           test_cff_composite_font};
+        const size_t lengths[] = {sizeof(test_cff_font), sizeof(test_cff_cid_font),
+                                  sizeof(test_cff_composite_font)};
+        for (unsigned sample = 0; sample < 3; sample++) {
+            size_t total = 0;
+            for (size_t failure = 0; failure <= total; failure++) {
+                allocation_count = 0;
+                fail_at = failure;
+                pdf_cff_font font = {0};
+                pdf_cff_outline output = {0};
+                size_t budget = 10000000;
+                int fitted = cupidimage_pdf_cff_init(&font, programs[sample], lengths[sample]) &&
+                             cupidimage_pdf_cff_hint_outline(&font, font.chars.count - 1, &size,
+                                                             &output, &budget);
+                if (!failure)
+                    total = allocation_count;
+                CHECK(fitted == !failure);
+                if (!fitted)
+                    CHECK(!output.segments && !output.count);
+                if (fitted) {
+                    CHECK(output.width == 600 || output.width == 601);
+                    const int32_t matrix[4] = {65536, 0, 0, 65536}, offset[2] = {64, -32};
+                    double x = output.segments[0].points[0], y = output.segments[0].points[1];
+                    CHECK(cupidimage_pdf_ps_outline_transform(&output, matrix, offset, &budget));
+                    CHECK(output.segments[0].points[0] == x + 1 &&
+                          output.segments[0].points[1] == y - .5);
+                    if (output.count > 1) {
+                        output.segments[output.count - 1].points[0] = NAN;
+                        pdf_cff_segment saved = output.segments[0];
+                        CHECK(
+                            !cupidimage_pdf_ps_outline_transform(&output, matrix, offset, &budget));
+                        CHECK(!memcmp(&saved, output.segments, sizeof(saved)));
+                    }
+                }
+                cupidimage_pdf_type2_free(&output);
+                cupidimage_pdf_cff_free(&font);
+                CHECK(!live_count);
+            }
+        }
+        fail_at = 0;
+    }
+    {
+        pdf_cff_font font = {0};
+        CHECK(cupidimage_pdf_cff_init(&font, test_cff_composite_font,
+                                      sizeof(test_cff_composite_font)));
+        double matrix[6] = {24, 0, 0, -24, 30.5, 80.25};
+        pdf_cff_outline output = {0};
+        int fitted = 0;
+        size_t budget = 1000000;
+        CHECK(cupidimage_pdf_cff_page_shape(&font, 4, matrix, &budget, &output, &fitted));
+        CHECK(fitted && output.count == 10 && output.width == 600);
+        size_t needed = 1000000 - budget;
+        cupidimage_pdf_type2_free(&output);
+        const size_t budgets[] = {0, 1, needed - 1, needed, needed + 1};
+        for (unsigned i = 0; i < sizeof(budgets) / sizeof(*budgets); i++) {
+            budget = budgets[i];
+            fitted = 0;
+            int ok = cupidimage_pdf_cff_page_shape(&font, 4, matrix, &budget, &output, &fitted);
+            CHECK(ok == (budgets[i] >= needed));
+            CHECK(fitted == ok);
+            if (!ok)
+                CHECK(!output.count && !output.segments);
+            cupidimage_pdf_type2_free(&output);
+        }
+        for (unsigned sample = 0; sample < 5; sample++) {
+            double m[6];
+            memcpy(m, matrix, sizeof(m));
+            if (sample == 0)
+                m[0] = NAN;
+            if (sample == 1)
+                m[3] = -40000;
+            if (sample == 2)
+                m[4] = 1e30;
+            if (sample == 3)
+                m[3] = 0;
+            if (sample == 4)
+                m[0] = INFINITY;
+            budget = 1000000;
+            int ok = cupidimage_pdf_cff_page_shape(&font, 4, m, &budget, &output, &fitted);
+            CHECK(ok == (sample == 3));
+            CHECK(!fitted && !output.count && !output.segments);
+            cupidimage_pdf_type2_free(&output);
+        }
+        cupidimage_pdf_cff_free(&font);
+        CHECK(!live_count);
+    }
     uint32_t random = 5177;
     for (unsigned trial = 0; trial < 2000; trial++) {
         random = random * 1664525u + 1013904223u;
@@ -294,7 +377,8 @@ int main(int argc, char **argv) {
         p.arrays[2][1] = high / 2;
         p.scalars[6] = trial % 2;
         random = random * 1664525u + 1013904223u;
-        pdf_ps_gridfit_size z = {(int32_t)(random % 131072 + 1), (int32_t)(random % 131072 + 1)};
+        pdf_ps_gridfit_size z = {.x_scale = (int32_t)(random % 131072 + 1),
+                                 .y_scale = (int32_t)(random % 131072 + 1)};
         pdf_cff_outline output;
         size_t budget = 1000000;
         int fitted = cupidimage_pdf_ps_gridfit(&p, &trace, &src, &z, &output, &budget);

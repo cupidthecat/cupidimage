@@ -41,15 +41,15 @@
 
   /**************************************************************************
    *
-   * The macro FT_COMPONENT is used in trace mode.  It is an implicit
-   * parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log
+   * The macro PSGF_FT_COMPONENT is used in trace mode.  It is an implicit
+   * parameter of the PSGF_FT_TRACE() and PSGF_FT_ERROR() macros, used to print/log
    * messages during execution.
    */
-#undef  FT_COMPONENT
-#define FT_COMPONENT  cf2blues
+#undef  PSGF_FT_COMPONENT
+#define PSGF_FT_COMPONENT  cf2blues
 
 
-  FT_LOCAL_DEF( void )
+  PSGF_FT_LOCAL_DEF( void )
   cf2_blues_init( CF2_Blues  blues,
                   CF2_Font   font )
   {
@@ -65,10 +65,10 @@
     size_t  numFamilyBlues;
     size_t  numFamilyOtherBlues;
 
-    FT_Fixed*  blueValues;
-    FT_Fixed*  otherBlues;
-    FT_Fixed*  familyBlues;
-    FT_Fixed*  familyOtherBlues;
+    PSGF_FT_Fixed*  blueValues;
+    PSGF_FT_Fixed*  otherBlues;
+    PSGF_FT_Fixed*  familyBlues;
+    PSGF_FT_Fixed*  familyOtherBlues;
 
     size_t     i;
     CF2_Fixed  emBoxBottom, emBoxTop;
@@ -81,7 +81,7 @@
       unitsPerEm = 1000;
 #endif
 
-    FT_ZERO( blues );
+    PSGF_FT_ZERO( blues );
     blues->scale = font->innerTransform.d;
 
     cf2_getBlueMetrics( decoder,
@@ -146,7 +146,7 @@
 
       blues->emBoxBottomEdge.csCoord = emBoxBottom - CF2_FIXED_EPSILON;
       blues->emBoxBottomEdge.dsCoord = cf2_fixedRound(
-                                         FT_MulFix(
+                                         PSGF_FT_MulFix(
                                            blues->emBoxBottomEdge.csCoord,
                                            blues->scale ) ) -
                                        CF2_MIN_COUNTER;
@@ -158,7 +158,7 @@
       blues->emBoxTopEdge.csCoord = emBoxTop + CF2_FIXED_EPSILON +
                                     2 * font->darkenY;
       blues->emBoxTopEdge.dsCoord = cf2_fixedRound(
-                                      FT_MulFix(
+                                      PSGF_FT_MulFix(
                                         blues->emBoxTopEdge.csCoord,
                                         blues->scale ) ) +
                                     CF2_MIN_COUNTER;
@@ -167,7 +167,7 @@
                                     CF2_Locked |
                                     CF2_Synthetic;
 
-      blues->doEmBoxHints = TRUE;    /* enable the heuristic */
+      blues->doEmBoxHints = PSGF_TRUE;    /* enable the heuristic */
 
       return;
     }
@@ -179,12 +179,12 @@
       blues->zone[blues->count].csBottomEdge = blueValues[i];
       blues->zone[blues->count].csTopEdge    = blueValues[i + 1];
 
-      zoneHeight = SUB_INT32( blues->zone[blues->count].csTopEdge,
+      zoneHeight = PSGF_SUB_INT32( blues->zone[blues->count].csTopEdge,
                               blues->zone[blues->count].csBottomEdge );
 
       if ( zoneHeight < 0 )
       {
-        FT_TRACE4(( "cf2_blues_init: ignoring negative zone height\n" ));
+        PSGF_FT_TRACE4(( "cf2_blues_init: ignoring negative zone height\n" ));
         continue;   /* reject this zone */
       }
 
@@ -206,14 +206,14 @@
       if ( i == 0 )
       {
         blues->zone[blues->count].bottomZone =
-          TRUE;
+          PSGF_TRUE;
         blues->zone[blues->count].csFlatEdge =
           blues->zone[blues->count].csTopEdge;
       }
       else
       {
         blues->zone[blues->count].bottomZone =
-          FALSE;
+          PSGF_FALSE;
         blues->zone[blues->count].csFlatEdge =
           blues->zone[blues->count].csBottomEdge;
       }
@@ -226,12 +226,12 @@
       blues->zone[blues->count].csBottomEdge = otherBlues[i];
       blues->zone[blues->count].csTopEdge    = otherBlues[i + 1];
 
-      zoneHeight = SUB_INT32( blues->zone[blues->count].csTopEdge,
+      zoneHeight = PSGF_SUB_INT32( blues->zone[blues->count].csTopEdge,
                               blues->zone[blues->count].csBottomEdge );
 
       if ( zoneHeight < 0 )
       {
-        FT_TRACE4(( "cf2_blues_init: ignoring negative zone height\n" ));
+        PSGF_FT_TRACE4(( "cf2_blues_init: ignoring negative zone height\n" ));
         continue;   /* reject this zone */
       }
 
@@ -246,7 +246,7 @@
 
       /* all OtherBlues are bottom zone */
       blues->zone[blues->count].bottomZone =
-        TRUE;
+        PSGF_TRUE;
       blues->zone[blues->count].csFlatEdge =
         blues->zone[blues->count].csTopEdge;
 
@@ -259,7 +259,7 @@
     /* `FamilyOtherBlues'.  According to the Black Book, any matching edge */
     /* must be within one device pixel                                     */
 
-    csUnitsPerPixel = FT_DivFix( cf2_intToFixed( 1 ), blues->scale );
+    csUnitsPerPixel = PSGF_FT_DivFix( cf2_intToFixed( 1 ), blues->scale );
 
     /* loop on all zones in this font */
     for ( i = 0; i < blues->count; i++ )
@@ -284,7 +284,7 @@
           /* top edge */
           flatFamilyEdge = familyOtherBlues[j + 1];
 
-          diff = cf2_fixedAbs( SUB_INT32( flatEdge, flatFamilyEdge ) );
+          diff = cf2_fixedAbs( PSGF_SUB_INT32( flatEdge, flatFamilyEdge ) );
 
           if ( diff < minDiff && diff < csUnitsPerPixel )
           {
@@ -302,7 +302,7 @@
           /* top edge */
           flatFamilyEdge = familyBlues[1];
 
-          diff = cf2_fixedAbs( SUB_INT32( flatEdge, flatFamilyEdge ) );
+          diff = cf2_fixedAbs( PSGF_SUB_INT32( flatEdge, flatFamilyEdge ) );
 
           if ( diff < minDiff && diff < csUnitsPerPixel )
             blues->zone[i].csFlatEdge = flatFamilyEdge;
@@ -325,7 +325,7 @@
           /* adjust edges of top zone upward by twice darkening amount */
           flatFamilyEdge += 2 * font->darkenY;      /* bottom edge */
 
-          diff = cf2_fixedAbs( SUB_INT32( flatEdge, flatFamilyEdge ) );
+          diff = cf2_fixedAbs( PSGF_SUB_INT32( flatEdge, flatFamilyEdge ) );
 
           if ( diff < minDiff && diff < csUnitsPerPixel )
           {
@@ -346,11 +346,11 @@
 
     if ( maxZoneHeight > 0 )
     {
-      if ( blues->blueScale > FT_DivFix( cf2_intToFixed( 1 ),
+      if ( blues->blueScale > PSGF_FT_DivFix( cf2_intToFixed( 1 ),
                                          maxZoneHeight ) )
       {
         /* clamp at maximum scale */
-        blues->blueScale = FT_DivFix( cf2_intToFixed( 1 ),
+        blues->blueScale = PSGF_FT_DivFix( cf2_intToFixed( 1 ),
                                       maxZoneHeight );
       }
 
@@ -385,14 +385,14 @@
 
     if ( blues->scale < blues->blueScale )
     {
-      blues->suppressOvershoot = TRUE;
+      blues->suppressOvershoot = PSGF_TRUE;
 
       /* Change rounding threshold for `dsFlatEdge'.                    */
       /* Note: constant changed from 0.5 to 0.6 to avoid a problem with */
       /*       10ppem Arial                                             */
 
       blues->boost = cf2_doubleToFixed( .6 ) -
-                       FT_MulDiv( cf2_doubleToFixed ( .6 ),
+                       PSGF_FT_MulDiv( cf2_doubleToFixed ( .6 ),
                                   blues->scale,
                                   blues->blueScale );
       if ( blues->boost > 0x7FFF )
@@ -413,13 +413,13 @@
     {
       if ( blues->zone[i].bottomZone )
         blues->zone[i].dsFlatEdge = cf2_fixedRound(
-                                      FT_MulFix(
+                                      PSGF_FT_MulFix(
                                         blues->zone[i].csFlatEdge,
                                         blues->scale ) -
                                       blues->boost );
       else
         blues->zone[i].dsFlatEdge = cf2_fixedRound(
-                                      FT_MulFix(
+                                      PSGF_FT_MulFix(
                                         blues->zone[i].csFlatEdge,
                                         blues->scale ) +
                                       blues->boost );
@@ -444,7 +444,7 @@
    *    edge at the nearest device pixel.
    *
    */
-  FT_LOCAL_DEF( FT_Bool )
+  PSGF_FT_LOCAL_DEF( PSGF_FT_Bool )
   cf2_blues_capture( const CF2_Blues  blues,
                      CF2_Hint         bottomHintEdge,
                      CF2_Hint         topHintEdge )
@@ -458,12 +458,12 @@
     /* amount that hint is moved when positioned */
     CF2_Fixed  dsMove = 0;
 
-    FT_Bool   captured = FALSE;
+    PSGF_FT_Bool   captured = PSGF_FALSE;
     CF2_UInt  i;
 
 
     /* assert edge flags are consistent */
-    FT_ASSERT( !cf2_hint_isTop( bottomHintEdge ) &&
+    PSGF_FT_ASSERT( !cf2_hint_isTop( bottomHintEdge ) &&
                !cf2_hint_isBottom( topHintEdge ) );
 
     /* TODO: search once without blue fuzz for compatibility with coretype? */
@@ -472,24 +472,24 @@
       if ( blues->zone[i].bottomZone           &&
            cf2_hint_isBottom( bottomHintEdge ) )
       {
-        if ( SUB_INT32( blues->zone[i].csBottomEdge, csFuzz ) <=
+        if ( PSGF_SUB_INT32( blues->zone[i].csBottomEdge, csFuzz ) <=
                bottomHintEdge->csCoord                           &&
              bottomHintEdge->csCoord <=
-               ADD_INT32( blues->zone[i].csTopEdge, csFuzz )     )
+               PSGF_ADD_INT32( blues->zone[i].csTopEdge, csFuzz )     )
         {
           /* bottom edge captured by bottom zone */
 
           if ( blues->suppressOvershoot )
             dsNew = blues->zone[i].dsFlatEdge;
 
-          else if ( SUB_INT32( blues->zone[i].csTopEdge,
+          else if ( PSGF_SUB_INT32( blues->zone[i].csTopEdge,
                                bottomHintEdge->csCoord ) >=
                       blues->blueShift )
           {
             /* guarantee minimum of 1 pixel overshoot */
-            dsNew = FT_MIN(
+            dsNew = PSGF_FT_MIN(
                       cf2_fixedRound( bottomHintEdge->dsCoord ),
-                      SUB_INT32( blues->zone[i].dsFlatEdge,
+                      PSGF_SUB_INT32( blues->zone[i].dsFlatEdge,
                                  cf2_intToFixed( 1 ) ) );
           }
 
@@ -499,8 +499,8 @@
             dsNew = cf2_fixedRound( bottomHintEdge->dsCoord );
           }
 
-          dsMove   = SUB_INT32( dsNew, bottomHintEdge->dsCoord );
-          captured = TRUE;
+          dsMove   = PSGF_SUB_INT32( dsNew, bottomHintEdge->dsCoord );
+          captured = PSGF_TRUE;
 
           break;
         }
@@ -508,22 +508,22 @@
 
       if ( !blues->zone[i].bottomZone && cf2_hint_isTop( topHintEdge ) )
       {
-        if ( SUB_INT32( blues->zone[i].csBottomEdge, csFuzz ) <=
+        if ( PSGF_SUB_INT32( blues->zone[i].csBottomEdge, csFuzz ) <=
                topHintEdge->csCoord                              &&
              topHintEdge->csCoord <=
-               ADD_INT32( blues->zone[i].csTopEdge, csFuzz )     )
+               PSGF_ADD_INT32( blues->zone[i].csTopEdge, csFuzz )     )
         {
           /* top edge captured by top zone */
 
           if ( blues->suppressOvershoot )
             dsNew = blues->zone[i].dsFlatEdge;
 
-          else if ( SUB_INT32( topHintEdge->csCoord,
+          else if ( PSGF_SUB_INT32( topHintEdge->csCoord,
                                blues->zone[i].csBottomEdge ) >=
                       blues->blueShift )
           {
             /* guarantee minimum of 1 pixel overshoot */
-            dsNew = FT_MAX(
+            dsNew = PSGF_FT_MAX(
                       cf2_fixedRound( topHintEdge->dsCoord ),
                       blues->zone[i].dsFlatEdge + cf2_intToFixed( 1 ) );
           }
@@ -534,8 +534,8 @@
             dsNew = cf2_fixedRound( topHintEdge->dsCoord );
           }
 
-          dsMove   = SUB_INT32( dsNew, topHintEdge->dsCoord );
-          captured = TRUE;
+          dsMove   = PSGF_SUB_INT32( dsNew, topHintEdge->dsCoord );
+          captured = PSGF_TRUE;
 
           break;
         }
@@ -547,14 +547,14 @@
       /* move both edges and flag them `locked' */
       if ( cf2_hint_isValid( bottomHintEdge ) )
       {
-        bottomHintEdge->dsCoord = ADD_INT32( bottomHintEdge->dsCoord,
+        bottomHintEdge->dsCoord = PSGF_ADD_INT32( bottomHintEdge->dsCoord,
                                              dsMove );
         cf2_hint_lock( bottomHintEdge );
       }
 
       if ( cf2_hint_isValid( topHintEdge ) )
       {
-        topHintEdge->dsCoord = ADD_INT32( topHintEdge->dsCoord, dsMove );
+        topHintEdge->dsCoord = PSGF_ADD_INT32( topHintEdge->dsCoord, dsMove );
         cf2_hint_lock( topHintEdge );
       }
     }

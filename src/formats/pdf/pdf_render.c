@@ -1492,6 +1492,7 @@ int cupidimage_pdf_render_content_stream_options(
     pdf_render_state st = {0};
     st.text_antialias = opts ? opts->text_antialias : 0;
     st.truetype_hinting = opts ? opts->truetype_hinting : 0;
+    st.cff_hinting = opts ? opts->cff_hinting : 0;
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     st.clip_budget = &clip_budget;
     st.xref = xref;

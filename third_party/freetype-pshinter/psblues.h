@@ -71,7 +71,7 @@
 
 
 
-FT_BEGIN_HEADER
+PSGF_FT_BEGIN_HEADER
 
 
   /*
@@ -132,7 +132,7 @@ FT_BEGIN_HEADER
     CF2_Fixed  csFlatEdge; /* may be from either local or Family zones */
     CF2_Fixed  dsFlatEdge; /* top edge of bottom zone or bottom edge   */
                            /* of top zone (rounded)                    */
-    FT_Bool  bottomZone;
+    PSGF_FT_Bool  bottomZone;
 
   } CF2_BlueRec;
 
@@ -149,8 +149,8 @@ FT_BEGIN_HEADER
   {
     CF2_Fixed  scale;
     CF2_UInt   count;
-    FT_Bool    suppressOvershoot;
-    FT_Bool    doEmBoxHints;
+    PSGF_FT_Bool    suppressOvershoot;
+    PSGF_FT_Bool    doEmBoxHints;
 
     CF2_Fixed  blueScale;
     CF2_Fixed  blueShift;
@@ -166,16 +166,16 @@ FT_BEGIN_HEADER
   } CF2_BluesRec, *CF2_Blues;
 
 
-  FT_LOCAL( void )
+  PSGF_FT_LOCAL( void )
   cf2_blues_init( CF2_Blues  blues,
                   CF2_Font   font );
-  FT_LOCAL( FT_Bool )
+  PSGF_FT_LOCAL( PSGF_FT_Bool )
   cf2_blues_capture( const CF2_Blues  blues,
                      CF2_Hint         bottomHintEdge,
                      CF2_Hint         topHintEdge );
 
 
-FT_END_HEADER
+PSGF_FT_END_HEADER
 
 
 #endif /* PSBLUES_H_ */

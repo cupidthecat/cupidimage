@@ -686,3 +686,9 @@ ownership checks, not hinted-pixel comparisons. See
 `make test-pdf-ps-gridfit` adds bounded CFF fitting, allocation/cancellation and
 independent outline/bitmap checks. These exercise the standalone core rather
 than PDF pages. See [CFF grid-fitting scope](pdf-postscript-gridfit.md).
+
+`make test-pdf-cff-page-hinting` checks the CFF page option, composite/CID
+placement, FontMatrix rules, fallback programs, PDF advances, Sixel output and
+allocation cleanup. Optional independent page masks cover lines, cubic curves,
+rotations, reflections and shears. The default and hinted paths both test the
+CID FD-only matrix regression. See [CFF page hinting](pdf-cff-page-hinting.md).

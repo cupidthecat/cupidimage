@@ -1,9 +1,9 @@
 # CFF outline grid fitting
 
 A bounded CFF grid-fitting core consumes the [retained hint data](pdf-postscript-hints.md)
-and returns an owned device-space outline. It is not connected to PDF pages yet.
-CFF and Type 1 page text still uses the existing unhinted path, including when
-`--pdf-tt-hinting` is enabled.
+and returns an owned device-space outline. The [CFF page option](pdf-cff-page-hinting.md)
+connects it to rendering. CFF and Type 1 remain unhinted by default;
+`--pdf-tt-hinting` alone does not enable CFF fitting.
 
 The core uses isolated, licensed blue-zone and hint-map components with the
 native CFF parser and Type 2 interpreter. No external font library is required
@@ -40,31 +40,34 @@ The current limits are:
 
 - 96 stems and 65,536 mask events.
 - 65,536 input and output segments.
-- Coordinates and private numeric parameters within 4,096 font units in magnitude.
+- Coordinates after component offsets, and private numeric parameters, within
+  4,096 font units in magnitude.
 - Positive axis scales no greater than 2 device pixels per font unit.
 - Per-call array storage capped at 256 entries.
 
-Invalid traces, nonfinite geometry, unsupported segment kinds and unresolved
-composites are rejected. Private hint fields marked invalid are not used for
+Invalid traces, nonfinite geometry and unsupported segment kinds are rejected.
+The core fits one component at a time; a bounded wrapper resolves composite
+base/accent glyphs with separate hint contexts. Empty masks and unused tail bits
+retain diagnosed recovery. Private hint fields marked invalid are not used for
 fitting. Admission and mask/segment processing consume a caller-owned work
 budget. Allocation or budget exhaustion releases the context, arrays and partial
 outline. The result is empty on failure. There is no shared mutable fitting state.
 
-These are implementation limits, not PDF specification limits. Larger glyphs,
-transforms and composite placement need further work before page integration.
+These are implementation limits, not PDF specification limits. Larger glyphs and transforms need further qualification. Component origins are
+applied before fitting; checked affine transforms follow it.
 
 ## Verification
 
-`make test-pdf-ps-gridfit` runs 190,646 authored checks covering ownership,
+`make test-pdf-ps-gridfit` runs 190,754 authored checks covering ownership,
 allocation failure, budget boundaries, malformed input, repeated contours and
 2,000 bounded parameter/geometry stress cases. Input geometry must remain
 unchanged. A 96-stem case exercises mask handling and buffer growth.
 
-Optional independent checks use 14 pinned fonts and 16 authored CFF programs:
+Optional independent checks use 22 pinned fonts and 23 authored CFF programs:
 
-- 19,452 complete outline matches at six uniform sizes.
-- 19,452 complete outline matches at six unequal-axis sizes.
-- 6,484 exact grayscale glyph bitmap matches at two sizes, using the native
+- 19,692 complete outline matches at six uniform sizes.
+- 19,692 complete outline matches at six unequal-axis sizes.
+- 6,564 exact grayscale glyph bitmap matches at two sizes, using the native
   coverage converter after fitting.
 
 The authored programs cover blue/family/other zones, overshoot controls, ghost
@@ -82,9 +85,8 @@ behavior with grid fitting; native encoding-equivalence checks retain the
 
 ## Remaining work
 
-Page integration, post-fit affine placement, component origins, Type 1 input,
-flex policy, stem darkening, synthetic bold, fractional private parameters and
-broader font-program arithmetic qualification remain open. The matching outlines
+Type 1 input, flex policy, stem darkening, synthetic bold, fractional private
+parameters and broader font-program arithmetic qualification remain open. The matching outlines
 and bitmaps establish the tested profile, not complete CFF/PDF rendering parity.
 
 The parameter and charstring rules come from Adobe [CFF, Technical Note 5176](https://pdfa.org/norm-refs/5176.CFF_.pdf)

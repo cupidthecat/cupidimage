@@ -155,7 +155,7 @@ typedef struct {
     pdf_object_id page_object;
     const pdf_object_view *resource_override;
     int image_failed;
-    int text_antialias, truetype_hinting;
+    int text_antialias, truetype_hinting, cff_hinting;
     char *error;
     size_t error_capacity;
     float page_x0_pts;

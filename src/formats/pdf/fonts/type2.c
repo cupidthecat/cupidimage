@@ -305,8 +305,9 @@ static int t2_run(type2_state *st, pdf_cff_slice code, unsigned depth) {
         return 0;
     size_t pos = 0;
     while (pos < code.length) {
-        if (!st->work--)
+        if (!st->work)
             return 0;
+        st->work--;
         unsigned op = code.data[pos++];
         if (op >= 32 || op == 28) {
             double value;
@@ -476,13 +477,16 @@ void cupidimage_pdf_type2_free(pdf_cff_outline *outline) {
     memset(outline, 0, sizeof(*outline));
 }
 
-int cupidimage_pdf_type2_outline_hints(const pdf_cff_font *font, unsigned glyph,
-                                       pdf_cff_outline *outline, pdf_ps_hint_program *hints) {
+int cupidimage_pdf_type2_outline_budget(const pdf_cff_font *font, unsigned glyph,
+                                        pdf_cff_outline *outline, pdf_ps_hint_program *hints,
+                                        size_t *work_left) {
+    if (!outline)
+        return 0;
     memset(outline, 0, sizeof(*outline));
     if (hints)
         memset(hints, 0, sizeof(*hints));
     pdf_cff_slice code;
-    if (!cupidimage_pdf_cff_item(&font->chars, glyph, &code))
+    if (!font || !work_left || !*work_left || !cupidimage_pdf_cff_item(&font->chars, glyph, &code))
         return 0;
     unsigned fd = font->fdselect ? font->fdselect[glyph] : 0;
     if (fd >= font->private_count)
@@ -493,13 +497,22 @@ int cupidimage_pdf_type2_outline_hints(const pdf_cff_font *font, unsigned glyph,
     st.outline = outline;
     st.hint_program = hints;
     st.random = st.private_dict->random_seed;
-    st.work = 65536;
-    if (t2_run(&st, code, 0) == 2)
+    unsigned admitted = *work_left < 65536 ? (unsigned)*work_left : 65536;
+    st.work = admitted;
+    int result = t2_run(&st, code, 0);
+    *work_left -= admitted - st.work;
+    if (result == 2)
         return 1;
     cupidimage_pdf_type2_free(outline);
     if (hints)
         cupidimage_pdf_ps_hint_program_free(hints);
     return 0;
+}
+
+int cupidimage_pdf_type2_outline_hints(const pdf_cff_font *font, unsigned glyph,
+                                       pdf_cff_outline *outline, pdf_ps_hint_program *hints) {
+    size_t work = 65536;
+    return cupidimage_pdf_type2_outline_budget(font, glyph, outline, hints, &work);
 }
 
 int cupidimage_pdf_type2_outline(const pdf_cff_font *font, unsigned glyph,

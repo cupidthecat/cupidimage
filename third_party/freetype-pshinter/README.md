@@ -15,7 +15,8 @@ Original files:
 
 `upstream-sha256.json` records the original hashes. The two C files have `.inc`
 extensions and their external includes are removed. Header includes are removed
-as well. The private bridge supplies only the required types, fixed-point
+as well. Private type and macro names have a `PSGF_` prefix so the components
+can coexist with the coverage converter in fault-instrumented tests. The private bridge supplies only the required types, fixed-point
 operations, masks, bounded arrays and callbacks. Interface structures in that
 bridge are adapted from `psglue.h`, `psfont.h` and `psarrst.h`; their copyright
 notice is retained there.
@@ -27,6 +28,6 @@ work-budget failures unwind to an owning context and discard partial output.
 
 The current wrapper enables hinting without stem darkening or synthetic bold.
 It accepts positive axis scales, validates bounded inputs, and returns an owned
-outline quantized to 1/64 pixel. Composite placement, flex policy, Type 1 input
-and page integration are separate work. These limits are not claims about the
-complete upstream library's capabilities.
+outline quantized to 1/64 pixel. Separate native wrappers handle composite
+placement and page integration. Flex policy and Type 1 input remain unfinished.
+These limits are not claims about the complete upstream library's capabilities.

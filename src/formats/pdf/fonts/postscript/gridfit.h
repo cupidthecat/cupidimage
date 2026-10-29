@@ -5,6 +5,8 @@
 /* Positive 16.16 font-unit-to-device-pixel scales. Translation is applied later. */
 typedef struct {
     int32_t x_scale, y_scale;
+    /* Component origin in 16.16 character-space units, before fitting. */
+    int32_t origin_x, origin_y;
 } pdf_ps_gridfit_size;
 
 /* Returns an owned, device-pixel outline, quantized down to the 1/64-pixel grid.

@@ -2,8 +2,9 @@
 
 CFF version-1 fonts retain their Private DICT hint parameters. An optional Type 2
 interpreter entry point also captures stem declarations and hint masks. The page
-renderer still draws unhinted CFF and Type 1 outlines. A separate [grid-fitting core](pdf-postscript-gridfit.md) now consumes them,
-but it is not connected to pages and does not change page pixels.
+renderer uses unhinted CFF and Type 1 outlines by default. The
+[grid-fitting core](pdf-postscript-gridfit.md) consumes these inputs through an
+explicit [CFF page option](pdf-cff-page-hinting.md).
 
 ## Private dictionaries
 
@@ -48,7 +49,7 @@ captured separately so their hint contexts are not combined accidentally.
 
 ## Tests and remaining work
 
-`make test-pdf-cff` includes 1,501 primitive checks, 36 authored private-parameter
+`make test-pdf-cff` includes 1,542 primitive checks, 36 authored private-parameter
 checks and 28 authored stem/mask capture cases. The capture tests also compare
 outlines with tracing enabled and disabled. Allocation-failure tests exercise
 mask-buffer growth, outline-buffer growth and truncated-program cleanup.
@@ -58,8 +59,9 @@ fonts and independently decodes 3,226 glyphs containing 13,717 stems and 2,759
 masks. These checks establish agreement on decoded inputs, not rendered pixels.
 
 The separate grid-fitting core has bounded outline and glyph-bitmap tests.
-Still needed: Type 1 private-parameter capture, flex-depth handling, component
-placement, page integration and broader profile qualification.
+Composite placement and CFF page integration now have focused checks. Type 1
+private-parameter capture, flex-depth handling and broader profile qualification
+remain open.
 `--pdf-tt-hinting` applies only to TrueType and does not enable these stages.
 
 ## Specifications

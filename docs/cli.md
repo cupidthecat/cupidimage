@@ -20,7 +20,8 @@ nonzero status.
 | `--svg-time seconds` | Render a sampled SVG animation time instead of autoplay. |
 | `--pdf-page number` | Render one PDF page, numbered from 1. |
 | `--pdf-text-aa` | Enable grayscale outline text fills. Stroke and clip coverage remain binary; hinting is unchanged. |
-| `--pdf-tt-hinting` | Execute the native legacy TrueType instruction profile. Off by default; CFF/Type 1 hinting is not added. |
+| `--pdf-tt-hinting` | Execute the native legacy TrueType instruction profile. Off by default. |
+| `--pdf-cff-hinting` | Enable bounded CFF outline hinting without stem darkening. Off by default; encrypted Type 1 programs remain unhinted. |
 
 If both `--ansi` and `--sixel` are present, ANSI wins. Without an explicit output
 choice, the CLI tries detected Sixel support, then detected Kitty support, then
@@ -36,6 +37,7 @@ including its pixel/cell aspect handling.
 ./bin/cupidimage --pdf-page 2 assets/pdf/pdfjs/basicapi.pdf
 ./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-coverage.pdf
 ./bin/cupidimage --pdf-text-aa --pdf-tt-hinting --sixel assets/pdf/native-truetype-hinting.pdf
+./bin/cupidimage --pdf-text-aa --pdf-cff-hinting --sixel assets/pdf/native-cff-hinting.pdf
 ```
 
 ## Animation and pages
