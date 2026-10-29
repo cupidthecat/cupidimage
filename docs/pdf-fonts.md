@@ -747,8 +747,9 @@ Regenerate them with `scripts/generate_pdf_empty_glyph_fixtures.py`.
 ## Native instruction-engine foundation
 
 The [TrueType instruction engine](pdf-truetype-vm.md) now has bounded stack,
-storage, control-flow and function-definition execution, plus fixed-point rounding
-and basic graphics-state setters. Its tests initialize the font programs of the
-pinned Latin faces and execute their uniform-size preparation programs. It is not connected to page rendering;
+storage, control-flow and function-definition execution, plus fixed-point rounding,
+graphics-state setters and an initial set of point/zone operations. Its tests
+initialize the pinned Latin font programs and execute their uniform-size preparation
+programs. It is not connected to page rendering;
 TrueType grid fitting, the remaining instructions, nonuniform sizing and per-glyph
 state setup are still unfinished. No hinted-glyph parity is claimed by those tests.

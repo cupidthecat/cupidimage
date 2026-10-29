@@ -16,8 +16,10 @@ value and function-definition state. It supports:
   subtraction, multiplication, division, absolute value and negation, plus F26Dot6
   floor and ceiling.
 - The six predefined rounding modes, SROUND, ROUND/NROUND and ODD/EVEN.
-- Axis-aligned projection/freedom vectors, vector reads and copying the projection
-  vector to the freedom vector.
+- Axis-aligned, stack-defined and point-derived projection/freedom vectors,
+  dual projection, vector reads and copying projection to freedom.
+- Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
+  MDAP and UTP.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -39,8 +41,7 @@ other TrueType tables. This does not execute those tables during PDF loading.
 The standalone tests run the `fpgm` initialization stream of all 12 pinned Latin
 faces and install 71 function definitions from each. They also run the complete
 `prep` streams at sizes 1 through 96 ppem in monochrome and grayscale configurations,
-for 2,304 preparation runs. Point-manipulating instructions
-inside those function bodies have not been executed by this implementation.
+for 2,304 preparation runs. The pinned faces' complete glyph instruction streams are not executed yet.
 
 ## Ownership and limits
 
@@ -69,9 +70,9 @@ ROUND/NROUND color operands and the reserved SROUND period are rejected.
 SROUND uses exact F26Dot6 periods of 32, 64 or 128 units, including all four phases
 and sixteen threshold selections. S45ROUND is still unsupported: its diagonal
 period and intermediate quantization need separate verification. Coordinate-axis
-projection updates also update the dual projection vector. Arbitrary and
-point-derived vectors remain unsupported. Point numbers are stored, but their
-zone bounds cannot be checked until point execution is implemented.
+projection updates also update the dual projection vector. Stack-defined vectors
+use signed 2.14 components and bounded fixed-point normalization. The math routine
+has required attribution in [the third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## Uniform size preparation
 
@@ -93,8 +94,33 @@ streams may define functions. INSTCTRL records valid flags in the permitted stag
 glyph execution is skipped when preparation has inhibited it. The defaults-selection
 flag is retained for future per-glyph setup, which is not implemented yet. SCANCTRL
 and SCANTYPE preserve their settings, but no scan converter consumes them. These
-low-level calls do not yet create glyph zones, restore prepared defaults for each
-glyph or run point instructions.
+low-level size calls do not load glyph geometry or restore prepared defaults for
+each glyph. Geometry must be supplied separately to the point-zone interface.
+
+## Point operations
+
+`cupidimage_pdf_tt_vm_set_zones` copies caller-supplied, already-scaled geometry
+into owned twilight and glyph zones. Current and original coordinates, contour
+flags and touched-axis flags are retained separately. The glyph count may include
+phantom points; the outline count excludes them. Twilight points start at zero.
+Allocations unwind on failure, and failed replacement retains the previous buffers
+until the invalidated instance is destroyed. Limits are 65,535 twilight points and
+65,540 glyph points, including up to four phantom points.
+
+GC selects current or original coordinates and the corresponding projection.
+SCFS moves along the freedom vector and records touched axes; twilight movement
+also establishes the original coordinate. MDAP applies optional rounding and sets
+reference points 0 and 1. UTP clears touched axes selected by the freedom vector.
+Line-vector instructions use their selected zones and preserve the distinct
+original/current directions for dual projection. Coincident lines use a horizontal
+fallback. A zero stack-defined vector preserves the existing direction.
+
+Movement uses checked fixed-point projection and division. A changing-coordinate
+request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
+vector pairs need separate qualification. These operators are tested on supplied
+geometry; extracting and executing a font's simple/composite glyph programs,
+creating their phantom points and completing the remaining point operators are
+still required before rendering integration.
 
 ## Verification
 
@@ -104,27 +130,33 @@ table extents. Randomized integer inputs are compared with explicit arithmetic a
 Boolean expectations. Rounding tests cover all six modes over signed distances,
 all 192 defined SROUND selectors, parity, halfway cases, overflow, reserved operands
 and stack underflow. Graphics-state tests check defaults, changes and persistence.
-Point instructions do not consume that state yet. These are instruction-level
-oracles, not independent hinted-glyph comparisons.
+The point tests check coordinate/original-coordinate ownership, touched flags,
+reference points, bounds and allocation recovery. These are instruction-level
+oracles, not complete hinted-glyph comparisons.
 
 When the optional `fontTools` and `freetype-py` test packages are available,
 `scripts/test_pdf_tt_vm_reference.py` also compares 4,068 native expression results
 with a separate interpreter. It places each result in a synthetic outline point
 using SCFS and checks that coordinate after monochrome hint execution. This
-qualifies the tested arithmetic and rounding instructions only; the native engine
-still does not execute SCFS or render hinted glyphs.
+qualifies the tested arithmetic and rounding instructions only; page rendering
+remains unhinted.
 
 `scripts/test_pdf_tt_prep_reference.py` checks 181,676 prepared control values across
 the 12 pinned faces, 22 sizes and both monochrome and grayscale configurations.
 Temporary, renamed copies of the fonts add probe glyphs and clear glyph inhibition
 after preparation so each CVT entry can be observed independently. That extra
-instruction does not change the CVT. Native point instructions remain untested by
-this comparison; only the independent interpreter executes the probe glyphs.
+instruction does not change the CVT. Only the independent interpreter executes the
+probe glyphs in this CVT comparison.
+
+`scripts/test_pdf_tt_points_reference.py` separately compares 2,654 authored
+programs on supplied triangle/twilight geometry. It covers point movement, rounding,
+original-coordinate reads and stack/line vector selection. It does not run the
+pinned fonts' full glyph programs or the PDF renderer.
 
 Remaining work includes diagonal rounding, custom instruction definitions,
-nonuniform sizing and arbitrary vectors, point zones, phantom points, per-glyph
-state restoration, glyph instructions and integration with transformed
-outline rendering. Existing PDF advances and resource ownership must remain intact
+nonuniform sizing, phantom-point construction, per-glyph state restoration, the
+remaining point instructions and integration with transformed outline rendering.
+Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
 
 The instruction contracts follow the [OpenType instruction set](https://learn.microsoft.com/en-us/typography/opentype/spec/tt_instructions),

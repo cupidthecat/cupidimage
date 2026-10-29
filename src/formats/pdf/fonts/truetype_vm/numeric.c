@@ -1,7 +1,7 @@
 #include "internal.h"
 
 /* Distances are F26Dot6. This VM uses zero engine-color compensation. */
-static int64_t vm_round(const pdf_tt_vm_round *rounding, int32_t value) {
+int64_t cupidimage_pdf_tt_vm_round(const pdf_tt_vm_round *rounding, int32_t value) {
     int64_t magnitude = value < 0 ? -(int64_t)value : value;
     if (rounding->off)
         return value;
@@ -84,7 +84,7 @@ int cupidimage_pdf_tt_vm_numeric_op(pdf_tt_vm *vm, unsigned op) {
     } else if (op >= 0x6c) {
         value = a;
     } else {
-        value = vm_round(r, (int32_t)a);
+        value = cupidimage_pdf_tt_vm_round(r, (int32_t)a);
         if (op == 0x56 || op == 0x57) {
             unsigned fraction = (unsigned)((uint64_t)value & 127);
             value = fraction == (op == 0x56 ? 64u : 0u);

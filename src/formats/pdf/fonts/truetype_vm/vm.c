@@ -39,6 +39,8 @@ void cupidimage_pdf_tt_vm_free(pdf_tt_vm *vm) {
     free(vm->storage);
     free(vm->cvt);
     free(vm->functions);
+    free(vm->zones[0].points);
+    free(vm->zones[1].points);
     memset(vm, 0, sizeof(*vm));
 }
 
@@ -146,6 +148,18 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
             continue;
         }
         handled = cupidimage_pdf_tt_vm_size_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_vector_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_point_op(vm, op);
         if (handled >= 0) {
             if (!handled)
                 return 0;

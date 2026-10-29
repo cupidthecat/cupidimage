@@ -49,8 +49,10 @@ static void vm_test_free(void *value) {
 #define free vm_test_free
 #include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
+#include "../src/formats/pdf/fonts/truetype_vm/points.c"
 #include "../src/formats/pdf/fonts/truetype_vm/size.c"
 #include "../src/formats/pdf/fonts/truetype_vm/stack.c"
+#include "../src/formats/pdf/fonts/truetype_vm/vector.c"
 #include "../src/formats/pdf/fonts/truetype_vm/vm.c"
 #undef malloc
 #undef calloc
@@ -172,13 +174,14 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
     return ok ? 0 : 3;
 }
 
+#include "pdf_tt_vm/points.c"
 #include "pdf_tt_vm/size.c"
 
 #include "pdf_tt_vm/graphics.c"
 
 #include "pdf_tt_vm/numeric.c"
 
-static int expression_programs(void) {
+static int expression_programs(int geometry) {
     char line[1024];
     while (fgets(line, sizeof(line), stdin)) {
         size_t length = strcspn(line, "\r\n");
@@ -201,12 +204,26 @@ static int expression_programs(void) {
         pdf_tt_vm vm;
         if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, NULL, 0, 0))
             return 2;
+        if (geometry) {
+            const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
+                                              {{100, 0}, {100, 0}, 0, 1, 0},
+                                              {{0, 100}, {0, 100}, 0, 1, 1}};
+            if (!cupidimage_pdf_tt_vm_set_zones(&vm, 2, points, 3, 3)) {
+                cupidimage_pdf_tt_vm_free(&vm);
+                return 2;
+            }
+        }
         int ok = cupidimage_pdf_tt_vm_run(&vm, code, length / 2, 0, 10000);
-        if (!ok || vm.stack_size != 1) {
+        if (!ok || (!geometry && vm.stack_size != 1)) {
             cupidimage_pdf_tt_vm_free(&vm);
             return 3;
         }
-        printf("%ld\n", (long)vm.stack[0]);
+        if (geometry) {
+            for (unsigned i = 0; i < 3; i++)
+                printf("%ld %ld%s", (long)vm.zones[1].points[i].current[0],
+                       (long)vm.zones[1].points[i].current[1], i == 2 ? "\n" : " ");
+        } else
+            printf("%ld\n", (long)vm.stack[0]);
         cupidimage_pdf_tt_vm_free(&vm);
     }
     return ferror(stdin) ? 2 : 0;
@@ -214,7 +231,9 @@ static int expression_programs(void) {
 
 int main(int argc, char **argv) {
     if (argc == 2 && !strcmp(argv[1], "--expressions"))
-        return expression_programs();
+        return expression_programs(0);
+    if (argc == 2 && !strcmp(argv[1], "--point-programs"))
+        return expression_programs(1);
     if (argc == 3 && !strcmp(argv[1], "--font"))
         return font_program(argv[2], 0, 0, 0);
     if (argc == 4 && (!strcmp(argv[1], "--prep") || !strcmp(argv[1], "--prep-cvt") ||
@@ -412,6 +431,7 @@ int main(int argc, char **argv) {
     numeric_tests();
     graphics_tests();
     size_tests();
+    point_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;
 }

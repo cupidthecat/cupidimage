@@ -13,7 +13,8 @@ typedef enum {
     PDF_TT_VM_ARITHMETIC,
     PDF_TT_VM_BUDGET,
     PDF_TT_VM_UNSUPPORTED,
-    PDF_TT_VM_SIZE
+    PDF_TT_VM_SIZE,
+    PDF_TT_VM_POINT
 } pdf_tt_vm_error;
 
 typedef struct {
@@ -46,12 +47,23 @@ typedef struct {
 } pdf_tt_vm_size_state;
 
 typedef struct {
+    int32_t current[2], original[2];
+    unsigned char touched, on, end;
+} pdf_tt_vm_point;
+
+typedef struct {
+    pdf_tt_vm_point *points;
+    unsigned count, outline_count;
+} pdf_tt_vm_zone;
+
+typedef struct {
     int32_t *stack, *storage, *cvt;
     pdf_tt_vm_function *functions;
     unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
     pdf_tt_vm_graphics graphics;
     pdf_tt_vm_size_state size;
     pdf_tt_vm_stage stage;
+    pdf_tt_vm_zone zones[2];
     size_t work_left;
     pdf_tt_vm_error error;
     size_t error_offset;
@@ -65,4 +77,7 @@ void cupidimage_pdf_tt_vm_free(pdf_tt_vm *);
 int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, pdf_tt_vm_stage, size_t);
 /* Uniform size preparation only. CVT inputs are unscaled font-unit values. */
 int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *, unsigned, int32_t, int32_t, int, const int32_t *);
+/* Geometry is already scaled to F26Dot6. Glyph count may include phantom points. */
+int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *, unsigned, const pdf_tt_vm_point *, unsigned,
+                                   unsigned);
 #endif

@@ -239,3 +239,14 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER
 DEALINGS IN THE FONT SOFTWARE.
+
+## FreeType fixed-point arithmetic
+
+This software is based in part on the work of the FreeType Team.
+
+Copyright (C) 1996-2024 by David Turner, Robert Wilhelm, and Werner Lemberg.
+
+The TrueType vector-normalization routine is adapted from FreeType 2.13.3 under
+the FreeType Project License. The unmodified license and the source revision and
+modification details are in `third_party/freetype-math`. Include this notice with
+binary distributions. The adaptation adds no runtime font-library dependency.
