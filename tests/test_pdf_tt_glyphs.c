@@ -71,10 +71,11 @@ static int native_probe(const char *path, const char *size, const char *index, i
     if (ok) {
         unsigned outline = vm->zones[1].outline_count;
         for (unsigned i = 0; i < outline; i++)
-            printf("%lld %ld\n",
+            printf("%lld %ld %u %u\n",
                    (long long)vm->zones[1].points[i].current[0] -
                        vm->zones[1].points[outline].current[0],
-                   (long)vm->zones[1].points[i].current[1]);
+                   (long)vm->zones[1].points[i].current[1], vm->zones[1].points[i].on,
+                   vm->zones[1].points[i].end);
     }
     cupidimage_pdf_tt_hint_free(&hint);
     free(data);
@@ -143,7 +144,7 @@ int main(int argc, char **argv) {
     }
     pdf_tt_vm vm;
     int ok = cupidimage_pdf_tt_vm_init(&vm, u16(f.maxp.data + 24), u16(f.maxp.data + 18), cvt, cvts,
-                                       u16(f.maxp.data + 20));
+                                       u16(f.maxp.data + 20), u16(f.maxp.data + 22));
     if (ok)
         ok = cupidimage_pdf_tt_vm_run(&vm, f.fpgm.data, f.fpgm.length, PDF_TT_VM_FONT, 1000000);
     if (ok)
@@ -163,10 +164,11 @@ int main(int argc, char **argv) {
     printf("%d %u %u %zu %u\n", ok, vm.error, vm.error_opcode, vm.error_offset, count);
     if (ok)
         for (unsigned i = 0; i < outline; i++)
-            printf("%lld %ld\n",
+            printf("%lld %ld %u %u\n",
                    (long long)vm.zones[1].points[i].current[0] -
                        vm.zones[1].points[outline].current[0],
-                   (long)vm.zones[1].points[i].current[1]);
+                   (long)vm.zones[1].points[i].current[1], vm.zones[1].points[i].on,
+                   vm.zones[1].points[i].end);
     cupidimage_pdf_tt_vm_free(&vm);
     free(design);
     free(points);

@@ -13,6 +13,8 @@ except ImportError:
 
 from generate_pdf_extended_fonts import FONTS, SOURCE
 
+from pdf_tt_reference import outline_state
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -48,7 +50,7 @@ def main():
                     native = [tuple(map(int, line.split())) for line in lines[1:]]
                     face.load_glyph(index, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
                                     (freetype.FT_LOAD_TARGET_NORMAL if options.gray else freetype.FT_LOAD_TARGET_MONO))
-                    actual = face.glyph.outline.points
+                    actual = outline_state(face)
                     if native != actual:
                         failures.append((filename, name, ppem, 'points',
                                          [(i, a, b) for i, (a, b) in enumerate(zip(native, actual)) if a != b][:4]))

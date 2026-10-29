@@ -8,7 +8,7 @@ support.
 ## Current scope
 
 `src/formats/pdf/fonts/truetype_vm` contains per-instance stack, storage, control
-value and function-definition state. It supports:
+value, function-definition and instruction-definition state. It supports:
 
 - Fixed and variable byte/word pushes, with unsigned bytes and signed words.
 - Duplicate, pop, swap, clear, depth, indexed copy/move and roll operations.
@@ -19,7 +19,7 @@ value and function-definition state. It supports:
 - Axis-aligned, stack-defined and point-derived projection/freedom vectors,
   dual projection, vector reads and copying projection to freedom.
 - Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
-  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, IP, IUP, UTP, DELTAP1/2/3, SHP, SHC and SHPIX.
+  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, IP, IUP, UTP, DELTAP1/2/3, SHP, SHC, SHZ, SHPIX, FLIPPT, FLIPRGON, FLIPRGOFF and ISECT.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -27,7 +27,7 @@ value and function-definition state. It supports:
 - Pixel/point-size queries, single-width scaling, legacy grayscale queries,
   instruction-control flags and retained scan-conversion settings.
 - IF/ELSE/EIF, relative conditional/unconditional jumps, function definitions,
-  calls and repeated calls.
+  calls, repeated calls and instruction definitions (IDEF).
 
 PUSH payload bytes are decoded correctly while skipping branches or collecting
 function bodies. They cannot be mistaken for structural opcodes. Function IDs are
@@ -41,7 +41,7 @@ other TrueType tables. This does not execute those tables during PDF loading.
 The standalone tests run the `fpgm` initialization stream of all 12 pinned Latin
 faces and install 71 function definitions from each. They also run the complete
 `prep` streams at sizes 1 through 96 ppem in monochrome and grayscale configurations,
-for 2,304 preparation runs. The pinned faces' complete glyph instruction streams are not executed yet.
+for 2,304 preparation runs. The broader glyph probes below execute complete programs for the outlines they select.
 
 ## Ownership and limits
 
@@ -73,6 +73,41 @@ period and intermediate quantization need separate verification. Coordinate-axis
 projection updates also update the dual projection vector. Stack-defined vectors
 use signed 2.14 components and bounded fixed-point normalization. The math routine
 has required attribution in [the third-party notices](../THIRD_PARTY_NOTICES.md).
+
+## Instruction definitions and additional point operations
+
+IDEF stores a borrowed instruction body under an 8-bit opcode. Font and preparation
+programs may define or replace bodies; glyph programs and nested definitions may
+not. The declared `maxInstructionDefs` limits distinct definitions, with at most
+256 opcode slots. Existing instructions retain their normal behavior. The legacy
+engine can patch otherwise unassigned opcodes, including newer variation opcodes
+whose native semantics it does not implement. A replacement does not consume a
+second slot. Definition scans, execution and recursive calls share the ordinary
+work and depth limits. An undefined opcode still fails explicitly.
+
+SHZ uses the zone number on the stack. It shifts real glyph points or allocated
+twilight points, excludes the reference point when it belongs to that zone, and
+preserves touch flags. Glyph phantom points are excluded. FLIPPT and the inclusive
+FLIPRGON/FLIPRGOFF ranges change only curve flags in `zp0`. FLIPPT consumes the loop
+count and resets it to one; the range operations leave it unchanged. The tested
+independent engines instead use `zp2` for SHZ and the glyph zone for curve flags.
+Mixed-zone cases record those differences separately.
+
+ISECT uses current points from `zp1` for line A, `zp0` for line B and `zp2` for the
+destination. It ignores projection/freedom vectors and marks both axes touched.
+Nonparallel intersections use exact integer determinants and rounded rational
+coordinates. Parallel lines use the midpoint of the four endpoints. Checked
+32-bit deltas and a bounded 96-bit-product division avoid floating-point
+approximations and signed overflow. An unrepresentable coordinate fails explicitly.
+The engine does not replace nearly parallel lines with a midpoint.
+
+`scripts/test_pdf_tt_instructions_reference.py` checks 105 instruction-definition
+results, including replacement during preparation. All 729 authored intersections
+match exact rational expectations; 717 also match the independent engines.
+Twelve differ because those engines quantize determinant products before division.
+These differences are checked and reported, not counted as parity. Analytic tests
+also cover nearly parallel lines, wide products, endpoint aliases, mixed zones,
+malformed definitions, allocation failures and recursive/work limits.
 
 ## Uniform size preparation
 
@@ -227,9 +262,9 @@ after preparation so each CVT entry can be observed independently. That extra
 instruction does not change the CVT. Only the independent interpreter executes the
 probe glyphs in this CVT comparison.
 
-`scripts/test_pdf_tt_points_reference.py` separately runs 23,916 authored
+`scripts/test_pdf_tt_points_reference.py` separately runs 24,069 authored
 programs at 13, 37, 64 and 97 ppem on supplied triangle/twilight geometry. There are
-95,660 matching comparisons and four recorded IUP differences in the tested engines. It covers point movement, CVT
+96,252 matching comparisons and 24 recorded IUP/zone-selection differences in the tested engines. It covers point movement, CVT
 cut-in boundaries, all delta size/step selections, looped shifts, relative
 positioning flags, design-space scaling, interpolation, single-width boundaries, mixed-zone/twilight cases, rounding,
 original-coordinate reads and stack/line vector selection. It does not run the
@@ -247,13 +282,23 @@ the 12 pinned fonts, selecting Unicode mappings U+0020 through U+00FF, at 6, 9,
 13, 16, 24 and 37 ppem in legacy monochrome mode.
 It supplies independently extracted geometry, original design points and phantom
 points, then runs the original font, preparation and glyph instruction streams.
-The comparison checks every resulting outline coordinate. A broader diagnostic at
+The comparison checks every resulting outline coordinate, on-curve flag and contour boundary. A broader diagnostic at
 `--all-simple` mode at 16 ppem matched 17,462 simple-glyph outlines and rejected four programs with a zero
 original reference span at IP, which the instruction contract declares invalid.
 Those rejected programs are not counted as matched or fully supported. Neither probe
 tests the native glyph loader, composite assembly, grayscale execution or PDF rasterization.
 
-Remaining work includes diagonal rounding, custom instruction definitions,
+A separate diagnostic sampled 154 unique embedded TrueType programs from 377
+locally cached PDFs at 16 ppem. It selected glyph zero, up to 24 leading nonempty
+glyphs and up to 32 evenly spaced nonempty glyphs per font. Of 4,194 successful
+native executions, 4,192 outlines matched interpreter version 2.13.2 and 4,193
+matched version 2.13.3, including curve flags and contour boundaries. The remaining
+F26Dot6-coordinate differences are not counted as agreement. Another sample had a
+perpendicular-vector movement failure, one had a truncated glyph description,
+13 font containers were rejected and three failed the diagnostic parser. These
+are diagnostic results, not a corpus-wide pass or PDF rendering qualification.
+
+Remaining work includes diagonal rounding,
 nonuniform sizing, the remaining point instructions, scan conversion and integration
 with transformed outline rendering.
 Existing PDF advances and resource ownership must remain intact

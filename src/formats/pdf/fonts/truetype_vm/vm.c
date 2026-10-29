@@ -6,16 +6,17 @@
 #define TT_VM_CALL_LIMIT 64u
 
 int cupidimage_pdf_tt_vm_init(pdf_tt_vm *vm, unsigned stack, unsigned storage, const int32_t *cvt,
-                              unsigned cvt_count, unsigned functions) {
+                              unsigned cvt_count, unsigned functions, unsigned instructions) {
     memset(vm, 0, sizeof(*vm));
     if (stack > 65535 || storage > 65535 || cvt_count > 65535 || functions > 65535 ||
-        (cvt_count && !cvt))
+        instructions > 65535 || (cvt_count && !cvt))
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_MEMORY);
     cupidimage_pdf_tt_vm_graphics_defaults(&vm->graphics);
     vm->stack_limit = stack;
     vm->storage_count = storage;
     vm->cvt_count = cvt_count;
     vm->function_count = functions;
+    vm->instruction_limit = instructions > 256 ? 256 : instructions;
     if (stack)
         vm->stack = calloc(stack, sizeof(*vm->stack));
     if (storage)
@@ -24,8 +25,10 @@ int cupidimage_pdf_tt_vm_init(pdf_tt_vm *vm, unsigned stack, unsigned storage, c
         vm->cvt = malloc((size_t)cvt_count * sizeof(*vm->cvt));
     if (functions)
         vm->functions = calloc(functions, sizeof(*vm->functions));
+    if (instructions)
+        vm->instructions = calloc(256, sizeof(*vm->instructions));
     if ((stack && !vm->stack) || (storage && !vm->storage) || (cvt_count && !vm->cvt) ||
-        (functions && !vm->functions)) {
+        (functions && !vm->functions) || (instructions && !vm->instructions)) {
         cupidimage_pdf_tt_vm_free(vm);
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_MEMORY);
     }
@@ -41,6 +44,7 @@ void cupidimage_pdf_tt_vm_free(pdf_tt_vm *vm) {
     free(vm->prepared_storage);
     free(vm->prepared_cvt);
     free(vm->functions);
+    free(vm->instructions);
     free(vm->zones[0].points);
     free(vm->zones[1].points);
     free(vm->zones[1].design);
@@ -198,6 +202,18 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
                 return 0;
             continue;
         }
+        handled = cupidimage_pdf_tt_vm_intersection_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_flags_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
         if (op == 0x58) {
             if (!cupidimage_pdf_tt_vm_need(vm, 1))
                 return 0;
@@ -208,18 +224,28 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
                 return 0;
         } else if (op == 0x59) {
             /* EIF also remains harmless when reached by a relative jump. */
-        } else if (op == 0x2c) {
+        } else if (op == 0x2c || op == 0x89) {
             if (!definitions || depth || !cupidimage_pdf_tt_vm_need(vm, 1))
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_FUNCTION);
             int32_t id = vm->stack[--vm->stack_size];
-            if (id < 0 || (unsigned)id >= vm->function_count)
+            if (id < 0 || (unsigned)id >= (op == 0x2c ? vm->function_count : 256))
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_FUNCTION);
             size_t start = at;
             if (!vm_skip(vm, data, length, &at, 1, 0))
                 return 0;
             if (at - start - 1 > 65536)
                 return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_FUNCTION);
-            vm->functions[id] = (pdf_tt_vm_function){data + start, at - start - 1, 1};
+            pdf_tt_vm_function body = {data + start, at - start - 1, 1};
+            if (op == 0x2c)
+                vm->functions[id] = body;
+            else {
+                if (!vm->instructions || (!vm->instructions[id].defined &&
+                                          vm->instruction_count == vm->instruction_limit))
+                    return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_FUNCTION);
+                if (!vm->instructions[id].defined)
+                    vm->instruction_count++;
+                vm->instructions[id] = body;
+            }
         } else if (op == 0x2b || op == 0x2a) {
             if (!cupidimage_pdf_tt_vm_need(vm, op == 0x2b ? 1 : 2))
                 return 0;
@@ -250,7 +276,14 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
             }
         } else if (op == 0x2d)
             return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_FUNCTION);
-        else
+        else if ((op == 0x28 || op == 0x7b || op == 0x83 || op == 0x84 ||
+                  (op >= 0x8f && op <= 0xaf)) &&
+                 vm->instructions && vm->instructions[op].defined) {
+            /* Definitions patch unassigned opcodes, never existing instructions. */
+            if (!vm_execute(vm, vm->instructions[op].data, vm->instructions[op].length, 0,
+                            depth + 1))
+                return 0;
+        } else
             return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_UNSUPPORTED);
     }
     return 1;

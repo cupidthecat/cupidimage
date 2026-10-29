@@ -17,6 +17,8 @@ except ImportError:
 
 from generate_pdf_extended_fonts import FONTS, SOURCE
 
+from pdf_tt_reference import outline_state
+
 
 def fixture(font, name, ppem):
     glyph = font['glyf'][name]
@@ -105,7 +107,7 @@ def main():
                         native = [tuple(map(int, line.split())) for line in lines[1:]]
                         face.load_glyph(font.getGlyphID(name), freetype.FT_LOAD_NO_BITMAP |
                                         freetype.FT_LOAD_NO_AUTOHINT | (freetype.FT_LOAD_TARGET_NORMAL if options.gray else freetype.FT_LOAD_TARGET_MONO))
-                        actual = face.glyph.outline.points
+                        actual = outline_state(face)
                         if native != actual:
                             failures.append((filename, name, ppem,
                                              [(i, a, b) for i, (a, b) in

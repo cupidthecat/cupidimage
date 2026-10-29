@@ -64,4 +64,37 @@ static void contour_tests(void) {
     CHECK(cupidimage_pdf_tt_vm_run(&vm, exact, sizeof(exact), 0, 9));
     CHECK(vm.work_left == 0);
     finish(&vm);
+    for (unsigned op = 0x36; op <= 0x37; op++)
+        for (unsigned source = 0; source < 2; source++)
+            for (unsigned target = 0; target < 2; target++) {
+                init(&vm, NULL, 0);
+                CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 3, points, 6, 4));
+                vm.graphics.zone[op & 1 ? 0 : 1] = source;
+                vm.graphics.zone[2] = 1 - target;
+                vm.graphics.loop = 7;
+                vm.zones[0].points[0].current[0] = 97;
+                vm.zones[0].points[1].touched = 2;
+                unsigned char code[] = {0xb0, (unsigned char)target, (unsigned char)op};
+                CHECK(cupidimage_pdf_tt_vm_run(&vm, code, sizeof(code), 0, 100));
+                for (unsigned i = 0; i < (target ? 6u : 3u); i++) {
+                    int moved = (target == 0 || i < 4) && (source != target || i != 0);
+                    int32_t base = target ? points[i].current[0] : i ? 0 : 97;
+                    CHECK(vm.zones[target].points[i].current[0] ==
+                          base + (moved ? source ? 31 : 97 : 0));
+                    CHECK(vm.zones[target].points[i].touched == (!target && i == 1 ? 2 : 0));
+                }
+                CHECK(vm.graphics.loop == 7 && !vm.stack_size);
+                finish(&vm);
+            }
+    init(&vm, NULL, 0);
+    CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, points, 6, 4));
+    static const unsigned char shifted_zone[] = {0xb0, 1, 0x37};
+    CHECK(!cupidimage_pdf_tt_vm_run(&vm, shifted_zone, sizeof(shifted_zone), 0, 6));
+    CHECK(vm.error == PDF_TT_VM_BUDGET);
+    finish(&vm);
+    init(&vm, NULL, 0);
+    CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, points, 6, 4));
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, shifted_zone, sizeof(shifted_zone), 0, 7));
+    CHECK(vm.work_left == 0 && vm.zones[1].points[4].current[0] == 400);
+    finish(&vm);
 }

@@ -20,6 +20,8 @@ except ImportError:
     print('TrueType composite transforms: skipped (optional fontTools/freetype-py unavailable)')
     raise SystemExit(0)
 
+from pdf_tt_reference import outline_state
+
 
 def compound(name, matrix, offset, flags, code=b''):
     component = GlyphComponent()
@@ -96,7 +98,7 @@ def main():
                 native = [tuple(map(int, line.split())) for line in lines[1:]]
                 face.set_pixel_sizes(ppem, ppem)
                 face.load_glyph(3, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT | freetype.FT_LOAD_TARGET_MONO)
-                actual = face.glyph.outline.points
+                actual = outline_state(face)
                 if native != actual:
                     failures.append((index, ppem, matrix, offset, child.hex(), parent.hex(), native, actual))
                 checked += 1
@@ -126,10 +128,10 @@ def main():
             face = freetype.Face(str(path))
             face.set_pixel_sizes(64,64)
             face.load_glyph(3, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT | freetype.FT_LOAD_TARGET_MONO)
-            assert native == face.glyph.outline.points, (siblings, native, face.glyph.outline.points)
-            assert native[:2] == [(97,35), (145,0)]
+            assert native == outline_state(face), (siblings, native, outline_state(face))
+            assert native[:2] == [(97,35,1,0), (145,0,1,0)]
             if siblings:
-                assert native[3:5] == [(297,35), (345,0)]
+                assert native[3:5] == [(297,35,1,0), (345,0,1,0)]
             checked += 1
             del face
         # OpenType requires the full matrix for a scaled component offset.
@@ -140,14 +142,14 @@ def main():
         lines = result.stdout.splitlines()
         assert list(map(int, lines[0].split()))[:4] == [1, 0, 0, 0]
         native = [tuple(map(int, line.split())) for line in lines[1:]]
-        expected = [(72, 301), (150, 300), (25, 350)]
+        expected = [(72, 301, 1, 0), (150, 300, 1, 0), (25, 350, 1, 1)]
         assert native == expected, native
         face = freetype.Face(str(path))
         face.set_pixel_sizes(64, 64)
         face.load_glyph(3, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT | freetype.FT_LOAD_TARGET_MONO)
-        actual = face.glyph.outline.points
+        actual = outline_state(face)
         if actual != expected:
-            assert actual == [(125, 275), (203, 274), (78, 324)], actual
+            assert actual == [(125, 275, 1, 0), (203, 274, 1, 0), (78, 324, 1, 1)], actual
             scaled_differences += 1
         checked += 1
         del face

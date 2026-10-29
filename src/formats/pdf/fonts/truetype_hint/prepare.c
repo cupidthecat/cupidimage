@@ -24,9 +24,9 @@ int cupidimage_pdf_tt_hint_init(pdf_tt_hint *hint, const pdf_tt_font *font, int3
         return cupidimage_pdf_tt_vm_fail(&hint->vm, PDF_TT_VM_MEMORY);
     for (unsigned i = 0; i < count; i++)
         cvt[i] = tt_hint_i16(font->cvt.data + i * 2);
-    int ok = cupidimage_pdf_tt_vm_init(&hint->vm, tt_hint_u16(font->maxp.data + 24),
-                                       tt_hint_u16(font->maxp.data + 18), cvt, count,
-                                       tt_hint_u16(font->maxp.data + 20));
+    int ok = cupidimage_pdf_tt_vm_init(
+        &hint->vm, tt_hint_u16(font->maxp.data + 24), tt_hint_u16(font->maxp.data + 18), cvt, count,
+        tt_hint_u16(font->maxp.data + 20), tt_hint_u16(font->maxp.data + 22));
     if (ok)
         ok = cupidimage_pdf_tt_vm_run(&hint->vm, font->fpgm.data, font->fpgm.length, PDF_TT_VM_FONT,
                                       budget);

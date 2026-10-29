@@ -412,6 +412,7 @@ test-pdf-tt-loader: $(BINDIR)/test_pdf_tt_loader $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_composites_reference.py $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_composites_reference.py $(BINDIR)/test_pdf_tt_glyphs --gray
 	python3 scripts/test_pdf_tt_composite_transforms.py $(BINDIR)/test_pdf_tt_glyphs
+	python3 scripts/test_pdf_tt_instructions_reference.py $(BINDIR)/test_pdf_tt_glyphs
 
 $(BINDIR)/test_pdf_tt_loader: tests/test_pdf_tt_loader.c $(wildcard tests/pdf_tt_loader/*.c) tests/fault_alloc.h tests/fixtures/pdf-truetype.inc $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)

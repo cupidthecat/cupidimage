@@ -50,8 +50,10 @@ static void vm_test_free(void *value) {
 #include "../src/formats/pdf/fonts/truetype_vm/contours.c"
 #include "../src/formats/pdf/fonts/truetype_vm/design.c"
 #include "../src/formats/pdf/fonts/truetype_vm/direct.c"
+#include "../src/formats/pdf/fonts/truetype_vm/flags.c"
 #include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
 #include "../src/formats/pdf/fonts/truetype_vm/interpolate.c"
+#include "../src/formats/pdf/fonts/truetype_vm/intersection.c"
 #include "../src/formats/pdf/fonts/truetype_vm/lifecycle.c"
 #include "../src/formats/pdf/fonts/truetype_vm/movement.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
@@ -76,7 +78,7 @@ static void vm_test_free(void *value) {
     } while (0)
 
 static void init(pdf_tt_vm *vm, const int32_t *cvt, unsigned count) {
-    CHECK(cupidimage_pdf_tt_vm_init(vm, 512, 16, cvt, count, 16));
+    CHECK(cupidimage_pdf_tt_vm_init(vm, 512, 16, cvt, count, 16, 0));
 }
 
 static void finish(pdf_tt_vm *vm) {
@@ -155,9 +157,9 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
         font_cvt[i] = value >= 32768 ? (int32_t)value - 65536 : (int32_t)value;
     }
     pdf_tt_vm vm;
-    int ok =
-        cupidimage_pdf_tt_vm_init(&vm, read16(font.maxp.data + 24), read16(font.maxp.data + 18),
-                                  font_cvt, cvt_count, read16(font.maxp.data + 20));
+    int ok = cupidimage_pdf_tt_vm_init(&vm, read16(font.maxp.data + 24),
+                                       read16(font.maxp.data + 18), font_cvt, cvt_count,
+                                       read16(font.maxp.data + 20), read16(font.maxp.data + 22));
     if (ok)
         ok = cupidimage_pdf_tt_vm_run(&vm, font.fpgm.data, font.fpgm.length, 1, 1000000);
     if (ok && ppem)
@@ -193,7 +195,10 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
 #include "pdf_tt_vm/relative.c"
 #include "pdf_tt_vm/size.c"
 
+#include "pdf_tt_vm/flags.c"
 #include "pdf_tt_vm/graphics.c"
+#include "pdf_tt_vm/instructions.c"
+#include "pdf_tt_vm/intersection.c"
 
 #include "pdf_tt_vm/numeric.c"
 
@@ -239,7 +244,7 @@ static int state_programs(void) {
                                           {{100, 0}, {100, 0}, 0, 1, 0},
                                           {{0, 100}, {0, 100}, 0, 1, 1}};
         pdf_tt_vm vm;
-        int ok = cupidimage_pdf_tt_vm_init(&vm, 64, 2, raw, 1, 16) &&
+        int ok = cupidimage_pdf_tt_vm_init(&vm, 64, 2, raw, 1, 16, 0) &&
                  cupidimage_pdf_tt_vm_set_size(&vm, 64, 64, 64, 0, raw) &&
                  cupidimage_pdf_tt_vm_set_zones(&vm, 2, NULL, 0, 0) &&
                  cupidimage_pdf_tt_vm_run(&vm, code[0], length[0], PDF_TT_VM_PREP, 10000) &&
@@ -260,7 +265,7 @@ static int state_programs(void) {
     return ferror(stdin) ? 2 : 0;
 }
 
-static int expression_programs(int geometry) {
+static int expression_programs(int geometry, int flags) {
     char line[1024];
     while (fgets(line, sizeof(line), stdin)) {
         line[strcspn(line, "\r\n")] = 0;
@@ -270,7 +275,7 @@ static int expression_programs(int geometry) {
             return 2;
         pdf_tt_vm vm;
         const int32_t raw[] = {64, 128, -64, 0};
-        if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, geometry ? raw : NULL, geometry ? 4 : 0, 0))
+        if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, geometry ? raw : NULL, geometry ? 4 : 0, 0, 0))
             return 2;
         if (geometry) {
             if (!cupidimage_pdf_tt_vm_set_size(&vm, 4096, geometry * 64, geometry * 64, 0, raw)) {
@@ -298,9 +303,13 @@ static int expression_programs(int geometry) {
             return 3;
         }
         if (geometry) {
-            for (unsigned i = 0; i < 3; i++)
-                printf("%ld %ld%s", (long)vm.zones[1].points[i].current[0],
-                       (long)vm.zones[1].points[i].current[1], i == 2 ? "\n" : " ");
+            for (unsigned i = 0; i < 3; i++) {
+                printf("%ld %ld", (long)vm.zones[1].points[i].current[0],
+                       (long)vm.zones[1].points[i].current[1]);
+                if (flags)
+                    printf(" %u %u", vm.zones[1].points[i].on, vm.zones[1].points[i].end);
+                printf("%s", i == 2 ? "\n" : " ");
+            }
         } else
             printf("%ld\n", (long)vm.stack[0]);
         cupidimage_pdf_tt_vm_free(&vm);
@@ -312,15 +321,15 @@ int main(int argc, char **argv) {
     if (argc == 2 && !strcmp(argv[1], "--state-programs"))
         return state_programs();
     if (argc == 2 && !strcmp(argv[1], "--expressions"))
-        return expression_programs(0);
+        return expression_programs(0, 0);
     if (argc == 2 && !strcmp(argv[1], "--point-programs"))
-        return expression_programs(64);
-    if (argc == 3 && !strcmp(argv[1], "--point-programs")) {
+        return expression_programs(64, 0);
+    if (argc == 3 && (!strcmp(argv[1], "--point-programs") || !strcmp(argv[1], "--point-state"))) {
         char *end;
         long pixels = strtol(argv[2], &end, 10);
         if (!*argv[2] || *end || pixels < 1 || pixels > 32767)
             return 2;
-        return expression_programs((int)pixels);
+        return expression_programs((int)pixels, !strcmp(argv[1], "--point-state"));
     }
     if (argc == 3 && !strcmp(argv[1], "--font"))
         return font_program(argv[2], 0, 0, 0);
@@ -340,16 +349,16 @@ int main(int argc, char **argv) {
         int32_t cvt[] = {64, 128};
         allocations = 0;
         fail_at = failure;
-        CHECK(!cupidimage_pdf_tt_vm_init(&vm, 8, 8, cvt, 2, 8));
+        CHECK(!cupidimage_pdf_tt_vm_init(&vm, 8, 8, cvt, 2, 8, 0));
         CHECK(vm.error == PDF_TT_VM_MEMORY);
         CHECK(live_bytes == 0);
         cupidimage_pdf_tt_vm_free(&vm);
     }
     fail_at = 0;
-    CHECK(cupidimage_pdf_tt_vm_init(&vm, 0, 0, NULL, 0, 0));
+    CHECK(cupidimage_pdf_tt_vm_init(&vm, 0, 0, NULL, 0, 0, 0));
     CHECK(cupidimage_pdf_tt_vm_run(&vm, NULL, 0, 1, 0));
     finish(&vm);
-    CHECK(!cupidimage_pdf_tt_vm_init(&vm, 65536, 0, NULL, 0, 0));
+    CHECK(!cupidimage_pdf_tt_vm_init(&vm, 65536, 0, NULL, 0, 0, 0));
     CHECK(live_bytes == 0);
     for (unsigned words = 0; words < 2; words++)
         for (unsigned count = 1; count <= 8; count++) {
@@ -458,7 +467,7 @@ int main(int argc, char **argv) {
     CHECK(cupidimage_pdf_tt_vm_run(&vm, write_cvt, sizeof(write_cvt), 0, 100));
     CHECK(vm.stack_size == 1 && vm.stack[0] == 42 && vm.cvt[0] == 42);
     finish(&vm);
-    CHECK(cupidimage_pdf_tt_vm_init(&vm, 1, 0, NULL, 0, 0));
+    CHECK(cupidimage_pdf_tt_vm_init(&vm, 1, 0, NULL, 0, 0, 0));
     static const unsigned char full_stack[] = {0xb1, 1, 2};
     CHECK(!cupidimage_pdf_tt_vm_run(&vm, full_stack, sizeof(full_stack), 0, 100));
     CHECK(vm.error == PDF_TT_VM_STACK);
@@ -525,6 +534,9 @@ int main(int argc, char **argv) {
     relative_tests();
     direct_tests();
     contour_tests();
+    point_flag_tests();
+    instruction_definition_tests();
+    intersection_tests();
     interpolation_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;

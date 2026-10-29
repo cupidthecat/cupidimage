@@ -61,7 +61,8 @@ typedef struct {
 typedef struct {
     int32_t *stack, *storage, *cvt;
     int32_t *prepared_storage, *prepared_cvt;
-    pdf_tt_vm_function *functions;
+    pdf_tt_vm_function *functions, *instructions;
+    unsigned instruction_limit, instruction_count;
     unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
     pdf_tt_vm_graphics graphics, prepared_graphics;
     int prepared;
@@ -76,7 +77,8 @@ typedef struct {
 
 /* Definition bodies borrow program bytes, which must outlive the VM.
  * A failed execution invalidates its state; destroy/reinitialize before reuse. */
-int cupidimage_pdf_tt_vm_init(pdf_tt_vm *, unsigned, unsigned, const int32_t *, unsigned, unsigned);
+int cupidimage_pdf_tt_vm_init(pdf_tt_vm *, unsigned, unsigned, const int32_t *, unsigned, unsigned,
+                              unsigned);
 void cupidimage_pdf_tt_vm_free(pdf_tt_vm *);
 int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, pdf_tt_vm_stage, size_t);
 /* Uniform size preparation only. CVT inputs are unscaled font-unit values. */

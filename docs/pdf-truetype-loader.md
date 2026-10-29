@@ -77,7 +77,7 @@ and allocation failures. It also checks a 32,767-contour description against the
 shared decoder.
 
 With the optional font test packages installed, native loading produces 9,330
-matching simple-glyph outlines in each of monochrome and grayscale configurations
+matching simple-glyph outlines (coordinates, curve flags and contour boundaries) in each of monochrome and grayscale configurations
 from the 12 pinned fonts at six sizes, selecting
 Unicode mappings U+0020 through U+00FF. Another 576 authored-font cases probe
 horizontal bearings, both original/current phantom coordinates, vertical metrics

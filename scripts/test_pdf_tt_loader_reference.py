@@ -17,6 +17,8 @@ except ImportError:
 from test_pdf_tt_points_reference import build_font, push
 from test_pdf_truetype import replace_tables, tables
 
+from pdf_tt_reference import outline_state
+
 
 def expected_outline(bearing, ppem, axis, phantom, original, top, bottom):
     def scaled(value):
@@ -31,7 +33,7 @@ def expected_outline(bearing, ppem, axis, phantom, original, top, bottom):
     if not original and (axis == 1) == (index < 2):
         value = rounded(value)
     origin = rounded(scaled(-bearing))
-    return [(value - origin, scaled(35)), (scaled(100) - origin, 0), (-origin, scaled(100))]
+    return [(value - origin, scaled(35), 1, 0), (scaled(100) - origin, 0, 1, 0), (-origin, scaled(100), 1, 1)]
 
 
 def main():
@@ -93,7 +95,7 @@ def main():
                                 face.set_pixel_sizes(ppem, ppem)
                                 face.load_glyph(1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
                                                 freetype.FT_LOAD_TARGET_MONO)
-                                actual = face.glyph.outline.points
+                                actual = outline_state(face)
                                 top, bottom = ((311, -97) if mode == 'os2' else
                                                (100 + bearing, 100 + bearing - 777) if mode == 'vmtx' else
                                                (256, -64))

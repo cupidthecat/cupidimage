@@ -108,7 +108,7 @@ static void lifecycle_tests(void) {
     CHECK(cupidimage_pdf_tt_vm_run(&vm, NULL, 0, PDF_TT_VM_FONT, 100));
     CHECK(!vm.prepared);
     finish(&vm);
-    CHECK(cupidimage_pdf_tt_vm_init(&vm, 64, 0, NULL, 0, 0));
+    CHECK(cupidimage_pdf_tt_vm_init(&vm, 64, 0, NULL, 0, 0, 0));
     CHECK(cupidimage_pdf_tt_vm_set_size(&vm, 64, 64, 64, 0, NULL));
     CHECK(cupidimage_pdf_tt_vm_run(&vm, NULL, 0, PDF_TT_VM_PREP, 100));
     unsigned before = allocations;

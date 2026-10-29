@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Optional comparisons of authored point programs on one scaled triangle."""
 from array import array
+from collections import Counter
 import random
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from pdf_tt_reference import outline_state
 
 try:
     import freetype
@@ -311,6 +313,38 @@ def cases():
                     code += push(0) + bytes([0x11 if op & 1 else 0x12]) + push(0) + bytes([op])
                     code += push(2, 1) + bytes([0x46, 0x01]) + push(1) + bytes([0x15, 0x48])
                     programs.append(code)
+    for point in range(3):
+        flip = push(point) + bytes([0x80])
+        programs.extend((flip, flip + flip))
+    for sequence in ((), (0,), (0, 0), (0, 1), (0, 1, 2), (2, 1, 2, 0)):
+        code = push(len(sequence)) + bytes([0x17])
+        if sequence:
+            code += push(*sequence)
+        programs.append(code + bytes([0x80]))
+    for op in (0x81, 0x82):
+        for low in range(3):
+            for high in range(3):
+                prefix = push(0, 2) + bytes([0x82]) if op == 0x81 else b''
+                code = prefix + push(3) + bytes([0x17]) + push(low, high) + bytes([op])
+                programs.extend((code, code + push(0, 1, 2) + bytes([0x80])))
+    for op in (0x36, 0x37):
+        for axis in (0, 1):
+            for value in (-145, -31, 31, 97, 145):
+                for freedom in ((0, 16384) if not axis else (16384, 0), (3, 5), (-3, 5)):
+                    code = bytes([axis]) + push(0, value) + bytes([0x48])
+                    code += push(*freedom) + bytes([0x0b]) + push(1) + bytes([op])
+                    programs.append(code)
+                for twilight_reference in (False, True):
+                    code = bytes([axis])
+                    if twilight_reference:
+                        code += push(0) + bytes([0x16]) + push(0, value) + bytes([0x44])
+                        code += push(0, 0) + bytes([0x3f]) + push(1) + bytes([0x15])
+                        code += push(1) + bytes([op])
+                    else:
+                        code += push(0, value) + bytes([0x48]) + push(0) + bytes([0x15])
+                        code += push(0) + bytes([op])
+                        code += push(2, 1) + bytes([0x46, 0x01]) + push(1) + bytes([0x15, 0x48])
+                    programs.append(code)
     # The reference face can retain twilight storage between glyph loads.
     # Give both engines the same explicit initial coordinates for each program.
     reset = push(0) + bytes([0x16, 0x01])
@@ -354,17 +388,47 @@ def build_font(programs, path):
     font.save(path)
 
 
+def special_states(kind, ppem):
+    scaled = lambda value: (value * ppem + 32) // 64
+    base = [(scaled(31), scaled(35)), (scaled(100), 0), (0, scaled(100))]
+    expected_on = actual_on = (1, 1, 1)
+    expected = actual = base
+    if kind in ('iup', 'shift-zone'):
+        shift = 97 - scaled(31)
+        expected = [(97, scaled(35)), (scaled(100) + shift, 0), (shift, scaled(100))]
+        factor = 2 if kind == 'iup' else 0
+        actual = [(97, scaled(35)), (scaled(100) + factor * shift, 0), (factor * shift, scaled(100))]
+    elif kind == 'flip-zone':
+        actual_on = (0, 1, 1)
+    elif kind == 'off-zone':
+        actual_on = (0, 0, 1)
+    elif kind == 'on-zone':
+        expected_on = (0, 0, 1)
+    def flatten(points, on):
+        return [value for i, point in enumerate(points) for value in (*point, on[i], int(i == 2))]
+    return flatten(expected, expected_on), flatten(actual, actual_on)
+
+
 def main():
     programs = cases()
-    # IUP must ignore an earlier interpolation of an untouched point. Some
-    # engines instead accumulate the single-anchor translation on repetition.
-    programs.append(push(0, 97) + bytes([0x48, 0x31, 0x31]))
+    specials = {}
+    # Keep specified behavior separate where tested engines disagree.
+    for kind, code in (
+        ('iup', push(0, 97) + bytes([0x48, 0x31, 0x31])),
+        ('flip-zone', push(0) + bytes([0x13]) + push(0) + bytes([0x80])),
+        ('off-zone', push(0) + bytes([0x13]) + push(0, 1) + bytes([0x82])),
+        ('on-zone', push(0, 1) + bytes([0x82]) + push(0) + bytes([0x13]) + push(0, 1) + bytes([0x81])),
+        ('shift-zone', push(0, 97) + bytes([0x48]) + push(0) + bytes([0x15]) + push(1) + bytes([0x36])),
+        ('shift-zone', push(0, 97) + bytes([0x48]) + push(0) + bytes([0x15]) + push(1) + bytes([0x37])),
+    ):
+        specials[len(programs)] = kind
+        programs.append(code)
     failures = []
-    specified_iup_differences = []
+    differences = Counter()
     sizes = (13, 37, 64, 97)
     with tempfile.TemporaryDirectory(prefix='cupid-tt-points-') as directory:
         for ppem in sizes:
-            result = subprocess.run([sys.argv[1], '--point-programs', str(ppem)],
+            result = subprocess.run([sys.argv[1], '--point-state', str(ppem)],
                                     input=''.join(code.hex() + '\n' for code in programs),
                                     capture_output=True, text=True, timeout=30)
             assert result.returncode == 0, (ppem, result.returncode, result.stderr)
@@ -380,25 +444,22 @@ def main():
                 for i, code in enumerate(batch):
                     face.load_glyph(i + 1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
                                     freetype.FT_LOAD_TARGET_MONO)
-                    actual = [value for point in face.glyph.outline.points for value in point]
-                    if start + i == len(programs) - 1:
-                        scaled = lambda value: (value * ppem + 32) // 64
-                        shift = 97 - scaled(31)
-                        expected = [97, scaled(35), scaled(100) + shift, 0, shift, scaled(100)]
-                        assert native[start + i] == expected, (ppem, native[start + i], expected)
-                        accumulated = [97, scaled(35), scaled(100) + 2 * shift, 0,
-                                       2 * shift, scaled(100)]
-                        if actual == accumulated and actual != expected:
-                            specified_iup_differences.append(ppem)
+                    actual = [value for point in outline_state(face) for value in point]
+                    kind = specials.get(start + i)
+                    if kind:
+                        expected, prior_behavior = special_states(kind, ppem)
+                        assert native[start + i] == expected, (kind, ppem, native[start + i], expected)
+                        if actual == prior_behavior and actual != expected:
+                            differences[kind] += 1
                             continue
                     if native[start + i] != actual:
                         failures.append((ppem, start + i, code.hex(), native[start + i], actual))
                 del face
     assert not failures, failures[:20]
     print(f'TrueType point reference: {len(programs)} programs at {len(sizes)} sizes '
-          f'({len(programs) * len(sizes) - len(specified_iup_differences)} matches, '
-          f'{len(specified_iup_differences)} specified-IUP differences), 0 unexpected failures; '
-          f'engine {freetype.version()}; page renderer not involved')
+          f'({len(programs) * len(sizes) - sum(differences.values())} matches, '
+          f'specified differences {dict(differences)}), 0 unexpected failures; '
+          f'engine {freetype.version()}; coordinates/curve flags/contours; page renderer not involved')
 
 
 if __name__ == '__main__':

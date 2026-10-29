@@ -611,13 +611,13 @@ the 12 pinned font programs. Numeric tests cover signed F26Dot6 arithmetic, all
 predefined rounding modes and 192 SROUND selectors; state tests cover defaults,
 axis vectors and scalar setters. Point cases cover CVT cut-ins, all three delta
 ranges, relative-positioning flags, original design distances, contour interpolation,
-reference-point shifts and direct freedom-vector shifts. The specified-defaults
-state case and repeated single-anchor IUP cases report their independent-engine
+reference-point shifts, whole-zone shifts, curve flags, line intersections and direct freedom-vector shifts. The specified-defaults
+state case, repeated single-anchor IUP, mixed-zone flags/shifts and determinant-quantization cases report their independent-engine
 differences separately. Point comparisons cover four uniform sizes. Preparation checks run both monochrome and
 grayscale configurations at 1–96 ppem. Optional independent probes compare numeric
 results, prepared CVT values, authored point programs and paired-glyph state
 sequences using temporary glyphs. Another probe executes simple-glyph programs
-from all 12 pinned faces at six sizes and compares every outline coordinate.
+from all 12 pinned faces at six sizes and compares every outline coordinate, curve flag and contour boundary.
 Geometry and phantom points are supplied independently, so this does not qualify
 the native glyph loader, composite assembly or PDF rasterization. The engine's
 unsupported instructions and unwired rendering path remain documented separately

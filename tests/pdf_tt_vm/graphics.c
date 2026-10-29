@@ -49,7 +49,7 @@ static void graphics_tests(void) {
         error(bad_zone, sizeof(bad_zone), PDF_TT_VM_PROGRAM, 100);
     }
     for (unsigned op = 0x0c; op <= 0x0d; op++) {
-        CHECK(cupidimage_pdf_tt_vm_init(&vm, 1, 0, NULL, 0, 0));
+        CHECK(cupidimage_pdf_tt_vm_init(&vm, 1, 0, NULL, 0, 0, 0));
         unsigned char code = (unsigned char)op;
         CHECK(!cupidimage_pdf_tt_vm_run(&vm, &code, 1, 0, 100));
         CHECK(vm.error == PDF_TT_VM_STACK);
