@@ -404,13 +404,14 @@ test-pdf-separation: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 test-pdf-devicen: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_devicen.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
-test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm
+test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm $(BINDIR)/test_pdf_tt_glyphs
 	$(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_prep_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_points_reference.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_state_reference.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_glyphs_reference.py $(BINDIR)/test_pdf_tt_glyphs
 
 test-pdf-empty-glyphs: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_empty_glyphs.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
@@ -429,6 +430,9 @@ test-pdf-font-resources: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-nchannel: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_nchannel.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+$(BINDIR)/test_pdf_tt_glyphs: tests/test_pdf_tt_glyphs.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
 $(BINDIR)/test_pdf_tt_vm: tests/test_pdf_tt_vm.c $(wildcard tests/pdf_tt_vm/*.c) $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)

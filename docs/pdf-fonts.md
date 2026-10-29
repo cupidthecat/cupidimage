@@ -748,10 +748,12 @@ Regenerate them with `scripts/generate_pdf_empty_glyph_fixtures.py`.
 
 The [TrueType instruction engine](pdf-truetype-vm.md) now has bounded stack,
 storage, control-flow and function-definition execution, plus fixed-point rounding,
-graphics-state setters, absolute/indirect relative positioning, delta moves and
-point shifts. Its tests
+graphics-state setters, absolute/relative positioning, original design-coordinate
+handling, interpolation, delta moves and point shifts. Its tests
 initialize the pinned Latin font programs and execute their uniform-size preparation
-programs. Prepared state and glyph entry are tested separately. The PDF renderer
-does not invoke this engine yet. Complete glyph-program
-execution, the remaining point instructions and nonuniform sizing are still
+programs. A separate probe compares 9,330 simple-glyph outlines at six sizes using
+supplied geometry for Unicode mappings U+0020 through U+00FF. Prepared state and
+glyph entry are tested separately. The PDF renderer
+does not invoke this engine yet. Native simple/composite glyph loading,
+the remaining point instructions and nonuniform sizing are still
 unfinished. No hinted-glyph parity is claimed by those tests.

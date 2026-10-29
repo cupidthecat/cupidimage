@@ -54,6 +54,8 @@ typedef struct {
 typedef struct {
     pdf_tt_vm_point *points;
     unsigned count, outline_count;
+    int32_t (*design)[2];
+    int32_t design_scale;
 } pdf_tt_vm_zone;
 
 typedef struct {
@@ -82,6 +84,10 @@ int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *, unsigned, int32_t, int32_t, int, 
 /* Geometry is already scaled to F26Dot6. Glyph count may include phantom points. */
 int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *, unsigned, const pdf_tt_vm_point *, unsigned,
                                    unsigned);
+/* Optional original design plane, copied with its positive 16.16 uniform scale.
+ * Without it, original coordinates describe an already scaled outline (as for
+ * a composite instruction phase). Installing new points clears this plane. */
+int cupidimage_pdf_tt_vm_set_design(pdf_tt_vm *, const int32_t (*)[2], unsigned, int32_t);
 int cupidimage_pdf_tt_vm_save_preparation(pdf_tt_vm *);
 int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned, unsigned);
 #endif

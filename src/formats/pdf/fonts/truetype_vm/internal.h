@@ -26,4 +26,8 @@ int cupidimage_pdf_tt_vm_movement_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_distance(pdf_tt_vm *, const int32_t[2], const int32_t[2], const int32_t[2],
                                   int32_t *);
 int cupidimage_pdf_tt_vm_relative_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_design_distance(pdf_tt_vm *, unsigned, int32_t, unsigned, int32_t,
+                                         int32_t *);
+int cupidimage_pdf_tt_vm_direct_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_interpolate_op(pdf_tt_vm *, unsigned);
 #endif

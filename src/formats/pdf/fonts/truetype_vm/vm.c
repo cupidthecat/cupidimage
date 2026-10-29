@@ -43,6 +43,7 @@ void cupidimage_pdf_tt_vm_free(pdf_tt_vm *vm) {
     free(vm->functions);
     free(vm->zones[0].points);
     free(vm->zones[1].points);
+    free(vm->zones[1].design);
     memset(vm, 0, sizeof(*vm));
 }
 
@@ -174,6 +175,18 @@ static int vm_execute(pdf_tt_vm *vm, const unsigned char *data, size_t length, i
             continue;
         }
         handled = cupidimage_pdf_tt_vm_relative_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_direct_op(vm, op);
+        if (handled >= 0) {
+            if (!handled)
+                return 0;
+            continue;
+        }
+        handled = cupidimage_pdf_tt_vm_interpolate_op(vm, op);
         if (handled >= 0) {
             if (!handled)
                 return 0;

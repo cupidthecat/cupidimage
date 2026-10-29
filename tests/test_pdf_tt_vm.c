@@ -47,7 +47,10 @@ static void vm_test_free(void *value) {
 #define malloc vm_test_malloc
 #define calloc vm_test_calloc
 #define free vm_test_free
+#include "../src/formats/pdf/fonts/truetype_vm/design.c"
+#include "../src/formats/pdf/fonts/truetype_vm/direct.c"
 #include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
+#include "../src/formats/pdf/fonts/truetype_vm/interpolate.c"
 #include "../src/formats/pdf/fonts/truetype_vm/lifecycle.c"
 #include "../src/formats/pdf/fonts/truetype_vm/movement.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
@@ -180,6 +183,8 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
     return ok ? 0 : 3;
 }
 
+#include "pdf_tt_vm/direct.c"
+#include "pdf_tt_vm/interpolate.c"
 #include "pdf_tt_vm/lifecycle.c"
 #include "pdf_tt_vm/movement.c"
 #include "pdf_tt_vm/points.c"
@@ -266,14 +271,21 @@ static int expression_programs(int geometry) {
         if (!cupidimage_pdf_tt_vm_init(&vm, 64, 0, geometry ? raw : NULL, geometry ? 4 : 0, 0))
             return 2;
         if (geometry) {
-            if (!cupidimage_pdf_tt_vm_set_size(&vm, 4096, 4096, 4096, 0, raw)) {
+            if (!cupidimage_pdf_tt_vm_set_size(&vm, 4096, geometry * 64, geometry * 64, 0, raw)) {
                 cupidimage_pdf_tt_vm_free(&vm);
                 return 2;
             }
-            const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
-                                              {{100, 0}, {100, 0}, 0, 1, 0},
-                                              {{0, 100}, {0, 100}, 0, 1, 1}};
-            if (!cupidimage_pdf_tt_vm_set_zones(&vm, 2, points, 3, 3)) {
+            pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
+                                        {{100, 0}, {100, 0}, 0, 1, 0},
+                                        {{0, 100}, {0, 100}, 0, 1, 1}};
+            const int32_t design[][2] = {{31, 35}, {100, 0}, {0, 100}};
+            for (unsigned i = 0; i < 3; i++)
+                for (unsigned axis = 0; axis < 2; axis++)
+                    points[i].current[axis] = points[i].original[axis] =
+                        (int32_t)cupidimage_pdf_tt_vm_divide(
+                            (int64_t)design[i][axis] * vm.size.scale, 65536);
+            if (!cupidimage_pdf_tt_vm_set_zones(&vm, 2, points, 3, 3) ||
+                !cupidimage_pdf_tt_vm_set_design(&vm, design, 3, vm.size.scale)) {
                 cupidimage_pdf_tt_vm_free(&vm);
                 return 2;
             }
@@ -300,7 +312,14 @@ int main(int argc, char **argv) {
     if (argc == 2 && !strcmp(argv[1], "--expressions"))
         return expression_programs(0);
     if (argc == 2 && !strcmp(argv[1], "--point-programs"))
-        return expression_programs(1);
+        return expression_programs(64);
+    if (argc == 3 && !strcmp(argv[1], "--point-programs")) {
+        char *end;
+        long pixels = strtol(argv[2], &end, 10);
+        if (!*argv[2] || *end || pixels < 1 || pixels > 32767)
+            return 2;
+        return expression_programs((int)pixels);
+    }
     if (argc == 3 && !strcmp(argv[1], "--font"))
         return font_program(argv[2], 0, 0, 0);
     if (argc == 4 && (!strcmp(argv[1], "--prep") || !strcmp(argv[1], "--prep-cvt") ||
@@ -502,6 +521,8 @@ int main(int argc, char **argv) {
     lifecycle_tests();
     movement_tests();
     relative_tests();
+    direct_tests();
+    interpolation_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;
 }

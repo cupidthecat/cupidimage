@@ -231,6 +231,64 @@ def cases():
         code = push(1, 97) + bytes([0x48]) + push(1) + bytes([0x10])
         code += push(*freedom) + bytes([0x0b]) + push(3) + bytes([0x17])
         programs.append(code + push(0, 1, 2) + bytes([0x3c]))
+    for op in range(0xc0, 0xe0):
+        if op & 3 == 3:
+            continue
+        for target in range(3):
+            for reference in range(3):
+                for axis in (0, 1):
+                    for mode in (0x18, 0x19, 0x7a, 0x7c, 0x7d):
+                        code = bytes([axis, mode]) + push(reference, 97) + bytes([0x48])
+                        code += push(reference) + bytes([0x10])
+                        programs.append(code + push(target) + bytes([op]))
+    for width in (-145, -69, -31, 0, 31, 69, 145):
+        for cutin in (0, 1, 38, 69, 70, 200):
+            for target, reference in ((0, 1), (1, 0)):
+                for op in (0xc0, 0xc4, 0xc8, 0xcc):
+                    code = push(width) + bytes([0x1f]) + push(cutin) + bytes([0x1e])
+                    code += push(reference) + bytes([0x10]) + push(target) + bytes([op])
+                    programs.append(code)
+    for axis in (0, 1):
+        for a in range(3):
+            for b in range(3):
+                if a == b:
+                    continue
+                for value_a in (-145, -1, 31, 97, 257):
+                    for value_b in (-145, -1, 31, 97, 257):
+                        code = bytes([axis]) + push(a, value_a) + bytes([0x48])
+                        code += push(b, value_b) + bytes([0x48])
+                        code += push(a) + bytes([0x11]) + push(b) + bytes([0x12])
+                        for target in range(3):
+                            programs.append(code + push(target) + bytes([0x39]))
+                        programs.append(code + push(4) + bytes([0x17]) + push(0, 1, 2, 0) + bytes([0x39]))
+        for mask in range(8):
+            for value in (-145, -1, 31, 97, 257):
+                code = bytes([axis])
+                for point in range(3):
+                    if mask & (1 << point):
+                        code += push(point, value + point * 29) + bytes([0x48])
+                programs.append(code + bytes([0x30 + axis]))
+                if bin(mask).count('1') >= 2:
+                    programs.append(code + bytes([0x30 + axis, 0x30 + axis]))
+    for op in (0x49, 0x4a):
+        for a in range(3):
+            for b in range(3):
+                for axis in (0, 1):
+                    for value in (-97, 31, 145):
+                        code = bytes([axis]) + push(a, value) + bytes([0x48])
+                        # Leave an output point below the measured pair.
+                        code += push(2, a, b) + bytes([op, 0x01, 0x48])
+                        programs.append(code)
+    for a, b in ((0, 1), (1, 0), (0, 2), (2, 0), (1, 2), (2, 1)):
+        for value in (-97, 31, 145):
+            base = push(a, value) + bytes([0x48]) + push(a, b) + bytes([0x86, 0x0e])
+            for target in range(3):
+                for op in (0xc0, 0xc4, 0xcc, 0xdc):
+                    programs.append(base + push(a) + bytes([0x10]) + push(target) + bytes([op]))
+                programs.append(base + push(a) + bytes([0x11]) + push(b) + bytes([0x12]) +
+                                push(target) + bytes([0x39]))
+            for op in (0x49, 0x4a):
+                programs.append(base + push(2, a, b) + bytes([op, 0x01, 0x48]))
     # The reference face can retain twilight storage between glyph loads.
     # Give both engines the same explicit initial coordinates for each program.
     reset = push(0) + bytes([0x16, 0x01])
@@ -276,29 +334,48 @@ def build_font(programs, path):
 
 def main():
     programs = cases()
-    result = subprocess.run([sys.argv[1], '--point-programs'],
-                            input=''.join(code.hex() + '\n' for code in programs),
-                            capture_output=True, text=True, timeout=30)
-    assert result.returncode == 0, (result.returncode, result.stderr)
-    native = [list(map(int, line.split())) for line in result.stdout.splitlines()]
-    assert len(native) == len(programs)
+    # IUP must ignore an earlier interpolation of an untouched point. Some
+    # engines instead accumulate the single-anchor translation on repetition.
+    programs.append(push(0, 97) + bytes([0x48, 0x31, 0x31]))
     failures = []
+    specified_iup_differences = []
+    sizes = (13, 37, 64, 97)
     with tempfile.TemporaryDirectory(prefix='cupid-tt-points-') as directory:
-        for start in range(0, len(programs), 20000):
-            batch = programs[start:start + 20000]
-            path = Path(directory) / f'points-{start}.ttf'
-            build_font(batch, path)
-            face = freetype.Face(str(path))
-            face.set_pixel_sizes(64, 64)
-            for i, code in enumerate(batch):
-                face.load_glyph(i + 1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
-                                freetype.FT_LOAD_TARGET_MONO)
-                actual = [value for point in face.glyph.outline.points for value in point]
-                if native[start + i] != actual:
-                    failures.append((start + i, code.hex(), native[start + i], actual))
-            del face
+        for ppem in sizes:
+            result = subprocess.run([sys.argv[1], '--point-programs', str(ppem)],
+                                    input=''.join(code.hex() + '\n' for code in programs),
+                                    capture_output=True, text=True, timeout=30)
+            assert result.returncode == 0, (ppem, result.returncode, result.stderr)
+            native = [list(map(int, line.split())) for line in result.stdout.splitlines()]
+            assert len(native) == len(programs)
+            for start in range(0, len(programs), 20000):
+                batch = programs[start:start + 20000]
+                path = Path(directory) / f'points-{start}.ttf'
+                if not path.exists():
+                    build_font(batch, path)
+                face = freetype.Face(str(path))
+                face.set_pixel_sizes(ppem, ppem)
+                for i, code in enumerate(batch):
+                    face.load_glyph(i + 1, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT |
+                                    freetype.FT_LOAD_TARGET_MONO)
+                    actual = [value for point in face.glyph.outline.points for value in point]
+                    if start + i == len(programs) - 1:
+                        scaled = lambda value: (value * ppem + 32) // 64
+                        shift = 97 - scaled(31)
+                        expected = [97, scaled(35), scaled(100) + shift, 0, shift, scaled(100)]
+                        assert native[start + i] == expected, (ppem, native[start + i], expected)
+                        accumulated = [97, scaled(35), scaled(100) + 2 * shift, 0,
+                                       2 * shift, scaled(100)]
+                        if actual == accumulated and actual != expected:
+                            specified_iup_differences.append(ppem)
+                            continue
+                    if native[start + i] != actual:
+                        failures.append((ppem, start + i, code.hex(), native[start + i], actual))
+                del face
     assert not failures, failures[:20]
-    print(f'TrueType point reference: {len(programs)} programs, 0 failures; '
+    print(f'TrueType point reference: {len(programs)} programs at {len(sizes)} sizes '
+          f'({len(programs) * len(sizes) - len(specified_iup_differences)} matches, '
+          f'{len(specified_iup_differences)} specified-IUP differences), 0 unexpected failures; '
           f'engine {freetype.version()}; page renderer not involved')
 
 

@@ -152,7 +152,7 @@ the mask once to the completed object.
 
 `fonts/truetype_vm` separates instruction dispatch/control flow from stack and
 storage operations, fixed-point arithmetic/rounding, graphics-state setters and
-uniform size preparation, vector normalization, point zones, absolute/relative movement operators and
+uniform size preparation, vector normalization, point zones, original design coordinates, movement/interpolation operators and
 prepared-state lifetimes. Instances own their mutable state but borrow immutable program
 bodies. This foundation is currently exercised by tests, not the page renderer;
 see [its scope and ownership rules](pdf-truetype-vm.md) before integrating hinting.

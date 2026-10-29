@@ -19,7 +19,7 @@ value and function-definition state. It supports:
 - Axis-aligned, stack-defined and point-derived projection/freedom vectors,
   dual projection, vector reads and copying projection to freedom.
 - Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
-  MDAP, MIAP, MIRP, MSIRP, ALIGNRP, UTP, DELTAP1/2/3, SHP and SHPIX.
+  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, IP, IUP, UTP, DELTAP1/2/3, SHP and SHPIX.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -133,6 +133,15 @@ Allocations unwind on failure, and failed replacement retains the previous buffe
 until the invalidated instance is destroyed. Limits are 65,535 twilight points and
 65,540 glyph points, including up to four phantom points.
 
+`cupidimage_pdf_tt_vm_set_design` optionally installs a separate, owned array of
+original design coordinates and its positive uniform 16.16 scale. Simple glyphs
+need this plane: rounding each point before subtracting loses small design-space
+distances. MDRP and original-distance MD measure in this plane before scaling.
+IP uses design-space ratios without rounding them to device coordinates first.
+When no design array is supplied, original coordinates describe an already-scaled
+outline, as needed during a composite instruction phase. Geometry replacement and
+size changes release the design array. This interface does not extract glyphs.
+
 GC selects current or original coordinates and the corresponding projection.
 SCFS moves along the freedom vector and records touched axes; twilight movement
 also establishes the original coordinate. MDAP applies optional rounding and sets reference points 0 and 1. MIAP uses a CVT
@@ -161,7 +170,22 @@ applying CVT cut-in or minimum distance. Both update reference points as request
 and construct twilight originals before the current move. ALIGNRP moves a looped
 set of points to the projected coordinate of reference point 0.
 
-Movement uses checked fixed-point projection and division. A changing-coordinate
+MDRP measures an original outline distance, then applies single-width substitution,
+optional rounding and minimum distance. MD opcode 0x49 measures current positions;
+0x4A measures original positions. Both use zone 0 for the deeper stack operand and
+zone 1 for the top operand. Original distances involving twilight points use their
+scaled original coordinates instead of a font design plane.
+
+IP interpolates the listed points between reference points 1 and 2, preserves
+reference settings and resets the loop count. A zero original reference span is
+invalid and fails explicitly. IUP walks each contour independently along the
+selected axis, leaving touched points and phantom points unchanged. It interpolates
+between touched anchors, shifts points outside their original interval and preserves
+touched flags. Contour scans and moves are bounded by the work budget; missing
+contour ends and a twilight-zone IUP are rejected.
+
+Movement uses checked fixed-point projection and division. Its 2.14 coupling
+coefficient uses explicit floor division, including for negative vector products. A changing-coordinate
 request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
 vector pairs need separate qualification. These operators are tested on supplied
 geometry; extracting and executing a font's simple/composite glyph programs,
@@ -194,12 +218,31 @@ after preparation so each CVT entry can be observed independently. That extra
 instruction does not change the CVT. Only the independent interpreter executes the
 probe glyphs in this CVT comparison.
 
-`scripts/test_pdf_tt_points_reference.py` separately compares 19,473 authored
-programs on supplied triangle/twilight geometry. It covers point movement, CVT
+`scripts/test_pdf_tt_points_reference.py` separately runs 23,704 authored
+programs at 13, 37, 64 and 97 ppem on supplied triangle/twilight geometry. There are
+94,812 matching comparisons and four recorded IUP differences in the tested engines. It covers point movement, CVT
 cut-in boundaries, all delta size/step selections, looped shifts, relative
-positioning flags, single-width boundaries, mixed-zone/twilight cases, rounding,
+positioning flags, design-space scaling, interpolation, single-width boundaries, mixed-zone/twilight cases, rounding,
 original-coordinate reads and stack/line vector selection. It does not run the
 pinned fonts' full glyph programs or the PDF renderer.
+
+The IUP difference concerns repeated interpolation with a single touched anchor.
+The instruction contract says a later IUP ignores previous interpolation of an
+untouched point. CupidImage recomputes the point from its original coordinate;
+the tested engines add the anchor's shift again. An analytic regression checks the
+specified result, and the independent test reports that difference without counting
+it as agreement. Repeated interpolation with two anchors matches independently.
+
+`scripts/test_pdf_tt_glyphs_reference.py` compares 9,330 simple-glyph outlines from
+the 12 pinned fonts, selecting Unicode mappings U+0020 through U+00FF, at 6, 9,
+13, 16, 24 and 37 ppem in legacy monochrome mode.
+It supplies independently extracted geometry, original design points and phantom
+points, then runs the original font, preparation and glyph instruction streams.
+The comparison checks every resulting outline coordinate. A broader diagnostic at
+`--all-simple` mode at 16 ppem matched 17,462 simple-glyph outlines and rejected four programs with a zero
+original reference span at IP, which the instruction contract declares invalid.
+Those rejected programs are not counted as matched or fully supported. Neither probe
+tests the native glyph loader, composite assembly, grayscale execution or PDF rasterization.
 
 Remaining work includes diagonal rounding, custom instruction definitions,
 nonuniform sizing, phantom-point construction, the remaining point instructions and integration with transformed outline rendering.

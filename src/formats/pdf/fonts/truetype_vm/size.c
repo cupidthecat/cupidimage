@@ -38,6 +38,7 @@ int cupidimage_pdf_tt_vm_set_size(pdf_tt_vm *vm, unsigned units, int32_t pixels,
     if (vm->zones[0].count)
         memset(vm->zones[0].points, 0, (size_t)vm->zones[0].count * sizeof(*vm->zones[0].points));
     free(vm->zones[1].points);
+    free(vm->zones[1].design);
     vm->zones[1] = (pdf_tt_vm_zone){0};
     return 1;
 }

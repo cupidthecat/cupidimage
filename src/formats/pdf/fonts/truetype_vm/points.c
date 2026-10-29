@@ -19,10 +19,12 @@ int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *vm, unsigned twilight, const pdf_t
     }
     if (count)
         memcpy(one, glyph, (size_t)count * sizeof(*one));
+    free(vm->zones[0].design);
+    free(vm->zones[1].design);
     free(vm->zones[0].points);
     free(vm->zones[1].points);
-    vm->zones[0] = (pdf_tt_vm_zone){zero, twilight, 0};
-    vm->zones[1] = (pdf_tt_vm_zone){one, count, outline};
+    vm->zones[0] = (pdf_tt_vm_zone){.points = zero, .count = twilight};
+    vm->zones[1] = (pdf_tt_vm_zone){.points = one, .count = count, .outline_count = outline};
     return 1;
 }
 
@@ -39,7 +41,8 @@ int cupidimage_pdf_tt_vm_load_glyph_points(pdf_tt_vm *vm, const pdf_tt_vm_point 
     if (count)
         memcpy(points, glyph, (size_t)count * sizeof(*points));
     free(vm->zones[1].points);
-    vm->zones[1] = (pdf_tt_vm_zone){points, count, outline};
+    free(vm->zones[1].design);
+    vm->zones[1] = (pdf_tt_vm_zone){.points = points, .count = count, .outline_count = outline};
     return 1;
 }
 
@@ -85,8 +88,10 @@ int cupidimage_pdf_tt_vm_distance(pdf_tt_vm *vm, const int32_t a[2], const int32
 
 int cupidimage_pdf_tt_vm_move(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t distance) {
     const int32_t *freedom = vm->graphics.freedom, *projection = vm->graphics.projection;
-    int64_t dot = cupidimage_pdf_tt_vm_divide(
-        (int64_t)freedom[0] * projection[0] + (int64_t)freedom[1] * projection[1], 16384);
+    int64_t product = (int64_t)freedom[0] * projection[0] + (int64_t)freedom[1] * projection[1];
+    /* The coupling coefficient drops the low 14 bits. Use explicit floor
+     * division rather than implementation-defined signed right shift. */
+    int64_t dot = product / 16384 - (product < 0 && product % 16384 != 0);
     if (!dot && distance)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);
     int64_t x = distance ? cupidimage_pdf_tt_vm_divide(distance * freedom[0], dot) : 0;
