@@ -165,8 +165,13 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
         return;
     }
     st->clip_budget->tests_left -= area;
+    if (area && mode != 3 && !cupidimage_pdf_text_group_begin(st)) {
+        free(stroke);
+        st->image_failed = 1;
+        return;
+    }
     pdf_paint_group combined = {0};
-    if (mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined)) {
+    if (area && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined)) {
         free(stroke);
         return;
     }
@@ -312,19 +317,6 @@ static unsigned char pdf_codepoint_to_ascii(uint32_t cp) {
 void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, size_t length) {
     if (!text || !st->in_text)
         return;
-    const pdf_font_map *current = st->gs.current_font;
-    if (length && ((st->gs.text_mode & 3) != 3 || (current && current->type3)) &&
-        !cupidimage_pdf_text_group_begin(st)) {
-        st->image_failed = 1;
-        cupidimage_set_err(st->error, st->error_capacity,
-                           "pdf: text transparency group exceeds limits");
-        return;
-    }
-    if (length && st->gs.text_mode >= 4 && (!current || !current->type3) &&
-        !cupidimage_pdf_text_clip_prepare(st)) {
-        st->image_failed = 1;
-        return;
-    }
     const unsigned char *bytes = (const unsigned char *)text;
     size_t pos = 0;
     while (pos < length && !st->image_failed) {
@@ -392,7 +384,10 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
-            if (!cupidimage_pdf_draw_type3_glyph(st, font, bytes[before]))
+            int paints = st->gs.text_mode != 3 && st->gs.font_size_pts != 0 &&
+                         st->gs.horizontal_scale != 0 && font->type3->glyphs[bytes[before]];
+            if ((paints && !cupidimage_pdf_text_group_begin(st)) ||
+                !cupidimage_pdf_draw_type3_glyph(st, font, bytes[before]))
                 st->image_failed = 1;
         } else if ((font && font->program) || cp >= 32) {
             if (font && font->cid && font->cid->vertical) {

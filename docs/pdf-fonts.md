@@ -526,7 +526,8 @@ also remain separate from reference passes.
 
 ## Text surface work
 
-An implicit knockout group is allocated when a text string first needs to paint,
+For outline and bitmap fonts, an implicit knockout group is allocated when a
+glyph has drawable geometry,
 not when BT merely resets text state. Empty text objects and outline-font text
 in invisible or clipping-only mode do not allocate a color surface. Clipping
 masks, text advances and Type 3 painting keep their existing rules.
@@ -713,3 +714,31 @@ Text rendering modes 2 and 6 use the combined-object grouping described in the
 of TK. Partial stroke shape and gaps in stroke patterns no longer discard the
 underlying fill. The temporary group does not change advances, glyph selection
 or the text clip accumulated for ET.
+
+
+## Glyphs without outlines
+
+ISO 32000-1 and ISO 32000-2 section 9.3.6 explicitly exempt text containing no
+glyph outlines from changing the clipping path. Empty strings and outline-less
+glyphs therefore leave the existing clip unchanged, even in modes 4 through 7.
+Mixed text accumulates the actual outlines until ET. A nonempty outline collapsed
+by zero font size or horizontal scale still establishes an empty clipping region;
+that is different from a glyph with no outline at all.
+
+The renderer makes this decision after glyph selection. Code 32 can select a glyph
+with ink, and another code can select a space. Glyph zero can also have an outline;
+none of these codes or indices are treated as intrinsically empty. Text advances
+and word spacing remain based on the PDF's encoded characters and metrics.
+
+Outline and bitmap glyphs do not allocate an implicit text group merely because
+a Tj operand contains bytes. Their groups are deferred until drawable geometry is
+present. Defined Type 3 programs still require execution to determine their marks;
+invisible, missing or zero-scaled Type 3 glyphs avoid unnecessary outer text groups.
+Large-page and repeated-space tests exercise the resource-budget difference.
+
+The comparison renderer currently creates an empty clip for outline-less-only
+text. The tests retain the explicit ISO exception rather than that behavior. Three
+older test expectations were corrected accordingly, without changing the expected
+rendering of nonempty glyphs. `make test-pdf-empty-glyphs` covers the distinction;
+two owned analytic assets cover clip preservation and a space code mapped to ink.
+Regenerate them with `scripts/generate_pdf_empty_glyph_fixtures.py`.

@@ -581,6 +581,20 @@
       "height": 120,
       "rgba_zlib": "eJzt27ENggAURdFtXIAFXMA1qB3BisptGFBbCxJUTG7AU5wBXnLL/4d5fAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAhnab7z9Wb2A/9UdIfpdduztfbJvrjU/qjpD9KS/2N0+Vt+mML/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1Rcn9PSX+U9Edp7Zf8G/Um9kN/lPQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPAfnskGzMQ=",
       "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/empty-glyph-preserves-clip.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0cEJAEEQhMDNP+m5HM6HNFhgBN57d/W/MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy/IB6l3LCE=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/space-code-outline-clip.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwED8mx4iBunnLqmDzgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAX5yzCzb8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/AcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwzAVda+hK",
+      "tolerance": 0
     }
   ]
 }

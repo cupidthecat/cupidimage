@@ -292,3 +292,9 @@ than being counted as independent matches.
     python3 scripts/test_pdf_combined_paint.py bin/test_pdf_pages bin/test_pdf_clip_oom --reference
 
 Regenerate the three owned assets with `scripts/generate_pdf_combined_fixtures.py`.
+
+
+Outline and bitmap text now start their implicit group only when a glyph has
+drawable geometry. Outline-less glyphs neither allocate that surface nor establish
+a text clip. See the [font guide](pdf-fonts.md#glyphs-without-outlines) for the
+specified clipping exception and the comparison renderer's differing behavior.

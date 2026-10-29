@@ -5,23 +5,27 @@ int cupidimage_pdf_text_group_begin(pdf_render_state *st) {
     if (!st->gs.text_knockout || st->text_group)
         return 1;
     if (!st->form_budget->calls_left)
-        return 0;
+        goto fail;
     st->form_budget->calls_left--;
     pdf_transparency_group *group = calloc(1, sizeof(*group));
     if (!group)
-        return 0;
+        goto fail;
     /* Text usually touches a small part of the page. Initialize its backdrop
      * only where a glyph contributes shape, retaining the same group equations. */
     group->lazy_backdrop = 1;
     if (!cupidimage_pdf_group_surface(st, group, 0, NULL)) {
         free(group);
-        return 0;
+        goto fail;
     }
     group->knockout = 1;
     st->text_group = group;
     st->group = group;
     st->img = &group->image;
     return 1;
+fail:
+    cupidimage_set_err(st->error, st->error_capacity,
+                       "pdf: text transparency group exceeds limits");
+    return 0;
 }
 
 /* Implicit text/glyph groups do not reset or save the caller's paint state. */

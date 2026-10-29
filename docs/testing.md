@@ -305,8 +305,10 @@ owned geometric fixtures include encrypted and filtered font streams. Run
 selected independent comparisons. Clear private dictionaries and a FontMatrix
 rejected by the independent loader remain analytic-only tests.
 
-The shared text tests also verify that showing a space in a clipping mode creates
-an empty clip, rather than leaving the previous clip unchanged.
+The shared text tests follow ISO 32000-1/2 section 9.3.6: glyphs with no outlines
+leave the previous clip unchanged. Earlier expectations that a space alone creates
+an empty clip were corrected; the installed comparison renderer differs on that
+case. The decision follows the selected glyph, not its character code.
 
 ## TrueType character maps and names
 
@@ -594,3 +596,10 @@ not establish fidelity to unavailable original font designs.
 explicit groups and analytic interior colors. Its optional `--reference` pass
 qualifies selected color samples, not whole-image edge coverage. Three owned
 assets cover alpha-as-shape, stroke-pattern holes and one-time mask application.
+
+`make test-pdf-empty-glyphs` checks outline-less text, encoded spaces with ink,
+empty .notdef glyphs, degenerate nonempty outlines, saved clips and deferred group
+allocation. Large-page and 5,000-object cases check that nonpainting glyphs do not
+consume implicit surfaces or clipping operations. Optional independent comparisons
+cover mixed text with nonempty glyphs; outline-less-only clipping uses the ISO rule
+as its oracle.

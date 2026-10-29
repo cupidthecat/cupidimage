@@ -66,7 +66,8 @@ def main():
         for mode in (4,5,6,7):
             same('clip-'+str(mode),f'BT /F 30 Tf {mode} Tr 20 30 Td (A) Tj ET 1 0 0 rg 0 0 120 90 re f',('20 30 12 18 re S ' if mode in (5,6) else '')+'20 30 12 18 re W n 1 0 0 rg 0 0 120 90 re f',reference=mode==7,secondary=True)
         same('invisible','BT /F 30 Tf 3 Tr 20 30 Td (A) Tj ET','q Q')
-        same('empty-clip','BT /F 30 Tf 7 Tr 20 30 Td ( ) Tj ET 1 0 0 rg 0 0 120 90 re f','q Q')
+        # ISO 32000-1/2 9.3.6 exempts outline-less glyphs; the comparison renderer differs.
+        same('empty-clip','BT /F 30 Tf 7 Tr 20 30 Td ( ) Tj ET 1 0 0 rg 0 0 120 90 re f','1 0 0 rg 0 0 120 90 re f',reference=False)
         same('rotated','BT /F 30 Tf 0 1 -1 0 80 20 Tm (A) Tj ET','62 20 18 12 re f')
         same('matrix',text,'2 30 18 12 re f',matrix='[0 .001 -.001 0 0 0]',reference=False)
         same('matrix-shear',text,'20 30 m 32 30 l 41 48 l 29 48 l h f',matrix='[.001 0 .0005 .001 0 0]')

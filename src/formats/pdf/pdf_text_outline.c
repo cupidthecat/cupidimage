@@ -300,7 +300,8 @@ static int outline_winding(const outline_edge *edges, unsigned count, double x, 
 int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_program *program,
                                            unsigned glyph) {
     program = cupidimage_pdf_font_program_select(program, &glyph);
-    if (st->gs.text_mode == 3 || st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0)
+    int zero_text_transform = st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0;
+    if (st->gs.text_mode == 3 || (zero_text_transform && st->gs.text_mode < 4))
         return 1;
     if (!st->form_budget->glyph_calls_left)
         return 0;
@@ -364,8 +365,16 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
             goto done;
     } else if (!outline_path(&outline, path, edges, &edge_count, m, flatness_squared))
         goto done;
+    if (!edge_count) {
+        ok = 1;
+        goto done;
+    }
     if (clipping && !cupidimage_pdf_text_clip_prepare(st))
         goto done;
+    if (zero_text_transform) {
+        ok = 1;
+        goto done;
+    }
     double x0 = st->img->width, y0 = st->img->height, x1 = 0, y1 = 0;
     for (unsigned i = 0; i < edge_count; i++) {
         const outline_edge *e = edges + i;
@@ -404,7 +413,9 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     if (edge_count && pixels > st->clip_budget->tests_left / edge_count)
         goto done;
     st->clip_budget->tests_left -= pixels * edge_count;
-    if (mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined))
+    if (pixels && mode != 3 && !cupidimage_pdf_text_group_begin(st))
+        goto done;
+    if (pixels && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined))
         goto done;
     for (int y = top; y < bottom && !st->image_failed; y++)
         for (int x = left; x < right && !st->image_failed; x++) {

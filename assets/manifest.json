@@ -639,6 +639,10 @@
       "sha256": "1cbde90a8ddfc3d95cec125cf19e9eceb28edb8f2ac2f59b4b39d2f6ead21d41"
     },
     {
+      "path": "assets/pdf/reference/empty-glyph-preserves-clip.pdf",
+      "sha256": "33dd1265214de941a10c4657d838a74521012171516fb79ef71ccb55ed895601"
+    },
+    {
       "path": "assets/pdf/reference/eof-without-newline.pdf",
       "sha256": "18904967c8ed8c705cb259efed6a2a0dca9262bdddefbc99c475b99b8938a0cf"
     },
@@ -849,6 +853,10 @@
     {
       "path": "assets/pdf/reference/soft-mask.pdf",
       "sha256": "10b02c491c96a069792b8762d14722a58402adb659e508824b80e1d3407eda0c"
+    },
+    {
+      "path": "assets/pdf/reference/space-code-outline-clip.pdf",
+      "sha256": "9c1b0fac0efe991a932f0e5d55c3d9afe5b686a0bcc58b4bbcc529ef417f1abf"
     },
     {
       "path": "assets/pdf/reference/standard-extended-advance.pdf",

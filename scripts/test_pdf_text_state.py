@@ -66,7 +66,8 @@ def main():
         same('text clip restored by Q','q '+prefix+'7 Tr (AB) Tj ET Q 1 0 0 rg 0 0 120 90 re f',
              '1 0 0 rg 0 0 120 90 re f')
         blank=render(prefix+'7 Tr ( ) Tj ET 0 0 120 90 re f')
-        expected=render('q Q')
+        # Outline-less glyphs do not establish a new clip (ISO 32000-1/2 9.3.6).
+        expected=render('0 0 120 90 re f')
         assert blank.returncode==0 and blank.stdout==expected.stdout
         count+=1
         stroke=render('1 0 0 RG '+prefix+'1 Tr (AB) Tj ET')
