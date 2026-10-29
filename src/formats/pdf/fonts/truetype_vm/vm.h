@@ -90,4 +90,7 @@ int cupidimage_pdf_tt_vm_set_zones(pdf_tt_vm *, unsigned, const pdf_tt_vm_point 
 int cupidimage_pdf_tt_vm_set_design(pdf_tt_vm *, const int32_t (*)[2], unsigned, int32_t);
 int cupidimage_pdf_tt_vm_save_preparation(pdf_tt_vm *);
 int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned, unsigned);
+/* Component/parent instruction phases reset graphics and geometry but share
+ * the enclosing glyph's private CVT/storage until the next begin_glyph call. */
+int cupidimage_pdf_tt_vm_begin_component(pdf_tt_vm *, const pdf_tt_vm_point *, unsigned, unsigned);
 #endif

@@ -47,6 +47,7 @@ static void vm_test_free(void *value) {
 #define malloc vm_test_malloc
 #define calloc vm_test_calloc
 #define free vm_test_free
+#include "../src/formats/pdf/fonts/truetype_vm/contours.c"
 #include "../src/formats/pdf/fonts/truetype_vm/design.c"
 #include "../src/formats/pdf/fonts/truetype_vm/direct.c"
 #include "../src/formats/pdf/fonts/truetype_vm/graphics.c"
@@ -183,6 +184,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
     return ok ? 0 : 3;
 }
 
+#include "pdf_tt_vm/contours.c"
 #include "pdf_tt_vm/direct.c"
 #include "pdf_tt_vm/interpolate.c"
 #include "pdf_tt_vm/lifecycle.c"
@@ -522,6 +524,7 @@ int main(int argc, char **argv) {
     movement_tests();
     relative_tests();
     direct_tests();
+    contour_tests();
     interpolation_tests();
     printf("TrueType VM foundations: %u checks, 0 failures\n", checks);
     return 0;

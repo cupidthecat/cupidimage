@@ -755,6 +755,7 @@ programs. A separate probe compares 9,330 simple-glyph outlines at six sizes usi
 supplied geometry for Unicode mappings U+0020 through U+00FF. Prepared state and
 glyph entry are tested separately. The PDF renderer
 does not invoke this engine yet. The [native loader](pdf-truetype-loader.md) now
-constructs simple glyphs and their phantom points and matches the same outline
-comparisons. Composite loading, the remaining point instructions and nonuniform
-sizing are still unfinished. No hinted-glyph parity is claimed by those tests.
+constructs simple and composite glyphs, their phantom points and instruction
+phases. Selected simple and composite outlines match independently in monochrome
+and grayscale modes. Remaining instructions, transformed sizing, scan conversion
+and PDF integration are still unfinished. No hinted-glyph parity is claimed by those tests.

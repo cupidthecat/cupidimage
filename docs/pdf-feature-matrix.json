@@ -860,7 +860,9 @@
             "tests/test_pdf_tt_vm.c",
             "docs/pdf-truetype-loader.md",
             "src/formats/pdf/fonts/truetype_hint/simple.c",
-            "tests/test_pdf_tt_loader.c"
+            "tests/test_pdf_tt_loader.c",
+            "docs/pdf-truetype-composites.md",
+            "src/formats/pdf/fonts/truetype_hint/composite.c"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
@@ -982,7 +984,9 @@
             "tests/test_pdf_tt_vm.c",
             "docs/pdf-truetype-loader.md",
             "src/formats/pdf/fonts/truetype_hint/simple.c",
-            "tests/test_pdf_tt_loader.c"
+            "tests/test_pdf_tt_loader.c",
+            "docs/pdf-truetype-composites.md",
+            "src/formats/pdf/fonts/truetype_hint/composite.c"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",

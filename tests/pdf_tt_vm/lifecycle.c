@@ -116,4 +116,21 @@ static void lifecycle_tests(void) {
     CHECK(cupidimage_pdf_tt_vm_begin_glyph(&vm, NULL, 0, 0));
     CHECK(allocations == before && !vm.prepared_cvt && !vm.prepared_storage);
     finish(&vm);
+    const int32_t component_cvt[] = {64};
+    init(&vm, component_cvt, 1);
+    CHECK(cupidimage_pdf_tt_vm_set_size(&vm, 64, 64, 64, 0, component_cvt));
+    CHECK(cupidimage_pdf_tt_vm_run(&vm, NULL, 0, PDF_TT_VM_PREP, 100));
+    CHECK(cupidimage_pdf_tt_vm_save_preparation(&vm));
+    CHECK(cupidimage_pdf_tt_vm_begin_glyph(&vm, NULL, 0, 0));
+    vm.cvt[0] = 97;
+    vm.storage[0] = 145;
+    vm.graphics.minimum_distance = 192;
+    vm.graphics.loop = 7;
+    CHECK(cupidimage_pdf_tt_vm_begin_component(&vm, NULL, 0, 0));
+    CHECK(vm.cvt[0] == 97 && vm.storage[0] == 145);
+    CHECK(vm.graphics.minimum_distance == 64 && vm.graphics.loop == 1);
+    CHECK(vm.prepared_cvt[0] == 64 && vm.prepared_storage[0] == 0);
+    CHECK(cupidimage_pdf_tt_vm_begin_glyph(&vm, NULL, 0, 0));
+    CHECK(vm.cvt[0] == 64 && vm.storage[0] == 0);
+    finish(&vm);
 }

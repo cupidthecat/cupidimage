@@ -30,4 +30,5 @@ int cupidimage_pdf_tt_vm_design_distance(pdf_tt_vm *, unsigned, int32_t, unsigne
                                          int32_t *);
 int cupidimage_pdf_tt_vm_direct_op(pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_interpolate_op(pdf_tt_vm *, unsigned);
+int cupidimage_pdf_tt_vm_contour_op(pdf_tt_vm *, unsigned);
 #endif

@@ -10,11 +10,11 @@ typedef struct {
     size_t glyph_budget;
 } pdf_tt_hint;
 
-/* The checked font's backing bytes must outlive this instance. Initialize once;
+/* The checked font's immutable backing bytes must outlive this instance. Initialize once;
  * free before reinitializing. Failure invalidates the instance until freed. */
 int cupidimage_pdf_tt_hint_init(pdf_tt_hint *, const pdf_tt_font *, int32_t, int32_t, int, size_t);
 void cupidimage_pdf_tt_hint_free(pdf_tt_hint *);
-/* Native simple-glyph loading only. Composite glyphs fail as unsupported.
+/* Bounded simple/composite loading and instruction execution.
  * Results remain owned by vm.zones[1], including four final phantom points. */
 int cupidimage_pdf_tt_hint_glyph(pdf_tt_hint *, unsigned);
 #endif

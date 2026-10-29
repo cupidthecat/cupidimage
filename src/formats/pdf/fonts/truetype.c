@@ -235,64 +235,19 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
     int contours = tt_i16(p);
     if (contours >= 0)
         return tt_simple(p, length, contours, o, NULL, NULL);
-    if (contours != -1)
-        return 0;
     size_t at = 10;
     unsigned flags = 0, base = o->count, instructions = 0;
+    pdf_tt_table view = {p, length};
     do {
-        if (length - at < 4)
+        pdf_tt_component record;
+        if (!cupidimage_pdf_tt_component_read(&view, &at, &record))
             return 0;
-        flags = tt_u16(p + at);
+        flags = record.flags;
         instructions |= flags & 256;
-        unsigned component = tt_u16(p + at + 2);
-        at += 4;
-        if (flags & 0xe000)
-            return 0;
-        int arg1, arg2;
-        if (flags & 1) {
-            if (length - at < 4)
-                return 0;
-            arg1 = flags & 2 ? tt_i16(p + at) : (int)tt_u16(p + at);
-            arg2 = flags & 2 ? tt_i16(p + at + 2) : (int)tt_u16(p + at + 2);
-            at += 4;
-        } else {
-            if (length - at < 2)
-                return 0;
-            arg1 = p[at++];
-            arg2 = p[at++];
-            if (flags & 2) {
-                if (arg1 > 127)
-                    arg1 -= 256;
-                if (arg2 > 127)
-                    arg2 -= 256;
-            }
-        }
-        double a = 1, b = 0, c = 0, d = 1;
-        unsigned transforms = !!(flags & 8) + !!(flags & 64) + !!(flags & 128);
-        if (transforms > 1 || (flags & 0x1800) == 0x1800)
-            return 0;
-        if (flags & 8) {
-            if (length - at < 2)
-                return 0;
-            a = d = tt_i16(p + at) / 16384.0;
-            at += 2;
-        }
-        if (flags & 64) {
-            if (length - at < 4)
-                return 0;
-            a = tt_i16(p + at) / 16384.0;
-            d = tt_i16(p + at + 2) / 16384.0;
-            at += 4;
-        }
-        if (flags & 128) {
-            if (length - at < 8)
-                return 0;
-            a = tt_i16(p + at) / 16384.0;
-            b = tt_i16(p + at + 2) / 16384.0;
-            c = tt_i16(p + at + 4) / 16384.0;
-            d = tt_i16(p + at + 6) / 16384.0;
-            at += 8;
-        }
+        unsigned component = record.glyph;
+        int32_t arg1 = record.argument[0], arg2 = record.argument[1];
+        double a = record.matrix[0] / 16384.0, b = record.matrix[1] / 16384.0,
+               c = record.matrix[2] / 16384.0, d = record.matrix[3] / 16384.0;
         unsigned child = o->count;
         double child_origin;
         if (!tt_glyph(f, component, o, chain, depth + 1, calls, &child_origin))
@@ -324,14 +279,9 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
                 return 0;
         }
     } while (flags & 32);
-    if (instructions) {
-        if (length - at < 2)
-            return 0;
-        unsigned size = tt_u16(p + at);
-        at += 2;
-        if (size > length - at)
-            return 0;
-    }
+    pdf_tt_table program;
+    if (!cupidimage_pdf_tt_component_program(&view, at, instructions != 0, &program))
+        return 0;
     return 1;
 }
 

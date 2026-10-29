@@ -156,7 +156,7 @@ uniform size preparation, vector normalization, point zones, original design coo
 prepared-state lifetimes. Instances own their mutable state but borrow immutable program
 bodies. This foundation is currently exercised by tests, not the page renderer;
 see [its scope and ownership rules](pdf-truetype-vm.md) before integrating hinting.
-`fonts/truetype_hint` connects the shared simple-outline decoder to size preparation,
-phantom construction and glyph execution. Its owned VM borrows the checked font's
+`fonts/truetype_hint` connects the shared outline/component decoders to size preparation,
+phantom construction, bounded composite assembly and glyph execution. Its owned VM borrows the checked font's
 backing bytes; [the loader guide](pdf-truetype-loader.md) describes that lifetime and
-the still-unsupported composite path.
+component state sharing.

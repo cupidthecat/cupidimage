@@ -1,9 +1,9 @@
 # Native TrueType glyph loading
 
-The native hinting loader connects simple-glyph decoding to the
+The native hinting loader connects simple/composite glyph decoding to the
 [instruction engine](pdf-truetype-vm.md). It is tested separately from PDF rendering.
-**PDF pages still use unhinted outlines.** Composite loading and rasterization remain
-unfinished, so this API is not a complete hinted-font backend.
+**PDF pages still use unhinted outlines.** Remaining instruction coverage, transformed sizing and rasterization are unfinished,
+so this API is not a complete hinted-font backend.
 
 ## Ownership and preparation
 
@@ -19,9 +19,11 @@ prepared state. Font and preparation execution share one work budget. Temporary
 control values are freed after preparation; the VM owns its scaled values and
 snapshots.
 
-Each glyph starts from the saved state. Twilight coordinates retain the VM's
+Each top-level glyph starts from the saved state. Twilight coordinates retain the VM's
 specified lifetime across glyphs, while glyph points, stack contents and private
-CVT/storage writes are replaced or restored. Allocation failures leave an instance
+CVT/storage writes are replaced or restored. Within a composite, child, sibling and
+parent instruction phases share private CVT/storage values. Component entry resets
+graphics settings and geometry without discarding those private writes. Allocation failures leave an instance
 safe to free, but not safe to execute again.
 
 ## Simple glyphs
@@ -40,8 +42,8 @@ overflow and exhausted budgets fail explicitly.
 
 An empty glyph can still contain instructions that operate on its phantom points.
 Those instructions execute even when there are no outline contours. Composite
-descriptions currently return an unsupported result; they are not flattened and
-passed off as correctly hinted glyphs.
+glyphs use a [separate assembly and instruction path](pdf-truetype-composites.md)
+that processes children before their parent.
 
 ## Phantom points and metrics
 
@@ -75,7 +77,8 @@ and allocation failures. It also checks a 32,767-contour description against the
 shared decoder.
 
 With the optional font test packages installed, native loading produces 9,330
-matching simple-glyph outlines from the 12 pinned fonts at six sizes, selecting
+matching simple-glyph outlines in each of monochrome and grayscale configurations
+from the 12 pinned fonts at six sizes, selecting
 Unicode mappings U+0020 through U+00FF. Another 576 authored-font cases probe
 horizontal bearings, both original/current phantom coordinates, vertical metrics
 and the `OS/2`/`hhea` fallbacks. Of these, 543 match independently and 33 shortened-table
@@ -87,9 +90,14 @@ The all-simple mode at 16 ppem covers 17,462 matching
 outlines and four explicitly rejected zero-span IP programs. Rejections are not
 counted as matches or full font support.
 
-Composite assembly and its instruction phase, component metrics and attachments,
-nonuniform/rotated sizing, the remaining VM instructions, antialiased coverage and
-PDF integration remain open. Existing unhinted rendering continues unchanged.
+Composite probes separately compare 4,242 selected outlines at six sizes in each
+configuration, plus 12,596 outlines in the all-composite 16-ppem mode. Authored tests
+cover nesting, transforms, metric inheritance, point attachments, private state,
+malformed graphs and allocation failures. See the composite guide for exact scope
+and known comparison differences.
+
+Nonuniform/rotated sizing, remaining VM instructions, antialiased coverage and PDF
+integration remain open. Existing unhinted rendering continues unchanged.
 
 The data contracts follow the official [glyph table](https://learn.microsoft.com/en-us/typography/opentype/spec/glyf),
 [maximum profile](https://learn.microsoft.com/en-us/typography/opentype/spec/maxp),

@@ -38,8 +38,8 @@ int cupidimage_pdf_tt_vm_save_preparation(pdf_tt_vm *vm) {
     return 1;
 }
 
-int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *vm, const pdf_tt_vm_point *points, unsigned count,
-                                     unsigned outline) {
+static int vm_begin_outline(pdf_tt_vm *vm, const pdf_tt_vm_point *points, unsigned count,
+                            unsigned outline, int restore_private) {
     if (vm->error != PDF_TT_VM_OK)
         return 0;
     if (!vm->prepared)
@@ -54,11 +54,21 @@ int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *vm, const pdf_tt_vm_point *point
         vm->graphics = vm->prepared_graphics;
     }
     vm->graphics.rounding = (pdf_tt_vm_round){64, 0, 32, 0};
-    if (vm->storage_count)
+    if (restore_private && vm->storage_count)
         memcpy(vm->storage, vm->prepared_storage, (size_t)vm->storage_count * sizeof(*vm->storage));
-    if (vm->cvt_count)
+    if (restore_private && vm->cvt_count)
         memcpy(vm->cvt, vm->prepared_cvt, (size_t)vm->cvt_count * sizeof(*vm->cvt));
     vm->stack_size = 0;
     vm->stage = PDF_TT_VM_GLYPH;
     return 1;
+}
+
+int cupidimage_pdf_tt_vm_begin_glyph(pdf_tt_vm *vm, const pdf_tt_vm_point *points, unsigned count,
+                                     unsigned outline) {
+    return vm_begin_outline(vm, points, count, outline, 1);
+}
+
+int cupidimage_pdf_tt_vm_begin_component(pdf_tt_vm *vm, const pdf_tt_vm_point *points,
+                                         unsigned count, unsigned outline) {
+    return vm_begin_outline(vm, points, count, outline, 0);
 }

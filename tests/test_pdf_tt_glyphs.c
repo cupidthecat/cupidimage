@@ -45,7 +45,7 @@ static unsigned char *read_file(const char *path, size_t *length) {
     return p;
 }
 
-static int native_probe(const char *path, const char *size, const char *index) {
+static int native_probe(const char *path, const char *size, const char *index, int grayscale) {
     char *end;
     long ppem = strtol(size, &end, 10);
     if (!*size || *end || ppem < 1 || ppem > 96)
@@ -61,8 +61,8 @@ static int native_probe(const char *path, const char *size, const char *index) {
         return 2;
     }
     pdf_tt_hint hint;
-    int ok = cupidimage_pdf_tt_hint_init(&hint, &font, (int32_t)ppem * 64, (int32_t)ppem * 64, 0,
-                                         1000000);
+    int ok = cupidimage_pdf_tt_hint_init(&hint, &font, (int32_t)ppem * 64, (int32_t)ppem * 64,
+                                         grayscale, 1000000);
     if (ok)
         ok = cupidimage_pdf_tt_hint_glyph(&hint, (unsigned)glyph);
     pdf_tt_vm *vm = &hint.vm;
@@ -82,8 +82,8 @@ static int native_probe(const char *path, const char *size, const char *index) {
 }
 
 int main(int argc, char **argv) {
-    if (argc == 5 && !strcmp(argv[2], "--native"))
-        return native_probe(argv[1], argv[3], argv[4]);
+    if (argc == 5 && (!strcmp(argv[2], "--native") || !strcmp(argv[2], "--native-gray")))
+        return native_probe(argv[1], argv[3], argv[4], !strcmp(argv[2], "--native-gray"));
     if (argc != 4)
         return 2;
     char *end;

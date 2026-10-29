@@ -14,4 +14,12 @@ static inline int32_t tt_hint_i16(const unsigned char *p) {
 }
 
 int cupidimage_pdf_tt_hint_phantoms(pdf_tt_hint *, unsigned, const pdf_tt_table *, int32_t[4][2]);
+int cupidimage_pdf_tt_hint_scale(pdf_tt_hint *, int32_t, int32_t *);
+int cupidimage_pdf_tt_hint_round(pdf_tt_hint *, int32_t, int32_t *);
+int cupidimage_pdf_tt_hint_take(pdf_tt_hint *, size_t *, size_t);
+int cupidimage_pdf_tt_hint_load(pdf_tt_hint *, unsigned, unsigned[16], unsigned, unsigned *,
+                                size_t *);
+int cupidimage_pdf_tt_hint_simple(pdf_tt_hint *, unsigned, const pdf_tt_table *, size_t *);
+int cupidimage_pdf_tt_hint_composite(pdf_tt_hint *, unsigned, const pdf_tt_table *, unsigned[16],
+                                     unsigned, unsigned *, size_t *);
 #endif

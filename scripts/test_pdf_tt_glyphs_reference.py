@@ -62,7 +62,10 @@ def main():
     parser.add_argument('probe')
     parser.add_argument('--all-simple', action='store_true')
     parser.add_argument('--native', action='store_true')
+    parser.add_argument('--gray', action='store_true')
     options = parser.parse_args()
+    if options.gray and not options.native:
+        parser.error("--gray requires --native")
     all_simple = options.all_simple
     sizes = (16,) if all_simple else (6, 9, 13, 16, 24, 37)
     rejected = []
@@ -84,7 +87,7 @@ def main():
                     face.set_pixel_sizes(ppem, ppem)
                     for name in names:
                         if options.native:
-                            command = [options.probe, str(font_path), '--native', str(ppem),
+                            command = [options.probe, str(font_path), '--native-gray' if options.gray else '--native', str(ppem),
                                        str(font.getGlyphID(name))]
                         else:
                             path.write_bytes(fixture(font, name, ppem))
@@ -101,7 +104,7 @@ def main():
                         assert status[:4] == [1, 0, 0, 0], (filename, name, ppem, status)
                         native = [tuple(map(int, line.split())) for line in lines[1:]]
                         face.load_glyph(font.getGlyphID(name), freetype.FT_LOAD_NO_BITMAP |
-                                        freetype.FT_LOAD_NO_AUTOHINT | freetype.FT_LOAD_TARGET_MONO)
+                                        freetype.FT_LOAD_NO_AUTOHINT | (freetype.FT_LOAD_TARGET_NORMAL if options.gray else freetype.FT_LOAD_TARGET_MONO))
                         actual = face.glyph.outline.points
                         if native != actual:
                             failures.append((filename, name, ppem,
@@ -114,7 +117,7 @@ def main():
     print(f'TrueType simple glyph reference: {checked} outline matches at {len(sizes)} sizes; '
           f'{len(rejected)} specified-invalid IP rejections; engine {freetype.version()}; '
           f'{"native loading" if options.native else "supplied geometry"}; '
-          'no composites or PDF rendering')
+          f'{"grayscale" if options.gray else "monochrome"}; no composites or PDF rendering')
 
 
 if __name__ == '__main__':

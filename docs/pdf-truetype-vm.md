@@ -19,7 +19,7 @@ value and function-definition state. It supports:
 - Axis-aligned, stack-defined and point-derived projection/freedom vectors,
   dual projection, vector reads and copying projection to freedom.
 - Owned twilight/glyph point zones, current/original coordinate reads, SCFS,
-  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, IP, IUP, UTP, DELTAP1/2/3, SHP and SHPIX.
+  MDAP, MIAP, MDRP, MIRP, MSIRP, MD, ALIGNRP, IP, IUP, UTP, DELTAP1/2/3, SHP, SHC and SHPIX.
 - Reference-point and zone selectors, loop count, minimum distance, control-value
   and single-width cut-ins, delta base/shift and automatic sign flipping.
 - Storage reads/writes, pixel- and font-unit control-value writes, uniform CVT
@@ -104,8 +104,11 @@ available when that zone has been allocated.
 After a successful preparation program, `cupidimage_pdf_tt_vm_save_preparation`
 records its control values, storage and graphics settings in owned snapshots.
 `cupidimage_pdf_tt_vm_begin_glyph` replaces only glyph-zone geometry and restores
-those snapshots. Writes made by one glyph therefore do not change the prepared
-CVT or storage seen by the next glyph.
+those snapshots. Writes made by one top-level glyph therefore do not change the prepared
+CVT or storage seen by the next glyph. `cupidimage_pdf_tt_vm_begin_component`
+restores graphics settings and geometry without restoring CVT/storage: child,
+sibling and parent instruction phases share these private values for the duration
+of one composite glyph. The next top-level entry restores the prepared snapshots.
 
 Glyph entry initializes vectors, reference points, zone selectors and loop count,
 and starts rounding at round-to-grid. Other prepared graphics settings are retained
@@ -121,7 +124,7 @@ stream also invalidates the previous snapshot.
 Snapshot and geometry allocations have bounded sizes and unwind on failure.
 Repeated snapshots reuse their buffers. These are explicit low-level interfaces;
 the [native simple-glyph loader](pdf-truetype-loader.md) uses them, but the PDF
-renderer does not. Composite glyph loading remains open.
+renderer does not. Composite loading uses a separate component-entry path within that loader.
 
 ## Point operations
 
@@ -161,6 +164,12 @@ along the freedom vector without using projection. SHP and SHPIX reset the loop
 count after successful execution. Every target is bounded and charged to the work
 budget, even when a size-specific exception does not match.
 
+SHC shifts one contour through the selected freedom/projection vectors. It excludes
+the reference point when that point belongs to the target contour, preserves
+original positions and marks moved axes as touched. Contour scans and moves consume
+the work budget. Twilight contour zero covers the allocated twilight points;
+other twilight contour indices are invalid. SHC does not change the loop setting.
+
 MIRP applies single-width substitution, automatic sign selection, same-zone CVT
 cut-in, optional rounding and minimum distance in instruction order. It reads
 original distance through dual projection and current distance through projection.
@@ -188,9 +197,9 @@ Movement uses checked fixed-point projection and division. Its 2.14 coupling
 coefficient uses explicit floor division, including for negative vector products. A changing-coordinate
 request with a zero freedom/projection dot product fails explicitly. Near-perpendicular
 vector pairs need separate qualification. These operators are tested on supplied
-geometry. Native simple-glyph extraction and phantom construction are tested
-separately. Composite loading and the remaining point operators are still required
-before rendering integration.
+geometry. Native simple/composite loading and phantom construction are tested separately.
+The remaining point operators and rasterization work are still required before
+rendering integration.
 
 ## Verification
 
@@ -218,9 +227,9 @@ after preparation so each CVT entry can be observed independently. That extra
 instruction does not change the CVT. Only the independent interpreter executes the
 probe glyphs in this CVT comparison.
 
-`scripts/test_pdf_tt_points_reference.py` separately runs 23,704 authored
+`scripts/test_pdf_tt_points_reference.py` separately runs 23,916 authored
 programs at 13, 37, 64 and 97 ppem on supplied triangle/twilight geometry. There are
-94,812 matching comparisons and four recorded IUP differences in the tested engines. It covers point movement, CVT
+95,660 matching comparisons and four recorded IUP differences in the tested engines. It covers point movement, CVT
 cut-in boundaries, all delta size/step selections, looped shifts, relative
 positioning flags, design-space scaling, interpolation, single-width boundaries, mixed-zone/twilight cases, rounding,
 original-coordinate reads and stack/line vector selection. It does not run the
@@ -245,8 +254,8 @@ Those rejected programs are not counted as matched or fully supported. Neither p
 tests the native glyph loader, composite assembly, grayscale execution or PDF rasterization.
 
 Remaining work includes diagonal rounding, custom instruction definitions,
-nonuniform sizing, composite assembly and phantom propagation, the remaining point
-instructions and integration with transformed outline rendering.
+nonuniform sizing, the remaining point instructions, scan conversion and integration
+with transformed outline rendering.
 Existing PDF advances and resource ownership must remain intact
 when that integration is implemented.
 

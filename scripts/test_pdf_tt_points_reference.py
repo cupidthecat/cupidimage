@@ -289,6 +289,28 @@ def cases():
                                 push(target) + bytes([0x39]))
             for op in (0x49, 0x4a):
                 programs.append(base + push(2, a, b) + bytes([op, 0x01, 0x48]))
+    for op in (0x34, 0x35):
+        for reference in range(3):
+            for axis in (0, 1):
+                for value in (-97, -31, 31, 97, 145):
+                    for freedom in ((0, 16384) if not axis else (16384, 0), (3, 5), (-3, 5)):
+                        code = bytes([axis]) + push(reference, value) + bytes([0x48])
+                        code += push(reference) + bytes([0x11 if op & 1 else 0x12])
+                        code += push(*freedom) + bytes([0x0b]) + push(0) + bytes([op])
+                        programs.append(code)
+    for op in (0x34, 0x35):
+        for axis in (0, 1):
+            for value in (-97, 31, 97, 145):
+                for twilight_reference in (False, True):
+                    code = bytes([axis])
+                    if twilight_reference:
+                        code += push(0) + bytes([0x16]) + push(0, value) + bytes([0x44])
+                        code += push(0, 0) + bytes([0x3f])
+                    else:
+                        code += push(0, value) + bytes([0x48]) + push(0) + bytes([0x15])
+                    code += push(0) + bytes([0x11 if op & 1 else 0x12]) + push(0) + bytes([op])
+                    code += push(2, 1) + bytes([0x46, 0x01]) + push(1) + bytes([0x15, 0x48])
+                    programs.append(code)
     # The reference face can retain twilight storage between glyph loads.
     # Give both engines the same explicit initial coordinates for each program.
     reset = push(0) + bytes([0x16, 0x01])
