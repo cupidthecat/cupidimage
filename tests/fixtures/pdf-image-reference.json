@@ -674,6 +674,22 @@
       "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
       "tolerance": 0,
       "provenance": "Literal pixel rectangle selected from a normal appearance and mapped from its BBox to Rect."
+    },
+    {
+      "asset": "assets/pdf/reference/cff-direct-cid.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
+      "tolerance": 0,
+      "provenance": "Literal blue rectangle selected by CID 2 as CharStrings index 2 in a name-keyed CFF descendant."
+    },
+    {
+      "asset": "assets/pdf/reference/opentype-cff-direct-cid.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
+      "tolerance": 0,
+      "provenance": "Literal blue rectangle selected by CID 2 as CharStrings index 2 in a name-keyed CFF descendant."
     }
   ]
 }

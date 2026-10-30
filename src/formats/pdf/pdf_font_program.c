@@ -100,8 +100,13 @@ pdf_font_program *cupidimage_pdf_font_program_select(pdf_font_program *program, 
 unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code) {
     if (!program->cid)
         return code < 256 ? program->glyphs[code] : 0;
-    if (program->is_cff)
+    if (program->is_cff) {
+        /* ISO 32000-1 9.7.4.2: a name-keyed CFF descendant uses CID as GID,
+         * not as a charset SID or an encoded character code. */
+        if (!program->cff.top.cid)
+            return code < program->cff.chars.count ? code : 0;
         return code < 65536 ? program->cff.selectors[code] : 0;
+    }
     unsigned glyph = code;
     if (program->gid_map)
         glyph = (size_t)code * 2 + 1 < program->gid_length
@@ -113,6 +118,8 @@ unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsi
 int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code) {
     if (program->is_type1)
         return code < 256 && program->glyphs[code] < program->type1.glyph_count;
+    if (program->is_cff && program->cid && !program->cff.top.cid)
+        return code < program->cff.chars.count;
     if (program->is_cff)
         return !code || (program->cid ? code < 65536 && program->cff.selectors[code] != 0
                                       : code < 256 && program->glyphs[code] != 0);
@@ -286,7 +293,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
         program->is_cff = 1;
         if (!(program->cid ? cupidimage_pdf_cff_init_subset(&program->cff, cff.data, cff.length)
                            : cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length)) ||
-            program->cff.top.cid != (unsigned)program->cid ||
+            (program->cff.top.cid && !program->cid) ||
             (!program->cid && !ps_pdf_encoding(data, size, view, program)))
             goto done;
     } else if (!(program->cid

@@ -643,6 +643,10 @@
       "sha256": "5d84a7e46128159a7d136dcc2e853b788c3c5478adabd80632f80dfdea0c1af3"
     },
     {
+      "path": "assets/pdf/reference/cff-direct-cid.pdf",
+      "sha256": "a21cf07939ebc3e325ed9ef45e40e9340049e9ec136006a482e2ca4d27f34d71"
+    },
+    {
       "path": "assets/pdf/reference/color-key-mask.pdf",
       "sha256": "882e494b107ead819956d7a0aa9048c13d3e9ecd3b4d11a38e496587f54dc989"
     },
@@ -877,6 +881,10 @@
     {
       "path": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
       "sha256": "c7bd14a3fcd08d7688cb7b79c156a9cbeb672e6cbe6dd5bcaae4e64a154009dc"
+    },
+    {
+      "path": "assets/pdf/reference/opentype-cff-direct-cid.pdf",
+      "sha256": "ed5e9d56287c74a912a5f4dfd909b063af78fd30df587e8a837ac852e958cabf"
     },
     {
       "path": "assets/pdf/reference/optional-content-state.pdf",

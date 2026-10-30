@@ -110,3 +110,8 @@ The annotation-appearance.pdf and annotation-widget-state.pdf reference assets
 paint the same literal blue rectangle through a normal appearance and an AS-selected
 widget state. They exercise BBox-to-Rect placement without external fonts. Generate
 them with scripts/generate_pdf_annotation_fixtures.py.
+
+The cff-direct-cid.pdf and opentype-cff-direct-cid.pdf reference assets select glyph
+index 2 from name-keyed CFF programs through Type 0 PDF fonts. Both have literal
+blue-rectangle pixel expectations. Generate them with
+scripts/generate_pdf_cff_binding_fixtures.py.

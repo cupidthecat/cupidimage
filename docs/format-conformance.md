@@ -740,3 +740,11 @@ initial graphics state and shares page resource budgets. Missing appearances are
 not generated. See [annotation appearances](pdf-annotations.md) for remaining form,
 interaction and rendering gaps. A visible redaction or signature appearance does
 not apply redaction or validate a signature.
+
+## Name-keyed CFF descendants
+
+Type 0 PDF fonts now accept name-keyed CFF descendants and use CIDs directly as
+CharStrings indices, as required by ISO 32000-1/2, 9.7.4.2. CID-keyed programs
+continue to use their charset mapping. PDF metrics, notdef handling and optional
+extraction metadata remain separate from glyph selection. See [CFF binding](pdf-cff-bindings.md)
+for the focused tests and the remaining pixel differences in sampled documents.

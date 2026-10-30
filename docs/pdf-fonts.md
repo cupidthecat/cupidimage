@@ -195,8 +195,9 @@ oracles; their scan conversion still differs from the comparison raster.
 FontFile3 accepts Type1C, CIDFontType0C and OpenType programs containing a CFF
 version-1 table. The parser handles INDEX and DICT data, standard/custom strings,
 all three charset forms, standard/expert/custom encodings and supplemental
-encoding entries. CID fonts use charset CIDs, FDArray, FDSelect formats 0/3 and
-the selected Private DICT. PDF encoding overrides and Differences select names
+encoding entries. CID-keyed CFF programs use charset CIDs, FDArray, FDSelect
+formats 0/3 and the selected Private DICT. A [name-keyed CFF descendant](pdf-cff-bindings.md)
+uses PDF CIDs directly as CharStrings indices. PDF encoding overrides and Differences select names
 for simple fonts; ToUnicode does not replace those glyphs.
 
 Type 2 programs support line and cubic path operators, local/global subroutines,

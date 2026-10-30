@@ -3,6 +3,7 @@
 #include "fixtures/pdf-type1.inc"
 #include "formats/pdf/fonts/program.h"
 #include "formats/pdf/fonts/standard.h"
+#include "formats/pdf/pdf_internal.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,6 +66,13 @@ int main(void) {
                                      test_type1_font_clear, test_type1_font_encrypted));
     unsigned checks = check_program(&tt, 1) + check_program(&cff, 2) +
                       check_program(&type1, cupidimage_pdf_type1_name(&type1.type1, "A"));
+    cff.cid = 1;
+    for (unsigned code = 0; code <= 65536; code++) {
+        unsigned expected = code < cff.cff.chars.count ? code : 0;
+        assert(cupidimage_pdf_font_program_glyph(&cff, code) == expected);
+        assert(cupidimage_pdf_font_program_has_glyph(&cff, code) == (code < cff.cff.chars.count));
+        checks += 2;
+    }
     cupidimage_pdf_cff_free(&cff.cff);
     cupidimage_pdf_type1_free(&type1.type1);
 

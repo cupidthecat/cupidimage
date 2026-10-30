@@ -995,12 +995,17 @@
             "docs/pdf-subset-fonts.md",
             "src/formats/pdf/fonts/truetype_subset.c",
             "scripts/test_pdf_subset_fonts.py",
-            "scripts/test_pdf_subset_font_pages.py"
+            "scripts/test_pdf_subset_font_pages.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option.",
-            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -1252,10 +1257,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/fonts/cmap.c",
-            "scripts/test_pdf_cmaps.py"
+            "scripts/test_pdf_cmaps.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
-            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -1272,10 +1282,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/fonts/cmap.c",
-            "scripts/test_pdf_cmaps.py"
+            "scripts/test_pdf_cmaps.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
-            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -1292,10 +1307,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/fonts/cmap.c",
-            "scripts/test_pdf_cmaps.py"
+            "scripts/test_pdf_cmaps.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
-            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",

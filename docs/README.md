@@ -13,6 +13,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [PDF dense paths](pdf-dense-paths.md): bounded path growth, coincident edges and localized clip work.
 - [PDF vector coverage](pdf-graphics-coverage.md): path antialiasing, Type 3 graphics and paint composition.
 - [PDF clipping](pdf-clipping.md): geometric intersections, fractional coverage, state ownership and limits.
+- [CFF descendant binding](pdf-cff-bindings.md): direct glyph indices and CID-keyed charset selection.
 - [Embedded CID subset recovery](pdf-subset-fonts.md): bounded compatibility for damaged font locations and selectors.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
 - [TrueType instruction engine](pdf-truetype-vm.md): tested foundations and the unfinished hinting integration.
