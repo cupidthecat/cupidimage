@@ -326,7 +326,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                                            unsigned glyph) {
     program = cupidimage_pdf_font_program_select(program, &glyph);
     int zero_text_transform = st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0;
-    if (st->gs.text_mode == 3 || (zero_text_transform && st->gs.text_mode < 4))
+    if (st->gs.text_mode == 3 ||
+        ((zero_text_transform || st->optional_hidden) && st->gs.text_mode < 4))
         return 1;
     if (!st->form_budget->glyph_calls_left)
         return 0;
@@ -338,7 +339,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     pdf_path *path = NULL;
     outline_edge *edges = NULL;
     unsigned edge_count = 0;
-    int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
+    int mode = st->optional_hidden ? 3 : st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     unsigned char *stroke = NULL, *stroke_aa = NULL, *fill = NULL;
     int aa_stroke = st->text_antialias;
     int ok = 0, borrowed = 0;

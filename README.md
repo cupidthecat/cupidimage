@@ -20,6 +20,8 @@ TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](
 [TrueType](docs/pdf-page-hinting.md), [CFF](docs/pdf-cff-page-hinting.md) and
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
 profiles have separate controls and limits.
+[Default layer visibility](docs/pdf-optional-content.md) controls painting while
+preserving text advances and clipping.
 Tiling/shading patterns, styled dashed strokes and graphics-state soft masks are
 also supported. Transparency groups can use device colors, including
 [CMYK](docs/pdf-cmyk-blending.md), and selected

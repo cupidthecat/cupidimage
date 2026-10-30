@@ -59,7 +59,7 @@ with per-item status and evidence. It is not a completed standards audit.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, annotations, optional content, JPX/JBIG2 and full-document qualification |
+| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, default layer visibility, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, annotations, interactive layer configuration, JPX/JBIG2 and full-document qualification |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -157,7 +157,7 @@ nested decoys. A narrow compatibility repair accepts generation 65536 only on
 the unused object-zero free-list sentinel; live entries and other generation
 overflows remain errors. The normative free-list generation is still 65535.
 
-These changes follow [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf), especially object syntax, stream boundaries, cross-reference tables, and marked-content property lists. They do not implement optional-content visibility, complete fonts, or all image filters.
+These changes follow [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf), especially object syntax, stream boundaries, cross-reference tables, and marked-content property lists. Parsing alone does not establish rendering support. [Default optional-content visibility](pdf-optional-content.md) now has separate implementation and tests; complete fonts and all image filters remain unfinished.
 
 In a targeted all-page run on the same 225 cached corpus files, document errors
 fell from 114 to 8 and rendered pages increased from 70 to 103. Additional image

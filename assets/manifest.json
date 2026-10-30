@@ -579,6 +579,10 @@
       "sha256": "7c7392e7f2e1268d0e4f34aa6b95364b5057d87e3f9036d9ce376c72c1905e0e"
     },
     {
+      "path": "assets/pdf/optional-content-text.pdf",
+      "sha256": "408582b256bf91c79ebb444b99bcb69da574c368281ff08e9df242de37d3554b"
+    },
+    {
       "path": "assets/pdf/pdfjs/LICENSE-APACHE-2.0.txt",
       "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
     },
@@ -865,6 +869,10 @@
     {
       "path": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
       "sha256": "c7bd14a3fcd08d7688cb7b79c156a9cbeb672e6cbe6dd5bcaae4e64a154009dc"
+    },
+    {
+      "path": "assets/pdf/reference/optional-content-state.pdf",
+      "sha256": "20ce840340739ead4513bf5d41f60e5a0d892c0d961f6a18f7ade74ae9516dcf"
     },
     {
       "path": "assets/pdf/reference/packed-gray-1bit.pdf",

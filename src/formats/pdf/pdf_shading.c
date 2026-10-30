@@ -260,6 +260,8 @@ int cupidimage_pdf_paint_shading_view(pdf_render_state *st, const pdf_object_vie
 }
 
 int cupidimage_pdf_draw_shading(pdf_render_state *st, const char *name) {
+    if (st->optional_hidden)
+        return 1;
     if (!st->form_budget->calls_left)
         return 0;
     st->form_budget->calls_left--;

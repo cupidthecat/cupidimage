@@ -716,7 +716,7 @@
             "docs/pdf-content.md"
           ],
           "limitations": [
-            "Marked-content metadata does not yet implement optional-content visibility, tagged extraction or accessibility."
+            "Marked-content scopes now apply default optional-content visibility. Interactive layer state, tagged extraction and accessibility remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -3157,87 +3157,132 @@
         {
           "id": "15.1",
           "requirement": "Optional Content Groups (OCGs) and Membership Dictionaries (OCMDs).",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Alternate configuration selection, interactive usage adjustments and annotation appearance integration remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.2",
           "requirement": "Default/alternate configurations, initial on/off states, base states.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Alternate configuration selection, interactive usage adjustments and annotation appearance integration remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.3",
           "requirement": "Membership policies, visibility expressions, and usage-based visibility.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Alternate configuration selection, interactive usage adjustments and annotation appearance integration remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.4",
           "requirement": "View/print/export intents where relevant; nested marked optional content.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Alternate configuration selection, interactive usage adjustments and annotation appearance integration remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.5",
           "requirement": "Layers containing graphics, text, images, forms, and annotations.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Alternate configuration selection, interactive usage adjustments and annotation appearance integration remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.6",
@@ -3259,19 +3304,28 @@
         {
           "id": "15.7",
           "requirement": "Do not erroneously render mutually exclusive/hidden optional content.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Alternate configuration selection, interactive usage adjustments and annotation appearance integration remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         }
       ],
       "dependencies": [

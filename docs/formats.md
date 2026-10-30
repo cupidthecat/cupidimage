@@ -592,3 +592,12 @@ per collected font table. Allocations are released on metadata failure and after
 rendering.
 
 Embedded program details, limits and tests are in [PDF fonts and text](pdf-fonts.md).
+
+## PDF optional content
+
+The document's default optional-content configuration controls text, path, image
+and Form painting. Hidden sections retain graphics-state changes, clipping and
+text advances. OCG identity, OCMD policies and nested visibility expressions have
+bounded native implementations. Interactive layer controls and automatic usage
+adjustments remain separate work. See [optional content](pdf-optional-content.md)
+for the static rendering profile, limits and verification.

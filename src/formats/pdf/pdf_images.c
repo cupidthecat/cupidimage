@@ -484,9 +484,16 @@ int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name) {
     pdf_object_view image = {0};
     pdf_object_id object;
     int ok = 0;
+    if (st->optional_hidden)
+        return 1;
     if (pdf_image_object(st, name, &object) && cupidimage_pdf_state_object(st, object, &image)) {
-        if (cupidimage_pdf_entry_is_name(st->document, st->document_size, &image, "Subtype",
-                                         "Form"))
+        int visible = 1;
+        if (!cupidimage_pdf_optional_object_visibility(st, &image, &visible))
+            ok = 0;
+        else if (!visible)
+            ok = 1;
+        else if (cupidimage_pdf_entry_is_name(st->document, st->document_size, &image, "Subtype",
+                                              "Form"))
             ok = cupidimage_pdf_draw_form(st, object, &image);
         else
             ok = cupidimage_pdf_draw_image_view(st, &image);

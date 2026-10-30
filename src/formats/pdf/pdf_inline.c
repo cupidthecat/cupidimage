@@ -422,6 +422,11 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
          !cupidimage_pdf_is_delim(data[p.pos + 2])))
         goto done;
     p.pos += 2;
+    if (st->optional_hidden) {
+        *position = p.pos;
+        ok = 1;
+        goto done;
+    }
     p.used = dict_end;
     char suffix[80];
     int n = snprintf(suffix, sizeof(suffix), "/Length %zu >>\nstream\n", encoded_size);

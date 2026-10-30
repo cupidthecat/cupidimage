@@ -3,6 +3,7 @@
 
 #include "clipping/geometry.h"
 #include "fonts/page_hint.h"
+#include "optional_content/state.h"
 #include "pdf_internal.h"
 
 #define PDF_COLOR_COMPONENTS 32
@@ -198,6 +199,8 @@ typedef struct {
     pdf_object_id page_object;
     const pdf_object_view *resource_override;
     int image_failed;
+    int optional_hidden;
+    pdf_optional_content *optional_content;
     int paint_coverage_clipped;
     int text_antialias, truetype_hinting, cff_hinting, type1_hinting, graphics_antialias;
     char *error;
@@ -394,6 +397,10 @@ int cupidimage_pdf_clip_limit_mask(pdf_render_state *, const unsigned char *, in
 int cupidimage_pdf_clip_append_edge_to(pdf_render_state *, pdf_clip_mask *, double, double, double,
                                        double);
 void cupidimage_pdf_clip_pending_clear(pdf_render_state *, pdf_clip_mask *);
+int cupidimage_pdf_optional_resource(pdf_render_state *, const char *, int *);
+int cupidimage_pdf_optional_dictionary_visibility(pdf_render_state *, const pdf_object_view *,
+                                                  int *);
+int cupidimage_pdf_optional_object_visibility(pdf_render_state *, const pdf_object_view *, int *);
 /* clear_bits is required for text masks with provisional glyph-winding bits. */
 int cupidimage_pdf_clip_render_geometry(pdf_render_state *, pdf_clip_mask *, int clear_bits);
 int cupidimage_pdf_clip_contains_crop(pdf_render_state *, int, int, int, int);

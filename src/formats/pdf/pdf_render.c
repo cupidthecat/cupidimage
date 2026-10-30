@@ -382,6 +382,8 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
 }
 
 static void pdf_fill_path(pdf_render_state *st, int even_odd) {
+    if (st->optional_hidden)
+        return;
     if (st->graphics_antialias) {
         (void)cupidimage_pdf_paint_path_coverage(st, &st->path, 1, 0, even_odd);
         return;
@@ -392,6 +394,8 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
 /* Fill-and-stroke is one PDF object. Stroke-covered pixels use the original
  * backdrop, not a fill that has already been composited onto it. */
 static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
+    if (st->optional_hidden)
+        return;
     if (st->graphics_antialias) {
         (void)cupidimage_pdf_paint_path_coverage(st, &st->path, 1, 1, even_odd);
         return;
@@ -641,14 +645,16 @@ static int pdf_set_source_color(pdf_render_state *st, int stroke, const pdf_imag
 }
 
 static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops, int *count,
-                                 unsigned *compatibility, unsigned *marked) {
+                                 unsigned *compatibility, unsigned *marked,
+                                 unsigned char hidden[64]) {
     int n = *count;
     st->paint_serial = ++st->form_budget->paint_serial;
     int paints_path = !strcmp(op, "S") || !strcmp(op, "s") || !strcmp(op, "f") ||
                       !strcmp(op, "F") || !strcmp(op, "f*") || !strcmp(op, "B") ||
                       !strcmp(op, "B*") || !strcmp(op, "b") || !strcmp(op, "b*") ||
                       (!strcmp(op, "n") && st->pending_clip);
-    if (paints_path && !cupidimage_pdf_path_flatten(st)) {
+    if (paints_path && (!st->optional_hidden || st->pending_clip) &&
+        !cupidimage_pdf_path_flatten(st)) {
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: path precision, allocation or segment limit exceeded");
@@ -681,13 +687,29 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             valid = ops[1].type == PDF_OPERAND_NAME || ops[1].type == PDF_OPERAND_DICTIONARY;
         if (!valid || (begin && *marked == 64))
             st->image_failed = 1;
-        else if (begin)
-            (*marked)++;
+        else if (begin) {
+            int visible = 1;
+            if (properties && !strcmp(ops[0].str, "OC")) {
+                if (ops[1].type == PDF_OPERAND_NAME)
+                    valid = cupidimage_pdf_optional_resource(st, ops[1].str, &visible);
+                else {
+                    pdf_object_view value = {(const unsigned char *)ops[1].str, ops[1].len, NULL,
+                                             st->xref};
+                    valid = cupidimage_pdf_optional_dictionary_visibility(st, &value, &visible);
+                }
+            }
+            if (!valid)
+                st->image_failed = 1;
+            else {
+                hidden[(*marked)++] = (unsigned char)st->optional_hidden;
+                st->optional_hidden |= !visible;
+            }
+        }
     } else if (!strcmp(op, "EMC")) {
         if (n || !*marked)
             st->image_failed = 1;
         else
-            (*marked)--;
+            st->optional_hidden = hidden[--(*marked)];
     } else if (!strcmp(op, "ri")) {
         if (n != 1 || ops[0].type != PDF_OPERAND_NAME)
             st->image_failed = 1;
@@ -748,7 +770,8 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
 
     if (strcmp(op, "sh") == 0) {
         if (st->glyph_uncolored || st->pattern_uncolored || n != 1 ||
-            ops[0].type != PDF_OPERAND_NAME || !cupidimage_pdf_draw_shading(st, ops[0].str)) {
+            ops[0].type != PDF_OPERAND_NAME ||
+            (!st->optional_hidden && !cupidimage_pdf_draw_shading(st, ops[0].str))) {
             st->image_failed = 1;
             cupidimage_set_err(st->error, st->error_capacity,
                                "pdf: invalid or unsupported shading");
@@ -762,7 +785,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         }
     } else if (strcmp(op, "Do") == 0) {
         if (n != 1 || ops[0].type != PDF_OPERAND_NAME ||
-            !cupidimage_pdf_draw_image(st, ops[0].str)) {
+            (!st->optional_hidden && !cupidimage_pdf_draw_image(st, ops[0].str))) {
             st->image_failed = 1;
             if (n != 1 || ops[0].type != PDF_OPERAND_NAME)
                 cupidimage_set_err(st->error, st->error_capacity,
@@ -1039,11 +1062,13 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
     } else if (strcmp(op, "n") == 0) {
         pdf_path_end(st);
     } else if (strcmp(op, "S") == 0) {
-        cupidimage_pdf_stroke_segments(st, &st->path, NULL);
+        if (!st->optional_hidden)
+            cupidimage_pdf_stroke_segments(st, &st->path, NULL);
         pdf_path_end(st);
     } else if (strcmp(op, "s") == 0) {
         cupidimage_pdf_path_close(&st->path);
-        cupidimage_pdf_stroke_segments(st, &st->path, NULL);
+        if (!st->optional_hidden)
+            cupidimage_pdf_stroke_segments(st, &st->path, NULL);
         pdf_path_end(st);
     } else if (strcmp(op, "f") == 0 || strcmp(op, "F") == 0 || strcmp(op, "f*") == 0) {
         pdf_fill_path(st, strcmp(op, "f*") == 0);
@@ -1108,6 +1133,7 @@ int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stre
     pdf_operand ops[64];
     int op_count = 0;
     unsigned compatibility = 0, marked = 0;
+    unsigned char marked_hidden[64] = {0};
     memset(ops, 0, sizeof(ops));
 
     size_t pos = 0;
@@ -1282,7 +1308,7 @@ int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stre
                 cupidimage_set_err(err, errcap, "pdf: unmatched inline image delimiter");
                 return 0;
             }
-            pdf_execute_operator(st, opbuf, ops, &op_count, &compatibility, &marked);
+            pdf_execute_operator(st, opbuf, ops, &op_count, &compatibility, &marked, marked_hidden);
             if (st->image_failed)
                 return 0;
             continue;
@@ -1317,7 +1343,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     const pdf_type3_font *type = font->type3;
     pdf_object_id object = type->glyphs[code];
     int ok = 0;
-    if (!object || st->gs.text_mode == 3 || st->gs.font_size_pts == 0 ||
+    if (!object || st->optional_hidden || st->gs.text_mode == 3 || st->gs.font_size_pts == 0 ||
         st->gs.horizontal_scale == 0)
         return 1;
     if (st->glyph_depth == 16 || !st->form_budget->glyph_calls_left)
@@ -1604,7 +1630,13 @@ int cupidimage_pdf_render_content_stream_options(
     st.initial_gs.soft_mask = NULL;
     st.initial_gs.clip = NULL;
     pdf_transparency_group page_group = {0};
-    int ok = cupidimage_pdf_page_group_begin(&st, &page_group);
+    pdf_optional_content optional;
+    st.optional_content = &optional;
+    int ok = cupidimage_pdf_optional_init(&optional, document, document_size, xref);
+    if (!ok)
+        cupidimage_set_err(err, errcap, "pdf: invalid optional-content configuration or limits");
+    if (ok)
+        ok = cupidimage_pdf_page_group_begin(&st, &page_group);
     if (ok)
         ok = cupidimage_pdf_render_stream(&st, stream, stream_len);
     cupidimage_pdf_render_state_release(&st);
@@ -1616,6 +1648,7 @@ int cupidimage_pdf_render_content_stream_options(
         ok = cupidimage_pdf_group_finish(&st, &page_group);
     cupidimage_pdf_group_free(&st, &page_group);
     cupidimage_pdf_patterns_free(&patterns);
+    cupidimage_pdf_optional_free(&optional);
     cupidimage_pdf_palettes_free(&palettes);
     cupidimage_pdf_tint_free(&tints);
     cupidimage_pdf_icc_free(&profiles);

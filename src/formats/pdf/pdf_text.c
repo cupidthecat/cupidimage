@@ -47,9 +47,10 @@ void cupidimage_pdf_text_advance(pdf_render_state *st, double distance) {
 /* The fallback glyph remains an 8x8 bitmap. Positioning and text-state
    transforms are applied independently of that temporary glyph representation. */
 static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
-    if (!st->img || !st->img->rgba || st->gs.text_mode == 3)
+    if (!st->img || !st->img->rgba || st->gs.text_mode == 3 ||
+        (st->optional_hidden && st->gs.text_mode < 4))
         return;
-    int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
+    int mode = st->optional_hidden ? 3 : st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     const uint8_t *glyph = cupidimage_pdf_font8x8_basic[c < 128 ? c : '?'];
     unsigned ink = 0;
     for (int row = 0; row < 8; row++)
@@ -409,8 +410,9 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
-            int paints = st->gs.text_mode != 3 && st->gs.font_size_pts != 0 &&
-                         st->gs.horizontal_scale != 0 && font->type3->glyphs[bytes[before]];
+            int paints = !st->optional_hidden && st->gs.text_mode != 3 &&
+                         st->gs.font_size_pts != 0 && st->gs.horizontal_scale != 0 &&
+                         font->type3->glyphs[bytes[before]];
             if ((paints && !cupidimage_pdf_text_group_begin(st)) ||
                 !cupidimage_pdf_draw_type3_glyph(st, font, bytes[before]))
                 st->image_failed = 1;
