@@ -122,3 +122,5 @@ The project license is in [LICENSE](LICENSE). Some test assets have separate
 licenses, retained beside the files and described in the asset guide.
 
 Third-party data notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+See [terminal rendering performance](docs/terminal-performance.md) for Sixel mapping, output-equivalence coverage, and preview integration notes.
