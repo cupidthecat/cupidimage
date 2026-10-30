@@ -2,10 +2,13 @@
 #include "pdf_render_internal.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
-void cupidimage_pdf_path_clear(pdf_path *p) {
+void cupidimage_pdf_path_init(pdf_path *p) {
     if (!p)
         return;
+    p->extra = NULL;
+    p->capacity = 0;
     p->seg_count = 0;
     p->subpath_first_seg = 0;
     p->has_current = 0;
@@ -17,20 +20,52 @@ void cupidimage_pdf_path_clear(pdf_path *p) {
     p->subpath_start_y = 0.0f;
 }
 
+void cupidimage_pdf_path_clear(pdf_path *p) {
+    if (!p)
+        return;
+    free(p->extra);
+    cupidimage_pdf_path_init(p);
+}
+
+int cupidimage_pdf_path_reserve(pdf_path *p, unsigned additional) {
+    if (!cupidimage_pdf_path_valid(p) ||
+        additional > PDF_PATH_SEGMENT_LIMIT - (unsigned)p->seg_count) {
+        if (p)
+            p->overflow = 1;
+        return 0;
+    }
+    unsigned needed = (unsigned)p->seg_count + additional;
+    unsigned capacity = p->extra ? p->capacity : PDF_PATH_INLINE_SEGMENTS;
+    if (needed <= capacity)
+        return 1;
+    while (capacity < needed)
+        capacity = capacity > PDF_PATH_SEGMENT_LIMIT / 2 ? PDF_PATH_SEGMENT_LIMIT : capacity * 2;
+    pdf_seg *segments = p->extra ? realloc(p->extra, (size_t)capacity * sizeof(*segments))
+                                 : malloc((size_t)capacity * sizeof(*segments));
+    if (!segments) {
+        p->overflow = 1;
+        return 0;
+    }
+    if (!p->extra)
+        memcpy(segments, p->segs, (size_t)p->seg_count * sizeof(*segments));
+    p->extra = segments;
+    p->capacity = capacity;
+    return 1;
+}
+
 static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1) {
     if (!p)
         return;
-    if (p->seg_count >= (int)(sizeof(p->segs) / sizeof(p->segs[0]))) {
-        p->overflow = 1;
+    if (!cupidimage_pdf_path_reserve(p, 1))
         return;
-    }
-    p->segs[p->seg_count] = (pdf_seg){0};
-    p->segs[p->seg_count].x0 = x0;
-    p->segs[p->seg_count].y0 = y0;
-    p->segs[p->seg_count].x1 = x1;
-    p->segs[p->seg_count].y1 = y1;
-    p->segs[p->seg_count].starts_subpath = p->seg_count == p->subpath_first_seg;
-    p->segs[p->seg_count].closes_subpath = 0;
+    pdf_seg *segments = cupidimage_pdf_path_mutable(p);
+    segments[p->seg_count] = (pdf_seg){0};
+    segments[p->seg_count].x0 = x0;
+    segments[p->seg_count].y0 = y0;
+    segments[p->seg_count].x1 = x1;
+    segments[p->seg_count].y1 = y1;
+    segments[p->seg_count].starts_subpath = p->seg_count == p->subpath_first_seg;
+    segments[p->seg_count].closes_subpath = 0;
     p->seg_count++;
 }
 
@@ -68,7 +103,7 @@ void cupidimage_pdf_path_close(pdf_path *p) {
         pdf_path_add_seg(p, p->current_x, p->current_y, p->subpath_start_x, p->subpath_start_y);
     }
     if (p->seg_count > p->subpath_first_seg)
-        p->segs[p->seg_count - 1].closes_subpath = 1;
+        cupidimage_pdf_path_mutable(p)[p->seg_count - 1].closes_subpath = 1;
     p->current_x = p->subpath_start_x;
     p->current_y = p->subpath_start_y;
 }
@@ -121,7 +156,7 @@ static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1
                               float x2, float y2, float x3, float y3, unsigned depth) {
     if (st->path.overflow)
         return;
-    if (st->path.seg_count >= 4096) {
+    if ((unsigned)st->path.seg_count >= PDF_PATH_SEGMENT_LIMIT) {
         st->path.overflow = 1;
         return;
     }
@@ -167,7 +202,7 @@ void cupidimage_pdf_path_curve_to(pdf_render_state *st, float x1, float y1, floa
     pdf_path_add_seg(&st->path, st->path.current_x, st->path.current_y, x3, y3);
     if (st->path.seg_count == index)
         return;
-    pdf_seg *segment = &st->path.segs[index];
+    pdf_seg *segment = cupidimage_pdf_path_mutable(&st->path) + index;
     segment->curve = 1;
     segment->cx1 = x1;
     segment->cy1 = y1;
@@ -178,20 +213,21 @@ void cupidimage_pdf_path_curve_to(pdf_render_state *st, float x1, float y1, floa
 }
 
 int cupidimage_pdf_path_flatten(pdf_render_state *st) {
-    if (st->path.overflow)
+    if (!cupidimage_pdf_path_valid(&st->path))
         return 0;
     int curves = 0;
     for (int i = 0; i < st->path.seg_count; i++)
-        curves |= st->path.segs[i].curve;
+        curves |= cupidimage_pdf_path_segments(&st->path)[i].curve;
     if (!curves)
         return 1;
     pdf_path *source = malloc(sizeof(*source));
     if (!source)
         return 0;
     *source = st->path;
-    cupidimage_pdf_path_clear(&st->path);
+    /* Transfer any extended storage to the retained source before rebuilding. */
+    cupidimage_pdf_path_init(&st->path);
     for (int i = 0; i < source->seg_count && !st->path.overflow; i++) {
-        const pdf_seg *segment = &source->segs[i];
+        const pdf_seg *segment = cupidimage_pdf_path_segments(source) + i;
         if (segment->starts_subpath)
             pdf_path_move_to(&st->path, segment->x0, segment->y0);
         if (segment->curve)
@@ -200,7 +236,7 @@ int cupidimage_pdf_path_flatten(pdf_render_state *st) {
         else
             pdf_path_line_to(&st->path, segment->x1, segment->y1);
         if (segment->closes_subpath && st->path.seg_count)
-            st->path.segs[st->path.seg_count - 1].closes_subpath = 1;
+            cupidimage_pdf_path_mutable(&st->path)[st->path.seg_count - 1].closes_subpath = 1;
     }
     /* Preserve the current point and subpath origin for the closing paint operators. */
     st->path.current_x = source->current_x;
@@ -211,6 +247,7 @@ int cupidimage_pdf_path_flatten(pdf_render_state *st) {
         st->path.subpath_first_seg = st->path.seg_count;
     st->path.has_current = source->has_current;
     st->path.has_subpath = source->has_subpath;
+    cupidimage_pdf_path_clear(source);
     free(source);
     return !st->path.overflow;
 }
@@ -222,7 +259,7 @@ int cupidimage_pdf_path_fill_edges(const pdf_path *path, size_t *work, pdf_regio
         return 0;
     *output = NULL;
     *count = 0;
-    if (!path || !work || path->overflow || path->seg_count < 0 || path->seg_count > 4096)
+    if (!work || !cupidimage_pdf_path_valid(path))
         return 0;
     unsigned max = (unsigned)path->seg_count * 4, used = 0;
     if (max > *work)
@@ -235,7 +272,7 @@ int cupidimage_pdf_path_fill_edges(const pdf_path *path, size_t *work, pdf_regio
     unsigned first = 0;
     int point = 0;
     for (int i = 0; i < path->seg_count; i++) {
-        const pdf_seg *s = path->segs + i;
+        const pdf_seg *s = cupidimage_pdf_path_segments(path) + i;
         if (s->curve || !isfinite(s->x0) || !isfinite(s->y0) || !isfinite(s->x1) ||
             !isfinite(s->y1)) {
             free(edges);
@@ -249,7 +286,7 @@ int cupidimage_pdf_path_fill_edges(const pdf_path *path, size_t *work, pdf_regio
         }
         point = point && s->x0 == sx && s->y0 == sy && s->x1 == sx && s->y1 == sy;
         edges[used++] = (pdf_region_edge){s->x0, s->y0, s->x1, s->y1, 0};
-        if (i + 1 == path->seg_count || path->segs[i + 1].starts_subpath) {
+        if (i + 1 == path->seg_count || cupidimage_pdf_path_segments(path)[i + 1].starts_subpath) {
             if (point) {
                 /* ISO 32000-2 8.5.3.3.1: a degenerate filled subpath encloses
                  * the device pixel under the point. A trailing move has no edge. */

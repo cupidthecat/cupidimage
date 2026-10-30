@@ -81,24 +81,30 @@ void cupidimage_pdf_clip_pending_clear(pdf_render_state *st, pdf_clip_mask *clip
 int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *clip) {
     size_t pixels = (size_t)st->img->width * st->img->height;
     if (!clip->geometry || clip->coverage || pixels > 16u * 1024u * 1024u ||
-        pixels > st->clip_budget->tests_left || st->clip_budget->bytes_used > 64u * 1024u * 1024u ||
+        st->clip_budget->bytes_used > 64u * 1024u * 1024u ||
         pixels > 64u * 1024u * 1024u - st->clip_budget->bytes_used)
         return 0;
-    st->clip_budget->tests_left -= pixels;
+    const double *b = clip->geometry->bounds;
+    int left = (int)fmax(0, fmin(st->img->width, floor(b[0]))),
+        right = (int)fmax(0, fmin(st->img->width, ceil(b[2])));
+    int top = (int)fmax(0, fmin(st->img->height, floor(b[1]))),
+        bottom = (int)fmax(0, fmin(st->img->height, ceil(b[3])));
+    size_t area = right > left && bottom > top && b[2] > b[0] && b[3] > b[1]
+                      ? (size_t)(right - left) * (bottom - top)
+                      : 0;
+    /* Geometric tests only visit the bounded region. The full-sized zeroed
+     * coverage allocation remains subject to the independent memory limit. */
+    size_t work = area + clip->bytes;
+    if (work > st->clip_budget->tests_left)
+        return 0;
+    st->clip_budget->tests_left -= work;
     clip->coverage = calloc(pixels ? pixels : 1, 1);
     if (!clip->coverage)
         return 0;
     clip->coverage_bytes = pixels;
     st->clip_budget->bytes_used += pixels;
     memset(clip->bits, 0, clip->bytes);
-    const double *b = clip->geometry->bounds;
-    if (b[2] <= b[0] || b[3] <= b[1])
-        return 1;
-    int left = (int)fmax(0, fmin(st->img->width, floor(b[0]))),
-        right = (int)fmax(0, fmin(st->img->width, ceil(b[2])));
-    int top = (int)fmax(0, fmin(st->img->height, floor(b[1]))),
-        bottom = (int)fmax(0, fmin(st->img->height, ceil(b[3])));
-    if (right <= left || bottom <= top)
+    if (!area)
         return 1;
     if (clip->geometry->rectangle) {
         for (int y = top; y < bottom; y++) {
@@ -127,9 +133,12 @@ int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *cli
             memcpy(clip->coverage + (size_t)y * st->img->width + left,
                    mask + (size_t)(y - top) * (right - left), (size_t)(right - left));
     if (ok)
-        for (size_t i = 0; i < pixels; i++)
-            if (clip->coverage[i])
-                clip->bits[i / 8] |= (unsigned char)(1u << (i % 8));
+        for (int y = top; y < bottom; y++)
+            for (int x = left; x < right; x++) {
+                size_t i = (size_t)y * st->img->width + x;
+                if (clip->coverage[i])
+                    clip->bits[i / 8] |= (unsigned char)(1u << (i % 8));
+            }
     free(edges);
     free(mask);
     return ok;

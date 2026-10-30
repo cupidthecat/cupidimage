@@ -340,6 +340,62 @@ static void localized_events(void) {
     checks++;
 }
 
+static void coincident_edges(void) {
+    pdf_region_edge *edges = malloc(65536 * sizeof(*edges));
+    assert(edges);
+    const unsigned copies[] = {256, 257, 1000, 1001, 16384};
+    unsigned char rules[2] = {0, 0};
+    for (unsigned c = 0; c < sizeof(copies) / sizeof(*copies); c++) {
+        unsigned count = copies[c];
+        for (unsigned i = 0; i < count; i++)
+            rectangle(edges + 4 * i, 0, .125, .125, .875, .875, 0);
+        rules[0] = 0;
+        assert(raster(edges, count * 4, rules, 1) == 144);
+        rules[0] = 1;
+        assert(raster(edges, count * 4, rules, 1) == (count % 2 ? 144 : 0));
+        for (unsigned i = 0; i < count; i++)
+            rectangle(edges + 4 * i, 0, .125, .125, .875, .875, i % 2);
+        rules[0] = 0;
+        assert(raster(edges, count * 4, rules, 1) == (count % 2 ? 144 : 0));
+    }
+    for (unsigned i = 0; i < 516; i++)
+        rectangle(edges + i * 4, i < 257 ? 0 : 1, .125, .125, .875, .875, i >= 257);
+    rules[0] = rules[1] = 1;
+    assert(raster(edges, 2064, rules, 2) == 144);
+    rules[0] = rules[1] = 0;
+    allocation_count = 0;
+    assert(raster(edges, 2064, rules, 2) == 144);
+    size_t allocations = allocation_count;
+    for (size_t fail = 0; fail <= allocations; fail++) {
+        fail_at = fail;
+        allocation_count = 0;
+        size_t work = 1000000;
+        unsigned char *out = (void *)1;
+        int ok = cupidimage_pdf_region_coverage(edges, 2064, rules, 2, 0, 0, 1, 1, &work, &out);
+        assert(ok == !fail);
+        if (ok)
+            fault_free(out);
+        else
+            assert(!out);
+        assert(!live_count);
+        checks++;
+    }
+    fail_at = 0;
+    for (size_t budget = 0; budget < 20000; budget += 37) {
+        size_t work = budget;
+        unsigned char *out = (void *)1;
+        int ok = cupidimage_pdf_region_coverage(edges, 2064, rules, 2, 0, 0, 1, 1, &work, &out);
+        assert(work <= budget);
+        if (ok)
+            fault_free(out);
+        else
+            assert(!out);
+        assert(!live_count);
+        checks++;
+    }
+    free(edges);
+}
+
 int main(void) {
     (void)fault_realloc;
     pdf_region_edge p[16];
@@ -398,6 +454,7 @@ int main(void) {
     sampled_ellipse_intersections();
     invalid_regions();
     localized_events();
+    coincident_edges();
     printf("PDF region intersection: %u analytic and ownership checks passed\n", checks);
     return 0;
 }

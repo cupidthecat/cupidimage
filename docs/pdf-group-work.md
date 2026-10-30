@@ -66,9 +66,9 @@ tests include 29 function cases. Existing mask, CMYK, calibrated and clipping
 suites remain separate.
 
 Two original CMYK corpus pages now proceed beyond their earlier group, mask and
-color-function failures. They still encounter dense-path segment and geometric
-clipping-work limits, so neither is counted as a completed page. The full manual
-corpus review remains deferred.
+color-function failures. The subsequent [dense-path work](pdf-dense-paths.md) gets one page through
+rendering, with pixel differences remaining. The other passes clipping but still
+reaches a shading-work limit. The full manual corpus review remains deferred.
 
 The owned nested-mask-surfaces.pdf has an exact full-page oracle, also matched
 by an independent 96-DPI raster. The clipped-shading-work.pdf asset remains

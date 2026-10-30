@@ -18,8 +18,13 @@ typedef struct {
     float cx1, cy1, cx2, cy2;
 } pdf_seg;
 
+#define PDF_PATH_INLINE_SEGMENTS 4096u
+#define PDF_PATH_SEGMENT_LIMIT 65536u
+
 typedef struct {
-    pdf_seg segs[4096];
+    pdf_seg segs[PDF_PATH_INLINE_SEGMENTS];
+    pdf_seg *extra;
+    unsigned capacity;
     int seg_count;
     int subpath_first_seg;
     float current_x;
@@ -30,6 +35,22 @@ typedef struct {
     int has_subpath;
     int overflow;
 } pdf_path;
+
+static inline const pdf_seg *cupidimage_pdf_path_segments(const pdf_path *path) {
+    return path->extra ? path->extra : path->segs;
+}
+
+static inline pdf_seg *cupidimage_pdf_path_mutable(pdf_path *path) {
+    return path->extra ? path->extra : path->segs;
+}
+
+static inline int cupidimage_pdf_path_valid(const pdf_path *path) {
+    if (!path || path->overflow || path->seg_count < 0)
+        return 0;
+    unsigned capacity = path->extra ? path->capacity : PDF_PATH_INLINE_SEGMENTS;
+    return capacity >= PDF_PATH_INLINE_SEGMENTS && capacity <= PDF_PATH_SEGMENT_LIMIT &&
+           (unsigned)path->seg_count <= capacity;
+}
 
 typedef struct {
     unsigned references;
@@ -411,7 +432,10 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
 void cupidimage_pdf_matrix_concat_double(double m[6], const double n[6]);
 int cupidimage_pdf_paint_path_coverage(pdf_render_state *, const pdf_path *, int, int, int);
 int cupidimage_pdf_path_fill_edges(const pdf_path *, size_t *, pdf_region_edge **, unsigned *);
+/* Init detaches borrowed storage after a state copy; clear releases owned storage. */
+void cupidimage_pdf_path_init(pdf_path *path);
 void cupidimage_pdf_path_clear(pdf_path *path);
+int cupidimage_pdf_path_reserve(pdf_path *path, unsigned additional);
 void cupidimage_pdf_path_close(pdf_path *path);
 void cupidimage_pdf_path_move_user(pdf_render_state *state, float x, float y);
 void cupidimage_pdf_path_line_user(pdf_render_state *state, float x, float y);

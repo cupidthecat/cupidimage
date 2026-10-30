@@ -81,3 +81,9 @@ full-raster oracle, independently matched at 96 DPI. The clipped shading page
 remains decoded-unverified because the independent device-color conversion
 differs. Regenerate them with
 scripts/generate_pdf_group_work_fixtures.py.
+
+The dense-vector-path.pdf and localized-clip-work.pdf fixtures exercise large
+compound paths and repeated small clips. Both have literal native pixel oracles.
+The dense path also matches an independent 96-DPI raster; the clip has a documented
+antialiased boundary difference. See ../docs/pdf-dense-paths.md. Regenerate them
+with scripts/generate_pdf_dense_path_fixtures.py.

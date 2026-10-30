@@ -213,8 +213,9 @@ static int stroke_geometry(pdf_render_state *st, const pdf_path *path, unsigned 
         return 0;
     if (!path->seg_count)
         return 1;
-    if (path->seg_count < 0 || path->seg_count > 4096)
+    if (!cupidimage_pdf_path_valid(path))
         return 0;
+    const pdf_seg *segments = cupidimage_pdf_path_segments(path);
     stroke_raster r = {0};
     r.state = st;
     r.aa = aa;
@@ -269,11 +270,11 @@ static int stroke_geometry(pdf_render_state *st, const pdf_path *path, unsigned 
         period *= 2;
     for (int first = 0; ok && first < path->seg_count;) {
         int end = first + 1;
-        while (end < path->seg_count && !path->segs[end].starts_subpath)
+        while (end < path->seg_count && !segments[end].starts_subpath)
             end++;
         int all_zero = 1;
         for (int k = first; k < end; k++)
-            if (path->segs[k].x0 != path->segs[k].x1 || path->segs[k].y0 != path->segs[k].y1)
+            if (segments[k].x0 != segments[k].x1 || segments[k].y0 != segments[k].y1)
                 all_zero = 0;
         unsigned start = count;
         int index = 0, continues = 0;
@@ -296,9 +297,9 @@ static int stroke_geometry(pdf_render_state *st, const pdf_path *path, unsigned 
         }
         for (int i = first; ok && i < end; i++) {
             stroke_point a = stroke_transform(r.inverse,
-                                              (stroke_point){path->segs[i].x0, path->segs[i].y0}),
+                                              (stroke_point){segments[i].x0, segments[i].y0}),
                          b = stroke_transform(r.inverse,
-                                              (stroke_point){path->segs[i].x1, path->segs[i].y1});
+                                              (stroke_point){segments[i].x1, segments[i].y1});
             stroke_point delta = stroke_sub(b, a);
             double geometry_length = hypot(delta.x, delta.y);
             double length = geometry_length;
@@ -347,9 +348,9 @@ static int stroke_geometry(pdf_render_state *st, const pdf_path *path, unsigned 
                     break;
             } while (pos < length || remaining == 0);
         }
-        if (ok && !st->gs.dash_count && count > start && path->segs[end - 1].closes_subpath) {
-            stroke_point origin = stroke_transform(
-                r.inverse, (stroke_point){path->segs[first].x0, path->segs[first].y0});
+        if (ok && !st->gs.dash_count && count > start && segments[end - 1].closes_subpath) {
+            stroke_point origin =
+                stroke_transform(r.inverse, (stroke_point){segments[first].x0, segments[first].y0});
             if (hypot(pieces[start].a.x - origin.x, pieces[start].a.y - origin.y) < 1e-8 &&
                 hypot(pieces[count - 1].b.x - origin.x, pieces[count - 1].b.y - origin.y) < 1e-8) {
                 pieces[start].previous = 1;

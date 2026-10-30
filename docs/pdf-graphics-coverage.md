@@ -32,7 +32,9 @@ result. Colors, patterns and blend modes use the existing paint pipeline.
 
 ## Limits
 
-Paths retain their 4,096-segment bound and shared page work budget. Fill and clip
+Paths use bounded storage for up to 65,536 segments and retain the shared page
+work budget. See [dense paths](pdf-dense-paths.md) for storage and coincident-edge
+handling. Fill and clip
 coverage use the region rasterizer's 65,536-edge limit, 1,024 per-pixel crossings,
 16 MiB output bound and coordinate/crop bounds of 32,768 device pixels. Strokes
 retain the separate limits in the stroke guide. Combined painting may need a

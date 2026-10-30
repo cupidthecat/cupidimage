@@ -14,6 +14,7 @@ typedef struct {
     region_real x, y, dx, dy, low, high;
     unsigned region;
     int direction;
+    unsigned source;
 } region_edge;
 
 typedef struct {
@@ -45,6 +46,26 @@ static int region_event(region_sweep *s, region_real y) {
         return 0;
     s->events[s->event_count++] = y;
     return 1;
+}
+
+static uint64_t region_edge_hash(const pdf_region_edge *edge) {
+    double values[4] = {edge->x0, edge->y0, edge->x1, edge->y1};
+    uint64_t hash = UINT64_C(14695981039346656037);
+    for (unsigned i = 0; i < 4; i++) {
+        double value = values[i] == 0 ? 0 : values[i];
+        unsigned char bytes[sizeof(value)];
+        memcpy(bytes, &value, sizeof(value));
+        for (size_t j = 0; j < sizeof(value); j++) {
+            hash ^= bytes[j];
+            hash *= UINT64_C(1099511628211);
+        }
+    }
+    return (hash ^ edge->region) * UINT64_C(1099511628211);
+}
+
+static int region_same_edge(const pdf_region_edge *a, const pdf_region_edge *b) {
+    return a->region == b->region && a->x0 == b->x0 && a->y0 == b->y0 && a->x1 == b->x1 &&
+           a->y1 == b->y1;
 }
 
 static int region_real_compare(const void *a, const void *b) {
@@ -275,15 +296,49 @@ int cupidimage_pdf_region_coverage_ellipses(const pdf_region_edge *input, unsign
     s.candidates = malloc(REGION_CROSSINGS * sizeof(*s.candidates));
     unsigned char *pixels = calloc(width && height ? width * height : 1, 1);
     int ok = 0;
-    unsigned n = 0;
+    unsigned n = 0, slots = 0;
+    unsigned *duplicates = NULL;
     if (!edges || !active || !row_ellipses || !s.events || !s.candidates || !pixels)
         goto done;
+    if (count >= REGION_CROSSINGS) {
+        slots = 1;
+        while (slots < count * 2)
+            slots *= 2;
+        if (!region_charge(&s, slots + (size_t)count * 4))
+            goto done;
+        duplicates = calloc(slots, sizeof(*duplicates));
+        if (!duplicates)
+            goto done;
+    }
     for (unsigned i = 0; i < count; i++) {
         const pdf_region_edge *p = input + i;
         if (p->region >= regions || !isfinite(p->x0) || !isfinite(p->y0) || !isfinite(p->x1) ||
             !isfinite(p->y1) || fabs(p->x0) > 32768 || fabs(p->y0) > 32768 || fabs(p->x1) > 32768 ||
             fabs(p->y1) > 32768)
             goto done;
+        if (duplicates) {
+            unsigned at = (unsigned)region_edge_hash(p) & (slots - 1);
+            int found = 0;
+            for (;;) {
+                if (!region_charge(&s, 1))
+                    goto done;
+                if (!duplicates[at]) {
+                    duplicates[at] = n + 1;
+                    break;
+                }
+                region_edge *edge = edges + duplicates[at] - 1;
+                if (region_same_edge(input + edge->source, p)) {
+                    /* Preserve directed winding multiplicity for both fill
+                     * rules, without moving coordinates or reordering edges. */
+                    edge->direction += p->y1 > p->y0 ? 1 : -1;
+                    found = 1;
+                    break;
+                }
+                at = (at + 1) & (slots - 1);
+            }
+            if (found)
+                continue;
+        }
         edges[n++] = (region_edge){p->x0,
                                    p->y0,
                                    (region_real)p->x1 - p->x0,
@@ -291,7 +346,8 @@ int cupidimage_pdf_region_coverage_ellipses(const pdf_region_edge *input, unsign
                                    fminl(p->y0, p->y1),
                                    fmaxl(p->y0, p->y1),
                                    p->region,
-                                   p->y1 > p->y0 ? 1 : -1};
+                                   p->y1 > p->y0 ? 1 : -1,
+                                   i};
     }
     for (size_t y = 0; y < height; y++) {
         s.y = top + (region_real)y;
@@ -332,6 +388,7 @@ int cupidimage_pdf_region_coverage_ellipses(const pdf_region_edge *input, unsign
     pixels = NULL;
     ok = 1;
 done:
+    free(duplicates);
     free(edges);
     free(active);
     free(row_ellipses);

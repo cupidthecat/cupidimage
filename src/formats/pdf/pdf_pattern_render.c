@@ -29,6 +29,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     cupidimage_pdf_font_table_init(&fonts);
     pdf_clip_budget clip_budget = {0, 256u * 1024u * 1024u, 4096};
     *child = *parent;
+    cupidimage_pdf_path_init(&child->path);
     child->text_group = NULL;
     child->in_text = 0;
     child->gs = parent->initial_gs;
@@ -126,6 +127,7 @@ static int pdf_pattern_shading_surface(pdf_render_state *parent, pdf_pattern *pa
     if (ok) {
         group->knockout = 1;
         *context = *parent;
+        cupidimage_pdf_path_init(&context->path);
         context->initial_gs = *pattern->initial;
         ok = cupidimage_pdf_render_shading_pattern(context, &pattern->definition, pattern->matrix,
                                                    pattern, group);
@@ -198,6 +200,7 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
             parent->form_budget->calls_left--;
             parent->form_budget->bytes_left -= pattern->program_length;
             *child = *parent;
+            cupidimage_pdf_path_init(&child->path);
             child->text_group = NULL;
             child->in_text = 0;
             child->gs = *pattern->initial;
@@ -289,6 +292,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     if (!child)
         return 0;
     *child = *parent;
+    cupidimage_pdf_path_init(&child->path);
     child->text_group = NULL;
     child->in_text = 0;
     child->gs = parent->initial_gs;
@@ -344,6 +348,7 @@ int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *patt
     if (!context)
         return 0;
     *context = *st;
+    cupidimage_pdf_path_init(&context->path);
     context->initial_gs = *pattern->initial;
     size_t pixels = (size_t)pattern->tile.width * pattern->tile.height;
     unsigned channels = cupidimage_pdf_current_blend(st)->colors.components == 4 ? 4 : 3;

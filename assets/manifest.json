@@ -502,6 +502,10 @@
       "sha256": "8fc562b2faafa02441894cdb82ca6cc1ca24f0fe8973dfc03e190d9a8ab21248"
     },
     {
+      "path": "assets/pdf/dense-vector-path.pdf",
+      "sha256": "057243fd3ea5f32888e8de7e4ea419e1ab5c8943fa5977f9011d73d927a3e1be"
+    },
+    {
       "path": "assets/pdf/descriptor-latin-families.pdf",
       "sha256": "d6a0add356d3f81961f277ac11586fc202e2e5cbcbba3fd1d93b9af9525c6bf7"
     },
@@ -528,6 +532,10 @@
     {
       "path": "assets/pdf/image-interpolation.pdf",
       "sha256": "ca4c8823d58daa237b8954402ce3d2f2d6e1d19c67a46b5aa4a9942c04e8ee07"
+    },
+    {
+      "path": "assets/pdf/localized-clip-work.pdf",
+      "sha256": "0243f4f634733a14679f197ec74bb6b89fa2c2b1e63788c15b4a5e8e56f4877f"
     },
     {
       "path": "assets/pdf/minimal_xref.pdf",

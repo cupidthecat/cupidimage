@@ -38,6 +38,7 @@ void cupidimage_pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
 }
 
 void cupidimage_pdf_render_state_release(pdf_render_state *st) {
+    cupidimage_pdf_path_clear(&st->path);
     cupidimage_pdf_text_group_discard(st);
     cupidimage_pdf_clip_release(st, st->gs.clip);
     cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
@@ -1341,6 +1342,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     if (!child)
         goto done;
     *child = *st;
+    cupidimage_pdf_path_init(&child->path);
     child->text_group = NULL;
     cupidimage_pdf_clip_retain(child->gs.clip);
     cupidimage_pdf_soft_mask_retain(child->gs.soft_mask);
@@ -1438,6 +1440,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
     if (!child)
         goto done;
     *child = *st;
+    cupidimage_pdf_path_init(&child->path);
     child->text_group = NULL;
     child->in_text = 0;
     cupidimage_pdf_clip_retain(child->gs.clip);

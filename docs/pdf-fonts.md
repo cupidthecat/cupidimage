@@ -311,7 +311,7 @@ pattern and transparency regressions exercise the same renderer.
 Each retained font program is limited to 16 MiB, with 64 MiB of program storage
 per collected font table. A CIDToGIDMap is at most 131,072 bytes. Glyph decoding
 allows 65,536 points, 4,096 contours, 4,096 component calls and 16 nested component
-levels. Stroked outlines share the path's 4,096-segment bound. Pixel intersection
+levels. Stroked outlines share the path's 65,536-segment bound. Pixel intersection
 work and text clipping use the page's shared budgets.
 
 Programs, maps, component points, curve edges and stroke masks are released on

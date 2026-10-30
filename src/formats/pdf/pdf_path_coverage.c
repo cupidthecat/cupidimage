@@ -42,13 +42,13 @@ int cupidimage_pdf_paint_path_coverage(pdf_render_state *st, const pdf_path *pat
     stroke = stroke && !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern);
     if (!fill && !stroke)
         return 1;
-    if (!path || path->overflow || path->seg_count < 0 || path->seg_count > 4096)
+    if (!cupidimage_pdf_path_valid(path))
         goto done;
     if (!path->seg_count)
         return 1;
     double x0 = INFINITY, y0 = INFINITY, x1 = -INFINITY, y1 = -INFINITY;
     for (int i = 0; i < path->seg_count; i++) {
-        const pdf_seg *edge = path->segs + i;
+        const pdf_seg *edge = cupidimage_pdf_path_segments(path) + i;
         if (edge->curve || !isfinite(edge->x0) || !isfinite(edge->y0) || !isfinite(edge->x1) ||
             !isfinite(edge->y1))
             goto done;

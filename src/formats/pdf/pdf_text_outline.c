@@ -21,16 +21,16 @@ static outline_point outline_mid(outline_point a, outline_point b) {
 }
 
 static int outline_line(pdf_path *path, outline_point a, outline_point b, int first) {
-    if (path->seg_count == 4096)
+    if (!cupidimage_pdf_path_reserve(path, 1))
         return 0;
     if (!isfinite(a.x) || !isfinite(a.y) || !isfinite(b.x) || !isfinite(b.y) || fabs(a.x) > 1e30 ||
         fabs(a.y) > 1e30 || fabs(b.x) > 1e30 || fabs(b.y) > 1e30)
         return 0;
-    path->segs[path->seg_count++] = (pdf_seg){.x0 = (float)a.x,
-                                              .y0 = (float)a.y,
-                                              .x1 = (float)b.x,
-                                              .y1 = (float)b.y,
-                                              .starts_subpath = first};
+    cupidimage_pdf_path_mutable(path)[path->seg_count++] = (pdf_seg){.x0 = (float)a.x,
+                                                                     .y0 = (float)a.y,
+                                                                     .x1 = (float)b.x,
+                                                                     .y1 = (float)b.y,
+                                                                     .starts_subpath = first};
     return 1;
 }
 
@@ -130,7 +130,7 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
                 return 0;
             current = p[0];
             if (path && segment->kind == PDF_CFF_CLOSE)
-                path->segs[path->seg_count - 1].closes_subpath = 1;
+                cupidimage_pdf_path_mutable(path)[path->seg_count - 1].closes_subpath = 1;
         }
         first = 0;
     }
@@ -195,7 +195,7 @@ static int outline_path(const pdf_tt_outline *outline, pdf_path *path, outline_e
         if (path && !outline_line(path, current, start, new_path))
             return 0;
         if (path)
-            path->segs[path->seg_count - 1].closes_subpath = 1;
+            cupidimage_pdf_path_mutable(path)[path->seg_count - 1].closes_subpath = 1;
         first = last + 1;
     }
     return 1;
@@ -583,6 +583,7 @@ done:
     free(fill);
     free(stroke);
     free(stroke_aa);
+    cupidimage_pdf_path_clear(path);
     free(path);
     free(edges);
     if (!borrowed) {

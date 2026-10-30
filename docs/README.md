@@ -8,6 +8,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [Formats](formats.md): decoder features, rendering behavior, and limits.
 - [PDF objects and revisions](pdf-objects.md): cross-reference tables, streams, generations and limits.
 - [PDF content syntax](pdf-content.md): names, text strings, operands and parser limits.
+- [PDF dense paths](pdf-dense-paths.md): bounded path growth, coincident edges and localized clip work.
 - [PDF vector coverage](pdf-graphics-coverage.md): path antialiasing, Type 3 graphics and paint composition.
 - [PDF clipping](pdf-clipping.md): geometric intersections, fractional coverage, state ownership and limits.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.

@@ -16,6 +16,7 @@ static double distance_squared(const pdf_seg *line, double x, double y) {
 }
 
 static void initialize(pdf_render_state *state, pdf_form_budget *budget, cupidimage_image *image) {
+    cupidimage_pdf_path_clear(&state->path);
     memset(state, 0, sizeof(*state));
     state->form_budget = budget;
     state->img = image;
@@ -57,7 +58,9 @@ int main(void) {
                 double y = (150 - m[1] * ux - m[3] * uy - m[5]) * (4.0 / 3.0);
                 double closest = HUGE_VAL;
                 for (int segment = 0; segment < state->path.seg_count; segment++)
-                    closest = fmin(closest, distance_squared(state->path.segs + segment, x, y));
+                    closest = fmin(closest,
+                                   distance_squared(
+                                       cupidimage_pdf_path_segments(&state->path) + segment, x, y));
                 assert(closest <= tolerance * tolerance);
                 checks++;
             }
@@ -81,6 +84,7 @@ int main(void) {
     assert(!cupidimage_pdf_path_flatten(state));
     assert(state->path.overflow);
     checks += 3;
+    cupidimage_pdf_path_clear(&state->path);
     free(state);
     printf("PDF flatness: %u geometry and state checks passed\n", checks);
     return 0;

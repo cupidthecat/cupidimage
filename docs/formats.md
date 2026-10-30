@@ -142,8 +142,9 @@ Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PD
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive and
-external-reference forms are rejected. Isolated and non-isolated, RGB/gray transparency
-groups are supported; other group configurations remain unsupported. See
+external-reference forms are rejected. Supported isolated and non-isolated
+transparency groups include device gray/RGB/CMYK, calibrated gray/RGB and
+bidirectional ICC spaces. See
 [PDF transparency](pdf-transparency.md) for compositing and memory limits.
 
 Run the generated form checks with Python 3:
@@ -154,9 +155,11 @@ Path clipping supports `W` (nonzero winding) and `W*` (even-odd). The clip takes
 effect after the path's painting operator, including `n`, and intersects the
 current clip. It applies to paths, text, images, and nested forms. `q` and `Q`
 save and restore the clip. Path coordinates retain their placement when the
-transformation matrix changes. Clipping samples pixel centers without antialiasing.
+transformation matrix changes. The default profile samples pixel centers. The
+text or graphics antialiasing option enables geometric fractional clipping; see
+[dense paths and clipping work](pdf-dense-paths.md).
 
-Each page allows 4096 clip operations, 4096 segments per clipping path, 32 saved
+Each page allows 4096 clip operations, 65,536 segments per clipping path, 32 saved
 graphics states, and 64 MiB of live clipping masks. A shared budget limits clipping
 to 268,435,456 pixel-edge tests per page. Documents exceeding these limits return
 a load error.
