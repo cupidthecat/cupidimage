@@ -10,6 +10,9 @@
 #include "../src/formats/jpeg/jpeg_arithmetic.c"
 #include "../src/formats/jpeg/jpeg_entropy.c"
 #include "../src/formats/jpeg/jpeg_output.c"
+#include "../src/formats/pdf/annotations/appearance.c"
+#include "../src/formats/pdf/annotations/render.c"
+#include "../src/formats/pdf/annotations/values.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #include "../src/formats/pdf/fonts/bitmap.c"
 #include "../src/formats/pdf/fonts/cff.c"
@@ -44,6 +47,7 @@
 #include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_outline.c"
+#include "../src/formats/pdf/pdf_form_values.c"
 #include "pdf_tt_loader_sources.inc"
 static int test_outline_cache_enabled = 1;
 

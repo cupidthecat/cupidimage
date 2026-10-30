@@ -59,7 +59,7 @@ with per-item status and evidence. It is not a completed standards audit.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, default layer visibility, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, annotations, interactive layer configuration, JPX/JBIG2 and full-document qualification |
+| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, stored annotation appearances, default layer visibility, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, appearance generation, interactive layer configuration, JPX/JBIG2 and full-document qualification |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -730,3 +730,13 @@ exact glyph geometry and pixel expectations, including cache ownership and
 allocation failures. The two original pages render but still differ from the
 independent rasters. This is compatibility work, not proof of complete font
 conformance. See [subset-font recovery](pdf-subset-fonts.md).
+
+## Supplied annotation appearances
+
+Normal appearance streams and AS-selected widget states now render after page
+content. BBox/Matrix mapping, screen visibility, default layer state, NoRotate and
+appearance transparency have focused tests. Each appearance starts from the
+initial graphics state and shares page resource budgets. Missing appearances are
+not generated. See [annotation appearances](pdf-annotations.md) for remaining form,
+interaction and rendering gaps. A visible redaction or signature appearance does
+not apply redaction or validate a signature.

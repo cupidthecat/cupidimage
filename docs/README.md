@@ -7,6 +7,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [Source architecture](architecture.md): module responsibilities and build boundaries.
 - [Formats](formats.md): decoder features, rendering behavior, and limits.
 - [PDF objects and revisions](pdf-objects.md): cross-reference tables, streams, generations and limits.
+- [PDF annotation appearances](pdf-annotations.md): stored drawing streams, widget states, visibility and placement.
 - [PDF optional content](pdf-optional-content.md): default layer states, membership expressions and hidden text.
 - [PDF content syntax](pdf-content.md): names, text strings, operands and parser limits.
 - [PDF dense paths](pdf-dense-paths.md): bounded path growth, coincident edges and localized clip work.

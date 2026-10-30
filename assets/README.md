@@ -105,3 +105,8 @@ the same blue rectangle as valid controls. Both have exact literal pixel oracles
 and independent 96-DPI matches. Regenerate them with
 scripts/generate_pdf_subset_fixtures.py; see ../docs/pdf-subset-fonts.md for the
 bounded recovery policy.
+
+The annotation-appearance.pdf and annotation-widget-state.pdf reference assets
+paint the same literal blue rectangle through a normal appearance and an AS-selected
+widget state. They exercise BBox-to-Rect placement without external fonts. Generate
+them with scripts/generate_pdf_annotation_fixtures.py.

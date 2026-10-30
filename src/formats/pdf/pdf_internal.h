@@ -233,6 +233,9 @@ size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font);
 void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *width,
                                 double *advance_y, double *origin_x, double *origin_y);
 
+/* Canonical object lookup: 1 found, 0 deleted/missing, -1 invalid or exhausted. */
+int cupidimage_pdf_resolve_object(const pdf_xref *, const unsigned char *, size_t, pdf_object_id,
+                                  pdf_object_view *, pdf_object_id *, size_t *);
 int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, size_t pos, pdf_object_view *out,
                                  unsigned depth);

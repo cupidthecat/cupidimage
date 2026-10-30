@@ -90,8 +90,9 @@ placement uses the current affine transform. Pages honor inherited MediaBox and
 CropBox rectangles, nonzero origins and quarter-turn rotation.
 
 Complete font fidelity, wider image resampling, color management, additional
-transparency spaces, annotations, optional-content visibility and several image
-filters remain unfinished. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
+transparency spaces, annotation appearance generation, interactive layer controls
+and several image filters remain unfinished. Stored [annotation appearances](pdf-annotations.md)
+and [default layer visibility](pdf-optional-content.md) are implemented. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
 [shading](pdf-shading.md), [pattern](pdf-patterns.md), [object](pdf-objects.md) and
 [transparency](pdf-transparency.md) guides describe the implemented paths and gaps.
 

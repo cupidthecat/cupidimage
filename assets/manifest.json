@@ -611,6 +611,14 @@
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92"
     },
     {
+      "path": "assets/pdf/reference/annotation-appearance.pdf",
+      "sha256": "ee31ef37422d027bc741992199d953b061fc873576d17dbb5dbf85896d8b6972"
+    },
+    {
+      "path": "assets/pdf/reference/annotation-widget-state.pdf",
+      "sha256": "c82d2a0e00e877a097330dc2d6384698acc3b71a2af14336bbfeb8b77ea90f0c"
+    },
+    {
       "path": "assets/pdf/reference/ascii85-flate-predictor.pdf",
       "sha256": "612a11950ea1e7571a4549407ab2c98af33be629611839a1958dac302f89a160"
     },

@@ -199,8 +199,9 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
     return 1;
 }
 
-int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
-                               const pdf_object_view *form, pdf_transparency_group *group) {
+static int pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
+                           const pdf_object_view *form, pdf_transparency_group *group,
+                           int appearance) {
     size_t pos;
     /* The isolated mask root already owns its prepared surface. Nested forms
      * still allocate their own groups and honor their own attributes. */
@@ -209,27 +210,31 @@ int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *
         child->mask_root_object = 0;
         return 1;
     }
-    if (!cupidimage_pdf_page_value(form, "Group", &pos))
+    int present = cupidimage_pdf_page_value(form, "Group", &pos);
+    if (!present && !appearance)
         return 1;
     pdf_object_view attributes = {0};
     int isolated = 0, knockout = 0, ok = 0;
-    if (!cupidimage_pdf_dictionary_value(parent->document, parent->document_size, form, "Group",
-                                         &attributes))
+    if (present && !cupidimage_pdf_dictionary_value(parent->document, parent->document_size, form,
+                                                    "Group", &attributes))
         goto done;
-    if (group_keyword(&attributes, "null")) {
-        ok = 1;
-        goto done;
+    if (present && group_keyword(&attributes, "null")) {
+        if (!appearance) {
+            ok = 1;
+            goto done;
+        }
+        present = 0;
     }
     pos = 0;
     cupidimage_pdf_skip_ws_and_comments(attributes.data, attributes.len, &pos);
-    if (attributes.len - pos < 2 || memcmp(attributes.data + pos, "<<", 2) ||
-        !cupidimage_pdf_entry_is_name(parent->document, parent->document_size, &attributes, "S",
-                                      "Transparency") ||
-        !cupidimage_pdf_dictionary_boolean(parent, &attributes, "I", &isolated) ||
-        !cupidimage_pdf_dictionary_boolean(parent, &attributes, "K", &knockout))
+    if (present && (attributes.len - pos < 2 || memcmp(attributes.data + pos, "<<", 2) ||
+                    !cupidimage_pdf_entry_is_name(parent->document, parent->document_size,
+                                                  &attributes, "S", "Transparency") ||
+                    !cupidimage_pdf_dictionary_boolean(parent, &attributes, "I", &isolated) ||
+                    !cupidimage_pdf_dictionary_boolean(parent, &attributes, "K", &knockout)))
         goto done;
     pdf_blend_space blend = *cupidimage_pdf_current_blend(parent);
-    if (!cupidimage_pdf_group_space(child, &attributes, 0, &blend) ||
+    if ((present && !cupidimage_pdf_group_space(child, &attributes, 0, &blend)) ||
         (!isolated && !cupidimage_pdf_blend_equal(&blend, cupidimage_pdf_current_blend(parent))))
         goto done;
     if (!cupidimage_pdf_group_surface(parent, group, isolated, NULL, &blend))
@@ -247,6 +252,17 @@ int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *
 done:
     cupidimage_pdf_object_view_release(&attributes);
     return ok;
+}
+
+int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
+                               const pdf_object_view *form, pdf_transparency_group *group) {
+    return pdf_group_begin(child, parent, form, group, 0);
+}
+
+int cupidimage_pdf_appearance_group_begin(pdf_render_state *child, const pdf_render_state *parent,
+                                          const pdf_object_view *form,
+                                          pdf_transparency_group *group) {
+    return pdf_group_begin(child, parent, form, group, 1);
 }
 
 /* A displayed page is an isolated group, even when I is false or omitted. */

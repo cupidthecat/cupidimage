@@ -308,6 +308,13 @@ int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transpar
 int cupidimage_pdf_composite_implicit_group(pdf_render_state *st,
                                             const pdf_transparency_group *group);
 
+void cupidimage_pdf_matrix_identity(float[6]);
+void cupidimage_pdf_matrix_concat(float[6], const float[6]);
+int cupidimage_pdf_form_matrix(const pdf_render_state *, const pdf_object_view *, float[6]);
+int cupidimage_pdf_draw_appearance(pdf_render_state *, pdf_object_id, const pdf_object_view *);
+int cupidimage_pdf_render_annotations(pdf_render_state *, const pdf_page_geometry *);
+int cupidimage_pdf_appearance_group_begin(pdf_render_state *, const pdf_render_state *,
+                                          const pdf_object_view *, pdf_transparency_group *);
 int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
                              const pdf_object_view *form);
 int cupidimage_pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,

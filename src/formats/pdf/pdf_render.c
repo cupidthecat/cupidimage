@@ -268,30 +268,6 @@ void cupidimage_pdf_composite_device(pdf_render_state *st, int x, int y, const d
     cupidimage_pdf_composite_space(st, x, y, values, &space, alpha, shape);
 }
 
-static void pdf_matrix_identity(float m[6]) {
-    m[0] = 1.0f;
-    m[1] = 0.0f;
-    m[2] = 0.0f;
-    m[3] = 1.0f;
-    m[4] = 0.0f;
-    m[5] = 0.0f;
-}
-
-static void pdf_matrix_concat(float dst[6], const float left[6]) {
-    float a = dst[0] * left[0] + dst[2] * left[1];
-    float b = dst[1] * left[0] + dst[3] * left[1];
-    float c = dst[0] * left[2] + dst[2] * left[3];
-    float d = dst[1] * left[2] + dst[3] * left[3];
-    float e = dst[0] * left[4] + dst[2] * left[5] + dst[4];
-    float f = dst[1] * left[4] + dst[3] * left[5] + dst[5];
-    dst[0] = a;
-    dst[1] = b;
-    dst[2] = c;
-    dst[3] = d;
-    dst[4] = e;
-    dst[5] = f;
-}
-
 void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
                                   float *py) {
     float tx = st->gs.ctm[0] * ux + st->gs.ctm[2] * uy + st->gs.ctm[4];
@@ -999,7 +975,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
             m[3] = (float)ops[n - 3].num;
             m[4] = (float)ops[n - 2].num;
             m[5] = (float)ops[n - 1].num;
-            pdf_matrix_concat(st->gs.ctm, m);
+            cupidimage_pdf_matrix_concat(st->gs.ctm, m);
         }
     } else if (strcmp(op, "q") == 0) {
         if (st->gs_stack_len < (int)(sizeof(st->gs_stack) / sizeof(st->gs_stack[0]))) {
@@ -1441,8 +1417,8 @@ done:
     return ok;
 }
 
-int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
-                             const pdf_object_view *form) {
+static int pdf_draw_form(pdf_render_state *st, pdf_object_id object, const pdf_object_view *form,
+                         int appearance) {
     size_t pos, length;
     int type = 1, ok = 0;
     const unsigned char *stream;
@@ -1483,35 +1459,10 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
     if (!cupidimage_pdf_page_value(form, "BBox", &pos) ||
         !cupidimage_pdf_page_rectangle(st->document, st->document_size, form, pos, clip->box))
         goto done;
-    if (cupidimage_pdf_page_value(form, "Matrix", &pos)) {
-        pdf_object_view indirect = {0};
-        const pdf_object_view *matrix = form;
-        pdf_object_id matrix_obj;
-        if (pos < form->len && form->data[pos] != '[') {
-            if (!cupidimage_pdf_page_reference(form, pos, &matrix_obj) ||
-                !cupidimage_pdf_state_object(st, matrix_obj, &indirect))
-                goto done;
-            matrix = &indirect;
-            pos = 0;
-            cupidimage_pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
-        }
-        float m[6];
-        int valid = pos < matrix->len && matrix->data[pos++] == '[';
-        for (int i = 0; valid && i < 6; i++) {
-            double number;
-            cupidimage_pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
-            valid = cupidimage_pdf_parse_pdf_number(matrix->data, matrix->len, &pos, &number) &&
-                    fabs(number) <= 1e30;
-            if (valid)
-                m[i] = (float)number;
-        }
-        cupidimage_pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
-        valid = valid && pos < matrix->len && matrix->data[pos] == ']';
-        cupidimage_pdf_object_view_release(&indirect);
-        if (!valid)
-            goto done;
-        pdf_matrix_concat(child->gs.ctm, m);
-    }
+    float matrix[6];
+    if (!cupidimage_pdf_form_matrix(st, form, matrix))
+        goto done;
+    cupidimage_pdf_matrix_concat(child->gs.ctm, matrix);
     const float *m = child->gs.ctm;
     for (int i = 0; i < 6; i++)
         if (!isfinite(m[i]))
@@ -1551,7 +1502,8 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
     if (length > st->form_budget->bytes_left)
         goto done;
     st->form_budget->bytes_left -= length;
-    if (!cupidimage_pdf_group_begin(child, st, form, &group))
+    if (!(appearance ? cupidimage_pdf_appearance_group_begin(child, st, form, &group)
+                     : cupidimage_pdf_group_begin(child, st, form, &group)))
         goto done;
     child->initial_gs = child->gs;
     child->initial_gs.soft_mask = NULL;
@@ -1570,6 +1522,16 @@ done:
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: invalid, recursive, or unsupported Form XObject");
     return ok;
+}
+
+int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
+                             const pdf_object_view *form) {
+    return pdf_draw_form(st, object, form, 0);
+}
+
+int cupidimage_pdf_draw_appearance(pdf_render_state *st, pdf_object_id object,
+                                   const pdf_object_view *form) {
+    return pdf_draw_form(st, object, form, 1);
 }
 
 int cupidimage_pdf_render_content_stream_options(
@@ -1612,7 +1574,7 @@ int cupidimage_pdf_render_content_stream_options(
     cupidimage_pdf_text_begin(&st);
     st.gs.font_size_pts = 12.0;
     st.gs.horizontal_scale = 1.0;
-    pdf_matrix_identity(st.gs.ctm);
+    cupidimage_pdf_matrix_identity(st.gs.ctm);
     st.gs.ctm[0] = st.gs.ctm[3] = (float)geometry->user_unit;
     st.gs.line_width_pts = 1.0f;
     st.gs.miter_limit = 10;
@@ -1639,6 +1601,12 @@ int cupidimage_pdf_render_content_stream_options(
         ok = cupidimage_pdf_page_group_begin(&st, &page_group);
     if (ok)
         ok = cupidimage_pdf_render_stream(&st, stream, stream_len);
+    if (ok) {
+        /* ISO 32000-1 12.5.5 requires the immediate page/annotation backdrop,
+         * even when page content itself used a knockout group. */
+        page_group.knockout = 0;
+        ok = cupidimage_pdf_render_annotations(&st, geometry);
+    }
     cupidimage_pdf_render_state_release(&st);
     /* Page paint state must not mask, clip or blend the final medium composite. */
     st.gs = st.initial_gs;

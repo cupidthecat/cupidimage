@@ -35,42 +35,15 @@ int cupidimage_pdf_oc_item(pdf_optional_content *store, const pdf_object_view *s
     end = start;
     pdf_object_id object;
     if (cupidimage_pdf_parse_reference(source, &end, &object)) {
-        pdf_object_view value = {0};
-        for (unsigned depth = 0; depth < 16; depth++) {
-            if (!cupidimage_pdf_oc_charge(store, 1)) {
-                cupidimage_pdf_object_view_release(&value);
-                return 0;
-            }
-            pdf_object_view next = {0};
-            int status = cupidimage_pdf_lookup_object(store->xref, store->document,
-                                                      store->document_size, object, &next);
-            cupidimage_pdf_object_view_release(&value);
-            if (status < 0)
-                return 0;
-            if (!status) {
-                *out = (pdf_object_view){(const unsigned char *)"null", 4, NULL, store->xref};
-                *position = end;
-                return 1;
-            }
-            value = next;
-            size_t at = 0;
-            pdf_object_id following;
-            cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
-            if (!cupidimage_pdf_parse_reference(&value, &at, &following)) {
-                *identity = object;
-                *out = value;
-                *position = end;
-                return 1;
-            }
-            cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
-            if (at != value.len) {
-                cupidimage_pdf_object_view_release(&value);
-                return 0;
-            }
-            object = following;
-        }
-        cupidimage_pdf_object_view_release(&value);
-        return 0;
+        int status =
+            cupidimage_pdf_resolve_object(store->xref, store->document, store->document_size,
+                                          object, out, identity, &store->work_left);
+        if (status < 0)
+            return 0;
+        if (!status)
+            *out = (pdf_object_view){(const unsigned char *)"null", 4, NULL, store->xref};
+        *position = end;
+        return 1;
     }
     unsigned char first = source->data[start];
     if (first == '[') {

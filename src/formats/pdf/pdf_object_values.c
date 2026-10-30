@@ -1,6 +1,40 @@
 #include "pdf_internal.h"
 #include <string.h>
 
+/* Resolve aliases while preserving the final identity used for resource scopes. */
+int cupidimage_pdf_resolve_object(const pdf_xref *xref, const unsigned char *data, size_t size,
+                                  pdf_object_id object, pdf_object_view *out,
+                                  pdf_object_id *identity, size_t *work_left) {
+    memset(out, 0, sizeof(*out));
+    *identity = 0;
+    for (unsigned depth = 0; depth < 16; depth++) {
+        if (work_left) {
+            if (!*work_left)
+                return -1;
+            --*work_left;
+        }
+        pdf_object_view value = {0};
+        int status = cupidimage_pdf_lookup_object(xref, data, size, object, &value);
+        if (status <= 0)
+            return status;
+        size_t at = 0;
+        pdf_object_id next;
+        cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
+        if (!cupidimage_pdf_parse_reference(&value, &at, &next)) {
+            *out = value;
+            *identity = object;
+            return 1;
+        }
+        cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
+        int valid = at == value.len;
+        cupidimage_pdf_object_view_release(&value);
+        if (!valid)
+            return -1;
+        object = next;
+    }
+    return -1;
+}
+
 int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, size_t p, pdf_object_view *out,
                                  unsigned depth) {

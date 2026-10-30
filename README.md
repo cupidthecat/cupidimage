@@ -21,12 +21,13 @@ TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
 profiles have separate controls and limits.
 [Default layer visibility](docs/pdf-optional-content.md) controls painting while
-preserving text advances and clipping.
+preserving text advances and clipping. Existing [annotation and widget appearances](docs/pdf-annotations.md)
+render over the page, including their selected states and transparency.
 Tiling/shading patterns, styled dashed strokes and graphics-state soft masks are
 also supported. Transparency groups can use device colors, including
 [CMYK](docs/pdf-cmyk-blending.md), and selected
 [calibrated and ICC spaces](docs/pdf-blending-colors.md). Full font fidelity,
-additional transparency spaces, color management and annotations still need work.
+additional transparency spaces, color management and appearance generation still need work.
 See the [shading guide](docs/pdf-shading.md) and [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.
 

@@ -47,8 +47,8 @@ such as allocation errors still fail the page.
 
 EMC restores the previous marked-content visibility. q and Q restore graphics
 state, not the marked-content stack. Form and image XObjects also honor their OC
-entries before executing their content. The same evaluator is available for
-annotation rendering, which is not implemented by this change.
+entries before executing their content. Supplied [annotation appearances](pdf-annotations.md) use the same evaluator
+for their annotation and Form OC entries.
 
 ## Painting and state
 

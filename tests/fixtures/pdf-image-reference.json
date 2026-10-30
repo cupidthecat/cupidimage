@@ -658,6 +658,22 @@
       "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
       "tolerance": 0,
       "provenance": "Literal rectangle from an owned CID glyph, preserving its identity and outline through bounded subset recovery."
+    },
+    {
+      "asset": "assets/pdf/reference/annotation-appearance.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
+      "tolerance": 0,
+      "provenance": "Literal pixel rectangle selected from a normal appearance and mapped from its BBox to Rect."
+    },
+    {
+      "asset": "assets/pdf/reference/annotation-widget-state.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
+      "tolerance": 0,
+      "provenance": "Literal pixel rectangle selected from a normal appearance and mapped from its BBox to Rect."
     }
   ]
 }
