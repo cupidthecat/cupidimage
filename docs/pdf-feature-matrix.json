@@ -804,7 +804,7 @@
     },
     {
       "id": 5,
-      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 \u2014 TEXT]",
+      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 — TEXT]",
       "items": [
         {
           "id": "5.1",
@@ -909,7 +909,7 @@
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options."
           ],
           "dependencies": [
             "1",
@@ -925,10 +925,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "Opt-in graphics coverage now includes Type 3 paths. Image/shading coverage and wider Type 3 color/transparency interactions remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -981,7 +985,7 @@
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option."
           ],
           "dependencies": [
             "1",
@@ -1068,8 +1072,8 @@
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options.",
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option."
           ],
           "dependencies": [
             "1",
@@ -1149,7 +1153,7 @@
     },
     {
       "id": 6,
-      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 \u2014 TEXT]",
+      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 — TEXT]",
       "items": [
         {
           "id": "6.1",
@@ -1325,7 +1329,7 @@
     },
     {
       "id": 7,
-      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 \u2014 TEXT]",
+      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 — TEXT]",
       "items": [
         {
           "id": "7.1",
@@ -1552,10 +1556,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete.",
+            "Opt-in graphics coverage now includes Type 3 paths. Image/shading coverage and wider Type 3 color/transparency interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -1606,15 +1614,18 @@
       "items": [
         {
           "id": "8.1",
-          "requirement": "m, l, c, v, y, h, re path construction and cubic B\u00e9zier geometry.",
+          "requirement": "m, l, c, v, y, h, re path construction and cubic Bézier geometry.",
           "status": "partial",
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1630,10 +1641,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1649,10 +1663,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1668,10 +1685,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1687,10 +1707,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1710,10 +1733,13 @@
             "docs/pdf-clipping.md",
             "scripts/test_pdf_fractional_clips.py",
             "tests/test_pdf_region.c",
-            "tests/test_pdf_clip_geometry.c"
+            "tests/test_pdf_clip_geometry.c",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Opt-in fractional path, text and Form clipping is tested. General vector antialiasing, automatic stroke adjustment and wider cross-feature qualification remain incomplete."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1729,10 +1755,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1748,10 +1777,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -2418,7 +2450,7 @@
     },
     {
       "id": 12,
-      "title": "PDF FUNCTION TYPES [P1 \u2014 PREREQUISITE FOR SHADING AND COLOR]",
+      "title": "PDF FUNCTION TYPES [P1 — PREREQUISITE FOR SHADING AND COLOR]",
       "items": [
         {
           "id": "12.1",

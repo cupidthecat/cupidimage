@@ -171,6 +171,15 @@ def main():
         assert render(fixture(shape+'f',fill=.6,pattern=True))[2]==render(fixture(shape+'f',fill=.6))[2]
         for data in (fixture(shape+'f'),fixture('1.125 w '+shape+'B',fill=.6,stroke=.4,mask=.6),
                      fixture('6 6 12 12 re W n 1 j 1.125 w '+shape+'B*')):fault(data)
+        # Text clipping must also be captured when only graphics AA is enabled.
+        # The font's paint profile is independent of its clipping outline.
+        from test_pdf_text_antialias import MAKERS
+        for maker in MAKERS.values():
+            data=maker('BT /F 30 Tf 7 Tr 20.1875 30.1875 Td (A) Tj ET '
+                       '1 0 0 rg 0 0 120 90 re f')
+            graphics_clip=render(data,graphics=1,text=0)
+            assert graphics_clip==render(data,graphics=1,text=1)
+            assert graphics_clip==render(data,graphics=0,text=1)
         # Type 3 charstrings execute the same graphic path coverage.
         content='1 0 0 rg BT /F 30 Tf 20.1875 30.1875 Td (A) Tj ET'
         actual=render(type3_fixture(content))[2]
