@@ -860,17 +860,21 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_type1_render.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Embedded MMType1 snapshots use the ordinary Type 1 path. Nonembedded instance matching remains incomplete. Live multiple-master programs are optional compatibility work, not conforming embedded snapshots."
           ],
           "dependencies": [
             "1",
             "2"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 9.6.2.3",
+            "ISO 32000-2:2020 9.6.2.3"
+          ]
         },
         {
           "id": "5.3",
@@ -4351,10 +4355,13 @@
             "scripts/test_pdf_text_antialias.py",
             "docs/pdf-page-hinting.md",
             "src/formats/pdf/fonts/page_hint.c",
-            "scripts/test_pdf_page_hinting.py"
+            "scripts/test_pdf_page_hinting.py",
+            "docs/pdf-stroke-outlines.md",
+            "scripts/test_pdf_text_strokes.py",
+            "tests/test_pdf_stroke_union.c"
           ],
           "limitations": [
-            "Opt-in outline fill coverage and a selected native legacy TrueType page profile are tested. Defaults retain unhinted center-point fill. Modern/subpixel profiles, variation behavior, CFF/Type 1 hinting, fractional clipping, stroke coverage, image resampling and wider raster fidelity remain incomplete."
+            "Opt-in outline fills and analytic text-stroke unions are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. Fractional clipping, general vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete."
           ],
           "dependencies": [
             "3",

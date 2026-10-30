@@ -275,7 +275,11 @@ Programs are limited to 16 MiB, 65,535 glyphs, 65,536 subroutines, 127-byte name
 per glyph. Glyph and subroutine strings are bounded to 65,535 encoded bytes.
 The decoded private section and lookup arrays count against retained font storage.
 Custom OtherSubrs, dynamically generated PostScript font data and synthetic or
-multiple-master programs remain unsupported.
+multiple-master programs remain unsupported as an optional compatibility extension.
+ISO 32000-1 and ISO 32000-2 section 9.6.2.3 require embedded multiple-master
+instances to be ordinary Type 1 snapshots, not live multiple-master programs.
+Interpolation of an external master font is a separate substitution capability;
+it is not a prerequisite for rendering a conforming embedded snapshot.
 
 ## Decoded outline cache
 
@@ -323,8 +327,9 @@ programs, widths or CID metrics.
 text fidelity in the current PDF work. The main gaps are:
 
 - Broader TrueType instruction and hinting-profile qualification, fractional text
-  clipping, stroke coverage and complete antialiased text composition.
-- CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
+  clipping, broader stroke qualification and complete antialiased text composition.
+- Nonembedded multiple-master instance matching, synthetic fonts and custom Type 1 procedures.
+- CFF2 and variable-font applicability still needs a PDF-version-specific audit.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
 - Symbolic/script/CJK substitutes and broader missing-font matching.
