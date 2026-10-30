@@ -15,7 +15,8 @@
 static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
-            "number] [--pdf-text-aa] [--pdf-tt-hinting] [--pdf-cff-hinting] [--sixel] "
+            "number] [--pdf-text-aa] [--pdf-tt-hinting] [--pdf-cff-hinting] [--pdf-type1-hinting] "
+            "[--sixel] "
             "[--sixel-colors N] "
             "[--sixel-dither MODE] [--ansi] "
             "<image-file> "
@@ -26,6 +27,7 @@ static void usage(const char *prog) {
         "  --pdf-text-aa: enable grayscale PDF outline text fill (strokes/clips remain binary)\n");
     fprintf(stderr, "  --pdf-tt-hinting: execute the native legacy TrueType hinting profile\n");
     fprintf(stderr, "  --pdf-cff-hinting: enable native CFF outline hinting\n");
+    fprintf(stderr, "  --pdf-type1-hinting: enable native Type 1 outline hinting\n");
     fprintf(stderr, "  --sixel: force Sixel output\n");
     fprintf(stderr, "  --sixel-colors N: set max palette colors (2-256, default 256)\n");
     fprintf(stderr, "  --sixel-dither MODE: none, floyd-steinberg, atkinson, ordered (default: "
@@ -851,6 +853,10 @@ int main(int argc, char **argv) {
             i++;
             continue;
         }
+        if (strcmp(argv[i], "--pdf-type1-hinting") == 0) {
+            pdf_options.type1_hinting = 1;
+            continue;
+        }
         if (strcmp(argv[i], "--pdf-cff-hinting") == 0) {
             pdf_options.cff_hinting = 1;
             continue;
@@ -905,7 +911,7 @@ int main(int argc, char **argv) {
 
     char err[128];
     if (path_has_pdf_extension(path) || has_pdf_page || pdf_options.text_antialias ||
-        pdf_options.truetype_hinting || pdf_options.cff_hinting) {
+        pdf_options.truetype_hinting || pdf_options.cff_hinting || pdf_options.type1_hinting) {
         int page_count = 0;
         if (!cupidimage_get_pdf_page_count_file(path, &page_count, err, sizeof(err))) {
             fprintf(stderr, "load error: %s\n", err);

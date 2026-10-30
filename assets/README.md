@@ -34,3 +34,8 @@ The full sample is decoded-unverified. Regenerate it with
 Use `--pdf-cff-hinting --pdf-text-aa` to exercise their fitted page path. Its
 complete raster remains decoded-unverified. Regenerate it with
 `scripts/generate_pdf_cff_page_hinting_fixture.py`.
+
+`pdf/native-type1-hinting.pdf` embeds owned Type 1 blue-zone and composite glyph
+programs. Use `--pdf-type1-hinting --pdf-text-aa` to exercise their fitted page
+path. Its complete raster remains decoded-unverified. Regenerate it with
+`scripts/generate_pdf_type1_page_hinting_fixture.py`.

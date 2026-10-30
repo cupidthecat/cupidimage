@@ -260,8 +260,8 @@ subroutines, division, seac accents, and standard OtherSubrs 0 through 3 for fle
 and hint replacement. Literal [private hint parameters](pdf-postscript-hints.md)
 are retained, with diagnostics for unresolved expressions. Optional traces retain
 stems, replacements, dotsection and flex inputs. A bounded
-[standalone fitter](pdf-postscript-gridfit.md) consumes them; Type 1 page integration
-is still pending.
+[fitter](pdf-postscript-gridfit.md) consumes them. Enable its
+[page path](pdf-type1-page-hinting.md) with `--pdf-type1-hinting`.
 Open strokes remain open; explicit closepath closes the path without resetting
 the charstring's current point. Accents use StandardEncoding component names.
 The embedded program's PaintType is ignored as required by ISO 32000-1 section
@@ -321,7 +321,8 @@ programs, widths or CID metrics.
 [Issue #50](https://github.com/cupidthecat/cupidimage/issues/50) tracks font and
 text fidelity in the current PDF work. The main gaps are:
 
-- TrueType instruction execution, grid fitting and antialiased font coverage.
+- Broader TrueType instruction and hinting-profile qualification, fractional text
+  clipping, stroke coverage and complete antialiased text composition.
 - CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.

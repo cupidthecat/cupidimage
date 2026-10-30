@@ -107,7 +107,7 @@ reviewer. For example, a small automated run with explicit native profiles is:
 ```sh
 make bin/test_pdf_pages
 python3 scripts/audit_pdf_corpus.py --corpus assets/pdf/pdfjs --pages first \
-  --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting \
+  --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting --pdf-type1-hinting \
   --report .cache/pdfjs-full/native-text.jsonl
 ```
 
@@ -716,7 +716,12 @@ than PDF pages. See [PostScript grid-fitting scope](pdf-postscript-gridfit.md).
 origins, open-contour preservation, selected private fields, allocation failure
 and shared budgets. Optional independent checks compare complete fitted fill
 contours and grayscale bitmaps. Installed PFB fonts can be added explicitly;
-the default suite uses authored programs. Type 1 page fitting is not yet enabled.
+the default suite uses authored programs.
+
+`make test-pdf-type1-page-hinting` checks the Type 1 page option, composite
+placement, FontMatrix transforms, PDF advances, text clipping, Form-local fonts,
+Sixel output and allocation cleanup. Optional reference checks compare grayscale
+pages. See [Type 1 page hinting](pdf-type1-page-hinting.md).
 
 `make test-pdf-cff-page-hinting` checks the CFF page option, composite/CID
 placement, FontMatrix rules, fallback programs, PDF advances, Sixel output and

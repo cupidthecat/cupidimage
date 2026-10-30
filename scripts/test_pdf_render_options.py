@@ -30,10 +30,11 @@ def main():
         assert supports_pdf_options(capabilities, {field: True for _, field, _ in OPTIONS})
         checks += 1
     fixtures = [Path('assets/pdf/native-truetype-hinting.pdf').resolve(),
-                Path('assets/pdf/native-cff-hinting.pdf').resolve()]
+                Path('assets/pdf/native-cff-hinting.pdf').resolve(),
+                Path('assets/pdf/native-type1-hinting.pdf').resolve()]
     images = {}
     for fixture in fixtures:
-        for bits in itertools.product((False, True), repeat=3):
+        for bits in itertools.product((False, True), repeat=len(OPTIONS)):
             values = {field: bits[i] for i, (_, field, _) in enumerate(OPTIONS)}
             flags = pdf_option_arguments(values)
             page = subprocess.check_output([str(pages), str(fixture), '0', *flags])
@@ -46,8 +47,12 @@ def main():
             assert subprocess.check_output([str(assets), str(fixture), 'pdf', '0', 'count', *flags]) == b'1\n'
             images[fixture.name, bits] = page[12:]
             checks += 1
-    assert images[fixtures[0].name, (True, True, False)] != images[fixtures[0].name, (True, False, False)]
-    assert images[fixtures[1].name, (True, False, True)] != images[fixtures[1].name, (True, False, False)]
+    assert images[fixtures[0].name, (True, True, False, False)] != images[fixtures[0].name, (True, False, False, False)]
+    assert images[fixtures[1].name, (True, False, True, False)] != images[fixtures[1].name, (True, False, False, False)]
+    assert images[fixtures[2].name, (True, False, False, True)] != images[fixtures[2].name, (True, False, False, False)]
+    for fixture in fixtures[:2]:
+        for bits in itertools.product((False, True), repeat=3):
+            assert images[fixture.name, (*bits, False)] == images[fixture.name, (*bits, True)]
     for command in ([str(pages), str(fixtures[0]), '0', '--unknown'],
                     [str(assets), str(fixtures[0]), 'pdf', '0', 'pixels', '--unknown'],
                     [str(assets), 'assets/png/basic.png', 'png', '0', 'pixels', '--pdf-text-aa']):
@@ -56,7 +61,7 @@ def main():
         checks += 1
     profile = {'text_antialias': True, 'truetype_hinting': False, 'cff_hinting': True}
     flags = pdf_option_arguments(profile)
-    expected = images[fixtures[1].name, (True, False, True)]
+    expected = images[fixtures[1].name, (True, False, True, False)]
     with tempfile.TemporaryDirectory(prefix='cupid-pdf-option-tests-') as temporary:
         root = Path(temporary)
         corpus = root / 'corpus'
@@ -79,6 +84,19 @@ def main():
         result = run(command + ['--resume', '--pdf-tt-hinting'], capture_output=True, text=True, timeout=30)
         assert result.returncode == 2 and report.read_bytes() == saved
         checks += 3
+        type1_report=root/'type1-audit.jsonl'
+        type1_corpus=root/'type1-corpus'
+        type1_corpus.mkdir()
+        shutil.copyfile(fixtures[2],type1_corpus/'case.pdf')
+        type1_command=[sys.executable,'scripts/audit_pdf_corpus.py','--corpus',str(type1_corpus),
+                       '--probe',str(pages),'--memory-mib','0','--report',str(type1_report),
+                       '--pdf-text-aa','--pdf-type1-hinting']
+        result=run(type1_command,capture_output=True,text=True,timeout=30)
+        assert result.returncode==0,(result.stdout,result.stderr)
+        type1_records=[json.loads(line) for line in type1_report.read_text().splitlines()]
+        assert type1_records[0]['configuration']['pdf_options']['type1_hinting'] is True
+        assert next(row for row in type1_records if row['kind']=='page')['rgba_sha256']==hashlib.sha256(images[fixtures[2].name,(True,False,False,True)]).hexdigest()
+        checks+=1
         # An old probe must fail before it can overwrite a report or rate inputs.
         old = root / 'old-probe'
         old.write_text('#!/usr/bin/env python3\nimport sys\nsys.exit(2)\n')
@@ -120,7 +138,7 @@ def main():
         assert len(displayed) == 1
         alternate = [value for value in arguments if value != '--pdf-cff-hinting'] + ['--resume']
         assert review(alternate) == (0, 1)
-        assert displayed[-1] == images[fixtures[1].name, (True, False, False)]
+        assert displayed[-1] == images[fixtures[1].name, (True, False, False, False)]
         records = [json.loads(line) for line in visual.read_text().splitlines()]
         ratings = [row for row in records if row['kind'] == 'rating']
         assert len(ratings) == 2 and ratings[0]['review_key'] != ratings[1]['review_key']

@@ -359,7 +359,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         memcpy(draw_matrix, (double[6]){1, 0, 0, 1, 0, 0}, sizeof(draw_matrix));
     }
     if (program->is_cff || program->is_type1) {
-        unsigned fd = program->cff.fdselect ? program->cff.fdselect[glyph] : 0;
+        unsigned fd =
+            !program->is_type1 && program->cff.fdselect ? program->cff.fdselect[glyph] : 0;
         const double *f =
             program->is_type1 ? program->type1.matrix : program->cff.private_dicts[fd].matrix;
         double a[6];
@@ -370,13 +371,20 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         m[3] = a[1] * f[2] + a[3] * f[3];
         m[4] = a[0] * f[4] + a[2] * f[5] + a[4];
         m[5] = a[1] * f[4] + a[3] * f[5] + a[5];
-        if (st->cff_hinting && program->is_cff && !zero_text_transform) {
+        if (((st->cff_hinting && program->is_cff) || (st->type1_hinting && program->is_type1)) &&
+            !zero_text_transform) {
             int fitted = 0;
-            if (!cupidimage_pdf_cff_page_shape(&program->cff, glyph, draw_matrix,
-                                               &st->clip_budget->tests_left, &hinted_cff,
-                                               &fitted)) {
+            int shaped = program->is_type1
+                             ? cupidimage_pdf_type1_page_shape(&program->type1, glyph, draw_matrix,
+                                                               &st->clip_budget->tests_left,
+                                                               &hinted_cff, &fitted)
+                             : cupidimage_pdf_cff_page_shape(&program->cff, glyph, draw_matrix,
+                                                             &st->clip_budget->tests_left,
+                                                             &hinted_cff, &fitted);
+            if (!shaped) {
                 cupidimage_set_err(st->error, st->error_capacity,
-                                   "pdf: unable to grid-fit CFF glyph");
+                                   program->is_type1 ? "pdf: unable to grid-fit Type 1 glyph"
+                                                     : "pdf: unable to grid-fit CFF glyph");
                 goto done;
             }
             if (fitted) {

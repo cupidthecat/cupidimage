@@ -27,11 +27,14 @@ def main():
                         content += ' 0 0 1 rg 0 0 120 90 re f'
                     for path, code in zip(paths, (changed, expanded)):
                         path.write_bytes(fixture(content, glyphs=[('.notdef', WIDTH+b'\x0e'), ('A', code)]))
-                    args = ['--pdf-text-aa'] if aa else []
-                    results = [subprocess.run([probe, str(p), '0', *args], capture_output=True,
-                                              check=True, timeout=20).stdout for p in paths]
-                    assert results[0] == results[1], (aa, mode, matrix)
-                    checks += 1
+                    for hint in (False, True):
+                        args = ['--pdf-text-aa'] if aa else []
+                        if hint:
+                            args.append('--pdf-type1-hinting')
+                        results = [subprocess.run([probe, str(p), '0', *args], capture_output=True,
+                                                  check=True, timeout=20).stdout for p in paths]
+                        assert results[0] == results[1], (aa, hint, mode, matrix)
+                        checks += 1
                     if '--reference' in sys.argv:
                         for p in paths:
                             subprocess.run(['pdftoppm', '-r', '96', '-aa', 'yes' if aa else 'no',

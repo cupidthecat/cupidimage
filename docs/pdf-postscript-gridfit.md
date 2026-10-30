@@ -3,7 +3,7 @@
 Bounded CFF and Type 1 grid-fitting cores consume the
 [retained hint data](pdf-postscript-hints.md) and return owned device-space outlines.
 The [CFF page option](pdf-cff-page-hinting.md) connects CFF fitting to rendering.
-Type 1 fitting is currently a standalone internal entry point, not a page option.
+The [Type 1 page option](pdf-type1-page-hinting.md) connects Type 1 fitting.
 CFF and Type 1 remain unhinted by default; `--pdf-tt-hinting` applies only to TrueType.
 
 The core uses isolated, licensed blue-zone and hint-map components with the
@@ -109,7 +109,7 @@ behavior with grid fitting; native encoding-equivalence checks retain the
 
 ### Type 1 checks
 
-`make test-pdf-type1-gridfit` runs 31,830 native checks, including work-budget
+`make test-pdf-type1-gridfit` runs 31,899 native checks, including work-budget
 boundaries, allocation failures, composite cleanup, malformed traces, open
 contours, transforms and 2,000 bounded sizing/origin cases. It also runs optional
 independent checks for 31 authored programs: 420 fitted fill-contour matches at
@@ -131,13 +131,13 @@ The font comparison normalizes implicit fill closure. Separate native tests ensu
 that an open contour does not acquire a closing stroke. These are standalone
 glyph checks, not PDF page integration or complete Type 1 conformance.
 
-`make test-pdf-type1` also checks 48 paired-font page cases for logical
-current-point changes, covering all text modes, transforms and antialiasing on/off.
-The pairs agree in the native renderer and in optional independent page rendering.
+`make test-pdf-type1` also checks 96 paired-font page cases for logical
+current-point changes, covering all text modes, transforms, antialiasing and
+Type 1 hinting on/off. The pairs also agree in 48 optional independent page checks.
 
 ## Remaining work
 
-Type 1 page integration, computed private dictionaries, broader OtherSubrs,
+Computed private dictionaries, broader OtherSubrs,
 flex policy, stem darkening, synthetic bold, fractional private parameters and
 broader font-program arithmetic qualification remain open. The matching outlines
 and bitmaps establish the tested profile, not complete CFF/PDF rendering parity.

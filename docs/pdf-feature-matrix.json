@@ -830,12 +830,15 @@
             "tests/test_pdf_type1_gridfit.c",
             "scripts/test_pdf_type1_gridfit_reference.py",
             "scripts/test_pdf_type1_currentpoint.py",
-            "docs/pdf-postscript-gridfit.md"
+            "docs/pdf-postscript-gridfit.md",
+            "docs/pdf-type1-page-hinting.md",
+            "scripts/test_pdf_type1_page_hinting.py",
+            "assets/pdf/native-type1-hinting.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution, computed font dictionaries and Type 1 page fitting remain unsupported.",
-            "Literal private hint fields and ordered charstring hint traces are retained. Computed parameters carry unresolved diagnostics; A bounded standalone fitter is tested; Type 1 page integration remains unfinished."
+            "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution and computed font dictionaries remain unsupported.",
+            "Literal private hint fields and ordered charstring hint traces feed an optional bounded page fitter. Computed parameters carry unresolved diagnostics; broader hinting and font-program qualification remain unfinished."
           ],
           "dependencies": [
             "1",

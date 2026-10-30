@@ -16,8 +16,8 @@ existing center-point fill path while the wider raster pipeline is qualified.
 Stroke and clip coverage remain binary, as do bitmap fallback glyphs and the
 ordinary graphics in Type 3 programs. Text inside a Form, a pattern or a soft-mask
 form inherits the option. Native TrueType page hinting has a separate
-[explicit option](pdf-page-hinting.md), as does [CFF hinting](pdf-cff-page-hinting.md);
-smoothing alone enables neither.
+[explicit option](pdf-page-hinting.md), as do [CFF hinting](pdf-cff-page-hinting.md)
+and [Type 1 hinting](pdf-type1-page-hinting.md). Smoothing alone enables none of them.
 
 ## Coordinates and output
 

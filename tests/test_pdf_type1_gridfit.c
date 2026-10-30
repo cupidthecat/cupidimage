@@ -10,6 +10,7 @@ static void bitmap_free(void *buffer) {
 #define realloc fault_realloc
 #define free fault_free
 #include "../src/formats/pdf/fonts/postscript/gridfit.c"
+#include "../src/formats/pdf/fonts/postscript/page.c"
 #include "../src/formats/pdf/fonts/postscript/type1_gridfit.c"
 #include "../src/formats/pdf/fonts/postscript/type1_shape.c"
 #include "../src/formats/pdf/fonts/type1/trace.c"
@@ -354,6 +355,66 @@ int main(int argc, char **argv) {
     work = 1000000;
     CHECK(!cupidimage_pdf_type1_hint_outline(&font, 0, &zero, &out, &work));
     CHECK(!out.segments && !out.count && !live_count);
+    glyphs[1].code = (pdf_cff_slice){base, sizeof(base)};
+    font.matrix[0] = font.matrix[3] = .001;
+    double text_matrix[6] = {24, 0, 0, -24, 40, 80};
+    int fitted = 0;
+    total = 0;
+    for (size_t failure = 0; failure <= total; failure++) {
+        allocation_count = 0;
+        fail_at = failure;
+        work = 1000000;
+        int ok = cupidimage_pdf_type1_page_shape(&font, 2, text_matrix, &work, &out, &fitted);
+        if (!failure)
+            total = allocation_count;
+        CHECK(ok == !failure && fitted == !failure);
+        if (ok)
+            CHECK(out.count == 10 && out.width == 600 && out.segments[0].points[0] == 40 &&
+                  out.segments[0].points[1] == 80);
+        else
+            CHECK(!out.segments && !out.count);
+        cupidimage_pdf_type2_free(&out);
+        CHECK(!live_count && work <= 1000000);
+    }
+    fail_at = 0;
+    for (unsigned field = 0; field < 6; field++) {
+        double original = text_matrix[field];
+        text_matrix[field] = NAN;
+        work = 1000000;
+        CHECK(!cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
+        CHECK(!fitted && !out.segments && !out.count);
+        text_matrix[field] = original;
+        original = font.matrix[field];
+        font.matrix[field] = NAN;
+        work = 1000000;
+        CHECK(!cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
+        CHECK(!fitted && !out.segments && !out.count);
+        font.matrix[field] = original;
+    }
+    text_matrix[0] = 0;
+    work = 1000000;
+    CHECK(cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
+    CHECK(!fitted && !out.segments && !out.count);
+    text_matrix[0] = 24;
+    font.matrix[0] = 0;
+    work = 1000000;
+    CHECK(cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
+    CHECK(!fitted && !out.segments && !out.count);
+    font.matrix[0] = .001;
+    font.matrix[4] = .00025;
+    font.matrix[5] = -.00025;
+    text_matrix[4] = 40.00390625;
+    text_matrix[5] = 80.00390625;
+    work = 1000000;
+    CHECK(cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
+    CHECK(fitted && out.segments[0].points[0] == 40.015625 &&
+          out.segments[0].points[1] == 80.015625);
+    cupidimage_pdf_type2_free(&out);
+    CHECK(!live_count);
+    text_matrix[4] = 1e9;
+    work = 1000000;
+    CHECK(!cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
+    CHECK(!fitted && !out.segments && !out.count && !live_count);
     printf("Type 1 grid fitting: %u checks, %u failures\n", checks, failures);
     return failures != 0;
 }

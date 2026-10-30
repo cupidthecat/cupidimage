@@ -81,15 +81,18 @@ To test an explicit grayscale/native-hinting configuration on a small selection:
 
 ```sh
 python3 scripts/review_assets.py --pdfjs --range 1-20 --pages first \
-  --reference --backend sixel --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting \
+  --reference --backend sixel --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting --pdf-type1-hinting \
   --report .cache/visual-review/pdf-native-hinting-sixel.jsonl
 ```
 
-The three switches can be used independently. They affect PDF decoding, not the
+The four switches can be used independently. They affect PDF decoding, not the
 PNG preview sent to the terminal, and do not change other formats in a mixed
 selection. They also do not change the independent renderer's settings. See the
-[TrueType](pdf-page-hinting.md), [CFF](pdf-cff-page-hinting.md) and
-[coverage](pdf-coverage.md) guides for profile limits.
+[TrueType](pdf-page-hinting.md), [CFF](pdf-cff-page-hinting.md),
+[Type 1](pdf-type1-page-hinting.md) and [coverage](pdf-coverage.md) guides for profile limits.
+
+Type 1 hinting is recorded in a rendering profile only when enabled. A missing
+`type1_hinting` field means false, preserving resume keys from older reports.
 
 The runner checks that its copied probe supports requested PDF switches before
 opening the report. A stale probe gives a rebuild error instead of marking the

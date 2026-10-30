@@ -88,9 +88,9 @@ fonts and independently decodes 3,226 glyphs containing 13,717 stems and 2,759
 masks. These checks establish agreement on decoded inputs, not rendered pixels.
 
 The separate grid-fitting core has bounded outline and glyph-bitmap tests.
-Composite placement and CFF page integration now have focused checks. Type 1
-computed parameters and page integration, flex-depth handling and broader profile
-qualification remain open.
+Composite placement and CFF/Type 1 page integration have focused checks. Type 1
+computed parameters, flex-depth handling and broader profile qualification remain
+open. See the [Type 1 page guide](pdf-type1-page-hinting.md).
 `--pdf-tt-hinting` applies only to TrueType and does not enable these stages.
 
 `make test-pdf-type1` includes 39 authored private-hint cases. Optional comparisons

@@ -77,7 +77,7 @@ Its complete page raster remains decoded-unverified.
 
 ## Remaining scope
 
-Type 1 grid fitting, flex policy, stem darkening, synthetic bold, fractional
+Flex policy, stem darkening, synthetic bold, fractional
 private parameters, broader charstring arithmetic and larger fitting ranges
 remain unfinished. Text clipping and strokes still need fractional coverage.
 The tested profile is not complete CFF or PDF rendering parity.

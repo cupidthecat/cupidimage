@@ -29,6 +29,6 @@ work-budget failures unwind to an owning context and discard partial output.
 The current wrapper enables hinting without stem darkening or synthetic bold.
 It accepts positive axis scales, validates bounded inputs, and returns an owned
 outline quantized to 1/64 pixel. Separate native wrappers handle composite
-placement. CFF also has a page adapter; Type 1 page integration and broader flex
-policy remain unfinished.
+placement. CFF and Type 1 share a page adapter. Broader flex policy remains
+unfinished.
 These limits are not claims about the complete upstream library's capabilities.

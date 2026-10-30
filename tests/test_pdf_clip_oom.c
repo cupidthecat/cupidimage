@@ -21,6 +21,8 @@
 #include "../src/formats/pdf/fonts/postscript/page.c"
 #include "../src/formats/pdf/fonts/postscript/private.c"
 #include "../src/formats/pdf/fonts/postscript/transform.c"
+#include "../src/formats/pdf/fonts/postscript/type1_gridfit.c"
+#include "../src/formats/pdf/fonts/postscript/type1_shape.c"
 #include "../src/formats/pdf/fonts/standard.c"
 #include "../src/formats/pdf/fonts/standard_outlines.c"
 #include "../src/formats/pdf/fonts/truetype.c"
@@ -111,7 +113,7 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #undef free
 
 static int test_document_allocations(const char *path, int expected_failure, int antialias,
-                                     int hinting, int cff_hinting) {
+                                     int hinting, int cff_hinting, int type1_hinting) {
     FILE *file = fopen(path, "rb");
     if (!file || fseek(file, 0, SEEK_END))
         return 2;
@@ -127,7 +129,7 @@ static int test_document_allocations(const char *path, int expected_failure, int
         return 2;
     }
     fclose(file);
-    cupidimage_pdf_options options = {antialias, hinting, cff_hinting};
+    cupidimage_pdf_options options = {antialias, hinting, cff_hinting, type1_hinting};
     size_t total = 0, checks = 0, failures = 0, expected_size = 0;
     unsigned char *expected = NULL;
     unsigned width = 0, height = 0;
@@ -190,10 +192,10 @@ static int test_document_allocations(const char *path, int expected_failure, int
 }
 
 int main(int argc, char **argv) {
-    if (argc >= 3 && argc <= 6)
-        return test_document_allocations(argv[1], atoi(argv[2]), argc >= 4 ? atoi(argv[3]) : 0,
-                                         argc >= 5 ? atoi(argv[4]) : 0,
-                                         argc >= 6 ? atoi(argv[5]) : 0);
+    if (argc >= 3 && argc <= 7)
+        return test_document_allocations(
+            argv[1], atoi(argv[2]), argc >= 4 ? atoi(argv[3]) : 0, argc >= 5 ? atoi(argv[4]) : 0,
+            argc >= 6 ? atoi(argv[5]) : 0, argc >= 7 ? atoi(argv[6]) : 0);
 
     static const struct {
         const char *content;

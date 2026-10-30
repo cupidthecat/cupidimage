@@ -67,15 +67,17 @@ are metadata, not proof that the embedded image is valid; decoding can still fai
 `cupidimage_load_pdf_page_file_with_options` accept a `cupidimage_pdf_options`
 pointer. Set `text_antialias` to 1 for grayscale TrueType/CFF/Type 1 fill coverage.
 Set `truetype_hinting` to 1 to execute the native legacy TrueType profile, and
-`cff_hinting` to 1 for the bounded CFF profile. Each field accepts only 0 or 1.
+`cff_hinting` to 1 for the bounded CFF profile. Set `type1_hinting` to 1 for the
+bounded Type 1 profile. Each field accepts only 0 or 1.
 Initialize the options struct to zero before setting fields. A null pointer or
 all-zero fields preserve unhinted center-point fills. Page indices remain
 zero-based.
 
 The option propagates into Forms, patterns and soft masks. It does not change
 PDF metrics or antialias strokes, clipping and bitmap glyphs. Hinting must be
-requested separately for supported TrueType and CFF programs. Type 1 remains
-unhinted. See the [CFF page guide](pdf-cff-page-hinting.md) for its scope.
+requested separately for supported TrueType, CFF and Type 1 programs. See the
+[CFF page guide](pdf-cff-page-hinting.md) and
+[Type 1 page guide](pdf-type1-page-hinting.md) for their scope.
 See [coverage limits and checks](pdf-coverage.md) before treating it as complete
 font rendering. All returned images use the ordinary ownership rules above.
 

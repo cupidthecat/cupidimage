@@ -20,7 +20,7 @@ from audit_pdf_corpus import fetch, process, read_ppm
 from pdf_visuals import save_visuals, write_png
 from test_asset_corpus import bundle
 from test_assets import SUFFIXES
-from pdf_render_options import add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options
+from pdf_render_options import add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options, pdf_option_key_values
 
 ROOT = Path(__file__).resolve().parents[1]
 RATINGS = {'c': 'correct', 'correct': 'correct', '1': 'correct',
@@ -79,7 +79,7 @@ def collect(paths, assets=False, formats=(), pattern='*', include_negative=False
 def review_key(path, digest, page, probe_hash, cli_hash, backend, reference=False, reviewer="local reviewer", pdf_options=None):
     values = [str(path), digest, page, probe_hash, cli_hash, backend, reference, reviewer]
     if pdf_options and any(pdf_options.values()):
-        values.append({key: bool(value) for key, value in pdf_options.items()})
+        values.append(pdf_option_key_values(pdf_options))
     return hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
 
 

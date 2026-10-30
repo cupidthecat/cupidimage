@@ -74,7 +74,7 @@ class AuditTests(unittest.TestCase):
             with patch.object(audit_pdf_corpus,'ROOT',root), patch.object(sys,'argv',args), contextlib.redirect_stdout(io.StringIO()), patch('audit_pdf_corpus.process',side_effect=AssertionError('must not render')):
                 self.assertEqual(audit_pdf_corpus.main(),0)
             self.assertEqual(report.read_text(),'preserve ratings')
-            for extra in ('--reference','--resume','--keep-images','--pdf-text-aa','--pdf-tt-hinting','--pdf-cff-hinting'):
+            for extra in ('--reference','--resume','--keep-images','--pdf-text-aa','--pdf-tt-hinting','--pdf-cff-hinting','--pdf-type1-hinting'):
                 with patch.object(sys,'argv',args+[extra]), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
                     audit_pdf_corpus.main()
                 self.assertEqual(error.exception.code,2)

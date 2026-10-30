@@ -71,6 +71,8 @@ typedef struct cupidimage_pdf_options {
     int truetype_hinting;
     /* 1 enables bounded CFF blue-zone/stem hinting without stem darkening. */
     int cff_hinting;
+    /* 1 enables bounded Type 1 blue-zone/stem hinting without stem darkening. */
+    int type1_hinting;
 } cupidimage_pdf_options;
 
 typedef struct cupidimage_svg_options {

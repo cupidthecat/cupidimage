@@ -21,7 +21,8 @@ nonzero status.
 | `--pdf-page number` | Render one PDF page, numbered from 1. |
 | `--pdf-text-aa` | Enable grayscale outline text fills. Stroke and clip coverage remain binary; hinting is unchanged. |
 | `--pdf-tt-hinting` | Execute the native legacy TrueType instruction profile. Off by default. |
-| `--pdf-cff-hinting` | Enable bounded CFF outline hinting without stem darkening. Off by default; encrypted Type 1 programs remain unhinted. |
+| `--pdf-cff-hinting` | Enable bounded CFF outline hinting without stem darkening. Off by default; applies only to CFF programs. |
+| `--pdf-type1-hinting` | Enable bounded Type 1 outline hinting without stem darkening. Off by default. |
 
 If both `--ansi` and `--sixel` are present, ANSI wins. Without an explicit output
 choice, the CLI tries detected Sixel support, then detected Kitty support, then

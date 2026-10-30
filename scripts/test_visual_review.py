@@ -69,12 +69,19 @@ class ReviewTests(unittest.TestCase):
         disabled={field:False for _,field,_ in OPTIONS}
         self.assertEqual(base,review_key('/image','sha',0,'probe','cli','sixel',pdf_options=disabled))
         keys=set()
-        for bits in range(1,8):
+        for bits in range(1,16):
             enabled={field:bool(bits&(1<<i)) for i,(_,field,_) in enumerate(OPTIONS)}
             key=review_key('/image','sha',0,'probe','cli','sixel',pdf_options=enabled)
             self.assertNotEqual(base,key);keys.add(key)
             self.assertEqual(key,review_key('/image','sha',0,'probe','cli','sixel',pdf_options=dict(reversed(list(enabled.items())))))
-        self.assertEqual(len(keys),7)
+        self.assertEqual(len(keys),15)
+
+        legacy_profile=review_key('/image','sha',0,'probe','cli','sixel',pdf_options=values)
+        self.assertEqual(legacy_profile,review_key('/image','sha',0,'probe','cli','sixel',pdf_options={**values,'type1_hinting':False}))
+        type1=pdf_option_values(parser.parse_args(['--pdf-type1-hinting']))
+        self.assertTrue(type1['type1_hinting'])
+        old_caps=json.dumps({'schema':1,'pdf_options':[flag for flag,_,_ in OPTIONS[:-1]]})
+        self.assertFalse(supports_pdf_options(old_caps,type1))
 
     def test_fingerprints(self):
         base=review_key('/image','sha',0,'probe','cli','auto')

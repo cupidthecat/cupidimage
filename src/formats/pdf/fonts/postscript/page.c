@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 
-static int cff_page_fixed(double value, int32_t *result) {
+static int ps_page_fixed(double value, int32_t *result) {
     value = trunc(value * 65536);
     if (!isfinite(value) || value < INT32_MIN || value > INT32_MAX)
         return 0;
@@ -11,7 +11,7 @@ static int cff_page_fixed(double value, int32_t *result) {
     return 1;
 }
 
-static int cff_page_offset(double value, int32_t *result) {
+static int ps_page_offset(double value, int32_t *result) {
     value = round(value * 64);
     if (!isfinite(value) || value < INT32_MIN || value > INT32_MAX)
         return 0;
@@ -19,19 +19,12 @@ static int cff_page_offset(double value, int32_t *result) {
     return 1;
 }
 
-int cupidimage_pdf_cff_page_shape(const pdf_cff_font *font, unsigned glyph,
-                                  const double text_matrix[6], size_t *work_left,
-                                  pdf_cff_outline *output, int *fitted) {
-    if (!output || !fitted)
-        return 0;
-    memset(output, 0, sizeof(*output));
-    *fitted = 0;
-    if (!font || glyph >= font->chars.count || !text_matrix || !work_left)
-        return 0;
-    unsigned fd = font->fdselect ? font->fdselect[glyph] : 0;
-    if (fd >= font->private_count || !font->private_dicts)
-        return 0;
-    const double *f = font->private_dicts[fd].matrix;
+typedef int (*ps_page_builder)(const void *, unsigned, const pdf_ps_gridfit_size *,
+                               pdf_cff_outline *, size_t *);
+
+static int ps_page_shape(const void *font, unsigned glyph, const double f[6],
+                         const double text_matrix[6], size_t *work_left, pdf_cff_outline *output,
+                         int *fitted, ps_page_builder build) {
     for (unsigned i = 0; i < 6; i++)
         if (!isfinite(text_matrix[i]) || !isfinite(f[i]) || fabs(text_matrix[i]) > 1e30 ||
             fabs(f[i]) > 1e30)
@@ -53,16 +46,16 @@ int cupidimage_pdf_cff_page_shape(const pdf_cff_font *font, unsigned glyph,
     pdf_ps_gridfit_size size = {.x_scale = scale, .y_scale = scale};
     int32_t font_matrix[4], page_matrix[4], font_offset[2] = {0}, page_offset[2];
     for (unsigned i = 0; i < 4; i++)
-        if (!cff_page_fixed(f[i] / unit, font_matrix + i) ||
-            !cff_page_fixed(text_matrix[i] / ppem, page_matrix + i))
+        if (!ps_page_fixed(f[i] / unit, font_matrix + i) ||
+            !ps_page_fixed(text_matrix[i] / ppem, page_matrix + i))
             return 0;
     for (unsigned i = 0; i < 2; i++)
-        if (!cff_page_offset(text_matrix[i] * f[4] + text_matrix[i + 2] * f[5] + text_matrix[i + 4],
-                             page_offset + i))
+        if (!ps_page_offset(text_matrix[i] * f[4] + text_matrix[i + 2] * f[5] + text_matrix[i + 4],
+                            page_offset + i))
             return 0;
     size_t quota = *work_left < 4000000 ? *work_left : 4000000;
     *work_left -= quota;
-    int ok = cupidimage_pdf_cff_hint_outline(font, glyph, &size, output, &quota) &&
+    int ok = build(font, glyph, &size, output, &quota) &&
              cupidimage_pdf_ps_outline_transform(output, font_matrix, font_offset, &quota) &&
              cupidimage_pdf_ps_outline_transform(output, page_matrix, page_offset, &quota);
     if (ok && output->count > quota)
@@ -88,4 +81,43 @@ int cupidimage_pdf_cff_page_shape(const pdf_cff_font *font, unsigned glyph,
     }
     *fitted = 1;
     return 1;
+}
+
+static int ps_page_cff(const void *font, unsigned glyph, const pdf_ps_gridfit_size *size,
+                       pdf_cff_outline *output, size_t *work) {
+    return cupidimage_pdf_cff_hint_outline(font, glyph, size, output, work);
+}
+
+static int ps_page_type1(const void *font, unsigned glyph, const pdf_ps_gridfit_size *size,
+                         pdf_cff_outline *output, size_t *work) {
+    return cupidimage_pdf_type1_hint_outline(font, glyph, size, output, work);
+}
+
+int cupidimage_pdf_cff_page_shape(const pdf_cff_font *font, unsigned glyph,
+                                  const double text_matrix[6], size_t *work_left,
+                                  pdf_cff_outline *output, int *fitted) {
+    if (!output || !fitted)
+        return 0;
+    memset(output, 0, sizeof(*output));
+    *fitted = 0;
+    if (!font || glyph >= font->chars.count || !text_matrix || !work_left)
+        return 0;
+    unsigned fd = font->fdselect ? font->fdselect[glyph] : 0;
+    if (fd >= font->private_count || !font->private_dicts)
+        return 0;
+    return ps_page_shape(font, glyph, font->private_dicts[fd].matrix, text_matrix, work_left,
+                         output, fitted, ps_page_cff);
+}
+
+int cupidimage_pdf_type1_page_shape(const pdf_type1_font *font, unsigned glyph,
+                                    const double text_matrix[6], size_t *work_left,
+                                    pdf_cff_outline *output, int *fitted) {
+    if (!output || !fitted)
+        return 0;
+    memset(output, 0, sizeof(*output));
+    *fitted = 0;
+    if (!font || glyph >= font->glyph_count || !text_matrix || !work_left)
+        return 0;
+    return ps_page_shape(font, glyph, font->matrix, text_matrix, work_left, output, fitted,
+                         ps_page_type1);
 }

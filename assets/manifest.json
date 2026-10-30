@@ -522,6 +522,10 @@
       "sha256": "30036c56c23458a8712cf0865c28ab0c8f8f0700bf76d0fce9d59590611171a1"
     },
     {
+      "path": "assets/pdf/native-type1-hinting.pdf",
+      "sha256": "9495280a4131fc884ebbf02072409dad5aab840c09236d4290bdc64fa0e2ef48"
+    },
+    {
       "path": "assets/pdf/negative/incorrect-stream-length.pdf",
       "sha256": "4694d77d16c82c01296852ad2be9b1d028e72e54d34eba9e62d09ada01780b95",
       "negative_reason": "Legacy fixture declares a 44-byte content stream containing only 38 bytes and has stale object offsets."
