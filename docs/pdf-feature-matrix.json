@@ -2018,10 +2018,14 @@
           "evidence": [
             "docs/pdf-images.md",
             "src/formats/pdf/pdf_images.c",
-            "scripts/test_pdf_image_values.py"
+            "scripts/test_pdf_image_values.py",
+            "docs/pdf-image-interpolation.md",
+            "src/formats/pdf/images/sample.c",
+            "scripts/test_pdf_image_interpolation.py",
+            "tests/test_pdf_image_sampling.c"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Dictionary-controlled bilinear sampling has focused component, mask, Matte and affine tests. Minification area filtering, image-boundary coverage, additional image color spaces, JPX/JBIG2 and optional-content handling remain unfinished. Independent interpolation profiles still differ."
           ],
           "dependencies": [
             "1",

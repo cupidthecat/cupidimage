@@ -56,6 +56,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_font_program.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/clipping/geometry.c"
+#include "../src/formats/pdf/images/sample.c"
 #include "../src/formats/pdf/pdf_clip_regions.c"
 #include "../src/formats/pdf/pdf_font_substitution.c"
 #include "../src/formats/pdf/pdf_font_truetype.c"

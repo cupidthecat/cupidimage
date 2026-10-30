@@ -89,7 +89,7 @@ DCT streams, filter chains, Decode arrays, explicit masks and soft masks. Image
 placement uses the current affine transform. Pages honor inherited MediaBox and
 CropBox rectangles, nonzero origins and quarter-turn rotation.
 
-Complete font fidelity, image interpolation, color management, additional
+Complete font fidelity, wider image resampling, color management, additional
 transparency spaces, annotations, optional-content visibility and several image
 filters remain unfinished. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
 [shading](pdf-shading.md), [pattern](pdf-patterns.md), [object](pdf-objects.md) and
@@ -212,7 +212,9 @@ Explicit Mask image streams support one-bit stencils. DeviceGray SMask images
 support 1/2/4/8/16-bit samples, Decode arrays, raw/Flate streams, and supported
 predictors. Masks can have different dimensions from the parent image and are
 sampled independently over its unit square. Image sampling remains nearest-neighbor;
-Interpolate is not implemented.
+`Interpolate true` selects the [bilinear image profile](pdf-image-interpolation.md);
+nearest sampling remains the default. Minification area filters and image-boundary
+antialiasing remain unfinished.
 
 SMask takes precedence over Mask. A Matte array removes preblending in the parent
 color space before color conversion. Matte masks must have the same dimensions as
@@ -403,7 +405,8 @@ transforms and compositing. Device and named resource colour spaces are
 supported, as are Indexed palettes and Decode arrays. Dictionary parsing is
 limited to 64 KiB, 128 entries and 16 nested containers; image data is bounded
 at 64 MiB. Unknown inline keys are ignored as required by ISO 32000-1 section
-8.9.7. This does not add image interpolation or the remaining colour spaces.
+8.9.7. Image interpolation has a separate [sampling profile](pdf-image-interpolation.md);
+the remaining colour spaces are still incomplete.
 
 ## PDF text state and positioning
 

@@ -55,3 +55,7 @@ Its complete raster is decoded-unverified. Regenerate it with
 combined painting and clipped Type 3 glyphs. Its full raster is decoded-unverified.
 Rebuild it with `scripts/generate_pdf_graphics_coverage_fixture.py`; use
 `--pdf-graphics-aa` to inspect the antialiased path profile.
+
+`pdf/image-interpolation.pdf` compares nearest and bilinear image samples, a
+Type 3 stencil glyph and an independent soft mask. It is decoded-unverified.
+Regenerate it with `scripts/generate_pdf_image_interpolation_fixture.py`.

@@ -1,5 +1,6 @@
 #include "core/internal.h"
 #include "cupidimage.h"
+#include "images/sample.h"
 #include "pdf_render_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -80,7 +81,7 @@ static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *
  * ISO 32000-1, 8.9.6.3 and 11.6.5.3. Never follow masks recursively. */
 typedef struct {
     unsigned char *samples;
-    int width, height, bits, soft, has_matte;
+    int width, height, bits, soft, has_matte, interpolate;
     size_t row;
     double decode[2], matte[PDF_COLOR_COMPONENTS];
 } pdf_image_mask;
@@ -160,8 +161,8 @@ static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view
     mask->decode[1] = 1;
     if (!cupidimage_pdf_entry_is_name(st->document, st->document_size, view, "Subtype", "Image") ||
         !pdf_image_type(st, view) || !pdf_image_boolean(st, view, "ImageMask", &stencil) ||
-        stencil == mask->soft || pdf_image_present(st, view, "Mask") != 0 ||
-        pdf_image_present(st, view, "SMask") != 0 ||
+        !pdf_image_boolean(st, view, "Interpolate", &mask->interpolate) || stencil == mask->soft ||
+        pdf_image_present(st, view, "Mask") != 0 || pdf_image_present(st, view, "SMask") != 0 ||
         !cupidimage_pdf_image_integer(st, view, "Width", &mask->width) ||
         !cupidimage_pdf_image_integer(st, view, "Height", &mask->height) || mask->width < 1 ||
         mask->height < 1 || (double)mask->width * mask->height > 64.0 * 1024 * 1024)
@@ -204,15 +205,89 @@ static int pdf_load_image_mask(const pdf_render_state *st, const pdf_object_view
 static double pdf_image_mask_alpha(const pdf_image_mask *mask, double u, double v) {
     if (!mask->samples)
         return 1;
-    int x = (int)(u * mask->width), y = (int)((1 - v) * mask->height);
-    if (x >= mask->width || y >= mask->height)
+    pdf_image_tap taps[4];
+    unsigned count;
+    if (!cupidimage_pdf_image_taps(mask->width, mask->height, u, v, mask->interpolate, taps,
+                                   &count))
         return 0;
-    uint32_t sample =
-        pdf_packed_sample(mask->samples + (size_t)y * mask->row, (size_t)x, mask->bits);
-    double alpha = mask->decode[0] +
-                   (double)sample / ((1u << mask->bits) - 1u) * (mask->decode[1] - mask->decode[0]);
-    alpha = fmin(1, fmax(0, alpha));
-    return mask->soft ? alpha : 1 - alpha;
+    double result = 0;
+    for (unsigned i = 0; i < count; i++) {
+        uint32_t sample =
+            pdf_packed_sample(mask->samples + (size_t)taps[i].y * mask->row, taps[i].x, mask->bits);
+        double alpha = mask->decode[0] + (double)sample / ((1u << mask->bits) - 1u) *
+                                             (mask->decode[1] - mask->decode[0]);
+        alpha = fmin(1, fmax(0, alpha));
+        result += taps[i].weight * (mask->soft ? alpha : 1 - alpha);
+    }
+    return result;
+}
+
+typedef struct {
+    const unsigned char *samples;
+    const double *decode;
+    const uint32_t *color_key;
+    const pdf_image_colors *colors;
+    const pdf_image_mask *mask;
+    size_t row;
+    int width, height, components, bits, stencil, has_color_key;
+} pdf_image_grid;
+
+/* Interpolate decoded components, expanding palette indices first. Color-key
+ * coverage is filtered with associated components so hidden colors do not bleed. */
+static double pdf_image_filtered_values(const pdf_image_grid *grid, double u, double v,
+                                        double values[PDF_COLOR_COMPONENTS]) {
+    pdf_image_tap taps[4];
+    unsigned count;
+    if (!cupidimage_pdf_image_taps(grid->width, grid->height, u, v, 1, taps, &count))
+        return 0;
+    double coverage = 0, color_weight = 0;
+    unsigned maximum = (1u << grid->bits) - 1u;
+    for (unsigned i = 0; i < count; i++) {
+        double decoded[PDF_COLOR_COMPONENTS] = {0};
+        const unsigned char *row = grid->samples + (size_t)taps[i].y * grid->row;
+        int transparent = grid->has_color_key;
+        for (int c = 0; c < grid->components; c++) {
+            unsigned raw =
+                pdf_packed_sample(row, (size_t)taps[i].x * grid->components + c, grid->bits);
+            if (grid->has_color_key &&
+                (raw < grid->color_key[2 * c] || raw > grid->color_key[2 * c + 1]))
+                transparent = 0;
+            decoded[c] = grid->decode[2 * c] +
+                         (double)raw / maximum * (grid->decode[2 * c + 1] - grid->decode[2 * c]);
+        }
+        if (transparent || (grid->stencil && decoded[0] >= .5))
+            continue;
+        double weight = taps[i].weight;
+        coverage += weight;
+        if (grid->stencil)
+            continue;
+        if (grid->colors->indexed) {
+            unsigned index = (unsigned)floor(fmin(grid->colors->high, fmax(0, decoded[0])) + .5);
+            for (int c = 0; c < grid->colors->components; c++)
+                decoded[c] = cupidimage_pdf_color_palette_value(
+                    grid->colors, c, grid->colors->palette[index * grid->colors->components + c]);
+        }
+        double alpha = grid->mask->has_matte
+                           ? pdf_image_mask_alpha(grid->mask, (taps[i].x + .5) / grid->width,
+                                                  1 - (taps[i].y + .5) / grid->height)
+                           : 1;
+        /* Matte recovery must not let an undefined fully transparent color
+         * contaminate neighboring samples. Filter associated recovered colors. */
+        if (grid->mask->has_matte)
+            weight *= alpha;
+        color_weight += weight;
+        for (int c = 0; c < grid->colors->components; c++) {
+            double value = cupidimage_pdf_color_component(grid->colors, c, decoded[c]);
+            if (grid->mask->has_matte)
+                value = alpha > 0 ? grid->mask->matte[c] + (value - grid->mask->matte[c]) / alpha
+                                  : grid->mask->matte[c];
+            values[c] += weight * cupidimage_pdf_color_component(grid->colors, c, value);
+        }
+    }
+    if (color_weight > 0 && !grid->stencil)
+        for (int c = 0; c < grid->colors->components; c++)
+            values[c] /= color_weight;
+    return coverage;
 }
 
 int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *view) {
@@ -231,9 +306,10 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
                                       "Image") ||
         !pdf_image_type(st, &image))
         goto done;
-    int stencil = 0;
+    int stencil = 0, interpolate = 0;
     if (!cupidimage_pdf_read_intent(st, &image, "Intent", &st->gs.rendering_intent) ||
-        !pdf_image_boolean(st, &image, "ImageMask", &stencil))
+        !pdf_image_boolean(st, &image, "ImageMask", &stencil) ||
+        !pdf_image_boolean(st, &image, "Interpolate", &interpolate))
         goto done;
     if ((st->glyph_uncolored || st->pattern_uncolored) && !stencil)
         goto done;
@@ -324,6 +400,16 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     int x1 = (int)fmax(0, fmin(st->img->width, ceil(max_x)));
     int y0 = (int)fmax(0, fmin(st->img->height, floor(min_y)));
     int y1 = (int)fmax(0, fmin(st->img->height, ceil(max_y)));
+    pdf_image_grid grid = {samples, decode, color_key,  &colors, &mask,   sample_row,
+                           width,   height, components, bits,    stencil, has_color_key};
+    if (interpolate || mask.interpolate) {
+        size_t pixels = (size_t)(x1 - x0) * (y1 - y0);
+        size_t per_pixel =
+            (size_t)(components + colors.components + 1) * 4 + (mask.samples ? 16 : 0);
+        if (pixels > st->clip_budget->tests_left / per_pixel)
+            goto done;
+        st->clip_budget->tests_left -= pixels * per_pixel;
+    }
     /* An image's explicit, color-key or soft mask replaces the graphics-state mask. */
     if (mask.samples || has_color_key)
         st->gs.soft_mask = NULL;
@@ -335,40 +421,48 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             double v = (m[0] * ty - m[1] * tx) / det;
             if (u < 0 || u >= 1 || v <= 0 || v > 1)
                 continue;
-            int sx = (int)(u * width), sy = (int)((1 - v) * height);
-            if (sx >= width || sy >= height)
-                continue;
-            const unsigned char *sample = samples + (size_t)sy * sample_row;
             double values[PDF_COLOR_COMPONENTS] = {0};
-            int transparent = has_color_key;
-            for (int c = 0; c < components; c++) {
-                uint32_t value = pdf_packed_sample(sample, (size_t)sx * components + c, bits);
-                if (has_color_key && (value < color_key[c * 2] || value > color_key[c * 2 + 1]))
-                    transparent = 0;
-                values[c] =
-                    decode[2 * c] + ((double)value / maximum) * (decode[2 * c + 1] - decode[2 * c]);
-            }
-            if (transparent || (stencil && values[0] >= 0.5))
-                continue;
-            double alpha = pdf_image_mask_alpha(&mask, u, v);
+            double alpha = pdf_image_mask_alpha(&mask, u, v), coverage = 1;
             if (alpha <= 0 && (!mask.soft || st->gs.alpha_is_shape))
                 continue;
-            if (colors.indexed) {
-                unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, values[0])) + 0.5);
-                for (int c = 0; c < colors.components; c++)
-                    values[c] = cupidimage_pdf_color_palette_value(
-                        &colors, c, colors.palette[index * colors.components + c]);
+            if (interpolate) {
+                coverage = pdf_image_filtered_values(&grid, u, v, values);
+                if (coverage <= 0)
+                    continue;
+            } else {
+                int sx = (int)(u * width), sy = (int)((1 - v) * height);
+                if (sx >= width || sy >= height)
+                    continue;
+                const unsigned char *sample = samples + (size_t)sy * sample_row;
+                int transparent = has_color_key;
+                for (int c = 0; c < components; c++) {
+                    uint32_t value = pdf_packed_sample(sample, (size_t)sx * components + c, bits);
+                    if (has_color_key && (value < color_key[c * 2] || value > color_key[c * 2 + 1]))
+                        transparent = 0;
+                    values[c] = decode[2 * c] +
+                                ((double)value / maximum) * (decode[2 * c + 1] - decode[2 * c]);
+                }
+                if (transparent || (stencil && values[0] >= 0.5))
+                    continue;
+                if (colors.indexed) {
+                    unsigned index = (unsigned)floor(fmin(colors.high, fmax(0, values[0])) + 0.5);
+                    for (int c = 0; c < colors.components; c++)
+                        values[c] = cupidimage_pdf_color_palette_value(
+                            &colors, c, colors.palette[index * colors.components + c]);
+                }
+                if (mask.has_matte && alpha > 0) {
+                    for (int c = 0; c < colors.components; c++)
+                        values[c] = mask.matte[c] + (values[c] - mask.matte[c]) / alpha;
+                }
             }
-            if (mask.has_matte && alpha > 0) {
-                for (int c = 0; c < colors.components; c++)
-                    values[c] = mask.matte[c] + (values[c] - mask.matte[c]) / alpha;
-            }
+            double shape = coverage * (mask.samples && !mask.soft ? alpha : 1);
+            alpha *= coverage;
             if (stencil)
                 cupidimage_pdf_paint_pixel(st, x, y, 0, alpha);
             else
                 cupidimage_pdf_composite_space(st, x, y, values, &colors, alpha * st->gs.fill_alpha,
                                                st->gs.alpha_is_shape ? alpha * st->gs.fill_alpha
-                                                                     : 1);
+                                                                     : shape);
         }
     }
     ok = 1;

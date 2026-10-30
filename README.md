@@ -11,7 +11,8 @@ implemented, and color-managed output is incomplete. See the
 for the exact boundaries. HEIC/HEIF is deferred.
 
 PDF previews include packed, indexed, fax- and JPEG-compressed images, inline
-images, image masks, filter chains, opacity and RGB blending. Text supports matrices,
+images, image masks, filter chains, opacity and RGB blending. Image dictionaries can
+request [bilinear sampling](docs/pdf-image-interpolation.md). Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard and Latin vector font substitutes, and unhinted embedded
 TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](docs/pdf-clipping.md),

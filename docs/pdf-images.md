@@ -2,8 +2,9 @@
 
 Image XObjects and inline images pass decoded samples through PDF color and mask
 processing before compositing. A file loading successfully does not establish
-complete image fidelity. Color management, interpolation and several compression
-formats remain unfinished.
+complete image fidelity. Images have an opt-in dictionary-controlled
+[bilinear interpolation profile](pdf-image-interpolation.md). Wider resampling,
+color management and several compression formats remain unfinished.
 
 ## Sample and filter pipeline
 
