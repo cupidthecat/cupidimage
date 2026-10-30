@@ -55,33 +55,18 @@ typedef enum {
     SVG_PAINT_PATTERN
 } svg_paint_type;
 
-typedef enum {
-    SVG_LINECAP_BUTT,
-    SVG_LINECAP_ROUND,
-    SVG_LINECAP_SQUARE
-} svg_linecap;
+typedef enum { SVG_LINECAP_BUTT, SVG_LINECAP_ROUND, SVG_LINECAP_SQUARE } svg_linecap;
 
-typedef enum {
-    SVG_LINEJOIN_MITER,
-    SVG_LINEJOIN_ROUND,
-    SVG_LINEJOIN_BEVEL
-} svg_linejoin;
+typedef enum { SVG_LINEJOIN_MITER, SVG_LINEJOIN_ROUND, SVG_LINEJOIN_BEVEL } svg_linejoin;
 
 typedef enum {
     SVG_GRADIENT_UNITS_OBJECT_BOUNDING_BOX,
     SVG_GRADIENT_UNITS_USER_SPACE
 } svg_gradient_units;
 
-typedef enum {
-    SVG_SPREAD_PAD,
-    SVG_SPREAD_REFLECT,
-    SVG_SPREAD_REPEAT
-} svg_spread_method;
+typedef enum { SVG_SPREAD_PAD, SVG_SPREAD_REFLECT, SVG_SPREAD_REPEAT } svg_spread_method;
 
-typedef enum {
-    SVG_MASK_TYPE_LUMINANCE,
-    SVG_MASK_TYPE_ALPHA
-} svg_mask_type;
+typedef enum { SVG_MASK_TYPE_LUMINANCE, SVG_MASK_TYPE_ALPHA } svg_mask_type;
 
 typedef struct svg_grad_coord {
     float value;
@@ -538,16 +523,9 @@ typedef enum {
     SVG_TRANSFER_GAMMA
 } svg_transfer_type;
 
-typedef enum {
-    SVG_MORPHOLOGY_ERODE,
-    SVG_MORPHOLOGY_DILATE
-} svg_morphology_op;
+typedef enum { SVG_MORPHOLOGY_ERODE, SVG_MORPHOLOGY_DILATE } svg_morphology_op;
 
-typedef enum {
-    SVG_EDGE_NONE,
-    SVG_EDGE_DUPLICATE,
-    SVG_EDGE_WRAP
-} svg_edge_mode;
+typedef enum { SVG_EDGE_NONE, SVG_EDGE_DUPLICATE, SVG_EDGE_WRAP } svg_edge_mode;
 
 typedef enum {
     SVG_DISPLACE_R,
@@ -711,9 +689,11 @@ static void set_err(char *err, size_t errcap, const char *msg) {
 }
 
 static int svg_dimension(float value, uint32_t *out) {
-    if (!isfinite(value) || value <= 0) return 0;
+    if (!isfinite(value) || value <= 0)
+        return 0;
     double rounded = fmax(1, floor((double)value + 0.5));
-    if (rounded > UINT32_MAX) return 0;
+    if (rounded > UINT32_MAX)
+        return 0;
     *out = (uint32_t)rounded;
     return 1;
 }
@@ -721,9 +701,12 @@ static int svg_dimension(float value, uint32_t *out) {
 /* Clip floating bounds before converting them to signed raster coordinates. */
 static int svg_raster_bound(float value, int upper) {
     double rounded = upper ? ceil((double)value) : floor((double)value);
-    if (isnan(rounded)) return 0;
-    if (rounded <= INT_MIN) return INT_MIN;
-    if (rounded >= INT_MAX) return INT_MAX;
+    if (isnan(rounded))
+        return 0;
+    if (rounded <= INT_MIN)
+        return INT_MIN;
+    if (rounded >= INT_MAX)
+        return INT_MAX;
     return (int)rounded;
 }
 
@@ -741,16 +724,21 @@ static int svg_hex_value(int c) {
 }
 
 static int svg_base64_value(int c) {
-    if (c >= 'A' && c <= 'Z') return c - 'A';
-    if (c >= 'a' && c <= 'z') return c - 'a' + 26;
-    if (c >= '0' && c <= '9') return c - '0' + 52;
-    if (c == '+') return 62;
-    if (c == '/') return 63;
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A';
+    if (c >= 'a' && c <= 'z')
+        return c - 'a' + 26;
+    if (c >= '0' && c <= '9')
+        return c - '0' + 52;
+    if (c == '+')
+        return 62;
+    if (c == '/')
+        return 63;
     return -1;
 }
 
-static int svg_decode_data_payload(const char *payload, int is_base64,
-                                   unsigned char **out, size_t *out_size) {
+static int svg_decode_data_payload(const char *payload, int is_base64, unsigned char **out,
+                                   size_t *out_size) {
     if (!payload || !out || !out_size) {
         return 0;
     }
@@ -949,7 +937,8 @@ static int svg_sibling_frame_push(svg_sibling_frame *frame, const svg_elem_info 
     }
     if (frame->count >= frame->cap) {
         int new_cap = frame->cap ? frame->cap * 2 : 16;
-        svg_elem_info *n = (svg_elem_info *)realloc(frame->items, (size_t)new_cap * sizeof(svg_elem_info));
+        svg_elem_info *n =
+            (svg_elem_info *)realloc(frame->items, (size_t)new_cap * sizeof(svg_elem_info));
         if (!n) {
             return 0;
         }
@@ -1154,7 +1143,8 @@ static int svg_parse_viewbox(const char *s, float *x, float *y, float *w, float 
     return 1;
 }
 
-static void svg_parse_preserve_aspect_ratio(const char *s, int *preserve_none, float *align_x, float *align_y) {
+static void svg_parse_preserve_aspect_ratio(const char *s, int *preserve_none, float *align_x,
+                                            float *align_y) {
     if (preserve_none) {
         *preserve_none = 0;
     }
@@ -1177,15 +1167,52 @@ static void svg_parse_preserve_aspect_ratio(const char *s, int *preserve_none, f
         }
         return;
     }
-    if (strncmp(tok, "xMinYMin", 8) == 0) { if (align_x) *align_x = 0.0f; if (align_y) *align_y = 0.0f; }
-    else if (strncmp(tok, "xMidYMin", 8) == 0) { if (align_x) *align_x = 0.5f; if (align_y) *align_y = 0.0f; }
-    else if (strncmp(tok, "xMaxYMin", 8) == 0) { if (align_x) *align_x = 1.0f; if (align_y) *align_y = 0.0f; }
-    else if (strncmp(tok, "xMinYMid", 8) == 0) { if (align_x) *align_x = 0.0f; if (align_y) *align_y = 0.5f; }
-    else if (strncmp(tok, "xMidYMid", 8) == 0) { if (align_x) *align_x = 0.5f; if (align_y) *align_y = 0.5f; }
-    else if (strncmp(tok, "xMaxYMid", 8) == 0) { if (align_x) *align_x = 1.0f; if (align_y) *align_y = 0.5f; }
-    else if (strncmp(tok, "xMinYMax", 8) == 0) { if (align_x) *align_x = 0.0f; if (align_y) *align_y = 1.0f; }
-    else if (strncmp(tok, "xMidYMax", 8) == 0) { if (align_x) *align_x = 0.5f; if (align_y) *align_y = 1.0f; }
-    else if (strncmp(tok, "xMaxYMax", 8) == 0) { if (align_x) *align_x = 1.0f; if (align_y) *align_y = 1.0f; }
+    if (strncmp(tok, "xMinYMin", 8) == 0) {
+        if (align_x)
+            *align_x = 0.0f;
+        if (align_y)
+            *align_y = 0.0f;
+    } else if (strncmp(tok, "xMidYMin", 8) == 0) {
+        if (align_x)
+            *align_x = 0.5f;
+        if (align_y)
+            *align_y = 0.0f;
+    } else if (strncmp(tok, "xMaxYMin", 8) == 0) {
+        if (align_x)
+            *align_x = 1.0f;
+        if (align_y)
+            *align_y = 0.0f;
+    } else if (strncmp(tok, "xMinYMid", 8) == 0) {
+        if (align_x)
+            *align_x = 0.0f;
+        if (align_y)
+            *align_y = 0.5f;
+    } else if (strncmp(tok, "xMidYMid", 8) == 0) {
+        if (align_x)
+            *align_x = 0.5f;
+        if (align_y)
+            *align_y = 0.5f;
+    } else if (strncmp(tok, "xMaxYMid", 8) == 0) {
+        if (align_x)
+            *align_x = 1.0f;
+        if (align_y)
+            *align_y = 0.5f;
+    } else if (strncmp(tok, "xMinYMax", 8) == 0) {
+        if (align_x)
+            *align_x = 0.0f;
+        if (align_y)
+            *align_y = 1.0f;
+    } else if (strncmp(tok, "xMidYMax", 8) == 0) {
+        if (align_x)
+            *align_x = 0.5f;
+        if (align_y)
+            *align_y = 1.0f;
+    } else if (strncmp(tok, "xMaxYMax", 8) == 0) {
+        if (align_x)
+            *align_x = 1.0f;
+        if (align_y)
+            *align_y = 1.0f;
+    }
 }
 
 static int svg_next_tag(char **p, svg_tag *tag);
@@ -1296,7 +1323,8 @@ static int svg_get_animation_progress(const svg_tag *anim, float time_s, float *
     svg_parse_repeat_count(svg_get_attr(anim, "repeatCount"), &repeat, &indefinite);
     if (indefinite) {
         float t = fmodf(local_t, dur);
-        if (t < 0.0f) t += dur;
+        if (t < 0.0f)
+            t += dur;
         *out_progress = dur > 0.0f ? (t / dur) : 0.0f;
         return 1;
     }
@@ -1310,7 +1338,8 @@ static int svg_get_animation_progress(const svg_tag *anim, float time_s, float *
         return 0;
     }
     float t = fmodf(local_t, dur);
-    if (t < 0.0f) t += dur;
+    if (t < 0.0f)
+        t += dur;
     *out_progress = dur > 0.0f ? (t / dur) : 0.0f;
     return 1;
 }
@@ -1386,10 +1415,12 @@ static int svg_tag_set_attr(svg_tag *tag, const char *name, const char *value) {
     if (tag->attr_count >= SVG_MAX_ATTR) {
         return 0;
     }
-    snprintf(tag->override_names[tag->attr_count], sizeof(tag->override_names[tag->attr_count]), "%s", name);
+    snprintf(tag->override_names[tag->attr_count], sizeof(tag->override_names[tag->attr_count]),
+             "%s", name);
     tag->attrs[tag->attr_count].name = tag->override_names[tag->attr_count];
     tag->has_override_name[tag->attr_count] = 1;
-    snprintf(tag->override_values[tag->attr_count], sizeof(tag->override_values[tag->attr_count]), "%s", value);
+    snprintf(tag->override_values[tag->attr_count], sizeof(tag->override_values[tag->attr_count]),
+             "%s", value);
     tag->attrs[tag->attr_count].value = tag->override_values[tag->attr_count];
     tag->has_override_value[tag->attr_count] = 1;
     tag->attr_count++;
@@ -1403,7 +1434,8 @@ static void svg_format_number(char *buf, size_t cap, float v) {
     snprintf(buf, cap, "%.6g", (double)v);
 }
 
-static int svg_animate_numeric(const svg_tag *anim, const char *attr_name, svg_tag *target, float progress) {
+static int svg_animate_numeric(const svg_tag *anim, const char *attr_name, svg_tag *target,
+                               float progress) {
     const char *from_s = svg_get_attr(anim, "from");
     const char *to_s = svg_get_attr(anim, "to");
     const char *by_s = svg_get_attr(anim, "by");
@@ -1419,7 +1451,8 @@ static int svg_animate_numeric(const svg_tag *anim, const char *attr_name, svg_t
             } else {
                 float segf = progress * (float)(count - 1);
                 int seg = (int)floorf(segf);
-                if (seg < 0) seg = 0;
+                if (seg < 0)
+                    seg = 0;
                 if (seg >= count - 1) {
                     seg = count - 2;
                 }
@@ -1496,9 +1529,12 @@ static int svg_animate_transform(const svg_tag *anim, svg_tag *target, float pro
     float to_v[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     float by_v[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     int from_n = 0, to_n = 0, by_n = 0;
-    if (from_s) svg_parse_number_list(from_s, from_v, 4, &from_n);
-    if (to_s) svg_parse_number_list(to_s, to_v, 4, &to_n);
-    if (by_s) svg_parse_number_list(by_s, by_v, 4, &by_n);
+    if (from_s)
+        svg_parse_number_list(from_s, from_v, 4, &from_n);
+    if (to_s)
+        svg_parse_number_list(to_s, to_v, 4, &to_n);
+    if (by_s)
+        svg_parse_number_list(by_s, by_v, 4, &by_n);
     char out[128];
     out[0] = '\0';
     if (svg_strcasecmp(type, "translate") == 0) {
@@ -1579,7 +1615,8 @@ static int svg_animate_transform(const svg_tag *anim, svg_tag *target, float pro
     return svg_tag_set_attr(target, "transform", out);
 }
 
-static void svg_apply_animation_children(svg_tag *target, const char *target_local, char *child_start, float time_s) {
+static void svg_apply_animation_children(svg_tag *target, const char *target_local,
+                                         char *child_start, float time_s) {
     if (!target || !target_local || !child_start || time_s < 0.0f) {
         return;
     }
@@ -1648,7 +1685,8 @@ static void svg_apply_animation_children(svg_tag *target, const char *target_loc
                     }
                     count++;
                     int idx = (int)floorf(prog * (float)count);
-                    if (idx >= count) idx = count - 1;
+                    if (idx >= count)
+                        idx = count - 1;
                     int cur = 0;
                     start = values;
                     end = values;
@@ -1667,9 +1705,12 @@ static void svg_apply_animation_children(svg_tag *target, const char *target_loc
                     }
                     if (chosen) {
                         size_t n = 0;
-                        while (chosen[n] && chosen[n] != ';') n++;
-                        while (n > 0 && isspace((unsigned char)chosen[n - 1])) n--;
-                        while (*chosen && isspace((unsigned char)*chosen)) chosen++;
+                        while (chosen[n] && chosen[n] != ';')
+                            n++;
+                        while (n > 0 && isspace((unsigned char)chosen[n - 1]))
+                            n--;
+                        while (*chosen && isspace((unsigned char)*chosen))
+                            chosen++;
                         char *val = svg_strndup(chosen, n);
                         if (val) {
                             svg_tag_set_attr(target, attr_name, val);
@@ -1716,13 +1757,15 @@ static float svg_css_apply_anim_direction(int direction, int cycle, float phase)
     return reverse ? (1.0f - phase) : phase;
 }
 
-static int svg_css_anim_progress(const svg_css_animation_binding *anim, float time_s, float *out_progress) {
+static int svg_css_anim_progress(const svg_css_animation_binding *anim, float time_s,
+                                 float *out_progress) {
     if (!anim || !out_progress || anim->duration <= 0.0f) {
         return 0;
     }
     float t = time_s - anim->delay;
     if (t < 0.0f) {
-        if (anim->fill_mode == SVG_CSS_ANIM_FILL_BACKWARDS || anim->fill_mode == SVG_CSS_ANIM_FILL_BOTH) {
+        if (anim->fill_mode == SVG_CSS_ANIM_FILL_BACKWARDS ||
+            anim->fill_mode == SVG_CSS_ANIM_FILL_BOTH) {
             *out_progress = svg_css_apply_anim_direction(anim->direction, 0, 0.0f);
             return 1;
         }
@@ -1732,15 +1775,18 @@ static int svg_css_anim_progress(const svg_css_animation_binding *anim, float ti
         float cyclef = floorf(t / anim->duration);
         int cycle = (int)cyclef;
         float phase = (t - cyclef * anim->duration) / anim->duration;
-        if (phase < 0.0f) phase = 0.0f;
-        if (phase > 1.0f) phase = 1.0f;
+        if (phase < 0.0f)
+            phase = 0.0f;
+        if (phase > 1.0f)
+            phase = 1.0f;
         *out_progress = svg_css_apply_anim_direction(anim->direction, cycle, phase);
         return 1;
     }
     float repeats = anim->repeat_count > 0.0f ? anim->repeat_count : 1.0f;
     float total = anim->duration * repeats;
     if (t >= total) {
-        if (anim->fill_mode != SVG_CSS_ANIM_FILL_FORWARDS && anim->fill_mode != SVG_CSS_ANIM_FILL_BOTH) {
+        if (anim->fill_mode != SVG_CSS_ANIM_FILL_FORWARDS &&
+            anim->fill_mode != SVG_CSS_ANIM_FILL_BOTH) {
             return 0;
         }
         float wholef = floorf(repeats);
@@ -1759,14 +1805,17 @@ static int svg_css_anim_progress(const svg_css_animation_binding *anim, float ti
     float cyclef = floorf(t / anim->duration);
     int cycle = (int)cyclef;
     float phase = (t - cyclef * anim->duration) / anim->duration;
-    if (phase < 0.0f) phase = 0.0f;
-    if (phase > 1.0f) phase = 1.0f;
+    if (phase < 0.0f)
+        phase = 0.0f;
+    if (phase > 1.0f)
+        phase = 1.0f;
     *out_progress = svg_css_apply_anim_direction(anim->direction, cycle, phase);
     return 1;
 }
 
 static int svg_css_keyframe_range(const svg_css_keyframes *kf, float progress,
-                                  const svg_css_keyframe_step **a, const svg_css_keyframe_step **b, float *u) {
+                                  const svg_css_keyframe_step **a, const svg_css_keyframe_step **b,
+                                  float *u) {
     if (!kf || kf->step_count <= 0 || !a || !b || !u) {
         return 0;
     }
@@ -1790,8 +1839,10 @@ static int svg_css_keyframe_range(const svg_css_keyframes *kf, float progress,
             *b = &steps[i + 1];
             float span = steps[i + 1].offset - steps[i].offset;
             *u = (span > 0.0f) ? (progress - steps[i].offset) / span : 0.0f;
-            if (*u < 0.0f) *u = 0.0f;
-            if (*u > 1.0f) *u = 1.0f;
+            if (*u < 0.0f)
+                *u = 0.0f;
+            if (*u > 1.0f)
+                *u = 1.0f;
             return 1;
         }
     }
@@ -1843,8 +1894,8 @@ static void svg_css_apply_animations_to_tag(svg_tag *tag, const svg_css *css, fl
                     m.e = ma.e + (mb.e - ma.e) * u;
                     m.f = ma.f + (mb.f - ma.f) * u;
                     char buf[160];
-                    snprintf(buf, sizeof(buf), "matrix(%.6g %.6g %.6g %.6g %.6g %.6g)",
-                             (double)m.a, (double)m.b, (double)m.c, (double)m.d, (double)m.e, (double)m.f);
+                    snprintf(buf, sizeof(buf), "matrix(%.6g %.6g %.6g %.6g %.6g %.6g)", (double)m.a,
+                             (double)m.b, (double)m.c, (double)m.d, (double)m.e, (double)m.f);
                     svg_tag_set_attr(tag, "transform", buf);
                 } else {
                     svg_tag_set_attr(tag, "transform", u < 0.5f ? av : bv);
@@ -1959,287 +2010,283 @@ typedef struct svg_named_color {
     uint32_t rgba;
 } svg_named_color;
 
-static const svg_named_color svg_named_colors[] = {
-    {"aliceblue", 0xF0F8FFFFu},
-    {"antiquewhite", 0xFAEBD7FFu},
-    {"aqua", 0x00FFFFFFu},
-    {"aquamarine", 0x7FFFD4FFu},
-    {"azure", 0xF0FFFFFFu},
-    {"beige", 0xF5F5DCFFu},
-    {"bisque", 0xFFE4C4FFu},
-    {"black", 0x000000FFu},
-    {"blanchedalmond", 0xFFEBCDFFu},
-    {"blue", 0x0000FFFFu},
-    {"blueviolet", 0x8A2BE2FFu},
-    {"brown", 0xA52A2AFFu},
-    {"burlywood", 0xDEB887FFu},
-    {"cadetblue", 0x5F9EA0FFu},
-    {"chartreuse", 0x7FFF00FFu},
-    {"chocolate", 0xD2691EFFu},
-    {"coral", 0xFF7F50FFu},
-    {"cornflowerblue", 0x6495EDFFu},
-    {"cornsilk", 0xFFF8DCFFu},
-    {"crimson", 0xDC143CFFu},
-    {"cyan", 0x00FFFFFFu},
-    {"darkblue", 0x00008BFFu},
-    {"darkcyan", 0x008B8BFFu},
-    {"darkgoldenrod", 0xB8860BFFu},
-    {"darkgray", 0xA9A9A9FFu},
-    {"darkgreen", 0x006400FFu},
-    {"darkgrey", 0xA9A9A9FFu},
-    {"darkkhaki", 0xBDB76BFFu},
-    {"darkmagenta", 0x8B008BFFu},
-    {"darkolivegreen", 0x556B2FFFu},
-    {"darkorange", 0xFF8C00FFu},
-    {"darkorchid", 0x9932CCFFu},
-    {"darkred", 0x8B0000FFu},
-    {"darksalmon", 0xE9967AFFu},
-    {"darkseagreen", 0x8FBC8FFFu},
-    {"darkslateblue", 0x483D8BFFu},
-    {"darkslategray", 0x2F4F4FFFu},
-    {"darkslategrey", 0x2F4F4FFFu},
-    {"darkturquoise", 0x00CED1FFu},
-    {"darkviolet", 0x9400D3FFu},
-    {"deeppink", 0xFF1493FFu},
-    {"deepskyblue", 0x00BFFFFFu},
-    {"dimgray", 0x696969FFu},
-    {"dimgrey", 0x696969FFu},
-    {"dodgerblue", 0x1E90FFFFu},
-    {"firebrick", 0xB22222FFu},
-    {"floralwhite", 0xFFFAF0FFu},
-    {"forestgreen", 0x228B22FFu},
-    {"fuchsia", 0xFF00FFFFu},
-    {"gainsboro", 0xDCDCDCFFu},
-    {"ghostwhite", 0xF8F8FFFFu},
-    {"gold", 0xFFD700FFu},
-    {"goldenrod", 0xDAA520FFu},
-    {"gray", 0x808080FFu},
-    {"green", 0x008000FFu},
-    {"greenyellow", 0xADFF2FFFu},
-    {"grey", 0x808080FFu},
-    {"honeydew", 0xF0FFF0FFu},
-    {"hotpink", 0xFF69B4FFu},
-    {"indianred", 0xCD5C5CFFu},
-    {"indigo", 0x4B0082FFu},
-    {"ivory", 0xFFFFF0FFu},
-    {"khaki", 0xF0E68CFFu},
-    {"lavender", 0xE6E6FAFFu},
-    {"lavenderblush", 0xFFF0F5FFu},
-    {"lawngreen", 0x7CFC00FFu},
-    {"lemonchiffon", 0xFFFACDFFu},
-    {"lightblue", 0xADD8E6FFu},
-    {"lightcoral", 0xF08080FFu},
-    {"lightcyan", 0xE0FFFFFFu},
-    {"lightgoldenrodyellow", 0xFAFAD2FFu},
-    {"lightgray", 0xD3D3D3FFu},
-    {"lightgreen", 0x90EE90FFu},
-    {"lightgrey", 0xD3D3D3FFu},
-    {"lightpink", 0xFFB6C1FFu},
-    {"lightsalmon", 0xFFA07AFFu},
-    {"lightseagreen", 0x20B2AAFFu},
-    {"lightskyblue", 0x87CEFAFFu},
-    {"lightslategray", 0x778899FFu},
-    {"lightslategrey", 0x778899FFu},
-    {"lightsteelblue", 0xB0C4DEFFu},
-    {"lightyellow", 0xFFFFE0FFu},
-    {"lime", 0x00FF00FFu},
-    {"limegreen", 0x32CD32FFu},
-    {"linen", 0xFAF0E6FFu},
-    {"magenta", 0xFF00FFFFu},
-    {"maroon", 0x800000FFu},
-    {"mediumaquamarine", 0x66CDAAFFu},
-    {"mediumblue", 0x0000CDFFu},
-    {"mediumorchid", 0xBA55D3FFu},
-    {"mediumpurple", 0x9370DBFFu},
-    {"mediumseagreen", 0x3CB371FFu},
-    {"mediumslateblue", 0x7B68EEFFu},
-    {"mediumspringgreen", 0x00FA9AFFu},
-    {"mediumturquoise", 0x48D1CCFFu},
-    {"mediumvioletred", 0xC71585FFu},
-    {"midnightblue", 0x191970FFu},
-    {"mintcream", 0xF5FFFAFFu},
-    {"mistyrose", 0xFFE4E1FFu},
-    {"moccasin", 0xFFE4B5FFu},
-    {"navajowhite", 0xFFDEADFFu},
-    {"navy", 0x000080FFu},
-    {"oldlace", 0xFDF5E6FFu},
-    {"olive", 0x808000FFu},
-    {"olivedrab", 0x6B8E23FFu},
-    {"orange", 0xFFA500FFu},
-    {"orangered", 0xFF4500FFu},
-    {"orchid", 0xDA70D6FFu},
-    {"palegoldenrod", 0xEEE8AAFFu},
-    {"palegreen", 0x98FB98FFu},
-    {"paleturquoise", 0xAFEEEEFFu},
-    {"palevioletred", 0xDB7093FFu},
-    {"papayawhip", 0xFFEFD5FFu},
-    {"peachpuff", 0xFFDAB9FFu},
-    {"peru", 0xCD853FFFu},
-    {"pink", 0xFFC0CBFFu},
-    {"plum", 0xDDA0DDFFu},
-    {"powderblue", 0xB0E0E6FFu},
-    {"purple", 0x800080FFu},
-    {"rebeccapurple", 0x663399FFu},
-    {"red", 0xFF0000FFu},
-    {"rosybrown", 0xBC8F8FFFu},
-    {"royalblue", 0x4169E1FFu},
-    {"saddlebrown", 0x8B4513FFu},
-    {"salmon", 0xFA8072FFu},
-    {"sandybrown", 0xF4A460FFu},
-    {"seagreen", 0x2E8B57FFu},
-    {"seashell", 0xFFF5EEFFu},
-    {"sienna", 0xA0522DFFu},
-    {"silver", 0xC0C0C0FFu},
-    {"skyblue", 0x87CEEBFFu},
-    {"slateblue", 0x6A5ACDFFu},
-    {"slategray", 0x708090FFu},
-    {"slategrey", 0x708090FFu},
-    {"snow", 0xFFFAFAFFu},
-    {"springgreen", 0x00FF7FFFu},
-    {"steelblue", 0x4682B4FFu},
-    {"tan", 0xD2B48CFFu},
-    {"teal", 0x008080FFu},
-    {"thistle", 0xD8BFD8FFu},
-    {"tomato", 0xFF6347FFu},
-    {"turquoise", 0x40E0D0FFu},
-    {"violet", 0xEE82EEFFu},
-    {"wheat", 0xF5DEB3FFu},
-    {"white", 0xFFFFFFFFu},
-    {"whitesmoke", 0xF5F5F5FFu},
-    {"yellow", 0xFFFF00FFu},
-    {"yellowgreen", 0x9ACD32FFu}
-};
+static const svg_named_color svg_named_colors[] = {{"aliceblue", 0xF0F8FFFFu},
+                                                   {"antiquewhite", 0xFAEBD7FFu},
+                                                   {"aqua", 0x00FFFFFFu},
+                                                   {"aquamarine", 0x7FFFD4FFu},
+                                                   {"azure", 0xF0FFFFFFu},
+                                                   {"beige", 0xF5F5DCFFu},
+                                                   {"bisque", 0xFFE4C4FFu},
+                                                   {"black", 0x000000FFu},
+                                                   {"blanchedalmond", 0xFFEBCDFFu},
+                                                   {"blue", 0x0000FFFFu},
+                                                   {"blueviolet", 0x8A2BE2FFu},
+                                                   {"brown", 0xA52A2AFFu},
+                                                   {"burlywood", 0xDEB887FFu},
+                                                   {"cadetblue", 0x5F9EA0FFu},
+                                                   {"chartreuse", 0x7FFF00FFu},
+                                                   {"chocolate", 0xD2691EFFu},
+                                                   {"coral", 0xFF7F50FFu},
+                                                   {"cornflowerblue", 0x6495EDFFu},
+                                                   {"cornsilk", 0xFFF8DCFFu},
+                                                   {"crimson", 0xDC143CFFu},
+                                                   {"cyan", 0x00FFFFFFu},
+                                                   {"darkblue", 0x00008BFFu},
+                                                   {"darkcyan", 0x008B8BFFu},
+                                                   {"darkgoldenrod", 0xB8860BFFu},
+                                                   {"darkgray", 0xA9A9A9FFu},
+                                                   {"darkgreen", 0x006400FFu},
+                                                   {"darkgrey", 0xA9A9A9FFu},
+                                                   {"darkkhaki", 0xBDB76BFFu},
+                                                   {"darkmagenta", 0x8B008BFFu},
+                                                   {"darkolivegreen", 0x556B2FFFu},
+                                                   {"darkorange", 0xFF8C00FFu},
+                                                   {"darkorchid", 0x9932CCFFu},
+                                                   {"darkred", 0x8B0000FFu},
+                                                   {"darksalmon", 0xE9967AFFu},
+                                                   {"darkseagreen", 0x8FBC8FFFu},
+                                                   {"darkslateblue", 0x483D8BFFu},
+                                                   {"darkslategray", 0x2F4F4FFFu},
+                                                   {"darkslategrey", 0x2F4F4FFFu},
+                                                   {"darkturquoise", 0x00CED1FFu},
+                                                   {"darkviolet", 0x9400D3FFu},
+                                                   {"deeppink", 0xFF1493FFu},
+                                                   {"deepskyblue", 0x00BFFFFFu},
+                                                   {"dimgray", 0x696969FFu},
+                                                   {"dimgrey", 0x696969FFu},
+                                                   {"dodgerblue", 0x1E90FFFFu},
+                                                   {"firebrick", 0xB22222FFu},
+                                                   {"floralwhite", 0xFFFAF0FFu},
+                                                   {"forestgreen", 0x228B22FFu},
+                                                   {"fuchsia", 0xFF00FFFFu},
+                                                   {"gainsboro", 0xDCDCDCFFu},
+                                                   {"ghostwhite", 0xF8F8FFFFu},
+                                                   {"gold", 0xFFD700FFu},
+                                                   {"goldenrod", 0xDAA520FFu},
+                                                   {"gray", 0x808080FFu},
+                                                   {"green", 0x008000FFu},
+                                                   {"greenyellow", 0xADFF2FFFu},
+                                                   {"grey", 0x808080FFu},
+                                                   {"honeydew", 0xF0FFF0FFu},
+                                                   {"hotpink", 0xFF69B4FFu},
+                                                   {"indianred", 0xCD5C5CFFu},
+                                                   {"indigo", 0x4B0082FFu},
+                                                   {"ivory", 0xFFFFF0FFu},
+                                                   {"khaki", 0xF0E68CFFu},
+                                                   {"lavender", 0xE6E6FAFFu},
+                                                   {"lavenderblush", 0xFFF0F5FFu},
+                                                   {"lawngreen", 0x7CFC00FFu},
+                                                   {"lemonchiffon", 0xFFFACDFFu},
+                                                   {"lightblue", 0xADD8E6FFu},
+                                                   {"lightcoral", 0xF08080FFu},
+                                                   {"lightcyan", 0xE0FFFFFFu},
+                                                   {"lightgoldenrodyellow", 0xFAFAD2FFu},
+                                                   {"lightgray", 0xD3D3D3FFu},
+                                                   {"lightgreen", 0x90EE90FFu},
+                                                   {"lightgrey", 0xD3D3D3FFu},
+                                                   {"lightpink", 0xFFB6C1FFu},
+                                                   {"lightsalmon", 0xFFA07AFFu},
+                                                   {"lightseagreen", 0x20B2AAFFu},
+                                                   {"lightskyblue", 0x87CEFAFFu},
+                                                   {"lightslategray", 0x778899FFu},
+                                                   {"lightslategrey", 0x778899FFu},
+                                                   {"lightsteelblue", 0xB0C4DEFFu},
+                                                   {"lightyellow", 0xFFFFE0FFu},
+                                                   {"lime", 0x00FF00FFu},
+                                                   {"limegreen", 0x32CD32FFu},
+                                                   {"linen", 0xFAF0E6FFu},
+                                                   {"magenta", 0xFF00FFFFu},
+                                                   {"maroon", 0x800000FFu},
+                                                   {"mediumaquamarine", 0x66CDAAFFu},
+                                                   {"mediumblue", 0x0000CDFFu},
+                                                   {"mediumorchid", 0xBA55D3FFu},
+                                                   {"mediumpurple", 0x9370DBFFu},
+                                                   {"mediumseagreen", 0x3CB371FFu},
+                                                   {"mediumslateblue", 0x7B68EEFFu},
+                                                   {"mediumspringgreen", 0x00FA9AFFu},
+                                                   {"mediumturquoise", 0x48D1CCFFu},
+                                                   {"mediumvioletred", 0xC71585FFu},
+                                                   {"midnightblue", 0x191970FFu},
+                                                   {"mintcream", 0xF5FFFAFFu},
+                                                   {"mistyrose", 0xFFE4E1FFu},
+                                                   {"moccasin", 0xFFE4B5FFu},
+                                                   {"navajowhite", 0xFFDEADFFu},
+                                                   {"navy", 0x000080FFu},
+                                                   {"oldlace", 0xFDF5E6FFu},
+                                                   {"olive", 0x808000FFu},
+                                                   {"olivedrab", 0x6B8E23FFu},
+                                                   {"orange", 0xFFA500FFu},
+                                                   {"orangered", 0xFF4500FFu},
+                                                   {"orchid", 0xDA70D6FFu},
+                                                   {"palegoldenrod", 0xEEE8AAFFu},
+                                                   {"palegreen", 0x98FB98FFu},
+                                                   {"paleturquoise", 0xAFEEEEFFu},
+                                                   {"palevioletred", 0xDB7093FFu},
+                                                   {"papayawhip", 0xFFEFD5FFu},
+                                                   {"peachpuff", 0xFFDAB9FFu},
+                                                   {"peru", 0xCD853FFFu},
+                                                   {"pink", 0xFFC0CBFFu},
+                                                   {"plum", 0xDDA0DDFFu},
+                                                   {"powderblue", 0xB0E0E6FFu},
+                                                   {"purple", 0x800080FFu},
+                                                   {"rebeccapurple", 0x663399FFu},
+                                                   {"red", 0xFF0000FFu},
+                                                   {"rosybrown", 0xBC8F8FFFu},
+                                                   {"royalblue", 0x4169E1FFu},
+                                                   {"saddlebrown", 0x8B4513FFu},
+                                                   {"salmon", 0xFA8072FFu},
+                                                   {"sandybrown", 0xF4A460FFu},
+                                                   {"seagreen", 0x2E8B57FFu},
+                                                   {"seashell", 0xFFF5EEFFu},
+                                                   {"sienna", 0xA0522DFFu},
+                                                   {"silver", 0xC0C0C0FFu},
+                                                   {"skyblue", 0x87CEEBFFu},
+                                                   {"slateblue", 0x6A5ACDFFu},
+                                                   {"slategray", 0x708090FFu},
+                                                   {"slategrey", 0x708090FFu},
+                                                   {"snow", 0xFFFAFAFFu},
+                                                   {"springgreen", 0x00FF7FFFu},
+                                                   {"steelblue", 0x4682B4FFu},
+                                                   {"tan", 0xD2B48CFFu},
+                                                   {"teal", 0x008080FFu},
+                                                   {"thistle", 0xD8BFD8FFu},
+                                                   {"tomato", 0xFF6347FFu},
+                                                   {"turquoise", 0x40E0D0FFu},
+                                                   {"violet", 0xEE82EEFFu},
+                                                   {"wheat", 0xF5DEB3FFu},
+                                                   {"white", 0xFFFFFFFFu},
+                                                   {"whitesmoke", 0xF5F5F5FFu},
+                                                   {"yellow", 0xFFFF00FFu},
+                                                   {"yellowgreen", 0x9ACD32FFu}};
 
-static const uint8_t svg_font8x8_basic[128][8] = {
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-    {0x7E,0x81,0xA5,0x81,0xBD,0x99,0x81,0x7E},
-    {0x7E,0xFF,0xDB,0xFF,0xC3,0xE7,0xFF,0x7E},
-    {0x6C,0xFE,0xFE,0xFE,0x7C,0x38,0x10,0x00},
-    {0x10,0x38,0x7C,0xFE,0x7C,0x38,0x10,0x00},
-    {0x38,0x7C,0x38,0xFE,0xFE,0xD6,0x10,0x38},
-    {0x10,0x38,0x7C,0xFE,0xFE,0x7C,0x10,0x38},
-    {0x00,0x00,0x18,0x3C,0x3C,0x18,0x00,0x00},
-    {0xFF,0xFF,0xE7,0xC3,0xC3,0xE7,0xFF,0xFF},
-    {0x00,0x3C,0x66,0x42,0x42,0x66,0x3C,0x00},
-    {0xFF,0xC3,0x99,0xBD,0xBD,0x99,0xC3,0xFF},
-    {0x0F,0x07,0x0F,0x7D,0xCC,0xCC,0xCC,0x78},
-    {0x3C,0x66,0x66,0x66,0x3C,0x18,0x7E,0x18},
-    {0x3F,0x33,0x3F,0x30,0x30,0x70,0xF0,0xE0},
-    {0x7F,0x63,0x7F,0x63,0x63,0x67,0xE6,0xC0},
-    {0x99,0x5A,0x3C,0xE7,0xE7,0x3C,0x5A,0x99},
-    {0x80,0xE0,0xF8,0xFE,0xF8,0xE0,0x80,0x00},
-    {0x02,0x0E,0x3E,0xFE,0x3E,0x0E,0x02,0x00},
-    {0x18,0x3C,0x7E,0x18,0x18,0x7E,0x3C,0x18},
-    {0x66,0x66,0x66,0x66,0x66,0x00,0x66,0x00},
-    {0x7F,0xDB,0xDB,0x7B,0x1B,0x1B,0x1B,0x00},
-    {0x3E,0x63,0x38,0x6C,0x6C,0x38,0xCC,0x7F},
-    {0x00,0x00,0x00,0x00,0x7E,0x7E,0x7E,0x00},
-    {0x18,0x3C,0x7E,0x18,0x7E,0x3C,0x18,0xFF},
-    {0x18,0x3C,0x7E,0x18,0x18,0x18,0x18,0x00},
-    {0x18,0x18,0x18,0x18,0x7E,0x3C,0x18,0x00},
-    {0x00,0x18,0x0C,0xFE,0x0C,0x18,0x00,0x00},
-    {0x00,0x30,0x60,0xFE,0x60,0x30,0x00,0x00},
-    {0x00,0x00,0xC0,0xC0,0xC0,0xFE,0x00,0x00},
-    {0x00,0x24,0x66,0xFF,0x66,0x24,0x00,0x00},
-    {0x00,0x18,0x3C,0x7E,0xFF,0xFF,0x00,0x00},
-    {0x00,0xFF,0xFF,0x7E,0x3C,0x18,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-    {0x18,0x3C,0x3C,0x18,0x18,0x00,0x18,0x00},
-    {0x36,0x36,0x12,0x00,0x00,0x00,0x00,0x00},
-    {0x36,0x36,0x7F,0x36,0x7F,0x36,0x36,0x00},
-    {0x0C,0x3E,0x03,0x1E,0x30,0x1F,0x0C,0x00},
-    {0x00,0x63,0x33,0x18,0x0C,0x66,0x63,0x00},
-    {0x1C,0x36,0x1C,0x6E,0x3B,0x33,0x6E,0x00},
-    {0x06,0x06,0x03,0x00,0x00,0x00,0x00,0x00},
-    {0x18,0x0C,0x06,0x06,0x06,0x0C,0x18,0x00},
-    {0x06,0x0C,0x18,0x18,0x18,0x0C,0x06,0x00},
-    {0x00,0x66,0x3C,0xFF,0x3C,0x66,0x00,0x00},
-    {0x00,0x0C,0x0C,0x3F,0x0C,0x0C,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x0C,0x0C,0x06},
-    {0x00,0x00,0x00,0x3F,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x0C,0x0C,0x00},
-    {0x60,0x30,0x18,0x0C,0x06,0x03,0x01,0x00},
-    {0x3E,0x63,0x73,0x7B,0x6F,0x67,0x3E,0x00},
-    {0x0C,0x0E,0x0C,0x0C,0x0C,0x0C,0x3F,0x00},
-    {0x1E,0x33,0x30,0x1C,0x06,0x33,0x3F,0x00},
-    {0x1E,0x33,0x30,0x1C,0x30,0x33,0x1E,0x00},
-    {0x38,0x3C,0x36,0x33,0x7F,0x30,0x78,0x00},
-    {0x3F,0x03,0x1F,0x30,0x30,0x33,0x1E,0x00},
-    {0x1C,0x06,0x03,0x1F,0x33,0x33,0x1E,0x00},
-    {0x3F,0x33,0x30,0x18,0x0C,0x0C,0x0C,0x00},
-    {0x1E,0x33,0x33,0x1E,0x33,0x33,0x1E,0x00},
-    {0x1E,0x33,0x33,0x3E,0x30,0x18,0x0E,0x00},
-    {0x00,0x0C,0x0C,0x00,0x00,0x0C,0x0C,0x00},
-    {0x00,0x0C,0x0C,0x00,0x00,0x0C,0x0C,0x06},
-    {0x18,0x0C,0x06,0x03,0x06,0x0C,0x18,0x00},
-    {0x00,0x00,0x3F,0x00,0x00,0x3F,0x00,0x00},
-    {0x06,0x0C,0x18,0x30,0x18,0x0C,0x06,0x00},
-    {0x1E,0x33,0x30,0x18,0x0C,0x00,0x0C,0x00},
-    {0x3E,0x63,0x7B,0x7B,0x7B,0x03,0x1E,0x00},
-    {0x0C,0x1E,0x33,0x33,0x3F,0x33,0x33,0x00},
-    {0x3F,0x66,0x66,0x3E,0x66,0x66,0x3F,0x00},
-    {0x3C,0x66,0x03,0x03,0x03,0x66,0x3C,0x00},
-    {0x1F,0x36,0x66,0x66,0x66,0x36,0x1F,0x00},
-    {0x7F,0x46,0x16,0x1E,0x16,0x46,0x7F,0x00},
-    {0x7F,0x46,0x16,0x1E,0x16,0x06,0x0F,0x00},
-    {0x3C,0x66,0x03,0x03,0x73,0x66,0x7C,0x00},
-    {0x33,0x33,0x33,0x3F,0x33,0x33,0x33,0x00},
-    {0x1E,0x0C,0x0C,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x78,0x30,0x30,0x30,0x33,0x33,0x1E,0x00},
-    {0x67,0x66,0x36,0x1E,0x36,0x66,0x67,0x00},
-    {0x0F,0x06,0x06,0x06,0x46,0x66,0x7F,0x00},
-    {0x63,0x77,0x7F,0x7F,0x6B,0x63,0x63,0x00},
-    {0x63,0x67,0x6F,0x7B,0x73,0x63,0x63,0x00},
-    {0x1C,0x36,0x63,0x63,0x63,0x36,0x1C,0x00},
-    {0x3F,0x66,0x66,0x3E,0x06,0x06,0x0F,0x00},
-    {0x1E,0x33,0x33,0x33,0x3B,0x1E,0x38,0x00},
-    {0x3F,0x66,0x66,0x3E,0x36,0x66,0x67,0x00},
-    {0x1E,0x33,0x07,0x0E,0x38,0x33,0x1E,0x00},
-    {0x3F,0x2D,0x0C,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x33,0x33,0x33,0x33,0x33,0x33,0x3F,0x00},
-    {0x33,0x33,0x33,0x33,0x33,0x1E,0x0C,0x00},
-    {0x63,0x63,0x63,0x6B,0x7F,0x77,0x63,0x00},
-    {0x63,0x63,0x36,0x1C,0x1C,0x36,0x63,0x00},
-    {0x33,0x33,0x33,0x1E,0x0C,0x0C,0x1E,0x00},
-    {0x7F,0x63,0x31,0x18,0x4C,0x66,0x7F,0x00},
-    {0x1E,0x06,0x06,0x06,0x06,0x06,0x1E,0x00},
-    {0x03,0x06,0x0C,0x18,0x30,0x60,0x40,0x00},
-    {0x1E,0x18,0x18,0x18,0x18,0x18,0x1E,0x00},
-    {0x08,0x1C,0x36,0x63,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF},
-    {0x0C,0x0C,0x18,0x00,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x1E,0x30,0x3E,0x33,0x6E,0x00},
-    {0x07,0x06,0x06,0x3E,0x66,0x66,0x3B,0x00},
-    {0x00,0x00,0x1E,0x33,0x03,0x33,0x1E,0x00},
-    {0x38,0x30,0x30,0x3E,0x33,0x33,0x6E,0x00},
-    {0x00,0x00,0x1E,0x33,0x3F,0x03,0x1E,0x00},
-    {0x1C,0x36,0x06,0x0F,0x06,0x06,0x0F,0x00},
-    {0x00,0x00,0x6E,0x33,0x33,0x3E,0x30,0x1F},
-    {0x07,0x06,0x36,0x6E,0x66,0x66,0x67,0x00},
-    {0x0C,0x00,0x0E,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x18,0x00,0x1C,0x18,0x18,0x18,0x1B,0x0E},
-    {0x07,0x06,0x66,0x36,0x1E,0x36,0x67,0x00},
-    {0x0E,0x0C,0x0C,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x00,0x00,0x33,0x7F,0x7F,0x6B,0x63,0x00},
-    {0x00,0x00,0x1F,0x33,0x33,0x33,0x33,0x00},
-    {0x00,0x00,0x1E,0x33,0x33,0x33,0x1E,0x00},
-    {0x00,0x00,0x3B,0x66,0x66,0x3E,0x06,0x0F},
-    {0x00,0x00,0x6E,0x33,0x33,0x3E,0x30,0x78},
-    {0x00,0x00,0x3B,0x6E,0x66,0x06,0x0F,0x00},
-    {0x00,0x00,0x3E,0x03,0x1E,0x30,0x1F,0x00},
-    {0x08,0x0C,0x3E,0x0C,0x0C,0x2C,0x18,0x00},
-    {0x00,0x00,0x33,0x33,0x33,0x33,0x6E,0x00},
-    {0x00,0x00,0x33,0x33,0x33,0x1E,0x0C,0x00},
-    {0x00,0x00,0x63,0x63,0x6B,0x7F,0x36,0x00},
-    {0x00,0x00,0x63,0x36,0x1C,0x36,0x63,0x00},
-    {0x00,0x00,0x33,0x33,0x33,0x3E,0x30,0x1F},
-    {0x00,0x00,0x3F,0x19,0x0C,0x26,0x3F,0x00},
-    {0x38,0x0C,0x0C,0x07,0x0C,0x0C,0x38,0x00},
-    {0x18,0x18,0x18,0x00,0x18,0x18,0x18,0x00},
-    {0x07,0x0C,0x0C,0x38,0x0C,0x0C,0x07,0x00},
-    {0x6E,0x3B,0x00,0x00,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
-};
+static const uint8_t svg_font8x8_basic[128][8] = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x7E, 0x81, 0xA5, 0x81, 0xBD, 0x99, 0x81, 0x7E},
+                                                  {0x7E, 0xFF, 0xDB, 0xFF, 0xC3, 0xE7, 0xFF, 0x7E},
+                                                  {0x6C, 0xFE, 0xFE, 0xFE, 0x7C, 0x38, 0x10, 0x00},
+                                                  {0x10, 0x38, 0x7C, 0xFE, 0x7C, 0x38, 0x10, 0x00},
+                                                  {0x38, 0x7C, 0x38, 0xFE, 0xFE, 0xD6, 0x10, 0x38},
+                                                  {0x10, 0x38, 0x7C, 0xFE, 0xFE, 0x7C, 0x10, 0x38},
+                                                  {0x00, 0x00, 0x18, 0x3C, 0x3C, 0x18, 0x00, 0x00},
+                                                  {0xFF, 0xFF, 0xE7, 0xC3, 0xC3, 0xE7, 0xFF, 0xFF},
+                                                  {0x00, 0x3C, 0x66, 0x42, 0x42, 0x66, 0x3C, 0x00},
+                                                  {0xFF, 0xC3, 0x99, 0xBD, 0xBD, 0x99, 0xC3, 0xFF},
+                                                  {0x0F, 0x07, 0x0F, 0x7D, 0xCC, 0xCC, 0xCC, 0x78},
+                                                  {0x3C, 0x66, 0x66, 0x66, 0x3C, 0x18, 0x7E, 0x18},
+                                                  {0x3F, 0x33, 0x3F, 0x30, 0x30, 0x70, 0xF0, 0xE0},
+                                                  {0x7F, 0x63, 0x7F, 0x63, 0x63, 0x67, 0xE6, 0xC0},
+                                                  {0x99, 0x5A, 0x3C, 0xE7, 0xE7, 0x3C, 0x5A, 0x99},
+                                                  {0x80, 0xE0, 0xF8, 0xFE, 0xF8, 0xE0, 0x80, 0x00},
+                                                  {0x02, 0x0E, 0x3E, 0xFE, 0x3E, 0x0E, 0x02, 0x00},
+                                                  {0x18, 0x3C, 0x7E, 0x18, 0x18, 0x7E, 0x3C, 0x18},
+                                                  {0x66, 0x66, 0x66, 0x66, 0x66, 0x00, 0x66, 0x00},
+                                                  {0x7F, 0xDB, 0xDB, 0x7B, 0x1B, 0x1B, 0x1B, 0x00},
+                                                  {0x3E, 0x63, 0x38, 0x6C, 0x6C, 0x38, 0xCC, 0x7F},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x7E, 0x7E, 0x7E, 0x00},
+                                                  {0x18, 0x3C, 0x7E, 0x18, 0x7E, 0x3C, 0x18, 0xFF},
+                                                  {0x18, 0x3C, 0x7E, 0x18, 0x18, 0x18, 0x18, 0x00},
+                                                  {0x18, 0x18, 0x18, 0x18, 0x7E, 0x3C, 0x18, 0x00},
+                                                  {0x00, 0x18, 0x0C, 0xFE, 0x0C, 0x18, 0x00, 0x00},
+                                                  {0x00, 0x30, 0x60, 0xFE, 0x60, 0x30, 0x00, 0x00},
+                                                  {0x00, 0x00, 0xC0, 0xC0, 0xC0, 0xFE, 0x00, 0x00},
+                                                  {0x00, 0x24, 0x66, 0xFF, 0x66, 0x24, 0x00, 0x00},
+                                                  {0x00, 0x18, 0x3C, 0x7E, 0xFF, 0xFF, 0x00, 0x00},
+                                                  {0x00, 0xFF, 0xFF, 0x7E, 0x3C, 0x18, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x18, 0x3C, 0x3C, 0x18, 0x18, 0x00, 0x18, 0x00},
+                                                  {0x36, 0x36, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x36, 0x36, 0x7F, 0x36, 0x7F, 0x36, 0x36, 0x00},
+                                                  {0x0C, 0x3E, 0x03, 0x1E, 0x30, 0x1F, 0x0C, 0x00},
+                                                  {0x00, 0x63, 0x33, 0x18, 0x0C, 0x66, 0x63, 0x00},
+                                                  {0x1C, 0x36, 0x1C, 0x6E, 0x3B, 0x33, 0x6E, 0x00},
+                                                  {0x06, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x18, 0x0C, 0x06, 0x06, 0x06, 0x0C, 0x18, 0x00},
+                                                  {0x06, 0x0C, 0x18, 0x18, 0x18, 0x0C, 0x06, 0x00},
+                                                  {0x00, 0x66, 0x3C, 0xFF, 0x3C, 0x66, 0x00, 0x00},
+                                                  {0x00, 0x0C, 0x0C, 0x3F, 0x0C, 0x0C, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x06},
+                                                  {0x00, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x00},
+                                                  {0x60, 0x30, 0x18, 0x0C, 0x06, 0x03, 0x01, 0x00},
+                                                  {0x3E, 0x63, 0x73, 0x7B, 0x6F, 0x67, 0x3E, 0x00},
+                                                  {0x0C, 0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x3F, 0x00},
+                                                  {0x1E, 0x33, 0x30, 0x1C, 0x06, 0x33, 0x3F, 0x00},
+                                                  {0x1E, 0x33, 0x30, 0x1C, 0x30, 0x33, 0x1E, 0x00},
+                                                  {0x38, 0x3C, 0x36, 0x33, 0x7F, 0x30, 0x78, 0x00},
+                                                  {0x3F, 0x03, 0x1F, 0x30, 0x30, 0x33, 0x1E, 0x00},
+                                                  {0x1C, 0x06, 0x03, 0x1F, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x3F, 0x33, 0x30, 0x18, 0x0C, 0x0C, 0x0C, 0x00},
+                                                  {0x1E, 0x33, 0x33, 0x1E, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x1E, 0x33, 0x33, 0x3E, 0x30, 0x18, 0x0E, 0x00},
+                                                  {0x00, 0x0C, 0x0C, 0x00, 0x00, 0x0C, 0x0C, 0x00},
+                                                  {0x00, 0x0C, 0x0C, 0x00, 0x00, 0x0C, 0x0C, 0x06},
+                                                  {0x18, 0x0C, 0x06, 0x03, 0x06, 0x0C, 0x18, 0x00},
+                                                  {0x00, 0x00, 0x3F, 0x00, 0x00, 0x3F, 0x00, 0x00},
+                                                  {0x06, 0x0C, 0x18, 0x30, 0x18, 0x0C, 0x06, 0x00},
+                                                  {0x1E, 0x33, 0x30, 0x18, 0x0C, 0x00, 0x0C, 0x00},
+                                                  {0x3E, 0x63, 0x7B, 0x7B, 0x7B, 0x03, 0x1E, 0x00},
+                                                  {0x0C, 0x1E, 0x33, 0x33, 0x3F, 0x33, 0x33, 0x00},
+                                                  {0x3F, 0x66, 0x66, 0x3E, 0x66, 0x66, 0x3F, 0x00},
+                                                  {0x3C, 0x66, 0x03, 0x03, 0x03, 0x66, 0x3C, 0x00},
+                                                  {0x1F, 0x36, 0x66, 0x66, 0x66, 0x36, 0x1F, 0x00},
+                                                  {0x7F, 0x46, 0x16, 0x1E, 0x16, 0x46, 0x7F, 0x00},
+                                                  {0x7F, 0x46, 0x16, 0x1E, 0x16, 0x06, 0x0F, 0x00},
+                                                  {0x3C, 0x66, 0x03, 0x03, 0x73, 0x66, 0x7C, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x3F, 0x33, 0x33, 0x33, 0x00},
+                                                  {0x1E, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x78, 0x30, 0x30, 0x30, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x67, 0x66, 0x36, 0x1E, 0x36, 0x66, 0x67, 0x00},
+                                                  {0x0F, 0x06, 0x06, 0x06, 0x46, 0x66, 0x7F, 0x00},
+                                                  {0x63, 0x77, 0x7F, 0x7F, 0x6B, 0x63, 0x63, 0x00},
+                                                  {0x63, 0x67, 0x6F, 0x7B, 0x73, 0x63, 0x63, 0x00},
+                                                  {0x1C, 0x36, 0x63, 0x63, 0x63, 0x36, 0x1C, 0x00},
+                                                  {0x3F, 0x66, 0x66, 0x3E, 0x06, 0x06, 0x0F, 0x00},
+                                                  {0x1E, 0x33, 0x33, 0x33, 0x3B, 0x1E, 0x38, 0x00},
+                                                  {0x3F, 0x66, 0x66, 0x3E, 0x36, 0x66, 0x67, 0x00},
+                                                  {0x1E, 0x33, 0x07, 0x0E, 0x38, 0x33, 0x1E, 0x00},
+                                                  {0x3F, 0x2D, 0x0C, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x3F, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x33, 0x33, 0x1E, 0x0C, 0x00},
+                                                  {0x63, 0x63, 0x63, 0x6B, 0x7F, 0x77, 0x63, 0x00},
+                                                  {0x63, 0x63, 0x36, 0x1C, 0x1C, 0x36, 0x63, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x1E, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x7F, 0x63, 0x31, 0x18, 0x4C, 0x66, 0x7F, 0x00},
+                                                  {0x1E, 0x06, 0x06, 0x06, 0x06, 0x06, 0x1E, 0x00},
+                                                  {0x03, 0x06, 0x0C, 0x18, 0x30, 0x60, 0x40, 0x00},
+                                                  {0x1E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x1E, 0x00},
+                                                  {0x08, 0x1C, 0x36, 0x63, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF},
+                                                  {0x0C, 0x0C, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x30, 0x3E, 0x33, 0x6E, 0x00},
+                                                  {0x07, 0x06, 0x06, 0x3E, 0x66, 0x66, 0x3B, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x33, 0x03, 0x33, 0x1E, 0x00},
+                                                  {0x38, 0x30, 0x30, 0x3E, 0x33, 0x33, 0x6E, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x33, 0x3F, 0x03, 0x1E, 0x00},
+                                                  {0x1C, 0x36, 0x06, 0x0F, 0x06, 0x06, 0x0F, 0x00},
+                                                  {0x00, 0x00, 0x6E, 0x33, 0x33, 0x3E, 0x30, 0x1F},
+                                                  {0x07, 0x06, 0x36, 0x6E, 0x66, 0x66, 0x67, 0x00},
+                                                  {0x0C, 0x00, 0x0E, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x18, 0x00, 0x1C, 0x18, 0x18, 0x18, 0x1B, 0x0E},
+                                                  {0x07, 0x06, 0x66, 0x36, 0x1E, 0x36, 0x67, 0x00},
+                                                  {0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x7F, 0x7F, 0x6B, 0x63, 0x00},
+                                                  {0x00, 0x00, 0x1F, 0x33, 0x33, 0x33, 0x33, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x33, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x00, 0x00, 0x3B, 0x66, 0x66, 0x3E, 0x06, 0x0F},
+                                                  {0x00, 0x00, 0x6E, 0x33, 0x33, 0x3E, 0x30, 0x78},
+                                                  {0x00, 0x00, 0x3B, 0x6E, 0x66, 0x06, 0x0F, 0x00},
+                                                  {0x00, 0x00, 0x3E, 0x03, 0x1E, 0x30, 0x1F, 0x00},
+                                                  {0x08, 0x0C, 0x3E, 0x0C, 0x0C, 0x2C, 0x18, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x33, 0x33, 0x33, 0x6E, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x33, 0x33, 0x1E, 0x0C, 0x00},
+                                                  {0x00, 0x00, 0x63, 0x63, 0x6B, 0x7F, 0x36, 0x00},
+                                                  {0x00, 0x00, 0x63, 0x36, 0x1C, 0x36, 0x63, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x33, 0x33, 0x3E, 0x30, 0x1F},
+                                                  {0x00, 0x00, 0x3F, 0x19, 0x0C, 0x26, 0x3F, 0x00},
+                                                  {0x38, 0x0C, 0x0C, 0x07, 0x0C, 0x0C, 0x38, 0x00},
+                                                  {0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x18, 0x00},
+                                                  {0x07, 0x0C, 0x0C, 0x38, 0x0C, 0x0C, 0x07, 0x00},
+                                                  {0x6E, 0x3B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 static float svg_clamp01(float v) {
     if (v < 0.0f) {
@@ -2396,7 +2443,10 @@ static int svg_parse_color(const char *s, uint32_t *out, int *is_none) {
             int r = isxdigit((unsigned char)s[0]) ? (int)strtol((char[]){s[0], 0}, NULL, 16) : -1;
             int g = isxdigit((unsigned char)s[1]) ? (int)strtol((char[]){s[1], 0}, NULL, 16) : -1;
             int b = isxdigit((unsigned char)s[2]) ? (int)strtol((char[]){s[2], 0}, NULL, 16) : -1;
-            int a = (len == 4) ? (isxdigit((unsigned char)s[3]) ? (int)strtol((char[]){s[3], 0}, NULL, 16) : -1) : 15;
+            int a = (len == 4)
+                        ? (isxdigit((unsigned char)s[3]) ? (int)strtol((char[]){s[3], 0}, NULL, 16)
+                                                         : -1)
+                        : 15;
             if (r < 0 || g < 0 || b < 0 || a < 0) {
                 return 0;
             }
@@ -2448,7 +2498,8 @@ static int svg_parse_color(const char *s, uint32_t *out, int *is_none) {
         int g = (int)lroundf(fmaxf(0.0f, fminf(255.0f, rgb[1])));
         int b = (int)lroundf(fmaxf(0.0f, fminf(255.0f, rgb[2])));
         int a = (int)lroundf(svg_clamp01(alpha) * 255.0f);
-        *out = ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
+        *out =
+            ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
         return 1;
     }
     if (svg_strncasecmp(s, "hsl(", 4) == 0 || svg_strncasecmp(s, "hsla(", 5) == 0) {
@@ -2494,7 +2545,8 @@ static int svg_parse_color(const char *s, uint32_t *out, int *is_none) {
         int g = (int)lroundf(svg_clamp01(gf) * 255.0f);
         int b = (int)lroundf(svg_clamp01(bf) * 255.0f);
         int a = (int)lroundf(svg_clamp01(alpha) * 255.0f);
-        *out = ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
+        *out =
+            ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | (uint32_t)(a & 0xFF);
         return 1;
     }
     for (size_t i = 0; i < sizeof(svg_named_colors) / sizeof(svg_named_colors[0]); i++) {
@@ -2514,48 +2566,78 @@ static svg_marker *svg_defs_find_marker(svg_defs *defs, const char *id);
 static svg_clip_path *svg_defs_find_clip(svg_defs *defs, const char *id);
 static svg_mask *svg_defs_find_mask(svg_defs *defs, const char *id);
 static const svg_filter *svg_defs_find_filter(const svg_defs *defs, const char *id);
-static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err, size_t errcap,
-                      const cupidimage_svg_options *opts);
+static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err,
+                      size_t errcap, const cupidimage_svg_options *opts);
 static void svg_segments_free(svg_segments *segs);
 static char *svg_text_normalize(const char *text, int preserve);
 static float svg_measure_line(const svg_style *style, const char *text, size_t len);
-static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                      const svg_segments *segs);
+static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style,
+                                      const svg_matrix *m, const svg_segments *segs);
 
 static int svg_property_id(const char *name) {
     if (!name) {
         return -1;
     }
-    if (strcmp(name, "fill") == 0) return SVG_PROP_FILL;
-    if (strcmp(name, "stroke") == 0) return SVG_PROP_STROKE;
-    if (strcmp(name, "stroke-width") == 0) return SVG_PROP_STROKE_WIDTH;
-    if (strcmp(name, "stroke-linecap") == 0) return SVG_PROP_STROKE_LINECAP;
-    if (strcmp(name, "stroke-linejoin") == 0) return SVG_PROP_STROKE_LINEJOIN;
-    if (strcmp(name, "stroke-miterlimit") == 0) return SVG_PROP_STROKE_MITERLIMIT;
-    if (strcmp(name, "stroke-dasharray") == 0) return SVG_PROP_STROKE_DASHARRAY;
-    if (strcmp(name, "stroke-dashoffset") == 0) return SVG_PROP_STROKE_DASHOFFSET;
-    if (strcmp(name, "clip-path") == 0) return SVG_PROP_CLIP_PATH;
-    if (strcmp(name, "mask") == 0) return SVG_PROP_MASK;
-    if (strcmp(name, "marker") == 0) return SVG_PROP_MARKER;
-    if (strcmp(name, "marker-start") == 0) return SVG_PROP_MARKER_START;
-    if (strcmp(name, "marker-mid") == 0) return SVG_PROP_MARKER_MID;
-    if (strcmp(name, "marker-end") == 0) return SVG_PROP_MARKER_END;
-    if (strcmp(name, "filter") == 0) return SVG_PROP_FILTER;
-    if (strcmp(name, "opacity") == 0) return SVG_PROP_OPACITY;
-    if (strcmp(name, "fill-opacity") == 0) return SVG_PROP_FILL_OPACITY;
-    if (strcmp(name, "stroke-opacity") == 0) return SVG_PROP_STROKE_OPACITY;
-    if (strcmp(name, "fill-rule") == 0) return SVG_PROP_FILL_RULE;
-    if (strcmp(name, "color") == 0) return SVG_PROP_COLOR;
-    if (strcmp(name, "font-size") == 0) return SVG_PROP_FONT_SIZE;
-    if (strcmp(name, "text-anchor") == 0) return SVG_PROP_TEXT_ANCHOR;
-    if (strcmp(name, "font-weight") == 0) return SVG_PROP_FONT_WEIGHT;
-    if (strcmp(name, "font-style") == 0) return SVG_PROP_FONT_STYLE;
-    if (strcmp(name, "dominant-baseline") == 0) return SVG_PROP_DOMINANT_BASELINE;
-    if (strcmp(name, "alignment-baseline") == 0) return SVG_PROP_DOMINANT_BASELINE;
-    if (strcmp(name, "letter-spacing") == 0) return SVG_PROP_LETTER_SPACING;
-    if (strcmp(name, "word-spacing") == 0) return SVG_PROP_WORD_SPACING;
-    if (strcmp(name, "display") == 0) return SVG_PROP_DISPLAY;
-    if (strcmp(name, "visibility") == 0) return SVG_PROP_VISIBILITY;
+    if (strcmp(name, "fill") == 0)
+        return SVG_PROP_FILL;
+    if (strcmp(name, "stroke") == 0)
+        return SVG_PROP_STROKE;
+    if (strcmp(name, "stroke-width") == 0)
+        return SVG_PROP_STROKE_WIDTH;
+    if (strcmp(name, "stroke-linecap") == 0)
+        return SVG_PROP_STROKE_LINECAP;
+    if (strcmp(name, "stroke-linejoin") == 0)
+        return SVG_PROP_STROKE_LINEJOIN;
+    if (strcmp(name, "stroke-miterlimit") == 0)
+        return SVG_PROP_STROKE_MITERLIMIT;
+    if (strcmp(name, "stroke-dasharray") == 0)
+        return SVG_PROP_STROKE_DASHARRAY;
+    if (strcmp(name, "stroke-dashoffset") == 0)
+        return SVG_PROP_STROKE_DASHOFFSET;
+    if (strcmp(name, "clip-path") == 0)
+        return SVG_PROP_CLIP_PATH;
+    if (strcmp(name, "mask") == 0)
+        return SVG_PROP_MASK;
+    if (strcmp(name, "marker") == 0)
+        return SVG_PROP_MARKER;
+    if (strcmp(name, "marker-start") == 0)
+        return SVG_PROP_MARKER_START;
+    if (strcmp(name, "marker-mid") == 0)
+        return SVG_PROP_MARKER_MID;
+    if (strcmp(name, "marker-end") == 0)
+        return SVG_PROP_MARKER_END;
+    if (strcmp(name, "filter") == 0)
+        return SVG_PROP_FILTER;
+    if (strcmp(name, "opacity") == 0)
+        return SVG_PROP_OPACITY;
+    if (strcmp(name, "fill-opacity") == 0)
+        return SVG_PROP_FILL_OPACITY;
+    if (strcmp(name, "stroke-opacity") == 0)
+        return SVG_PROP_STROKE_OPACITY;
+    if (strcmp(name, "fill-rule") == 0)
+        return SVG_PROP_FILL_RULE;
+    if (strcmp(name, "color") == 0)
+        return SVG_PROP_COLOR;
+    if (strcmp(name, "font-size") == 0)
+        return SVG_PROP_FONT_SIZE;
+    if (strcmp(name, "text-anchor") == 0)
+        return SVG_PROP_TEXT_ANCHOR;
+    if (strcmp(name, "font-weight") == 0)
+        return SVG_PROP_FONT_WEIGHT;
+    if (strcmp(name, "font-style") == 0)
+        return SVG_PROP_FONT_STYLE;
+    if (strcmp(name, "dominant-baseline") == 0)
+        return SVG_PROP_DOMINANT_BASELINE;
+    if (strcmp(name, "alignment-baseline") == 0)
+        return SVG_PROP_DOMINANT_BASELINE;
+    if (strcmp(name, "letter-spacing") == 0)
+        return SVG_PROP_LETTER_SPACING;
+    if (strcmp(name, "word-spacing") == 0)
+        return SVG_PROP_WORD_SPACING;
+    if (strcmp(name, "display") == 0)
+        return SVG_PROP_DISPLAY;
+    if (strcmp(name, "visibility") == 0)
+        return SVG_PROP_VISIBILITY;
     return -1;
 }
 
@@ -2711,16 +2793,18 @@ static char *svg_wrap_with_group_attrs(const char *content, const char *attrs) {
     return out;
 }
 
-static void svg_style_apply_property_id(svg_style *style, int prop, const char *value, float base_len,
-                                        float dpi, const svg_defs *defs) {
+static void svg_style_apply_property_id(svg_style *style, int prop, const char *value,
+                                        float base_len, float dpi, const svg_defs *defs) {
     if (!style || !value) {
         return;
     }
     if (prop == SVG_PROP_FILL || prop == SVG_PROP_STROKE) {
         svg_paint_type *ptype = (prop == SVG_PROP_FILL) ? &style->fill_type : &style->stroke_type;
         uint32_t *pcolor = (prop == SVG_PROP_FILL) ? &style->fill_color : &style->stroke_color;
-        const svg_gradient **pgrad = (prop == SVG_PROP_FILL) ? &style->fill_gradient : &style->stroke_gradient;
-        svg_pattern **ppat = (prop == SVG_PROP_FILL) ? &style->fill_pattern : &style->stroke_pattern;
+        const svg_gradient **pgrad =
+            (prop == SVG_PROP_FILL) ? &style->fill_gradient : &style->stroke_gradient;
+        svg_pattern **ppat =
+            (prop == SVG_PROP_FILL) ? &style->fill_pattern : &style->stroke_pattern;
         if (svg_strcasecmp(value, "currentcolor") == 0) {
             *ptype = SVG_PAINT_COLOR;
             *pcolor = style->color;
@@ -2800,7 +2884,8 @@ static void svg_style_apply_property_id(svg_style *style, int prop, const char *
         char *end = NULL;
         double v = strtod(value, &end);
         if (end != value) {
-            if (v < 1.0) v = 1.0;
+            if (v < 1.0)
+                v = 1.0;
             style->stroke_miterlimit = (float)v;
         }
         return;
@@ -2874,8 +2959,8 @@ static void svg_style_apply_property_id(svg_style *style, int prop, const char *
         }
         return;
     }
-    if (prop == SVG_PROP_MARKER || prop == SVG_PROP_MARKER_START ||
-        prop == SVG_PROP_MARKER_MID || prop == SVG_PROP_MARKER_END) {
+    if (prop == SVG_PROP_MARKER || prop == SVG_PROP_MARKER_START || prop == SVG_PROP_MARKER_MID ||
+        prop == SVG_PROP_MARKER_END) {
         svg_marker *mk = NULL;
         if (svg_strcasecmp(value, "none") != 0) {
             char url_id[96];
@@ -2988,8 +3073,7 @@ static void svg_style_apply_property_id(svg_style *style, int prop, const char *
                    svg_strcasecmp(value, "text-before-edge") == 0 ||
                    svg_strcasecmp(value, "before-edge") == 0) {
             style->dominant_baseline = 2;
-        } else if (svg_strcasecmp(value, "alphabetic") == 0 ||
-                   svg_strcasecmp(value, "auto") == 0 ||
+        } else if (svg_strcasecmp(value, "alphabetic") == 0 || svg_strcasecmp(value, "auto") == 0 ||
                    svg_strcasecmp(value, "baseline") == 0 ||
                    svg_strcasecmp(value, "text-after-edge") == 0 ||
                    svg_strcasecmp(value, "after-edge") == 0) {
@@ -3031,8 +3115,8 @@ static void svg_style_apply_property_id(svg_style *style, int prop, const char *
     }
 }
 
-static void svg_style_apply_property(svg_style *style, const char *name, const char *value, float base_len,
-                                     float dpi, const svg_defs *defs) {
+static void svg_style_apply_property(svg_style *style, const char *name, const char *value,
+                                     float base_len, float dpi, const svg_defs *defs) {
     if (!style || !name || !value) {
         return;
     }
@@ -3043,8 +3127,8 @@ static void svg_style_apply_property(svg_style *style, const char *name, const c
     svg_style_apply_property_id(style, prop, value, base_len, dpi, defs);
 }
 
-static void svg_style_apply_style_attr(svg_style *style, const char *value, float base_len, float dpi,
-                                       const svg_defs *defs) {
+static void svg_style_apply_style_attr(svg_style *style, const char *value, float base_len,
+                                       float dpi, const svg_defs *defs) {
     if (!style || !value) {
         return;
     }
@@ -3108,8 +3192,8 @@ static void svg_blend_premul(uint8_t *dst, uint8_t sr, uint8_t sg, uint8_t sb, u
     dst[3] = (uint8_t)(sa + (uint32_t)dst[3] * inv / 255u);
 }
 
-static void svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, float base_len, float dpi,
-                                         const svg_defs *defs) {
+static void svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, float base_len,
+                                         float dpi, const svg_defs *defs) {
     for (int i = 0; i < tag->attr_count; i++) {
         const char *name = svg_local_name(tag->attrs[i].name);
         const char *value = tag->attrs[i].value;
@@ -3123,8 +3207,8 @@ static void svg_apply_presentation_attrs(svg_style *style, const svg_tag *tag, f
     }
 }
 
-static void svg_apply_inline_style_attr(svg_style *style, const svg_tag *tag, float base_len, float dpi,
-                                        const svg_defs *defs) {
+static void svg_apply_inline_style_attr(svg_style *style, const svg_tag *tag, float base_len,
+                                        float dpi, const svg_defs *defs) {
     const char *style_attr = svg_get_attr(tag, "style");
     if (style_attr) {
         svg_style_apply_style_attr(style, style_attr, base_len, dpi, defs);
@@ -3147,8 +3231,10 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
         }
         if (strncmp(p, "matrix", 6) == 0) {
             p += 6;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float v[6];
             for (int i = 0; i < 6; i++) {
@@ -3160,8 +3246,10 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "translate", 9) == 0) {
             p += 9;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float tx = 0.0f, ty = 0.0f;
             svg_parse_transform_number(&p, &tx);
@@ -3175,8 +3263,10 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "scale", 5) == 0) {
             p += 5;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float sx = 1.0f, sy = 1.0f;
             svg_parse_transform_number(&p, &sx);
@@ -3190,8 +3280,10 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "rotate", 6) == 0) {
             p += 6;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float angle = 0.0f;
             if (!svg_parse_transform_number(&p, &angle)) {
@@ -3216,8 +3308,10 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "skewx", 5) == 0) {
             p += 5;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float angle = 0.0f;
             if (!svg_parse_transform_number(&p, &angle)) {
@@ -3229,8 +3323,10 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
             svg_matrix_multiply(&t, &m, &m);
         } else if (strncmp(p, "skewy", 5) == 0) {
             p += 5;
-            while (*p && *p != '(') p++;
-            if (*p != '(') break;
+            while (*p && *p != '(')
+                p++;
+            if (*p != '(')
+                break;
             p++;
             float angle = 0.0f;
             if (!svg_parse_transform_number(&p, &angle)) {
@@ -3243,7 +3339,8 @@ static int svg_parse_transform(const char *value, svg_matrix *out) {
         } else {
             break;
         }
-        while (*p && *p != ')') p++;
+        while (*p && *p != ')')
+            p++;
         if (*p == ')') {
             p++;
         }
@@ -3560,7 +3657,8 @@ static void svg_css_init(svg_css *css) {
 static void svg_selector_part_free(svg_selector_part *part) {
     free(part->tag);
     free(part->id);
-    for (int c = 0; c < part->class_count; c++) free(part->classes[c]);
+    for (int c = 0; c < part->class_count; c++)
+        free(part->classes[c]);
     free(part->classes);
     for (int a = 0; a < part->attr_count; a++) {
         free(part->attr_names[a]);
@@ -3573,23 +3671,27 @@ static void svg_selector_part_free(svg_selector_part *part) {
 }
 
 static void svg_selector_free(svg_selector *sel) {
-    for (int p = 0; p < sel->part_count; p++) svg_selector_part_free(&sel->parts[p]);
+    for (int p = 0; p < sel->part_count; p++)
+        svg_selector_part_free(&sel->parts[p]);
     free(sel->parts);
     free(sel->combinators);
     memset(sel, 0, sizeof(*sel));
 }
 
 static void svg_css_rule_free(svg_css_rule *rule) {
-    for (int s = 0; s < rule->selector_count; s++) svg_selector_free(&rule->selectors[s]);
+    for (int s = 0; s < rule->selector_count; s++)
+        svg_selector_free(&rule->selectors[s]);
     free(rule->selectors);
-    for (int d = 0; d < rule->decl_count; d++) free(rule->decls[d].value);
+    for (int d = 0; d < rule->decl_count; d++)
+        free(rule->decls[d].value);
     free(rule->decls);
     memset(rule, 0, sizeof(*rule));
 }
 
 static void svg_css_keyframes_free(svg_css_keyframes *kf) {
     free(kf->name);
-    for (int k = 0; k < kf->step_count; k++) free(kf->steps[k].transform);
+    for (int k = 0; k < kf->step_count; k++)
+        free(kf->steps[k].transform);
     free(kf->steps);
     memset(kf, 0, sizeof(*kf));
 }
@@ -3628,7 +3730,8 @@ static svg_gradient *svg_defs_add_gradient(svg_defs *defs, const char *id, svg_p
     }
     if (defs->gradient_count >= defs->gradient_cap) {
         int new_cap = defs->gradient_cap ? defs->gradient_cap * 2 : 16;
-        svg_gradient *n = (svg_gradient *)realloc(defs->gradients, (size_t)new_cap * sizeof(svg_gradient));
+        svg_gradient *n =
+            (svg_gradient *)realloc(defs->gradients, (size_t)new_cap * sizeof(svg_gradient));
         if (!n) {
             return NULL;
         }
@@ -3690,7 +3793,8 @@ static svg_pattern *svg_defs_add_pattern(svg_defs *defs, const char *id) {
     }
     if (defs->pattern_count >= defs->pattern_cap) {
         int new_cap = defs->pattern_cap ? defs->pattern_cap * 2 : 16;
-        svg_pattern *n = (svg_pattern *)realloc(defs->patterns, (size_t)new_cap * sizeof(svg_pattern));
+        svg_pattern *n =
+            (svg_pattern *)realloc(defs->patterns, (size_t)new_cap * sizeof(svg_pattern));
         if (!n) {
             return NULL;
         }
@@ -3748,7 +3852,8 @@ static svg_clip_path *svg_defs_add_clip(svg_defs *defs, const char *id) {
     }
     if (defs->clip_count >= defs->clip_cap) {
         int new_cap = defs->clip_cap ? defs->clip_cap * 2 : 16;
-        svg_clip_path *n = (svg_clip_path *)realloc(defs->clips, (size_t)new_cap * sizeof(svg_clip_path));
+        svg_clip_path *n =
+            (svg_clip_path *)realloc(defs->clips, (size_t)new_cap * sizeof(svg_clip_path));
         if (!n) {
             return NULL;
         }
@@ -3905,7 +4010,8 @@ static svg_path_def *svg_defs_add_path(svg_defs *defs, const char *id, const cha
     }
     if (defs->path_count >= defs->path_cap) {
         int new_cap = defs->path_cap ? defs->path_cap * 2 : 16;
-        svg_path_def *n = (svg_path_def *)realloc(defs->paths, (size_t)new_cap * sizeof(svg_path_def));
+        svg_path_def *n =
+            (svg_path_def *)realloc(defs->paths, (size_t)new_cap * sizeof(svg_path_def));
         if (!n) {
             return NULL;
         }
@@ -3965,7 +4071,8 @@ static svg_use_def *svg_defs_add_use(svg_defs *defs, const svg_tag *tag) {
     if (!ud) {
         if (defs->use_count >= defs->use_cap) {
             int new_cap = defs->use_cap ? defs->use_cap * 2 : 16;
-            svg_use_def *n = (svg_use_def *)realloc(defs->uses, (size_t)new_cap * sizeof(svg_use_def));
+            svg_use_def *n =
+                (svg_use_def *)realloc(defs->uses, (size_t)new_cap * sizeof(svg_use_def));
             if (!n) {
                 return NULL;
             }
@@ -4151,8 +4258,10 @@ static int svg_parse_stop_offset(const char *s, float *out) {
         percent = 1;
     }
     float off = percent ? (float)(v / 100.0) : (float)v;
-    if (off < 0.0f) off = 0.0f;
-    if (off > 1.0f) off = 1.0f;
+    if (off < 0.0f)
+        off = 0.0f;
+    if (off > 1.0f)
+        off = 1.0f;
     *out = off;
     return 1;
 }
@@ -4232,7 +4341,8 @@ static int svg_gradient_add_stop(svg_gradient *g, float offset, uint32_t color) 
         return 0;
     }
     int idx = g->stop_count;
-    svg_gradient_stop *n = (svg_gradient_stop *)realloc(g->stops, (size_t)(idx + 1) * sizeof(svg_gradient_stop));
+    svg_gradient_stop *n =
+        (svg_gradient_stop *)realloc(g->stops, (size_t)(idx + 1) * sizeof(svg_gradient_stop));
     if (!n) {
         return 0;
     }
@@ -4283,8 +4393,10 @@ static int svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color) {
     }
     uint8_t a = (uint8_t)(stop_color & 0xFFu);
     float alpha = (a / 255.0f) * stop_opacity;
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     a = (uint8_t)lroundf(alpha * 255.0f);
     stop_color = (stop_color & 0xFFFFFF00u) | a;
     *offset = off;
@@ -4297,8 +4409,10 @@ static int svg_stop_parse(const svg_tag *tag, float *offset, uint32_t *color) {
 static int svg_stop_offset_cmp(const void *a, const void *b) {
     const svg_gradient_stop *sa = (const svg_gradient_stop *)a;
     const svg_gradient_stop *sb = (const svg_gradient_stop *)b;
-    if (sa->offset < sb->offset) return -1;
-    if (sa->offset > sb->offset) return 1;
+    if (sa->offset < sb->offset)
+        return -1;
+    if (sa->offset > sb->offset)
+        return 1;
     return 0;
 }
 
@@ -4339,7 +4453,8 @@ static void svg_gradient_inherit(svg_gradient *g, const svg_defs *defs) {
             g->r = ref->r;
         }
     }
-    if (!g->has_focal && g->type == SVG_PAINT_RADIAL_GRADIENT && ref->type == SVG_PAINT_RADIAL_GRADIENT) {
+    if (!g->has_focal && g->type == SVG_PAINT_RADIAL_GRADIENT &&
+        ref->type == SVG_PAINT_RADIAL_GRADIENT) {
         g->fx = ref->fx;
         g->fy = ref->fy;
     }
@@ -4412,11 +4527,16 @@ static void svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g) {
         const char *y1 = svg_get_attr(tag, "y1");
         const char *x2 = svg_get_attr(tag, "x2");
         const char *y2 = svg_get_attr(tag, "y2");
-        if (x1 && svg_parse_grad_coord(x1, &g->x1, g->units)) has = 1;
-        if (y1 && svg_parse_grad_coord(y1, &g->y1, g->units)) has = 1;
-        if (x2 && svg_parse_grad_coord(x2, &g->x2, g->units)) has = 1;
-        if (y2 && svg_parse_grad_coord(y2, &g->y2, g->units)) has = 1;
-        if (has) g->has_coords = 1;
+        if (x1 && svg_parse_grad_coord(x1, &g->x1, g->units))
+            has = 1;
+        if (y1 && svg_parse_grad_coord(y1, &g->y1, g->units))
+            has = 1;
+        if (x2 && svg_parse_grad_coord(x2, &g->x2, g->units))
+            has = 1;
+        if (y2 && svg_parse_grad_coord(y2, &g->y2, g->units))
+            has = 1;
+        if (has)
+            g->has_coords = 1;
     } else {
         int has = 0;
         const char *cx = svg_get_attr(tag, "cx");
@@ -4424,16 +4544,20 @@ static void svg_parse_gradient_tag(const svg_tag *tag, svg_gradient *g) {
         const char *r = svg_get_attr(tag, "r");
         const char *fx = svg_get_attr(tag, "fx");
         const char *fy = svg_get_attr(tag, "fy");
-        if (cx && svg_parse_grad_coord(cx, &g->cx, g->units)) has = 1;
-        if (cy && svg_parse_grad_coord(cy, &g->cy, g->units)) has = 1;
-        if (r && svg_parse_grad_coord(r, &g->r, g->units)) has = 1;
+        if (cx && svg_parse_grad_coord(cx, &g->cx, g->units))
+            has = 1;
+        if (cy && svg_parse_grad_coord(cy, &g->cy, g->units))
+            has = 1;
+        if (r && svg_parse_grad_coord(r, &g->r, g->units))
+            has = 1;
         if (fx && svg_parse_grad_coord(fx, &g->fx, g->units)) {
             g->has_focal = 1;
         }
         if (fy && svg_parse_grad_coord(fy, &g->fy, g->units)) {
             g->has_focal = 1;
         }
-        if (has) g->has_coords = 1;
+        if (has)
+            g->has_coords = 1;
     }
 }
 
@@ -4480,10 +4604,14 @@ static void svg_parse_pattern_tag(const svg_tag *tag, svg_pattern *p) {
     const char *y = svg_get_attr(tag, "y");
     const char *w = svg_get_attr(tag, "width");
     const char *h = svg_get_attr(tag, "height");
-    if (x && svg_parse_grad_coord(x, &p->x, p->units)) has = 1;
-    if (y && svg_parse_grad_coord(y, &p->y, p->units)) has = 1;
-    if (w && svg_parse_grad_coord(w, &p->width, p->units)) has = 1;
-    if (h && svg_parse_grad_coord(h, &p->height, p->units)) has = 1;
+    if (x && svg_parse_grad_coord(x, &p->x, p->units))
+        has = 1;
+    if (y && svg_parse_grad_coord(y, &p->y, p->units))
+        has = 1;
+    if (w && svg_parse_grad_coord(w, &p->width, p->units))
+        has = 1;
+    if (h && svg_parse_grad_coord(h, &p->height, p->units))
+        has = 1;
     if (has) {
         p->has_coords = 1;
     }
@@ -4635,10 +4763,14 @@ static void svg_parse_mask_tag(const svg_tag *tag, svg_mask *m) {
     const char *y = svg_get_attr(tag, "y");
     const char *w = svg_get_attr(tag, "width");
     const char *h = svg_get_attr(tag, "height");
-    if (x && svg_parse_grad_coord(x, &m->x, m->units)) has = 1;
-    if (y && svg_parse_grad_coord(y, &m->y, m->units)) has = 1;
-    if (w && svg_parse_grad_coord(w, &m->width, m->units)) has = 1;
-    if (h && svg_parse_grad_coord(h, &m->height, m->units)) has = 1;
+    if (x && svg_parse_grad_coord(x, &m->x, m->units))
+        has = 1;
+    if (y && svg_parse_grad_coord(y, &m->y, m->units))
+        has = 1;
+    if (w && svg_parse_grad_coord(w, &m->width, m->units))
+        has = 1;
+    if (h && svg_parse_grad_coord(h, &m->height, m->units))
+        has = 1;
     if (has) {
         m->has_coords = 1;
     }
@@ -4673,10 +4805,14 @@ static void svg_parse_filter_tag(const svg_tag *tag, svg_filter *f) {
     const char *y = svg_get_attr(tag, "y");
     const char *w = svg_get_attr(tag, "width");
     const char *h = svg_get_attr(tag, "height");
-    if (x && svg_parse_grad_coord(x, &f->x, f->units)) has = 1;
-    if (y && svg_parse_grad_coord(y, &f->y, f->units)) has = 1;
-    if (w && svg_parse_grad_coord(w, &f->width, f->units)) has = 1;
-    if (h && svg_parse_grad_coord(h, &f->height, f->units)) has = 1;
+    if (x && svg_parse_grad_coord(x, &f->x, f->units))
+        has = 1;
+    if (y && svg_parse_grad_coord(y, &f->y, f->units))
+        has = 1;
+    if (w && svg_parse_grad_coord(w, &f->width, f->units))
+        has = 1;
+    if (h && svg_parse_grad_coord(h, &f->height, f->units))
+        has = 1;
     if (has) {
         f->has_coords = 1;
     }
@@ -4686,13 +4822,13 @@ static void svg_parse_symbol_tag(const svg_tag *tag, svg_symbol *sym) {
     if (!tag || !sym) {
         return;
     }
-    sym->vb_ok = svg_parse_viewbox(svg_get_attr(tag, "viewBox"),
-                                   &sym->vb_x, &sym->vb_y, &sym->vb_w, &sym->vb_h);
+    sym->vb_ok = svg_parse_viewbox(svg_get_attr(tag, "viewBox"), &sym->vb_x, &sym->vb_y, &sym->vb_w,
+                                   &sym->vb_h);
     sym->preserve_none = 0;
     sym->align_x = 0.5f;
     sym->align_y = 0.5f;
-    svg_parse_preserve_aspect_ratio(svg_get_attr(tag, "preserveAspectRatio"),
-                                    &sym->preserve_none, &sym->align_x, &sym->align_y);
+    svg_parse_preserve_aspect_ratio(svg_get_attr(tag, "preserveAspectRatio"), &sym->preserve_none,
+                                    &sym->align_x, &sym->align_y);
 }
 
 static void svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float base_len, float dpi) {
@@ -4743,13 +4879,13 @@ static void svg_parse_marker_tag(const svg_tag *tag, svg_marker *mk, float base_
             }
         }
     }
-    mk->vb_ok = svg_parse_viewbox(svg_get_attr(tag, "viewBox"),
-                                  &mk->vb_x, &mk->vb_y, &mk->vb_w, &mk->vb_h);
+    mk->vb_ok =
+        svg_parse_viewbox(svg_get_attr(tag, "viewBox"), &mk->vb_x, &mk->vb_y, &mk->vb_w, &mk->vb_h);
     mk->preserve_none = 0;
     mk->align_x = 0.5f;
     mk->align_y = 0.5f;
-    svg_parse_preserve_aspect_ratio(svg_get_attr(tag, "preserveAspectRatio"),
-                                    &mk->preserve_none, &mk->align_x, &mk->align_y);
+    svg_parse_preserve_aspect_ratio(svg_get_attr(tag, "preserveAspectRatio"), &mk->preserve_none,
+                                    &mk->align_x, &mk->align_y);
 }
 
 static void svg_mask_inherit(svg_mask *m, svg_defs *defs) {
@@ -4809,8 +4945,8 @@ static void svg_text_path_clear(svg_text_path_state *tp) {
     svg_segments_free(&tp->segs);
 }
 
-static int svg_text_path_point(const svg_text_path_state *tp, float dist,
-                               float *out_x, float *out_y, float *out_angle) {
+static int svg_text_path_point(const svg_text_path_state *tp, float dist, float *out_x,
+                               float *out_y, float *out_angle) {
     if (!tp || !out_x || !out_y || !out_angle || tp->seg_count == 0 || tp->total_len <= 0.0f) {
         return 0;
     }
@@ -4842,7 +4978,8 @@ static int svg_text_path_point(const svg_text_path_state *tp, float dist,
     return 0;
 }
 
-static float svg_textpath_measure_range(const char *start, const char *end, int preserve, const svg_style *style) {
+static float svg_textpath_measure_range(const char *start, const char *end, int preserve,
+                                        const svg_style *style) {
     if (!start || !end || !style || end <= start) {
         return 0.0f;
     }
@@ -5091,8 +5228,8 @@ static int svg_css_add_keyframe_step(svg_css_keyframes *kf, const svg_css_keyfra
     }
     if (kf->step_count >= kf->step_cap) {
         int new_cap = kf->step_cap ? kf->step_cap * 2 : 8;
-        svg_css_keyframe_step *n =
-            (svg_css_keyframe_step *)realloc(kf->steps, (size_t)new_cap * sizeof(svg_css_keyframe_step));
+        svg_css_keyframe_step *n = (svg_css_keyframe_step *)realloc(
+            kf->steps, (size_t)new_cap * sizeof(svg_css_keyframe_step));
         if (!n) {
             return 0;
         }
@@ -5109,8 +5246,8 @@ static int svg_css_add_keyframes(svg_css *css, svg_css_keyframes *kf) {
     }
     if (css->keyframe_count >= css->keyframe_cap) {
         int new_cap = css->keyframe_cap ? css->keyframe_cap * 2 : 8;
-        svg_css_keyframes *n =
-            (svg_css_keyframes *)realloc(css->keyframes, (size_t)new_cap * sizeof(svg_css_keyframes));
+        svg_css_keyframes *n = (svg_css_keyframes *)realloc(
+            css->keyframes, (size_t)new_cap * sizeof(svg_css_keyframes));
         if (!n) {
             return 0;
         }
@@ -5245,15 +5382,11 @@ static int svg_css_parse_animation_shorthand(const char *value, svg_css_animatio
             free(tok);
             continue;
         }
-        if (svg_strcasecmp(tok, "none") == 0 ||
-            svg_strcasecmp(tok, "linear") == 0 ||
-            svg_strcasecmp(tok, "ease") == 0 ||
-            svg_strcasecmp(tok, "ease-in") == 0 ||
-            svg_strcasecmp(tok, "ease-out") == 0 ||
-            svg_strcasecmp(tok, "ease-in-out") == 0 ||
+        if (svg_strcasecmp(tok, "none") == 0 || svg_strcasecmp(tok, "linear") == 0 ||
+            svg_strcasecmp(tok, "ease") == 0 || svg_strcasecmp(tok, "ease-in") == 0 ||
+            svg_strcasecmp(tok, "ease-out") == 0 || svg_strcasecmp(tok, "ease-in-out") == 0 ||
             svg_strncasecmp(tok, "steps(", 6) == 0 ||
-            svg_strncasecmp(tok, "cubic-bezier(", 13) == 0 ||
-            svg_strcasecmp(tok, "running") == 0 ||
+            svg_strncasecmp(tok, "cubic-bezier(", 13) == 0 || svg_strcasecmp(tok, "running") == 0 ||
             svg_strcasecmp(tok, "paused") == 0) {
             free(tok);
             continue;
@@ -5301,8 +5434,9 @@ static int svg_css_parse_target_id(const char *selector, char *out, size_t out_c
     return 1;
 }
 
-static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_start, const char *selector_end,
-                                         const char *body_start, const char *body_end) {
+static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_start,
+                                         const char *selector_end, const char *body_start,
+                                         const char *body_end) {
     if (!css || !selector_start || !selector_end || !body_start || !body_end) {
         return 0;
     }
@@ -5413,7 +5547,8 @@ static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_star
                                     step.color = col;
                                 }
                             }
-                            if (!svg_css_add_keyframe_step(&kf, &step)) free(step.transform);
+                            if (!svg_css_add_keyframe_step(&kf, &step))
+                                free(step.transform);
                         }
                         free(label);
                     }
@@ -5444,13 +5579,15 @@ static int svg_css_parse_keyframes_block(svg_css *css, const char *selector_star
     return 1;
 }
 
-static void svg_css_parse_animation_bindings(svg_css *css, const char *selector_start, const char *selector_end,
-                                             const char *decl_start, const char *decl_end) {
+static void svg_css_parse_animation_bindings(svg_css *css, const char *selector_start,
+                                             const char *selector_end, const char *decl_start,
+                                             const char *decl_end) {
     if (!css || !selector_start || !selector_end || !decl_start || !decl_end) {
         return;
     }
     char *anim_value = NULL;
-    if (!svg_css_extract_decl_value_span(decl_start, decl_end, "animation", &anim_value) || !anim_value) {
+    if (!svg_css_extract_decl_value_span(decl_start, decl_end, "animation", &anim_value) ||
+        !anim_value) {
         return;
     }
     const char *sel = selector_start;
@@ -5520,7 +5657,8 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 p++;
             }
             part.tag = svg_strndup(start, (size_t)(p - start));
-            if (!part.tag) goto fail;
+            if (!part.tag)
+                goto fail;
             svg_lowercase(part.tag);
             sel.specificity += 1;
             matched = 1;
@@ -5544,7 +5682,8 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
                 part.id = name;
                 sel.specificity += 100;
             } else {
-                char **classes = (char **)realloc(part.classes, (size_t)(part.class_count + 1) * sizeof(char *));
+                char **classes =
+                    (char **)realloc(part.classes, (size_t)(part.class_count + 1) * sizeof(char *));
                 if (!classes) {
                     free(name);
                     goto fail;
@@ -5644,7 +5783,8 @@ static int svg_css_parse_selector(const char *s, svg_selector *out) {
             break;
         }
         int old_count = sel.part_count;
-        svg_selector_part *parts = (svg_selector_part *)realloc(sel.parts, (size_t)(old_count + 1) * sizeof(svg_selector_part));
+        svg_selector_part *parts = (svg_selector_part *)realloc(
+            sel.parts, (size_t)(old_count + 1) * sizeof(svg_selector_part));
         if (!parts) {
             goto fail;
         }
@@ -5732,7 +5872,8 @@ static int svg_css_parse_decls(svg_css_rule *rule, const char *s) {
                 if (!val) {
                     return 0;
                 }
-                svg_css_decl *decls = (svg_css_decl *)realloc(rule->decls, (size_t)(rule->decl_count + 1) * sizeof(svg_css_decl));
+                svg_css_decl *decls = (svg_css_decl *)realloc(
+                    rule->decls, (size_t)(rule->decl_count + 1) * sizeof(svg_css_decl));
                 if (!decls) {
                     free(val);
                     return 0;
@@ -5756,7 +5897,8 @@ static int svg_css_add_rule(svg_css *css, svg_css_rule *rule) {
     }
     if (css->rule_count >= css->rule_cap) {
         int new_cap = css->rule_cap ? css->rule_cap * 2 : 16;
-        svg_css_rule *n = (svg_css_rule *)realloc(css->rules, (size_t)new_cap * sizeof(svg_css_rule));
+        svg_css_rule *n =
+            (svg_css_rule *)realloc(css->rules, (size_t)new_cap * sizeof(svg_css_rule));
         if (!n) {
             return 0;
         }
@@ -5837,7 +5979,8 @@ static int svg_css_parse(svg_css *css, const char *text) {
                 svg_selector sel;
                 memset(&sel, 0, sizeof(sel));
                 if (svg_css_parse_selector(sel_str, &sel)) {
-                    svg_selector *sels = (svg_selector *)realloc(rule.selectors, (size_t)(rule.selector_count + 1) * sizeof(svg_selector));
+                    svg_selector *sels = (svg_selector *)realloc(
+                        rule.selectors, (size_t)(rule.selector_count + 1) * sizeof(svg_selector));
                     if (sels) {
                         rule.selectors = sels;
                         rule.selectors[rule.selector_count++] = sel;
@@ -5991,9 +6134,8 @@ static int svg_selector_matches(const svg_selector *sel, const svg_elem_info *st
 }
 
 static void svg_css_apply(svg_style *style, const svg_css *css, const svg_defs *defs,
-                          const svg_elem_info *stack, int depth,
-                          const svg_elem_info *siblings, int sibling_count,
-                          float base_len, float dpi) {
+                          const svg_elem_info *stack, int depth, const svg_elem_info *siblings,
+                          int sibling_count, float base_len, float dpi) {
     if (!style || !css || css->rule_count == 0 || !stack || depth <= 0) {
         return;
     }
@@ -6016,8 +6158,10 @@ static void svg_css_apply(svg_style *style, const svg_css *css, const svg_defs *
                 if (prop < 0 || prop >= SVG_PROP_COUNT) {
                     continue;
                 }
-                if (spec > best_spec[prop] || (spec == best_spec[prop] && rule->order >= best_order[prop])) {
-                    svg_style_apply_property_id(style, prop, rule->decls[d].value, base_len, dpi, defs);
+                if (spec > best_spec[prop] ||
+                    (spec == best_spec[prop] && rule->order >= best_order[prop])) {
+                    svg_style_apply_property_id(style, prop, rule->decls[d].value, base_len, dpi,
+                                                defs);
                     best_spec[prop] = spec;
                     best_order[prop] = rule->order;
                 }
@@ -6060,8 +6204,9 @@ static char *svg_find_close_tag(char *p, const char *tag_name, char **after) {
     return NULL;
 }
 
-static int svg_parse_preamble(const unsigned char *data, size_t size, svg_preamble *pre, svg_defs *defs,
-                              svg_css *css, float dpi, float anim_time, char *err, size_t errcap) {
+static int svg_parse_preamble(const unsigned char *data, size_t size, svg_preamble *pre,
+                              svg_defs *defs, svg_css *css, float dpi, float anim_time, char *err,
+                              size_t errcap) {
     if (!data || !pre) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -6092,13 +6237,16 @@ static int svg_parse_preamble(const unsigned char *data, size_t size, svg_preamb
             const char *h = svg_get_attr(&tag, "height");
             pre->width_attr = svg_parse_length(w, 0.0f, dpi, &pre->width_ok);
             pre->height_attr = svg_parse_length(h, 0.0f, dpi, &pre->height_ok);
-            pre->vb_ok = svg_parse_viewbox(svg_get_attr(&tag, "viewBox"), &pre->vb_x, &pre->vb_y, &pre->vb_w, &pre->vb_h);
+            pre->vb_ok = svg_parse_viewbox(svg_get_attr(&tag, "viewBox"), &pre->vb_x, &pre->vb_y,
+                                           &pre->vb_w, &pre->vb_h);
             svg_parse_preserve_aspect_ratio(svg_get_attr(&tag, "preserveAspectRatio"),
                                             &pre->preserve_none, &pre->align_x, &pre->align_y);
         }
-        if (!tag.is_end && (strcmp(local, "lineargradient") == 0 || strcmp(local, "radialgradient") == 0)) {
+        if (!tag.is_end &&
+            (strcmp(local, "lineargradient") == 0 || strcmp(local, "radialgradient") == 0)) {
             const char *id = svg_get_attr(&tag, "id");
-            svg_paint_type type = strcmp(local, "lineargradient") == 0 ? SVG_PAINT_LINEAR_GRADIENT : SVG_PAINT_RADIAL_GRADIENT;
+            svg_paint_type type = strcmp(local, "lineargradient") == 0 ? SVG_PAINT_LINEAR_GRADIENT
+                                                                       : SVG_PAINT_RADIAL_GRADIENT;
             svg_gradient *g = svg_defs_add_gradient(defs, id, type);
             if (g) {
                 svg_parse_gradient_tag(&tag, g);
@@ -6251,7 +6399,8 @@ static int svg_parse_preamble(const unsigned char *data, size_t size, svg_preamb
             }
             continue;
         }
-        if (tag.is_end && (strcmp(local, "lineargradient") == 0 || strcmp(local, "radialgradient") == 0)) {
+        if (tag.is_end &&
+            (strcmp(local, "lineargradient") == 0 || strcmp(local, "radialgradient") == 0)) {
             current_grad = NULL;
             continue;
         }
@@ -6304,7 +6453,8 @@ static int svg_parse_preamble(const unsigned char *data, size_t size, svg_preamb
     return 1;
 }
 
-static int svg_segments_add(svg_segments *segs, float x0, float y0, float x1, float y1, int to_stroke, int to_fill) {
+static int svg_segments_add(svg_segments *segs, float x0, float y0, float x1, float y1,
+                            int to_stroke, int to_fill) {
     if (to_stroke) {
         if (segs->stroke_count >= segs->stroke_cap) {
             size_t new_cap = segs->stroke_cap ? segs->stroke_cap * 2 : 32;
@@ -6329,14 +6479,22 @@ static int svg_segments_add(svg_segments *segs, float x0, float y0, float x1, fl
         }
         segs->fill[segs->fill_count++] = (svg_segment){x0, y0, x1, y1};
     }
-    if (x0 < segs->minx) segs->minx = x0;
-    if (y0 < segs->miny) segs->miny = y0;
-    if (x0 > segs->maxx) segs->maxx = x0;
-    if (y0 > segs->maxy) segs->maxy = y0;
-    if (x1 < segs->minx) segs->minx = x1;
-    if (y1 < segs->miny) segs->miny = y1;
-    if (x1 > segs->maxx) segs->maxx = x1;
-    if (y1 > segs->maxy) segs->maxy = y1;
+    if (x0 < segs->minx)
+        segs->minx = x0;
+    if (y0 < segs->miny)
+        segs->miny = y0;
+    if (x0 > segs->maxx)
+        segs->maxx = x0;
+    if (y0 > segs->maxy)
+        segs->maxy = y0;
+    if (x1 < segs->minx)
+        segs->minx = x1;
+    if (y1 < segs->miny)
+        segs->miny = y1;
+    if (x1 > segs->maxx)
+        segs->maxx = x1;
+    if (y1 > segs->maxy)
+        segs->maxy = y1;
     return 1;
 }
 
@@ -6381,14 +6539,19 @@ static void svg_segments_add_arc(svg_segments *segs, float cx, float cy, float r
     }
 }
 
-static void svg_segments_add_rect(svg_segments *segs, float x, float y, float w, float h, float rx, float ry) {
+static void svg_segments_add_rect(svg_segments *segs, float x, float y, float w, float h, float rx,
+                                  float ry) {
     if (!segs || w <= 0.0f || h <= 0.0f) {
         return;
     }
-    if (rx < 0.0f) rx = 0.0f;
-    if (ry < 0.0f) ry = 0.0f;
-    if (rx > w * 0.5f) rx = w * 0.5f;
-    if (ry > h * 0.5f) ry = h * 0.5f;
+    if (rx < 0.0f)
+        rx = 0.0f;
+    if (ry < 0.0f)
+        ry = 0.0f;
+    if (rx > w * 0.5f)
+        rx = w * 0.5f;
+    if (ry > h * 0.5f)
+        ry = h * 0.5f;
     if (rx <= 0.0f || ry <= 0.0f) {
         svg_segments_add(segs, x, y, x + w, y, 1, 0);
         svg_segments_add(segs, x + w, y, x + w, y + h, 1, 0);
@@ -6397,8 +6560,10 @@ static void svg_segments_add_rect(svg_segments *segs, float x, float y, float w,
         return;
     }
     int steps = (int)lroundf(fmaxf(rx, ry) * 0.5f);
-    if (steps < 4) steps = 4;
-    if (steps > 24) steps = 24;
+    if (steps < 4)
+        steps = 4;
+    if (steps > 24)
+        steps = 24;
     float left = x + rx;
     float right = x + w - rx;
     float top = y + ry;
@@ -6418,8 +6583,10 @@ static void svg_segments_add_ellipse(svg_segments *segs, float cx, float cy, flo
         return;
     }
     int steps = (int)lroundf(fmaxf(rx, ry) * 0.75f);
-    if (steps < 16) steps = 16;
-    if (steps > 128) steps = 128;
+    if (steps < 16)
+        steps = 16;
+    if (steps > 128)
+        steps = 128;
     float prevx = cx + rx;
     float prevy = cy;
     for (int i = 1; i <= steps; i++) {
@@ -6433,8 +6600,8 @@ static void svg_segments_add_ellipse(svg_segments *segs, float cx, float cy, flo
 }
 
 static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, float x1, float y1,
-                                     float rx, float ry, float x_axis_rotation,
-                                     int large_arc, int sweep) {
+                                     float rx, float ry, float x_axis_rotation, int large_arc,
+                                     int sweep) {
     if (!segs) {
         return;
     }
@@ -6490,7 +6657,8 @@ static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, flo
         delta += 2.0f * (float)M_PI;
     }
     int segments = (int)ceilf(fabsf(delta) / (float)(M_PI / 8.0f));
-    if (segments < 1) segments = 1;
+    if (segments < 1)
+        segments = 1;
     float prevx = x0;
     float prevy = y0;
     for (int i = 1; i <= segments; i++) {
@@ -6505,7 +6673,8 @@ static void svg_segments_add_arc_rot(svg_segments *segs, float x0, float y0, flo
     }
 }
 
-static float svg_point_segment_distance(float px, float py, float x0, float y0, float x1, float y1) {
+static float svg_point_segment_distance(float px, float py, float x0, float y0, float x1,
+                                        float y1) {
     float dx = x1 - x0;
     float dy = y1 - y0;
     float denom = dx * dx + dy * dy;
@@ -6515,8 +6684,10 @@ static float svg_point_segment_distance(float px, float py, float x0, float y0, 
         return sqrtf(ux * ux + uy * uy);
     }
     float t = ((px - x0) * dx + (py - y0) * dy) / denom;
-    if (t < 0.0f) t = 0.0f;
-    if (t > 1.0f) t = 1.0f;
+    if (t < 0.0f)
+        t = 0.0f;
+    if (t > 1.0f)
+        t = 1.0f;
     float lx = x0 + t * dx;
     float ly = y0 + t * dy;
     float ux = px - lx;
@@ -6524,8 +6695,8 @@ static float svg_point_segment_distance(float px, float py, float x0, float y0, 
     return sqrtf(ux * ux + uy * uy);
 }
 
-static float svg_point_segment_distance_cap(float px, float py, float x0, float y0, float x1, float y1,
-                                            float half, int start_cap, int end_cap) {
+static float svg_point_segment_distance_cap(float px, float py, float x0, float y0, float x1,
+                                            float y1, float half, int start_cap, int end_cap) {
     float dx = x1 - x0;
     float dy = y1 - y0;
     float len2 = dx * dx + dy * dy;
@@ -6550,8 +6721,10 @@ static float svg_point_segment_distance_cap(float px, float py, float x0, float 
     if (end_cap == SVG_LINECAP_BUTT && t > 1.0f) {
         return 1e30f;
     }
-    if (t < min_t) t = min_t;
-    if (t > max_t) t = max_t;
+    if (t < min_t)
+        t = min_t;
+    if (t > max_t)
+        t = max_t;
     float lx = x0 + t * dx;
     float ly = y0 + t * dy;
     float ux = px - lx;
@@ -6601,7 +6774,8 @@ static int svg_point_on_segments(const svg_segments *segs, float px, float py, f
     return min_dist <= half_width;
 }
 
-static void svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start_open, uint8_t *end_open) {
+static void svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start_open,
+                                        uint8_t *end_open) {
     const float eps = 1e-3f;
     for (size_t i = 0; i < segs->stroke_count; i++) {
         int scount = 0;
@@ -6615,10 +6789,14 @@ static void svg_segments_endpoint_flags(const svg_segments *segs, uint8_t *start
             float ay = segs->stroke[j].y0;
             float bx = segs->stroke[j].x1;
             float by = segs->stroke[j].y1;
-            if (fabsf(sx - ax) <= eps && fabsf(sy - ay) <= eps) scount++;
-            else if (fabsf(sx - bx) <= eps && fabsf(sy - by) <= eps) scount++;
-            if (fabsf(ex - ax) <= eps && fabsf(ey - ay) <= eps) ecount++;
-            else if (fabsf(ex - bx) <= eps && fabsf(ey - by) <= eps) ecount++;
+            if (fabsf(sx - ax) <= eps && fabsf(sy - ay) <= eps)
+                scount++;
+            else if (fabsf(sx - bx) <= eps && fabsf(sy - by) <= eps)
+                scount++;
+            if (fabsf(ex - ax) <= eps && fabsf(ey - ay) <= eps)
+                ecount++;
+            else if (fabsf(ex - bx) <= eps && fabsf(ey - by) <= eps)
+                ecount++;
         }
         start_open[i] = (scount <= 1);
         end_open[i] = (ecount <= 1);
@@ -6634,8 +6812,8 @@ static int svg_point_in_triangle(float px, float py, const svg_join_tri *tri) {
     return !(has_neg && has_pos);
 }
 
-static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap,
-                            float ax, float ay, float bx, float by, float cx, float cy) {
+static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap, float ax, float ay, float bx,
+                            float by, float cx, float cy) {
     if (!tris || !count || !cap) {
         return 0;
     }
@@ -6649,9 +6827,12 @@ static int svg_join_tri_add(svg_join_tri **tris, int *count, int *cap,
         *cap = new_cap;
     }
     svg_join_tri *t = &(*tris)[(*count)++];
-    t->ax = ax; t->ay = ay;
-    t->bx = bx; t->by = by;
-    t->cx = cx; t->cy = cy;
+    t->ax = ax;
+    t->ay = ay;
+    t->bx = bx;
+    t->by = by;
+    t->cx = cx;
+    t->cy = cy;
     return 1;
 }
 
@@ -6709,15 +6890,19 @@ static void svg_build_join_tris(const svg_segments *segs, const svg_style *style
             }
             float d1x = endpoint == 0 ? (segs->stroke[i].x1 - jx) : (segs->stroke[i].x0 - jx);
             float d1y = endpoint == 0 ? (segs->stroke[i].y1 - jy) : (segs->stroke[i].y0 - jy);
-            float d2x = j_endpoint == 0 ? (segs->stroke[j_idx].x1 - jx) : (segs->stroke[j_idx].x0 - jx);
-            float d2y = j_endpoint == 0 ? (segs->stroke[j_idx].y1 - jy) : (segs->stroke[j_idx].y0 - jy);
+            float d2x =
+                j_endpoint == 0 ? (segs->stroke[j_idx].x1 - jx) : (segs->stroke[j_idx].x0 - jx);
+            float d2y =
+                j_endpoint == 0 ? (segs->stroke[j_idx].y1 - jy) : (segs->stroke[j_idx].y0 - jy);
             float len1 = sqrtf(d1x * d1x + d1y * d1y);
             float len2 = sqrtf(d2x * d2x + d2y * d2y);
             if (len1 <= 1e-6f || len2 <= 1e-6f) {
                 continue;
             }
-            d1x /= len1; d1y /= len1;
-            d2x /= len2; d2y /= len2;
+            d1x /= len1;
+            d1y /= len1;
+            d2x /= len2;
+            d2y /= len2;
             float cross = d1x * d2y - d1y * d2x;
             if (fabsf(cross) <= 1e-6f) {
                 continue;
@@ -6755,9 +6940,10 @@ static void svg_build_join_tris(const svg_segments *segs, const svg_style *style
     }
 }
 
-static int svg_point_on_segments_cap(const svg_segments *segs, const svg_style *style, float px, float py,
-                                     float half_width, const uint8_t *start_open, const uint8_t *end_open,
-                                     const svg_join_tri *joins, int join_count) {
+static int svg_point_on_segments_cap(const svg_segments *segs, const svg_style *style, float px,
+                                     float py, float half_width, const uint8_t *start_open,
+                                     const uint8_t *end_open, const svg_join_tri *joins,
+                                     int join_count) {
     float min_dist = 1e30f;
     for (size_t i = 0; i < segs->stroke_count; i++) {
         int join_cap = SVG_LINECAP_BUTT;
@@ -6767,8 +6953,8 @@ static int svg_point_on_segments_cap(const svg_segments *segs, const svg_style *
         int start_cap = start_open && start_open[i] ? style->stroke_linecap : join_cap;
         int end_cap = end_open && end_open[i] ? style->stroke_linecap : join_cap;
         float d = svg_point_segment_distance_cap(px, py, segs->stroke[i].x0, segs->stroke[i].y0,
-                                                 segs->stroke[i].x1, segs->stroke[i].y1,
-                                                 half_width, start_cap, end_cap);
+                                                 segs->stroke[i].x1, segs->stroke[i].y1, half_width,
+                                                 start_cap, end_cap);
         if (d < min_dist) {
             min_dist = d;
         }
@@ -6784,7 +6970,8 @@ static int svg_point_on_segments_cap(const svg_segments *segs, const svg_style *
     return 0;
 }
 
-static int svg_segments_build_dashed(const svg_segments *src, const svg_style *style, svg_segments *out) {
+static int svg_segments_build_dashed(const svg_segments *src, const svg_style *style,
+                                     svg_segments *out) {
     if (!src || !style || !out || src->stroke_count == 0 || style->stroke_dashcount == 0) {
         return 0;
     }
@@ -6888,8 +7075,9 @@ static int svg_segments_build_dashed(const svg_segments *src, const svg_style *s
     return out->stroke_count > 0;
 }
 
-static void svg_transform_bounds(const svg_matrix *m, float minx, float miny, float maxx, float maxy,
-                                 float *out_minx, float *out_miny, float *out_maxx, float *out_maxy) {
+static void svg_transform_bounds(const svg_matrix *m, float minx, float miny, float maxx,
+                                 float maxy, float *out_minx, float *out_miny, float *out_maxx,
+                                 float *out_maxy) {
     float x0 = minx, y0 = miny;
     float x1 = maxx, y1 = miny;
     float x2 = maxx, y2 = maxy;
@@ -6920,8 +7108,10 @@ static float svg_apply_spread(float t, svg_spread_method spread) {
             t = 2.0f - t;
         }
     } else {
-        if (t < 0.0f) t = 0.0f;
-        if (t > 1.0f) t = 1.0f;
+        if (t < 0.0f)
+            t = 0.0f;
+        if (t > 1.0f)
+            t = 1.0f;
     }
     return t;
 }
@@ -6962,7 +7152,8 @@ static uint32_t svg_gradient_stop_color(const svg_gradient *g, float t) {
     return g->stops[g->stop_count - 1].color;
 }
 
-static float svg_resolve_grad_coord(const svg_grad_coord *c, float base, float origin, svg_gradient_units units) {
+static float svg_resolve_grad_coord(const svg_grad_coord *c, float base, float origin,
+                                    svg_gradient_units units) {
     if (!c) {
         return origin;
     }
@@ -6979,8 +7170,8 @@ static int svg_matrix_to_string(const svg_matrix *m, char *buf, size_t cap) {
     if (!m || !buf || cap == 0) {
         return 0;
     }
-    int n = snprintf(buf, cap, "matrix(%.6g %.6g %.6g %.6g %.6g %.6g)",
-                     m->a, m->b, m->c, m->d, m->e, m->f);
+    int n = snprintf(buf, cap, "matrix(%.6g %.6g %.6g %.6g %.6g %.6g)", m->a, m->b, m->c, m->d,
+                     m->e, m->f);
     if (n < 0 || (size_t)n >= cap) {
         return 0;
     }
@@ -7001,8 +7192,7 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
         if (!needs_bbox) {
             return 1;
         }
-        if (clip->has_cached_bbox &&
-            fabsf(clip->cached_bbox_x - bbox->x) < 1e-4f &&
+        if (clip->has_cached_bbox && fabsf(clip->cached_bbox_x - bbox->x) < 1e-4f &&
             fabsf(clip->cached_bbox_y - bbox->y) < 1e-4f &&
             fabsf(clip->cached_bbox_w - bbox->w) < 1e-4f &&
             fabsf(clip->cached_bbox_h - bbox->h) < 1e-4f) {
@@ -7015,10 +7205,11 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     clip->rendering = 1;
 
     char header[256];
-    int header_len = snprintf(header, sizeof(header),
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
-                              "viewBox=\"%.6g %.6g %.6g %.6g\">",
-                              out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
+    int header_len =
+        snprintf(header, sizeof(header),
+                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
+                 "viewBox=\"%.6g %.6g %.6g %.6g\">",
+                 out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
     if (header_len < 0 || header_len >= (int)sizeof(header)) {
         clip->rendering = 0;
         return 0;
@@ -7040,8 +7231,7 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     if (needs_bbox) {
         float bw = bbox->w > 0.0f ? bbox->w : 1.0f;
         float bh = bbox->h > 0.0f ? bbox->h : 1.0f;
-        g2_len = snprintf(g2, sizeof(g2),
-                          "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
+        g2_len = snprintf(g2, sizeof(g2), "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
                           bbox->x, bbox->y, bw, bh);
         if (g2_len < 0 || g2_len >= (int)sizeof(g2)) {
             clip->rendering = 0;
@@ -7096,7 +7286,8 @@ static int svg_clip_prepare(svg_clip_path *clip, const svg_render_ctx *ctx, cons
     svg_render_ctx clip_ctx;
     memset(&clip_ctx, 0, sizeof(clip_ctx));
     char errbuf[128];
-    int ok = svg_render(&clip_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = svg_render(&clip_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf),
+                        &opts);
     free(svg);
     if (!ok) {
         clip->rendering = 0;
@@ -7133,8 +7324,7 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
         if (!needs_bbox) {
             return 1;
         }
-        if (mask->has_cached_bbox &&
-            fabsf(mask->cached_bbox_x - bbox->x) < 1e-4f &&
+        if (mask->has_cached_bbox && fabsf(mask->cached_bbox_x - bbox->x) < 1e-4f &&
             fabsf(mask->cached_bbox_y - bbox->y) < 1e-4f &&
             fabsf(mask->cached_bbox_w - bbox->w) < 1e-4f &&
             fabsf(mask->cached_bbox_h - bbox->h) < 1e-4f) {
@@ -7147,10 +7337,11 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     mask->rendering = 1;
 
     char header[256];
-    int header_len = snprintf(header, sizeof(header),
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
-                              "viewBox=\"%.6g %.6g %.6g %.6g\">",
-                              out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
+    int header_len =
+        snprintf(header, sizeof(header),
+                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%u\" height=\"%u\" "
+                 "viewBox=\"%.6g %.6g %.6g %.6g\">",
+                 out_w, out_h, ctx->vb_x, ctx->vb_y, ctx->vb_w, ctx->vb_h);
     if (header_len < 0 || header_len >= (int)sizeof(header)) {
         mask->rendering = 0;
         return 0;
@@ -7172,8 +7363,7 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     if (needs_bbox) {
         float bw = bbox->w > 0.0f ? bbox->w : 1.0f;
         float bh = bbox->h > 0.0f ? bbox->h : 1.0f;
-        g2_len = snprintf(g2, sizeof(g2),
-                          "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
+        g2_len = snprintf(g2, sizeof(g2), "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
                           bbox->x, bbox->y, bw, bh);
         if (g2_len < 0 || g2_len >= (int)sizeof(g2)) {
             mask->rendering = 0;
@@ -7228,7 +7418,8 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     svg_render_ctx mask_ctx;
     memset(&mask_ctx, 0, sizeof(mask_ctx));
     char errbuf[128];
-    int ok = svg_render(&mask_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = svg_render(&mask_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf),
+                        &opts);
     free(svg);
     if (!ok) {
         mask->rendering = 0;
@@ -7251,8 +7442,8 @@ static int svg_mask_prepare(svg_mask *mask, const svg_render_ctx *ctx, const svg
     return mask->rgba != NULL;
 }
 
-static uint8_t svg_sample_mask_alpha(svg_style *style, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                                     int sx, int sy) {
+static uint8_t svg_sample_mask_alpha(svg_style *style, const svg_render_ctx *ctx,
+                                     const svg_bbox *bbox, int sx, int sy) {
     if (!style || !ctx || !bbox) {
         return 255;
     }
@@ -7302,11 +7493,14 @@ static void svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_
     const int max_radius = 96;
     if (sigma_x >= 0.01f) {
         int radius = (int)fminf((float)max_radius, ceilf(3.0f * sigma_x));
-        if (radius < 1) radius = 1;
-        if (radius > max_radius) radius = max_radius;
+        if (radius < 1)
+            radius = 1;
+        if (radius > max_radius)
+            radius = max_radius;
         float sigma_eff = sigma_x;
         float max_sigma = (float)radius / 3.0f;
-        if (sigma_eff > max_sigma) sigma_eff = max_sigma;
+        if (sigma_eff > max_sigma)
+            sigma_eff = max_sigma;
         int klen = radius * 2 + 1;
         float *kernel = (float *)malloc((size_t)klen * sizeof(float));
         if (!kernel) {
@@ -7329,8 +7523,10 @@ static void svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_
                 float acc[4] = {0, 0, 0, 0};
                 for (int k = -radius; k <= radius; k++) {
                     int sx = (int)x + k;
-                    if (sx < 0) sx = 0;
-                    if (sx >= (int)w) sx = (int)w - 1;
+                    if (sx < 0)
+                        sx = 0;
+                    if (sx >= (int)w)
+                        sx = (int)w - 1;
                     size_t idx = ((size_t)y * w + (size_t)sx) * 4u;
                     float wgt = kernel[k + radius];
                     acc[0] += buf[idx + 0] * wgt;
@@ -7350,11 +7546,14 @@ static void svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_
     }
     if (sigma_y >= 0.01f) {
         int radius = (int)fminf((float)max_radius, ceilf(3.0f * sigma_y));
-        if (radius < 1) radius = 1;
-        if (radius > max_radius) radius = max_radius;
+        if (radius < 1)
+            radius = 1;
+        if (radius > max_radius)
+            radius = max_radius;
         float sigma_eff = sigma_y;
         float max_sigma = (float)radius / 3.0f;
-        if (sigma_eff > max_sigma) sigma_eff = max_sigma;
+        if (sigma_eff > max_sigma)
+            sigma_eff = max_sigma;
         int klen = radius * 2 + 1;
         float *kernel = (float *)malloc((size_t)klen * sizeof(float));
         if (!kernel) {
@@ -7377,8 +7576,10 @@ static void svg_gaussian_blur(uint8_t *buf, uint32_t w, uint32_t h, float sigma_
                 float acc[4] = {0, 0, 0, 0};
                 for (int k = -radius; k <= radius; k++) {
                     int sy = (int)y + k;
-                    if (sy < 0) sy = 0;
-                    if (sy >= (int)h) sy = (int)h - 1;
+                    if (sy < 0)
+                        sy = 0;
+                    if (sy >= (int)h)
+                        sy = (int)h - 1;
                     size_t idx = ((size_t)sy * w + (size_t)x) * 4u;
                     float wgt = kernel[k + radius];
                     acc[0] += buf[idx + 0] * wgt;
@@ -7560,8 +7761,8 @@ static void svg_color_matrix_luminance_to_alpha(float *m) {
     m[17] = 0.0722f;
 }
 
-static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op,
-                                     char ***names, int *name_count, int *name_cap) {
+static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op, char ***names,
+                                     int *name_count, int *name_cap) {
     if (!op) {
         return;
     }
@@ -7594,7 +7795,8 @@ static void svg_filter_assign_result(const svg_tag *tag, svg_filter_op *op,
     op->result_id = idx;
 }
 
-static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_gradient_units units) {
+static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op,
+                                    svg_gradient_units units) {
     if (!tag || !op) {
         return;
     }
@@ -7603,10 +7805,14 @@ static void svg_filter_parse_region(const svg_tag *tag, svg_filter_op *op, svg_g
     const char *y = svg_get_attr(tag, "y");
     const char *w = svg_get_attr(tag, "width");
     const char *h = svg_get_attr(tag, "height");
-    if (x && svg_parse_grad_coord(x, &op->rx, units)) has = 1;
-    if (y && svg_parse_grad_coord(y, &op->ry, units)) has = 1;
-    if (w && svg_parse_grad_coord(w, &op->rwidth, units)) has = 1;
-    if (h && svg_parse_grad_coord(h, &op->rheight, units)) has = 1;
+    if (x && svg_parse_grad_coord(x, &op->rx, units))
+        has = 1;
+    if (y && svg_parse_grad_coord(y, &op->ry, units))
+        has = 1;
+    if (w && svg_parse_grad_coord(w, &op->rwidth, units))
+        has = 1;
+    if (h && svg_parse_grad_coord(h, &op->rheight, units))
+        has = 1;
     if (has) {
         op->has_region = 1;
     }
@@ -7632,44 +7838,52 @@ static float svg_transfer_apply(const svg_transfer_func *func, float v) {
     if (!func) {
         return v;
     }
-    if (v < 0.0f) v = 0.0f;
-    if (v > 1.0f) v = 1.0f;
+    if (v < 0.0f)
+        v = 0.0f;
+    if (v > 1.0f)
+        v = 1.0f;
     float out = v;
     switch (func->type) {
-    case SVG_TRANSFER_TABLE:
-        if (func->table_count > 0) {
-            float t = v * (float)(func->table_count - 1);
-            int i0 = (int)floorf(t);
-            int i1 = i0 + 1;
-            if (i0 < 0) i0 = 0;
-            if (i1 >= func->table_count) i1 = func->table_count - 1;
-            float frac = t - (float)i0;
-            float v0 = func->table[i0];
-            float v1 = func->table[i1];
-            out = v0 + (v1 - v0) * frac;
-        }
-        break;
-    case SVG_TRANSFER_DISCRETE:
-        if (func->table_count > 0) {
-            int idx = (int)floorf(v * (float)func->table_count);
-            if (idx < 0) idx = 0;
-            if (idx >= func->table_count) idx = func->table_count - 1;
-            out = func->table[idx];
-        }
-        break;
-    case SVG_TRANSFER_LINEAR:
-        out = func->slope * v + func->intercept;
-        break;
-    case SVG_TRANSFER_GAMMA:
-        out = func->amplitude * powf(v, func->exponent) + func->offset;
-        break;
-    case SVG_TRANSFER_IDENTITY:
-    default:
-        out = v;
-        break;
+        case SVG_TRANSFER_TABLE:
+            if (func->table_count > 0) {
+                float t = v * (float)(func->table_count - 1);
+                int i0 = (int)floorf(t);
+                int i1 = i0 + 1;
+                if (i0 < 0)
+                    i0 = 0;
+                if (i1 >= func->table_count)
+                    i1 = func->table_count - 1;
+                float frac = t - (float)i0;
+                float v0 = func->table[i0];
+                float v1 = func->table[i1];
+                out = v0 + (v1 - v0) * frac;
+            }
+            break;
+        case SVG_TRANSFER_DISCRETE:
+            if (func->table_count > 0) {
+                int idx = (int)floorf(v * (float)func->table_count);
+                if (idx < 0)
+                    idx = 0;
+                if (idx >= func->table_count)
+                    idx = func->table_count - 1;
+                out = func->table[idx];
+            }
+            break;
+        case SVG_TRANSFER_LINEAR:
+            out = func->slope * v + func->intercept;
+            break;
+        case SVG_TRANSFER_GAMMA:
+            out = func->amplitude * powf(v, func->exponent) + func->offset;
+            break;
+        case SVG_TRANSFER_IDENTITY:
+        default:
+            out = v;
+            break;
     }
-    if (out < 0.0f) out = 0.0f;
-    if (out > 1.0f) out = 1.0f;
+    if (out < 0.0f)
+        out = 0.0f;
+    if (out > 1.0f)
+        out = 1.0f;
     return out;
 }
 
@@ -7693,8 +7907,10 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
                 if (!svg_parse_number(&p, &v)) {
                     break;
                 }
-                if (v < 0.0f) v = 0.0f;
-                if (v > 1.0f) v = 1.0f;
+                if (v < 0.0f)
+                    v = 0.0f;
+                if (v > 1.0f)
+                    v = 1.0f;
                 func->table[func->table_count++] = v;
             }
         }
@@ -7710,8 +7926,10 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
                 if (!svg_parse_number(&p, &v)) {
                     break;
                 }
-                if (v < 0.0f) v = 0.0f;
-                if (v > 1.0f) v = 1.0f;
+                if (v < 0.0f)
+                    v = 0.0f;
+                if (v > 1.0f)
+                    v = 1.0f;
                 func->table[func->table_count++] = v;
             }
         }
@@ -7721,8 +7939,10 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
         func->type = SVG_TRANSFER_LINEAR;
         const char *slope = svg_get_attr(tag, "slope");
         const char *intercept = svg_get_attr(tag, "intercept");
-        if (slope) func->slope = (float)strtod(slope, NULL);
-        if (intercept) func->intercept = (float)strtod(intercept, NULL);
+        if (slope)
+            func->slope = (float)strtod(slope, NULL);
+        if (intercept)
+            func->intercept = (float)strtod(intercept, NULL);
         return;
     }
     if (svg_strcasecmp(type, "gamma") == 0) {
@@ -7730,9 +7950,12 @@ static void svg_parse_transfer_func(const svg_tag *tag, svg_transfer_func *func)
         const char *amplitude = svg_get_attr(tag, "amplitude");
         const char *exponent = svg_get_attr(tag, "exponent");
         const char *offset = svg_get_attr(tag, "offset");
-        if (amplitude) func->amplitude = (float)strtod(amplitude, NULL);
-        if (exponent) func->exponent = (float)strtod(exponent, NULL);
-        if (offset) func->offset = (float)strtod(offset, NULL);
+        if (amplitude)
+            func->amplitude = (float)strtod(amplitude, NULL);
+        if (exponent)
+            func->exponent = (float)strtod(exponent, NULL);
+        if (offset)
+            func->offset = (float)strtod(offset, NULL);
         return;
     }
     func->type = SVG_TRANSFER_IDENTITY;
@@ -7771,9 +7994,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             if (transfer_index >= 0 && strcmp(local_end, "fecomponenttransfer") == 0) {
                 transfer_index = -1;
             }
-            if (lighting_index >= 0 &&
-                (strcmp(local_end, "fediffuselighting") == 0 ||
-                 strcmp(local_end, "fespecularlighting") == 0)) {
+            if (lighting_index >= 0 && (strcmp(local_end, "fediffuselighting") == 0 ||
+                                        strcmp(local_end, "fespecularlighting") == 0)) {
                 lighting_index = -1;
             }
             continue;
@@ -7782,8 +8004,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "femergenode") == 0 && merge_index >= 0) {
             svg_filter_op *op = &(*out_ops)[merge_index];
             if (op->merge_count < (int)(sizeof(op->merge_inputs) / sizeof(op->merge_inputs[0]))) {
-                op->merge_inputs[op->merge_count++] = svg_parse_filter_ref(svg_get_attr(&tag, "in"),
-                                                                          names, name_count);
+                op->merge_inputs[op->merge_count++] =
+                    svg_parse_filter_ref(svg_get_attr(&tag, "in"), names, name_count);
             }
             continue;
         }
@@ -7813,8 +8035,10 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             float el = 0.0f;
             const char *azs = svg_get_attr(&tag, "azimuth");
             const char *els = svg_get_attr(&tag, "elevation");
-            if (azs) az = (float)strtod(azs, NULL);
-            if (els) el = (float)strtod(els, NULL);
+            if (azs)
+                az = (float)strtod(azs, NULL);
+            if (els)
+                el = (float)strtod(els, NULL);
             float azr = az * (float)M_PI / 180.0f;
             float elr = el * (float)M_PI / 180.0f;
             op->light_x = cosf(elr) * cosf(azr);
@@ -7825,7 +8049,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "femerge") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -7846,7 +8071,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "fetile") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -7866,7 +8092,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "feimage") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -7925,7 +8152,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "fecomponenttransfer") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -7972,8 +8200,10 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             if (order_y) {
                 oy = (int)lroundf(strtod(order_y, NULL));
             }
-            if (ox <= 0) ox = 3;
-            if (oy <= 0) oy = 3;
+            if (ox <= 0)
+                ox = 3;
+            if (oy <= 0)
+                oy = 3;
             int kcount = ox * oy;
             const char *km = svg_get_attr(&tag, "kernelMatrix");
             if (!km) {
@@ -7999,7 +8229,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     free(kernel);
                     break;
@@ -8037,9 +8268,12 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             const char *edge = svg_get_attr(&tag, "edgeMode");
             if (edge) {
-                if (svg_strcasecmp(edge, "duplicate") == 0) op->mode = SVG_EDGE_DUPLICATE;
-                else if (svg_strcasecmp(edge, "wrap") == 0) op->mode = SVG_EDGE_WRAP;
-                else op->mode = SVG_EDGE_NONE;
+                if (svg_strcasecmp(edge, "duplicate") == 0)
+                    op->mode = SVG_EDGE_DUPLICATE;
+                else if (svg_strcasecmp(edge, "wrap") == 0)
+                    op->mode = SVG_EDGE_WRAP;
+                else
+                    op->mode = SVG_EDGE_NONE;
             } else {
                 op->mode = SVG_EDGE_NONE;
             }
@@ -8057,7 +8291,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "feturbulence") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8082,8 +8317,10 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             const char *oct = svg_get_attr(&tag, "numOctaves");
             if (oct) {
                 int v = (int)lroundf(strtod(oct, NULL));
-                if (v < 1) v = 1;
-                if (v > 8) v = 8;
+                if (v < 1)
+                    v = 1;
+                if (v > 8)
+                    v = 8;
                 op->turb_octaves = v;
             }
             const char *seed = svg_get_attr(&tag, "seed");
@@ -8103,7 +8340,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "fedisplacementmap") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8122,16 +8360,24 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             const char *xch = svg_get_attr(&tag, "xChannelSelector");
             const char *ych = svg_get_attr(&tag, "yChannelSelector");
             if (xch) {
-                if (svg_strcasecmp(xch, "g") == 0) op->displace_x_channel = SVG_DISPLACE_G;
-                else if (svg_strcasecmp(xch, "b") == 0) op->displace_x_channel = SVG_DISPLACE_B;
-                else if (svg_strcasecmp(xch, "a") == 0) op->displace_x_channel = SVG_DISPLACE_A;
-                else op->displace_x_channel = SVG_DISPLACE_R;
+                if (svg_strcasecmp(xch, "g") == 0)
+                    op->displace_x_channel = SVG_DISPLACE_G;
+                else if (svg_strcasecmp(xch, "b") == 0)
+                    op->displace_x_channel = SVG_DISPLACE_B;
+                else if (svg_strcasecmp(xch, "a") == 0)
+                    op->displace_x_channel = SVG_DISPLACE_A;
+                else
+                    op->displace_x_channel = SVG_DISPLACE_R;
             }
             if (ych) {
-                if (svg_strcasecmp(ych, "g") == 0) op->displace_y_channel = SVG_DISPLACE_G;
-                else if (svg_strcasecmp(ych, "b") == 0) op->displace_y_channel = SVG_DISPLACE_B;
-                else if (svg_strcasecmp(ych, "a") == 0) op->displace_y_channel = SVG_DISPLACE_A;
-                else op->displace_y_channel = SVG_DISPLACE_R;
+                if (svg_strcasecmp(ych, "g") == 0)
+                    op->displace_y_channel = SVG_DISPLACE_G;
+                else if (svg_strcasecmp(ych, "b") == 0)
+                    op->displace_y_channel = SVG_DISPLACE_B;
+                else if (svg_strcasecmp(ych, "a") == 0)
+                    op->displace_y_channel = SVG_DISPLACE_A;
+                else
+                    op->displace_y_channel = SVG_DISPLACE_R;
             }
             op->in1 = svg_parse_filter_ref(svg_get_attr(&tag, "in"), names, name_count);
             op->in2 = svg_parse_filter_ref(svg_get_attr(&tag, "in2"), names, name_count);
@@ -8144,7 +8390,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
         if (strcmp(local, "fediffuselighting") == 0 || strcmp(local, "fespecularlighting") == 0) {
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8160,13 +8407,17 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             op->in1 = svg_parse_filter_ref(svg_get_attr(&tag, "in"), names, name_count);
             const char *surface = svg_get_attr(&tag, "surfaceScale");
-            if (surface) op->surface_scale = (float)strtod(surface, NULL);
+            if (surface)
+                op->surface_scale = (float)strtod(surface, NULL);
             const char *diff = svg_get_attr(&tag, "diffuseConstant");
-            if (diff) op->diffuse_constant = (float)strtod(diff, NULL);
+            if (diff)
+                op->diffuse_constant = (float)strtod(diff, NULL);
             const char *spec = svg_get_attr(&tag, "specularConstant");
-            if (spec) op->specular_constant = (float)strtod(spec, NULL);
+            if (spec)
+                op->specular_constant = (float)strtod(spec, NULL);
             const char *exp = svg_get_attr(&tag, "specularExponent");
-            if (exp) op->specular_exponent = (float)strtod(exp, NULL);
+            if (exp)
+                op->specular_exponent = (float)strtod(exp, NULL);
             uint32_t color = 0xFFFFFFFFu;
             int is_none = 0;
             const char *lc = svg_get_attr(&tag, "lighting-color");
@@ -8200,7 +8451,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8223,11 +8475,14 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             int okx = 0, oky = 0;
             float dx = svg_parse_length(dxs, base_len, dpi, &okx);
             float dy = svg_parse_length(dys, base_len, dpi, &oky);
-            if (!okx) dx = 0.0f;
-            if (!oky) dy = 0.0f;
+            if (!okx)
+                dx = 0.0f;
+            if (!oky)
+                dy = 0.0f;
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8290,7 +8545,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8323,13 +8579,16 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             uint8_t a = (uint8_t)(color & 0xFFu);
             float alpha = (a / 255.0f) * opacity;
-            if (alpha < 0.0f) alpha = 0.0f;
-            if (alpha > 1.0f) alpha = 1.0f;
+            if (alpha < 0.0f)
+                alpha = 0.0f;
+            if (alpha > 1.0f)
+                alpha = 1.0f;
             a = (uint8_t)lroundf(alpha * 255.0f);
             color = (color & 0xFFFFFF00u) | a;
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8348,17 +8607,25 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             const char *mode = svg_get_attr(&tag, "mode");
             int blend_mode = SVG_BLEND_NORMAL;
             if (mode) {
-                if (svg_strcasecmp(mode, "multiply") == 0) blend_mode = SVG_BLEND_MULTIPLY;
-                else if (svg_strcasecmp(mode, "screen") == 0) blend_mode = SVG_BLEND_SCREEN;
-                else if (svg_strcasecmp(mode, "darken") == 0) blend_mode = SVG_BLEND_DARKEN;
-                else if (svg_strcasecmp(mode, "lighten") == 0) blend_mode = SVG_BLEND_LIGHTEN;
-                else if (svg_strcasecmp(mode, "overlay") == 0) blend_mode = SVG_BLEND_OVERLAY;
-                else if (svg_strcasecmp(mode, "hard-light") == 0) blend_mode = SVG_BLEND_HARDLIGHT;
-                else if (svg_strcasecmp(mode, "soft-light") == 0) blend_mode = SVG_BLEND_SOFTLIGHT;
+                if (svg_strcasecmp(mode, "multiply") == 0)
+                    blend_mode = SVG_BLEND_MULTIPLY;
+                else if (svg_strcasecmp(mode, "screen") == 0)
+                    blend_mode = SVG_BLEND_SCREEN;
+                else if (svg_strcasecmp(mode, "darken") == 0)
+                    blend_mode = SVG_BLEND_DARKEN;
+                else if (svg_strcasecmp(mode, "lighten") == 0)
+                    blend_mode = SVG_BLEND_LIGHTEN;
+                else if (svg_strcasecmp(mode, "overlay") == 0)
+                    blend_mode = SVG_BLEND_OVERLAY;
+                else if (svg_strcasecmp(mode, "hard-light") == 0)
+                    blend_mode = SVG_BLEND_HARDLIGHT;
+                else if (svg_strcasecmp(mode, "soft-light") == 0)
+                    blend_mode = SVG_BLEND_SOFTLIGHT;
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8379,24 +8646,34 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             const char *opname = svg_get_attr(&tag, "operator");
             int comp = SVG_COMPOSITE_OVER;
             if (opname) {
-                if (svg_strcasecmp(opname, "in") == 0) comp = SVG_COMPOSITE_IN;
-                else if (svg_strcasecmp(opname, "out") == 0) comp = SVG_COMPOSITE_OUT;
-                else if (svg_strcasecmp(opname, "atop") == 0) comp = SVG_COMPOSITE_ATOP;
-                else if (svg_strcasecmp(opname, "xor") == 0) comp = SVG_COMPOSITE_XOR;
-                else if (svg_strcasecmp(opname, "arithmetic") == 0) comp = SVG_COMPOSITE_ARITHMETIC;
+                if (svg_strcasecmp(opname, "in") == 0)
+                    comp = SVG_COMPOSITE_IN;
+                else if (svg_strcasecmp(opname, "out") == 0)
+                    comp = SVG_COMPOSITE_OUT;
+                else if (svg_strcasecmp(opname, "atop") == 0)
+                    comp = SVG_COMPOSITE_ATOP;
+                else if (svg_strcasecmp(opname, "xor") == 0)
+                    comp = SVG_COMPOSITE_XOR;
+                else if (svg_strcasecmp(opname, "arithmetic") == 0)
+                    comp = SVG_COMPOSITE_ARITHMETIC;
             }
             float k1 = 0.0f, k2 = 0.0f, k3 = 0.0f, k4 = 0.0f;
             const char *k1s = svg_get_attr(&tag, "k1");
             const char *k2s = svg_get_attr(&tag, "k2");
             const char *k3s = svg_get_attr(&tag, "k3");
             const char *k4s = svg_get_attr(&tag, "k4");
-            if (k1s) k1 = (float)strtod(k1s, NULL);
-            if (k2s) k2 = (float)strtod(k2s, NULL);
-            if (k3s) k3 = (float)strtod(k3s, NULL);
-            if (k4s) k4 = (float)strtod(k4s, NULL);
+            if (k1s)
+                k1 = (float)strtod(k1s, NULL);
+            if (k2s)
+                k2 = (float)strtod(k2s, NULL);
+            if (k3s)
+                k3 = (float)strtod(k3s, NULL);
+            if (k4s)
+                k4 = (float)strtod(k4s, NULL);
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8435,7 +8712,8 @@ static int svg_parse_filter_ops(const char *content, svg_filter_op **out_ops, in
             }
             if (*out_count >= cap) {
                 int new_cap = cap ? cap * 2 : 8;
-                svg_filter_op *n = (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
+                svg_filter_op *n =
+                    (svg_filter_op *)realloc(*out_ops, (size_t)new_cap * sizeof(svg_filter_op));
                 if (!n) {
                     break;
                 }
@@ -8501,7 +8779,8 @@ static uint8_t *svg_filter_resolve_input(const svg_filter_ref *ref, uint8_t *cur
     return current;
 }
 
-static void svg_filter_clip_region(uint8_t *buf, uint32_t w, uint32_t h, const svg_filter_region *region) {
+static void svg_filter_clip_region(uint8_t *buf, uint32_t w, uint32_t h,
+                                   const svg_filter_region *region) {
     if (!buf || !region || !region->valid) {
         return;
     }
@@ -8509,10 +8788,14 @@ static void svg_filter_clip_region(uint8_t *buf, uint32_t w, uint32_t h, const s
     int y0 = region->y0;
     int x1 = region->x1;
     int y1 = region->y1;
-    if (x0 < 0) x0 = 0;
-    if (y0 < 0) y0 = 0;
-    if (x1 >= (int)w) x1 = (int)w - 1;
-    if (y1 >= (int)h) y1 = (int)h - 1;
+    if (x0 < 0)
+        x0 = 0;
+    if (y0 < 0)
+        y0 = 0;
+    if (x1 >= (int)w)
+        x1 = (int)w - 1;
+    if (y1 >= (int)h)
+        y1 = (int)h - 1;
     for (uint32_t y = 0; y < h; y++) {
         if ((int)y < y0 || (int)y > y1) {
             memset(buf + (size_t)y * w * 4u, 0, (size_t)w * 4u);
@@ -8529,8 +8812,10 @@ static void svg_filter_clip_region(uint8_t *buf, uint32_t w, uint32_t h, const s
 }
 
 static uint8_t svg_clamp_u8(float v) {
-    if (v < 0.0f) return 0;
-    if (v > 255.0f) return 255;
+    if (v < 0.0f)
+        return 0;
+    if (v > 255.0f)
+        return 255;
     return (uint8_t)lroundf(v);
 }
 
@@ -8555,10 +8840,14 @@ static float svg_alpha_sample_clamped(const uint8_t *buf, uint32_t w, uint32_t h
     if (!buf || w == 0 || h == 0) {
         return 0.0f;
     }
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-    if (x >= (int)w) x = (int)w - 1;
-    if (y >= (int)h) y = (int)h - 1;
+    if (x < 0)
+        x = 0;
+    if (y < 0)
+        y = 0;
+    if (x >= (int)w)
+        x = (int)w - 1;
+    if (y >= (int)h)
+        y = (int)h - 1;
     size_t idx = ((size_t)y * w + (size_t)x) * 4u;
     return buf[idx + 3] / 255.0f;
 }
@@ -8570,11 +8859,14 @@ static uint32_t svg_noise_hash(uint32_t x, uint32_t y, uint32_t seed) {
 }
 
 static float svg_noise2(float x, float y, uint32_t seed) {
-    if (!isfinite(x) || !isfinite(y)) return 0.0f;
+    if (!isfinite(x) || !isfinite(y))
+        return 0.0f;
     double ix = floor((double)x), iy = floor((double)y);
     double wx = fmod(ix, 4294967296.0), wy = fmod(iy, 4294967296.0);
-    if (wx < 0) wx += 4294967296.0;
-    if (wy < 0) wy += 4294967296.0;
+    if (wx < 0)
+        wx += 4294967296.0;
+    if (wy < 0)
+        wy += 4294967296.0;
     uint32_t x0 = (uint32_t)wx, y0 = (uint32_t)wy;
     uint32_t x1 = x0 + 1u, y1 = y0 + 1u;
     float fx = (float)((double)x - ix);
@@ -8630,10 +8922,14 @@ static void svg_compute_filter_region(const svg_filter *filter, const svg_render
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
     if (sx0 > sx1 || sy0 > sy1) {
         return;
     }
@@ -8684,10 +8980,14 @@ static void svg_compute_filter_op_region(const svg_filter_op *op, const svg_filt
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
     if (sx0 > sx1 || sy0 > sy1) {
         return;
     }
@@ -8699,26 +8999,30 @@ static void svg_compute_filter_op_region(const svg_filter_op *op, const svg_filt
         out->valid = 1;
         return;
     }
-    if (sx0 > parent->x0) out->x0 = sx0;
-    if (sy0 > parent->y0) out->y0 = sy0;
-    if (sx1 < parent->x1) out->x1 = sx1;
-    if (sy1 < parent->y1) out->y1 = sy1;
+    if (sx0 > parent->x0)
+        out->x0 = sx0;
+    if (sy0 > parent->y0)
+        out->y0 = sy0;
+    if (sx1 < parent->x1)
+        out->x1 = sx1;
+    if (sy1 < parent->y1)
+        out->y1 = sy1;
     out->valid = (out->x0 <= out->x1 && out->y0 <= out->y1);
 }
 
-static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, uint8_t *buf, float base_len,
-                                 const svg_filter_region *region,
-                                 const svg_bbox *bbox, const svg_matrix *m,
-                                 uint8_t *background, uint8_t *background_alpha,
-                                 uint8_t *fill_paint, uint8_t *stroke_paint) {
+static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, uint8_t *buf,
+                                 float base_len, const svg_filter_region *region,
+                                 const svg_bbox *bbox, const svg_matrix *m, uint8_t *background,
+                                 uint8_t *background_alpha, uint8_t *fill_paint,
+                                 uint8_t *stroke_paint) {
     if (!filter || !ctx || !buf || !filter->content || !*filter->content) {
         return;
     }
     svg_filter_op *ops = NULL;
     int count = 0;
     int result_count = 0;
-    if (!svg_parse_filter_ops(filter->content, &ops, &count, &result_count,
-                              base_len, ctx->dpi, filter->units)) {
+    if (!svg_parse_filter_ops(filter->content, &ops, &count, &result_count, base_len, ctx->dpi,
+                              filter->units)) {
         svg_filter_ops_cleanup(ops, count);
         free(ops);
         return;
@@ -8777,9 +9081,9 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                 }
             }
         }
-        uint8_t *in1 = svg_filter_resolve_input(&op->in1, buf, source, source_alpha,
-                                                background, background_alpha,
-                                                fill_paint, stroke_paint, results, result_count);
+        uint8_t *in1 = svg_filter_resolve_input(&op->in1, buf, source, source_alpha, background,
+                                                background_alpha, fill_paint, stroke_paint, results,
+                                                result_count);
         if (op->type == SVG_FILTER_OP_BLUR) {
             if (in1 != buf) {
                 memcpy(buf, in1, size);
@@ -8832,18 +9136,30 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     g = buf[idx + 1] / 255.0f / a;
                     b = buf[idx + 2] / 255.0f / a;
                 }
-                float nr = op->matrix[0] * r + op->matrix[1] * g + op->matrix[2] * b + op->matrix[3] * a + op->matrix[4];
-                float ng = op->matrix[5] * r + op->matrix[6] * g + op->matrix[7] * b + op->matrix[8] * a + op->matrix[9];
-                float nb = op->matrix[10] * r + op->matrix[11] * g + op->matrix[12] * b + op->matrix[13] * a + op->matrix[14];
-                float na = op->matrix[15] * r + op->matrix[16] * g + op->matrix[17] * b + op->matrix[18] * a + op->matrix[19];
-                if (nr < 0.0f) nr = 0.0f;
-                if (ng < 0.0f) ng = 0.0f;
-                if (nb < 0.0f) nb = 0.0f;
-                if (na < 0.0f) na = 0.0f;
-                if (nr > 1.0f) nr = 1.0f;
-                if (ng > 1.0f) ng = 1.0f;
-                if (nb > 1.0f) nb = 1.0f;
-                if (na > 1.0f) na = 1.0f;
+                float nr = op->matrix[0] * r + op->matrix[1] * g + op->matrix[2] * b +
+                           op->matrix[3] * a + op->matrix[4];
+                float ng = op->matrix[5] * r + op->matrix[6] * g + op->matrix[7] * b +
+                           op->matrix[8] * a + op->matrix[9];
+                float nb = op->matrix[10] * r + op->matrix[11] * g + op->matrix[12] * b +
+                           op->matrix[13] * a + op->matrix[14];
+                float na = op->matrix[15] * r + op->matrix[16] * g + op->matrix[17] * b +
+                           op->matrix[18] * a + op->matrix[19];
+                if (nr < 0.0f)
+                    nr = 0.0f;
+                if (ng < 0.0f)
+                    ng = 0.0f;
+                if (nb < 0.0f)
+                    nb = 0.0f;
+                if (na < 0.0f)
+                    na = 0.0f;
+                if (nr > 1.0f)
+                    nr = 1.0f;
+                if (ng > 1.0f)
+                    ng = 1.0f;
+                if (nb > 1.0f)
+                    nb = 1.0f;
+                if (na > 1.0f)
+                    na = 1.0f;
                 buf[idx + 3] = (uint8_t)lroundf(na * 255.0f);
                 buf[idx + 0] = (uint8_t)lroundf(nr * na * 255.0f);
                 buf[idx + 1] = (uint8_t)lroundf(ng * na * 255.0f);
@@ -8867,14 +9183,22 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                 float ng = svg_transfer_apply(&op->tg, g);
                 float nb = svg_transfer_apply(&op->tb, b);
                 float na = svg_transfer_apply(&op->ta, a);
-                if (nr < 0.0f) nr = 0.0f;
-                if (ng < 0.0f) ng = 0.0f;
-                if (nb < 0.0f) nb = 0.0f;
-                if (na < 0.0f) na = 0.0f;
-                if (nr > 1.0f) nr = 1.0f;
-                if (ng > 1.0f) ng = 1.0f;
-                if (nb > 1.0f) nb = 1.0f;
-                if (na > 1.0f) na = 1.0f;
+                if (nr < 0.0f)
+                    nr = 0.0f;
+                if (ng < 0.0f)
+                    ng = 0.0f;
+                if (nb < 0.0f)
+                    nb = 0.0f;
+                if (na < 0.0f)
+                    na = 0.0f;
+                if (nr > 1.0f)
+                    nr = 1.0f;
+                if (ng > 1.0f)
+                    ng = 1.0f;
+                if (nb > 1.0f)
+                    nb = 1.0f;
+                if (na > 1.0f)
+                    na = 1.0f;
                 buf[idx + 3] = (uint8_t)lroundf(na * 255.0f);
                 buf[idx + 0] = (uint8_t)lroundf(nr * na * 255.0f);
                 buf[idx + 1] = (uint8_t)lroundf(ng * na * 255.0f);
@@ -8893,10 +9217,14 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
             int oy = op->order_y > 0 ? op->order_y : 3;
             int tx = op->target_x;
             int ty = op->target_y;
-            if (tx < 0) tx = 0;
-            if (ty < 0) ty = 0;
-            if (tx >= ox) tx = ox - 1;
-            if (ty >= oy) ty = oy - 1;
+            if (tx < 0)
+                tx = 0;
+            if (ty < 0)
+                ty = 0;
+            if (tx >= ox)
+                tx = ox - 1;
+            if (ty >= oy)
+                ty = oy - 1;
             float divisor = (fabsf(op->divisor) < 1e-6f) ? 1.0f : op->divisor;
             for (uint32_t y = 0; y < h; y++) {
                 for (uint32_t x = 0; x < w; x++) {
@@ -8907,11 +9235,15 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     for (int ky = 0; ky < oy; ky++) {
                         int sy = (int)y + (ky - ty);
                         if (op->mode == SVG_EDGE_DUPLICATE) {
-                            if (sy < 0) sy = 0;
-                            if (sy >= (int)h) sy = (int)h - 1;
+                            if (sy < 0)
+                                sy = 0;
+                            if (sy >= (int)h)
+                                sy = (int)h - 1;
                         } else if (op->mode == SVG_EDGE_WRAP) {
-                            if (sy < 0) sy = (sy % (int)h + (int)h) % (int)h;
-                            if (sy >= (int)h) sy %= (int)h;
+                            if (sy < 0)
+                                sy = (sy % (int)h + (int)h) % (int)h;
+                            if (sy >= (int)h)
+                                sy %= (int)h;
                         } else {
                             if (sy < 0 || sy >= (int)h) {
                                 continue;
@@ -8920,11 +9252,15 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                         for (int kx = 0; kx < ox; kx++) {
                             int sx = (int)x + (kx - tx);
                             if (op->mode == SVG_EDGE_DUPLICATE) {
-                                if (sx < 0) sx = 0;
-                                if (sx >= (int)w) sx = (int)w - 1;
+                                if (sx < 0)
+                                    sx = 0;
+                                if (sx >= (int)w)
+                                    sx = (int)w - 1;
                             } else if (op->mode == SVG_EDGE_WRAP) {
-                                if (sx < 0) sx = (sx % (int)w + (int)w) % (int)w;
-                                if (sx >= (int)w) sx %= (int)w;
+                                if (sx < 0)
+                                    sx = (sx % (int)w + (int)w) % (int)w;
+                                if (sx >= (int)w)
+                                    sx %= (int)w;
                             } else {
                                 if (sx < 0 || sx >= (int)w) {
                                     continue;
@@ -8964,10 +9300,13 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
         } else if (op->type == SVG_FILTER_OP_TURBULENCE) {
             float fx = op->turb_freq_x;
             float fy = op->turb_freq_y;
-            if (fx <= 0.0f) fx = 0.01f;
-            if (fy <= 0.0f) fy = 0.01f;
+            if (fx <= 0.0f)
+                fx = 0.01f;
+            if (fy <= 0.0f)
+                fy = 0.01f;
             int octaves = op->turb_octaves;
-            if (octaves < 1) octaves = 1;
+            if (octaves < 1)
+                octaves = 1;
             float max_amp = 0.0f;
             float amp = 1.0f;
             for (int o = 0; o < octaves; o++) {
@@ -8985,7 +9324,8 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     float freqy = fy;
                     float a = 1.0f;
                     for (int o = 0; o < octaves; o++) {
-                        float n = svg_noise2(ux * freqx, uy * freqy, (uint32_t)op->turb_seed + (uint32_t)o * 17u);
+                        float n = svg_noise2(ux * freqx, uy * freqy,
+                                             (uint32_t)op->turb_seed + (uint32_t)o * 17u);
                         if (op->turb_fractal) {
                             sum += n * a;
                         } else {
@@ -8996,8 +9336,10 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                         freqy *= 2.0f;
                     }
                     float val = op->turb_fractal ? (sum / max_amp * 0.5f + 0.5f) : (sum / max_amp);
-                    if (val < 0.0f) val = 0.0f;
-                    if (val > 1.0f) val = 1.0f;
+                    if (val < 0.0f)
+                        val = 0.0f;
+                    if (val > 1.0f)
+                        val = 1.0f;
                     uint8_t c = (uint8_t)lroundf(val * 255.0f);
                     size_t idx = ((size_t)y * w + (size_t)x) * 4u;
                     buf[idx + 0] = c;
@@ -9008,9 +9350,9 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
             }
             svg_filter_clip_region(buf, w, h, &clip_region);
         } else if (op->type == SVG_FILTER_OP_DISPLACEMENT) {
-            uint8_t *in2 = svg_filter_resolve_input(&op->in2, buf, source, source_alpha,
-                                                    background, background_alpha,
-                                                    fill_paint, stroke_paint, results, result_count);
+            uint8_t *in2 = svg_filter_resolve_input(&op->in2, buf, source, source_alpha, background,
+                                                    background_alpha, fill_paint, stroke_paint,
+                                                    results, result_count);
             uint8_t *tmp = (uint8_t *)malloc(size);
             if (!tmp) {
                 continue;
@@ -9026,10 +9368,14 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     float dy = (cy - 0.5f) * scale_dy;
                     int sx = (int)lroundf((float)x + dx);
                     int sy = (int)lroundf((float)y + dy);
-                    if (sx < 0) sx = 0;
-                    if (sy < 0) sy = 0;
-                    if (sx >= (int)w) sx = (int)w - 1;
-                    if (sy >= (int)h) sy = (int)h - 1;
+                    if (sx < 0)
+                        sx = 0;
+                    if (sy < 0)
+                        sy = 0;
+                    if (sx >= (int)w)
+                        sx = (int)w - 1;
+                    if (sy >= (int)h)
+                        sy = (int)h - 1;
                     size_t sidx = ((size_t)sy * w + (size_t)sx) * 4u;
                     tmp[idx + 0] = in1[sidx + 0];
                     tmp[idx + 1] = in1[sidx + 1];
@@ -9050,10 +9396,14 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
             float lz = op->light_z;
             float llen = sqrtf(lx * lx + ly * ly + lz * lz);
             if (llen <= 1e-6f) {
-                lx = 0.0f; ly = 0.0f; lz = 1.0f;
+                lx = 0.0f;
+                ly = 0.0f;
+                lz = 1.0f;
                 llen = 1.0f;
             }
-            lx /= llen; ly /= llen; lz /= llen;
+            lx /= llen;
+            ly /= llen;
+            lz /= llen;
             uint8_t lr = (uint8_t)(op->color >> 24);
             uint8_t lg = (uint8_t)(op->color >> 16);
             uint8_t lb = (uint8_t)(op->color >> 8);
@@ -9082,7 +9432,9 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     float nz = 1.0f;
                     float nlen = sqrtf(nx * nx + ny * ny + nz * nz);
                     if (nlen > 1e-6f) {
-                        nx /= nlen; ny /= nlen; nz /= nlen;
+                        nx /= nlen;
+                        ny /= nlen;
+                        nz /= nlen;
                     }
                     float intensity = 0.0f;
                     if (op->type == SVG_FILTER_OP_DIFFUSE_LIGHTING) {
@@ -9096,7 +9448,8 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                             float rz = 2.0f * dotnl * nz - lz;
                             float dotrv = rz;
                             if (dotrv > 0.0f) {
-                                intensity = powf(dotrv, op->specular_exponent) * op->specular_constant;
+                                intensity =
+                                    powf(dotrv, op->specular_exponent) * op->specular_constant;
                             }
                         }
                     }
@@ -9106,15 +9459,19 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     float out_g = 0.0f;
                     float out_b = 0.0f;
                     if (op->type == SVG_FILTER_OP_DIFFUSE_LIGHTING) {
-                        if (intensity < 0.0f) intensity = 0.0f;
-                        if (intensity > 1.0f) intensity = 1.0f;
+                        if (intensity < 0.0f)
+                            intensity = 0.0f;
+                        if (intensity > 1.0f)
+                            intensity = 1.0f;
                         out_a = base_a;
                         out_r = lrf * intensity;
                         out_g = lgf * intensity;
                         out_b = lbf * intensity;
                     } else {
-                        if (intensity < 0.0f) intensity = 0.0f;
-                        if (intensity > 1.0f) intensity = 1.0f;
+                        if (intensity < 0.0f)
+                            intensity = 0.0f;
+                        if (intensity > 1.0f)
+                            intensity = 1.0f;
                         out_a = base_a * intensity;
                         out_r = lrf;
                         out_g = lgf;
@@ -9144,9 +9501,9 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
             }
             svg_filter_clip_region(buf, w, h, &clip_region);
         } else if (op->type == SVG_FILTER_OP_BLEND || op->type == SVG_FILTER_OP_COMPOSITE) {
-            uint8_t *in2 = svg_filter_resolve_input(&op->in2, buf, source, source_alpha,
-                                                    background, background_alpha,
-                                                    fill_paint, stroke_paint, results, result_count);
+            uint8_t *in2 = svg_filter_resolve_input(&op->in2, buf, source, source_alpha, background,
+                                                    background_alpha, fill_paint, stroke_paint,
+                                                    results, result_count);
             uint8_t *tmp = (uint8_t *)malloc(size);
             if (!tmp) {
                 continue;
@@ -9192,17 +9549,26 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                         bg = fmaxf(g1, g2);
                         bb = fmaxf(b1, b2);
                     } else if (op->mode == SVG_BLEND_OVERLAY) {
-                        br = (r1 <= 0.5f) ? (2.0f * r1 * r2) : (1.0f - 2.0f * (1.0f - r1) * (1.0f - r2));
-                        bg = (g1 <= 0.5f) ? (2.0f * g1 * g2) : (1.0f - 2.0f * (1.0f - g1) * (1.0f - g2));
-                        bb = (b1 <= 0.5f) ? (2.0f * b1 * b2) : (1.0f - 2.0f * (1.0f - b1) * (1.0f - b2));
+                        br = (r1 <= 0.5f) ? (2.0f * r1 * r2)
+                                          : (1.0f - 2.0f * (1.0f - r1) * (1.0f - r2));
+                        bg = (g1 <= 0.5f) ? (2.0f * g1 * g2)
+                                          : (1.0f - 2.0f * (1.0f - g1) * (1.0f - g2));
+                        bb = (b1 <= 0.5f) ? (2.0f * b1 * b2)
+                                          : (1.0f - 2.0f * (1.0f - b1) * (1.0f - b2));
                     } else if (op->mode == SVG_BLEND_HARDLIGHT) {
-                        br = (r2 <= 0.5f) ? (2.0f * r1 * r2) : (1.0f - 2.0f * (1.0f - r1) * (1.0f - r2));
-                        bg = (g2 <= 0.5f) ? (2.0f * g1 * g2) : (1.0f - 2.0f * (1.0f - g1) * (1.0f - g2));
-                        bb = (b2 <= 0.5f) ? (2.0f * b1 * b2) : (1.0f - 2.0f * (1.0f - b1) * (1.0f - b2));
+                        br = (r2 <= 0.5f) ? (2.0f * r1 * r2)
+                                          : (1.0f - 2.0f * (1.0f - r1) * (1.0f - r2));
+                        bg = (g2 <= 0.5f) ? (2.0f * g1 * g2)
+                                          : (1.0f - 2.0f * (1.0f - g1) * (1.0f - g2));
+                        bb = (b2 <= 0.5f) ? (2.0f * b1 * b2)
+                                          : (1.0f - 2.0f * (1.0f - b1) * (1.0f - b2));
                     } else if (op->mode == SVG_BLEND_SOFTLIGHT) {
-                        float gr = (r1 <= 0.25f) ? (((16.0f * r1 - 12.0f) * r1 + 4.0f) * r1) : sqrtf(fmaxf(r1, 0.0f));
-                        float gg = (g1 <= 0.25f) ? (((16.0f * g1 - 12.0f) * g1 + 4.0f) * g1) : sqrtf(fmaxf(g1, 0.0f));
-                        float gb = (b1 <= 0.25f) ? (((16.0f * b1 - 12.0f) * b1 + 4.0f) * b1) : sqrtf(fmaxf(b1, 0.0f));
+                        float gr = (r1 <= 0.25f) ? (((16.0f * r1 - 12.0f) * r1 + 4.0f) * r1)
+                                                 : sqrtf(fmaxf(r1, 0.0f));
+                        float gg = (g1 <= 0.25f) ? (((16.0f * g1 - 12.0f) * g1 + 4.0f) * g1)
+                                                 : sqrtf(fmaxf(g1, 0.0f));
+                        float gb = (b1 <= 0.25f) ? (((16.0f * b1 - 12.0f) * b1 + 4.0f) * b1)
+                                                 : sqrtf(fmaxf(b1, 0.0f));
                         br = (r2 <= 0.5f) ? (r1 - (1.0f - 2.0f * r2) * r1 * (1.0f - r1))
                                           : (r1 + (2.0f * r2 - 1.0f) * (gr - r1));
                         bg = (g2 <= 0.5f) ? (g1 - (1.0f - 2.0f * g2) * g1 * (1.0f - g1))
@@ -9268,28 +9634,44 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                         out_pb = op->a * ab * bb + op->b * ab + op->c * bb + op->d;
                         out_pa = op->a * a1 * a2 + op->b * a1 + op->c * a2 + op->d;
                     }
-                    if (out_pr < 0.0f) out_pr = 0.0f;
-                    if (out_pg < 0.0f) out_pg = 0.0f;
-                    if (out_pb < 0.0f) out_pb = 0.0f;
-                    if (out_pa < 0.0f) out_pa = 0.0f;
-                    if (out_pr > 1.0f) out_pr = 1.0f;
-                    if (out_pg > 1.0f) out_pg = 1.0f;
-                    if (out_pb > 1.0f) out_pb = 1.0f;
-                    if (out_pa > 1.0f) out_pa = 1.0f;
+                    if (out_pr < 0.0f)
+                        out_pr = 0.0f;
+                    if (out_pg < 0.0f)
+                        out_pg = 0.0f;
+                    if (out_pb < 0.0f)
+                        out_pb = 0.0f;
+                    if (out_pa < 0.0f)
+                        out_pa = 0.0f;
+                    if (out_pr > 1.0f)
+                        out_pr = 1.0f;
+                    if (out_pg > 1.0f)
+                        out_pg = 1.0f;
+                    if (out_pb > 1.0f)
+                        out_pb = 1.0f;
+                    if (out_pa > 1.0f)
+                        out_pa = 1.0f;
                     tmp[idx + 0] = (uint8_t)lroundf(out_pr * 255.0f);
                     tmp[idx + 1] = (uint8_t)lroundf(out_pg * 255.0f);
                     tmp[idx + 2] = (uint8_t)lroundf(out_pb * 255.0f);
                     tmp[idx + 3] = (uint8_t)lroundf(out_pa * 255.0f);
                     continue;
                 }
-                if (out_a < 0.0f) out_a = 0.0f;
-                if (out_a > 1.0f) out_a = 1.0f;
-                if (out_r < 0.0f) out_r = 0.0f;
-                if (out_g < 0.0f) out_g = 0.0f;
-                if (out_b < 0.0f) out_b = 0.0f;
-                if (out_r > 1.0f) out_r = 1.0f;
-                if (out_g > 1.0f) out_g = 1.0f;
-                if (out_b > 1.0f) out_b = 1.0f;
+                if (out_a < 0.0f)
+                    out_a = 0.0f;
+                if (out_a > 1.0f)
+                    out_a = 1.0f;
+                if (out_r < 0.0f)
+                    out_r = 0.0f;
+                if (out_g < 0.0f)
+                    out_g = 0.0f;
+                if (out_b < 0.0f)
+                    out_b = 0.0f;
+                if (out_r > 1.0f)
+                    out_r = 1.0f;
+                if (out_g > 1.0f)
+                    out_g = 1.0f;
+                if (out_b > 1.0f)
+                    out_b = 1.0f;
                 tmp[idx + 3] = (uint8_t)lroundf(out_a * 255.0f);
                 tmp[idx + 0] = (uint8_t)lroundf(out_r * out_a * 255.0f);
                 tmp[idx + 1] = (uint8_t)lroundf(out_g * out_a * 255.0f);
@@ -9344,20 +9726,28 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                     int py = (int)lroundf(draw_y * scale_y);
                     int pw = (int)lroundf(draw_w * scale_x);
                     int ph = (int)lroundf(draw_h * scale_y);
-                    if (pw < 1) pw = 1;
-                    if (ph < 1) ph = 1;
+                    if (pw < 1)
+                        pw = 1;
+                    if (ph < 1)
+                        ph = 1;
                     for (int y = 0; y < ph; y++) {
                         int dy = py + y;
-                        if (dy < 0 || dy >= (int)h) continue;
+                        if (dy < 0 || dy >= (int)h)
+                            continue;
                         int sy = (int)((float)y / (float)ph * (float)img.height);
-                        if (sy < 0) sy = 0;
-                        if (sy >= (int)img.height) sy = (int)img.height - 1;
+                        if (sy < 0)
+                            sy = 0;
+                        if (sy >= (int)img.height)
+                            sy = (int)img.height - 1;
                         for (int x = 0; x < pw; x++) {
                             int dx = px + x;
-                            if (dx < 0 || dx >= (int)w) continue;
+                            if (dx < 0 || dx >= (int)w)
+                                continue;
                             int sx = (int)((float)x / (float)pw * (float)img.width);
-                            if (sx < 0) sx = 0;
-                            if (sx >= (int)img.width) sx = (int)img.width - 1;
+                            if (sx < 0)
+                                sx = 0;
+                            if (sx >= (int)img.width)
+                                sx = (int)img.width - 1;
                             size_t sidx = ((size_t)sy * img.width + (size_t)sx) * 4u;
                             size_t didx = ((size_t)dy * w + (size_t)dx) * 4u;
                             uint8_t a = img.rgba[sidx + 3];
@@ -9377,8 +9767,10 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
         } else if (op->type == SVG_FILTER_OP_MORPHOLOGY) {
             int rx = (int)lroundf(fabsf(op->a) * scale_x);
             int ry = (int)lroundf(fabsf(op->b) * scale_y);
-            if (rx < 0) rx = 0;
-            if (ry < 0) ry = 0;
+            if (rx < 0)
+                rx = 0;
+            if (ry < 0)
+                ry = 0;
             if (rx == 0 && ry == 0) {
                 if (in1 != buf) {
                     memcpy(buf, in1, size);
@@ -9399,10 +9791,14 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                         int y1 = (int)y + ry;
                         int x0 = (int)x - rx;
                         int x1 = (int)x + rx;
-                        if (y0 < 0) y0 = 0;
-                        if (x0 < 0) x0 = 0;
-                        if (y1 >= (int)h) y1 = (int)h - 1;
-                        if (x1 >= (int)w) x1 = (int)w - 1;
+                        if (y0 < 0)
+                            y0 = 0;
+                        if (x0 < 0)
+                            x0 = 0;
+                        if (y1 >= (int)h)
+                            y1 = (int)h - 1;
+                        if (x1 >= (int)w)
+                            x1 = (int)w - 1;
                         for (int yy = y0; yy <= y1; yy++) {
                             for (int xx = x0; xx <= x1; xx++) {
                                 size_t sidx = ((size_t)yy * w + (size_t)xx) * 4u;
@@ -9411,15 +9807,23 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                                 uint8_t sb = src[sidx + 2];
                                 uint8_t sa = src[sidx + 3];
                                 if (op->mode == SVG_MORPHOLOGY_DILATE) {
-                                    if (sr > best_r) best_r = sr;
-                                    if (sg > best_g) best_g = sg;
-                                    if (sb > best_b) best_b = sb;
-                                    if (sa > best_a) best_a = sa;
+                                    if (sr > best_r)
+                                        best_r = sr;
+                                    if (sg > best_g)
+                                        best_g = sg;
+                                    if (sb > best_b)
+                                        best_b = sb;
+                                    if (sa > best_a)
+                                        best_a = sa;
                                 } else {
-                                    if (sr < best_r) best_r = sr;
-                                    if (sg < best_g) best_g = sg;
-                                    if (sb < best_b) best_b = sb;
-                                    if (sa < best_a) best_a = sa;
+                                    if (sr < best_r)
+                                        best_r = sr;
+                                    if (sg < best_g)
+                                        best_g = sg;
+                                    if (sb < best_b)
+                                        best_b = sb;
+                                    if (sa < best_a)
+                                        best_a = sa;
                                 }
                             }
                         }
@@ -9444,12 +9848,13 @@ static void svg_apply_filter_ops(const svg_filter *filter, svg_render_ctx *ctx, 
                 op->merge_inputs[0] = svg_make_filter_ref(SVG_FILTER_IN_SOURCE_GRAPHIC, -1);
             }
             for (int m = 0; m < mcount; m++) {
-                uint8_t *inm = svg_filter_resolve_input(&op->merge_inputs[m], buf, source,
-                                                        source_alpha, background, background_alpha,
-                                                        fill_paint, stroke_paint, results, result_count);
+                uint8_t *inm = svg_filter_resolve_input(
+                    &op->merge_inputs[m], buf, source, source_alpha, background, background_alpha,
+                    fill_paint, stroke_paint, results, result_count);
                 for (size_t j = 0; j < (size_t)w * (size_t)h; j++) {
                     size_t idx = j * 4u;
-                    svg_blend_premul(tmp + idx, inm[idx + 0], inm[idx + 1], inm[idx + 2], inm[idx + 3]);
+                    svg_blend_premul(tmp + idx, inm[idx + 0], inm[idx + 1], inm[idx + 2],
+                                     inm[idx + 3]);
                 }
             }
             memcpy(buf, tmp, size);
@@ -9490,6 +9895,7 @@ static void svg_composite_buffer(svg_render_ctx *ctx, const uint8_t *src) {
         svg_blend_premul(ctx->hi_rgba + idx, src[idx + 0], src[idx + 1], src[idx + 2], sa);
     }
 }
+
 static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox) {
     if (!p || !ctx || !bbox || !p->content || !*p->content) {
         return 0;
@@ -9512,16 +9918,17 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     }
     uint32_t px_w = (uint32_t)lroundf(tile_w * (float)ctx->ss);
     uint32_t px_h = (uint32_t)lroundf(tile_h * (float)ctx->ss);
-    if (px_w < 1) px_w = 1;
-    if (px_h < 1) px_h = 1;
+    if (px_w < 1)
+        px_w = 1;
+    if (px_h < 1)
+        px_h = 1;
     int needs_bbox = (p->units == SVG_GRADIENT_UNITS_OBJECT_BOUNDING_BOX) ||
                      (p->content_units == SVG_GRADIENT_UNITS_OBJECT_BOUNDING_BOX);
     if (p->rendered && p->rgba && p->tile_w == px_w && p->tile_h == px_h) {
         if (!needs_bbox) {
             return 1;
         }
-        if (p->has_cached_bbox &&
-            fabsf(p->cached_bbox_x - bbox->x) < 1e-4f &&
+        if (p->has_cached_bbox && fabsf(p->cached_bbox_x - bbox->x) < 1e-4f &&
             fabsf(p->cached_bbox_y - bbox->y) < 1e-4f &&
             fabsf(p->cached_bbox_w - bbox->w) < 1e-4f &&
             fabsf(p->cached_bbox_h - bbox->h) < 1e-4f) {
@@ -9535,10 +9942,11 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     p->rendering = 1;
 
     char header[256];
-    int header_len = snprintf(header, sizeof(header),
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6g\" height=\"%.6g\" "
-                              "viewBox=\"%.6g %.6g %.6g %.6g\">",
-                              tile_w, tile_h, tile_x, tile_y, tile_w, tile_h);
+    int header_len =
+        snprintf(header, sizeof(header),
+                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6g\" height=\"%.6g\" "
+                 "viewBox=\"%.6g %.6g %.6g %.6g\">",
+                 tile_w, tile_h, tile_x, tile_y, tile_w, tile_h);
     if (header_len < 0 || header_len >= (int)sizeof(header)) {
         p->rendering = 0;
         return 0;
@@ -9549,8 +9957,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
         float cw = bbox->w > 0.0f ? bbox->w : 1.0f;
         float ch = bbox->h > 0.0f ? bbox->h : 1.0f;
         gopen_len = snprintf(gopen, sizeof(gopen),
-                             "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">",
-                             bbox->x, bbox->y, cw, ch);
+                             "<g transform=\"translate(%.6g %.6g) scale(%.6g %.6g)\">", bbox->x,
+                             bbox->y, cw, ch);
         if (gopen_len < 0 || gopen_len >= (int)sizeof(gopen)) {
             p->rendering = 0;
             return 0;
@@ -9561,7 +9969,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     size_t content_len = strlen(p->content);
     size_t gclose_len = strlen(gclose);
     size_t footer_len = strlen(footer);
-    size_t total = (size_t)header_len + (size_t)gopen_len + content_len + gclose_len + footer_len + 1u;
+    size_t total =
+        (size_t)header_len + (size_t)gopen_len + content_len + gclose_len + footer_len + 1u;
     char *svg = (char *)malloc(total);
     if (!svg) {
         p->rendering = 0;
@@ -9598,7 +10007,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
     svg_render_ctx tile_ctx;
     memset(&tile_ctx, 0, sizeof(tile_ctx));
     char errbuf[128];
-    int ok = svg_render(&tile_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = svg_render(&tile_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf),
+                        &opts);
     free(svg);
     if (!ok) {
         p->rendering = 0;
@@ -9622,7 +10032,8 @@ static int svg_pattern_prepare(svg_pattern *p, const svg_render_ctx *ctx, const 
 }
 
 static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                              float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa) {
+                              float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb,
+                              uint8_t *pa) {
     if (!p || !ctx || !bbox || !pr || !pg || !pb || !pa) {
         return 0;
     }
@@ -9651,12 +10062,16 @@ static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const s
     float ty = (py - tile_y) / tile_h;
     tx = tx - floorf(tx);
     ty = ty - floorf(ty);
-    if (tx < 0.0f) tx += 1.0f;
-    if (ty < 0.0f) ty += 1.0f;
+    if (tx < 0.0f)
+        tx += 1.0f;
+    if (ty < 0.0f)
+        ty += 1.0f;
     uint32_t ix = (uint32_t)floorf(tx * (float)p->tile_w);
     uint32_t iy = (uint32_t)floorf(ty * (float)p->tile_h);
-    if (ix >= p->tile_w) ix = p->tile_w - 1;
-    if (iy >= p->tile_h) iy = p->tile_h - 1;
+    if (ix >= p->tile_w)
+        ix = p->tile_w - 1;
+    if (iy >= p->tile_h)
+        iy = p->tile_h - 1;
     size_t idx = ((size_t)iy * (size_t)p->tile_w + (size_t)ix) * 4u;
     *pr = p->rgba[idx + 0];
     *pg = p->rgba[idx + 1];
@@ -9665,8 +10080,8 @@ static int svg_pattern_sample(svg_pattern *p, const svg_render_ctx *ctx, const s
     return *pa > 0;
 }
 
-static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx *ctx, const svg_bbox *bbox,
-                                    float x, float y) {
+static uint32_t svg_gradient_sample(const svg_gradient *g, const svg_render_ctx *ctx,
+                                    const svg_bbox *bbox, float x, float y) {
     if (!g || g->stop_count == 0 || !ctx || !bbox) {
         return 0x00000000u;
     }
@@ -9747,11 +10162,15 @@ static int svg_prepare_const_paint(const svg_style *style, int is_stroke, uint8_
     uint32_t color = is_stroke ? style->stroke_color : style->fill_color;
     uint8_t a = (uint8_t)(color & 0xFFu);
     float opacity = style->opacity * (is_stroke ? style->stroke_opacity : style->fill_opacity);
-    if (opacity < 0.0f) opacity = 0.0f;
-    if (opacity > 1.0f) opacity = 1.0f;
+    if (opacity < 0.0f)
+        opacity = 0.0f;
+    if (opacity > 1.0f)
+        opacity = 1.0f;
     float alpha = (a / 255.0f) * opacity;
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     uint8_t oa = (uint8_t)lroundf(alpha * 255.0f);
     uint8_t r = (uint8_t)(color >> 24);
     uint8_t g = (uint8_t)(color >> 16);
@@ -9763,8 +10182,9 @@ static int svg_prepare_const_paint(const svg_style *style, int is_stroke, uint8_
     return oa > 0;
 }
 
-static int svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, int is_stroke, const svg_bbox *bbox,
-                            float x, float y, uint8_t *pr, uint8_t *pg, uint8_t *pb, uint8_t *pa) {
+static int svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, int is_stroke,
+                            const svg_bbox *bbox, float x, float y, uint8_t *pr, uint8_t *pg,
+                            uint8_t *pb, uint8_t *pa) {
     if (!style || !ctx || !bbox || !pr || !pg || !pb || !pa) {
         return 0;
     }
@@ -9779,8 +10199,10 @@ static int svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, i
             return 0;
         }
         float opacity = style->opacity * (is_stroke ? style->stroke_opacity : style->fill_opacity);
-        if (opacity < 0.0f) opacity = 0.0f;
-        if (opacity > 1.0f) opacity = 1.0f;
+        if (opacity < 0.0f)
+            opacity = 0.0f;
+        if (opacity > 1.0f)
+            opacity = 1.0f;
         uint8_t oa = (uint8_t)lroundf(sa * opacity);
         if (oa == 0) {
             return 0;
@@ -9803,11 +10225,15 @@ static int svg_sample_paint(const svg_style *style, const svg_render_ctx *ctx, i
         return 0;
     }
     float opacity = style->opacity * (is_stroke ? style->stroke_opacity : style->fill_opacity);
-    if (opacity < 0.0f) opacity = 0.0f;
-    if (opacity > 1.0f) opacity = 1.0f;
+    if (opacity < 0.0f)
+        opacity = 0.0f;
+    if (opacity > 1.0f)
+        opacity = 1.0f;
     float alpha = (a / 255.0f) * opacity;
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     uint8_t oa = (uint8_t)lroundf(alpha * 255.0f);
     if (oa == 0) {
         return 0;
@@ -9952,7 +10378,8 @@ static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len) {
     }
     if ((c0 & 0xE0u) == 0xC0u) {
         unsigned char c1 = (unsigned char)s[1];
-        if ((c1 & 0xC0u) != 0x80u) return 0;
+        if ((c1 & 0xC0u) != 0x80u)
+            return 0;
         *cp = ((uint32_t)(c0 & 0x1Fu) << 6) | (uint32_t)(c1 & 0x3Fu);
         *len = 2;
         return 1;
@@ -9960,8 +10387,10 @@ static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len) {
     if ((c0 & 0xF0u) == 0xE0u) {
         unsigned char c1 = (unsigned char)s[1];
         unsigned char c2 = (unsigned char)s[2];
-        if ((c1 & 0xC0u) != 0x80u || (c2 & 0xC0u) != 0x80u) return 0;
-        *cp = ((uint32_t)(c0 & 0x0Fu) << 12) | ((uint32_t)(c1 & 0x3Fu) << 6) | (uint32_t)(c2 & 0x3Fu);
+        if ((c1 & 0xC0u) != 0x80u || (c2 & 0xC0u) != 0x80u)
+            return 0;
+        *cp =
+            ((uint32_t)(c0 & 0x0Fu) << 12) | ((uint32_t)(c1 & 0x3Fu) << 6) | (uint32_t)(c2 & 0x3Fu);
         *len = 3;
         return 1;
     }
@@ -9969,7 +10398,8 @@ static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len) {
         unsigned char c1 = (unsigned char)s[1];
         unsigned char c2 = (unsigned char)s[2];
         unsigned char c3 = (unsigned char)s[3];
-        if ((c1 & 0xC0u) != 0x80u || (c2 & 0xC0u) != 0x80u || (c3 & 0xC0u) != 0x80u) return 0;
+        if ((c1 & 0xC0u) != 0x80u || (c2 & 0xC0u) != 0x80u || (c3 & 0xC0u) != 0x80u)
+            return 0;
         *cp = ((uint32_t)(c0 & 0x07u) << 18) | ((uint32_t)(c1 & 0x3Fu) << 12) |
               ((uint32_t)(c2 & 0x3Fu) << 6) | (uint32_t)(c3 & 0x3Fu);
         *len = 4;
@@ -9978,9 +10408,7 @@ static int svg_utf8_decode_one(const char *s, uint32_t *cp, int *len) {
     return 0;
 }
 
-static const uint8_t svg_glyph_bullet[8] = {
-    0x00, 0x00, 0x18, 0x3C, 0x3C, 0x18, 0x00, 0x00
-};
+static const uint8_t svg_glyph_bullet[8] = {0x00, 0x00, 0x18, 0x3C, 0x3C, 0x18, 0x00, 0x00};
 
 static const uint8_t *svg_get_glyph_codepoint(uint32_t cp) {
     if (cp < 128u) {
@@ -10039,8 +10467,9 @@ static float svg_measure_line(const svg_style *style, const char *text, size_t l
     return width;
 }
 
-static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m, const svg_bbox *bbox,
-                           const uint8_t *glyph, float x, float y, float scale_x, float scale_y) {
+static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
+                           const svg_bbox *bbox, const uint8_t *glyph, float x, float y,
+                           float scale_x, float scale_y) {
     if (!ctx || !style || !m || !glyph || !bbox) {
         return;
     }
@@ -10059,8 +10488,10 @@ static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const sv
     float width = 8.0f * scale_x;
     float height = 8.0f * scale_y;
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
-    svg_transform_bounds(&total, 0.0f, 0.0f, width, height, &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
-    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width || dev_miny > (float)ctx->height) {
+    svg_transform_bounds(&total, 0.0f, 0.0f, width, height, &dev_minx, &dev_miny, &dev_maxx,
+                         &dev_maxy);
+    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width ||
+        dev_miny > (float)ctx->height) {
         return;
     }
     svg_matrix inv;
@@ -10072,12 +10503,16 @@ static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const sv
     int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
     int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
     int fill_is_color = style->fill_type == SVG_PAINT_COLOR;
     uint8_t fill_pr = 0, fill_pg = 0, fill_pb = 0, fill_pa = 0;
     if (fill_is_color) {
@@ -10101,7 +10536,8 @@ static void svg_draw_glyph(svg_render_ctx *ctx, const svg_style *style, const sv
             if ((glyph[iy] & (1u << ix)) == 0) {
                 continue;
             }
-            uint8_t *dst = ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
+            uint8_t *dst =
+                ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
             uint8_t mask_alpha = svg_sample_mask_alpha((svg_style *)style, ctx, bbox, sx, sy);
             if (mask_alpha == 0) {
                 continue;
@@ -10168,7 +10604,8 @@ static void svg_render_text_run(svg_render_ctx *ctx, const svg_style *style, con
         }
         float line_y = *pen_y + baseline_off;
         if (bbox_out) {
-            svg_bbox_add_rect(bbox_out, line_x, line_y - style->font_size, line_width, style->font_size);
+            svg_bbox_add_rect(bbox_out, line_x, line_y - style->font_size, line_width,
+                              style->font_size);
         }
         svg_bbox bbox;
         bbox.x = line_x;
@@ -10180,7 +10617,8 @@ static void svg_render_text_run(svg_render_ctx *ctx, const svg_style *style, con
         while (i < line_len) {
             uint32_t cp = 0;
             int n = 0;
-            if (!svg_utf8_decode_one(line_start + i, &cp, &n) || n <= 0 || i + (size_t)n > line_len) {
+            if (!svg_utf8_decode_one(line_start + i, &cp, &n) || n <= 0 ||
+                i + (size_t)n > line_len) {
                 i++;
                 continue;
             }
@@ -10191,7 +10629,8 @@ static void svg_render_text_run(svg_render_ctx *ctx, const svg_style *style, con
             const uint8_t *glyph = svg_get_glyph_codepoint(cp);
             svg_draw_glyph(ctx, style, m, &bbox, glyph, x, line_y, scale_x, scale_y);
             if (style->bold) {
-                svg_draw_glyph(ctx, style, m, &bbox, glyph, x + scale_x * 0.8f, line_y, scale_x, scale_y);
+                svg_draw_glyph(ctx, style, m, &bbox, glyph, x + scale_x * 0.8f, line_y, scale_x,
+                               scale_y);
             }
             x += svg_text_advance(style, cp);
         }
@@ -10204,8 +10643,9 @@ static void svg_render_text_run(svg_render_ctx *ctx, const svg_style *style, con
     }
 }
 
-static void svg_render_text_run_path(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                     const char *text, svg_text_path_state *tp, svg_bbox *bbox_out) {
+static void svg_render_text_run_path(svg_render_ctx *ctx, const svg_style *style,
+                                     const svg_matrix *m, const char *text, svg_text_path_state *tp,
+                                     svg_bbox *bbox_out) {
     if (!ctx || !style || !m || !text || !tp || !tp->active) {
         return;
     }
@@ -10247,7 +10687,8 @@ static void svg_render_text_run_path(svg_render_ctx *ctx, const svg_style *style
         svg_matrix glyph_m;
         svg_matrix_multiply(m, &local, &glyph_m);
         const uint8_t *glyph = svg_get_glyph_codepoint(cp);
-        svg_draw_glyph(ctx, style, &glyph_m, &tp->bbox, glyph, 0.0f, style->font_size + baseline_off, scale_x, scale_y);
+        svg_draw_glyph(ctx, style, &glyph_m, &tp->bbox, glyph, 0.0f,
+                       style->font_size + baseline_off, scale_x, scale_y);
         if (style->bold) {
             svg_draw_glyph(ctx, style, &glyph_m, &tp->bbox, glyph, scale_x * 0.8f,
                            style->font_size + baseline_off, scale_x, scale_y);
@@ -10268,17 +10709,22 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
     float maxy = y + h + half;
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
     svg_transform_bounds(m, minx, miny, maxx, maxy, &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
-    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width || dev_miny > (float)ctx->height) {
+    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width ||
+        dev_miny > (float)ctx->height) {
         return;
     }
     svg_matrix inv;
     if (!svg_matrix_invert(m, &inv)) {
         return;
     }
-    if (rx < 0.0f) rx = 0.0f;
-    if (ry < 0.0f) ry = 0.0f;
-    if (rx > w * 0.5f) rx = w * 0.5f;
-    if (ry > h * 0.5f) ry = h * 0.5f;
+    if (rx < 0.0f)
+        rx = 0.0f;
+    if (ry < 0.0f)
+        ry = 0.0f;
+    if (rx > w * 0.5f)
+        rx = w * 0.5f;
+    if (ry > h * 0.5f)
+        ry = h * 0.5f;
     float inner_rx = rx > half ? rx - half : 0.0f;
     float inner_ry = ry > half ? ry - half : 0.0f;
 
@@ -10287,20 +10733,23 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
     int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
     int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
 
     svg_bbox bbox = {x, y, w, h};
     int has_fill = style->fill_type != SVG_PAINT_NONE;
     int has_stroke = style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f;
-    int need_segment_stroke = has_stroke &&
-                              (style->stroke_dashcount > 0 ||
-                               style->stroke_linecap != SVG_LINECAP_BUTT ||
-                               style->stroke_linejoin != SVG_LINEJOIN_MITER);
+    int need_segment_stroke =
+        has_stroke && (style->stroke_dashcount > 0 || style->stroke_linecap != SVG_LINECAP_BUTT ||
+                       style->stroke_linejoin != SVG_LINEJOIN_MITER);
     int has_stroke_analytic = has_stroke && !need_segment_stroke;
     int fill_is_color = style->fill_type == SVG_PAINT_COLOR;
     int stroke_is_color = style->stroke_type == SVG_PAINT_COLOR;
@@ -10357,7 +10806,8 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
                 } else {
                     int inside_inner = 0;
                     if (inner_rx <= 0.0f || inner_ry <= 0.0f) {
-                        if (lx >= inner_x && lx <= inner_x + inner_w && ly >= inner_y && ly <= inner_y + inner_h) {
+                        if (lx >= inner_x && lx <= inner_x + inner_w && ly >= inner_y &&
+                            ly <= inner_y + inner_h) {
                             inside_inner = 1;
                         }
                     } else {
@@ -10365,8 +10815,10 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
                         float inner_right = inner_x + inner_w - inner_rx;
                         float inner_top = inner_y + inner_ry;
                         float inner_bottom = inner_y + inner_h - inner_ry;
-                        if ((lx >= inner_left && lx <= inner_right && ly >= inner_y && ly <= inner_y + inner_h) ||
-                            (lx >= inner_x && lx <= inner_x + inner_w && ly >= inner_top && ly <= inner_bottom)) {
+                        if ((lx >= inner_left && lx <= inner_right && ly >= inner_y &&
+                             ly <= inner_y + inner_h) ||
+                            (lx >= inner_x && lx <= inner_x + inner_w && ly >= inner_top &&
+                             ly <= inner_bottom)) {
                             inside_inner = 1;
                         } else {
                             float cx = lx < inner_left ? inner_left : inner_right;
@@ -10385,7 +10837,8 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
                     }
                 }
             }
-            uint8_t *dst = ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
+            uint8_t *dst =
+                ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
             uint8_t mask_alpha = 255;
             if ((has_fill && inside) || (has_stroke_analytic && in_stroke)) {
                 mask_alpha = svg_sample_mask_alpha((svg_style *)style, ctx, &bbox, sx, sy);
@@ -10468,8 +10921,8 @@ static void svg_draw_samples_rect(svg_render_ctx *ctx, const svg_style *style, c
     }
 }
 
-static void svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                     float cx, float cy, float rx, float ry) {
+static void svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style,
+                                     const svg_matrix *m, float cx, float cy, float rx, float ry) {
     if (rx <= 0.0f || ry <= 0.0f) {
         return;
     }
@@ -10480,7 +10933,8 @@ static void svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style
     float maxy = cy + ry + half;
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
     svg_transform_bounds(m, minx, miny, maxx, maxy, &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
-    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width || dev_miny > (float)ctx->height) {
+    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width ||
+        dev_miny > (float)ctx->height) {
         return;
     }
     svg_matrix inv;
@@ -10493,20 +10947,23 @@ static void svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style
     int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
     int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
 
     svg_bbox bbox = {cx - rx, cy - ry, rx * 2.0f, ry * 2.0f};
     int has_fill = style->fill_type != SVG_PAINT_NONE;
     int has_stroke = style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f;
-    int need_segment_stroke = has_stroke &&
-                              (style->stroke_dashcount > 0 ||
-                               style->stroke_linecap != SVG_LINECAP_BUTT ||
-                               style->stroke_linejoin != SVG_LINEJOIN_MITER);
+    int need_segment_stroke =
+        has_stroke && (style->stroke_dashcount > 0 || style->stroke_linecap != SVG_LINECAP_BUTT ||
+                       style->stroke_linejoin != SVG_LINEJOIN_MITER);
     int has_stroke_analytic = has_stroke && !need_segment_stroke;
     int fill_is_color = style->fill_type == SVG_PAINT_COLOR;
     int stroke_is_color = style->stroke_type == SVG_PAINT_COLOR;
@@ -10542,7 +10999,8 @@ static void svg_draw_samples_ellipse(svg_render_ctx *ctx, const svg_style *style
                     in_stroke = 1;
                 }
             }
-            uint8_t *dst = ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
+            uint8_t *dst =
+                ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
             uint8_t mask_alpha = 255;
             if ((has_fill && inside) || (has_stroke_analytic && in_stroke)) {
                 mask_alpha = svg_sample_mask_alpha((svg_style *)style, ctx, &bbox, sx, sy);
@@ -10638,8 +11096,7 @@ static void svg_draw_samples_line(svg_render_ctx *ctx, const svg_style *style, c
 }
 
 static void svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                   const cupidimage_image *img,
-                                   float x, float y, float w, float h,
+                                   const cupidimage_image *img, float x, float y, float w, float h,
                                    int preserve_none, float align_x, float align_y) {
     if (!ctx || !style || !m || !img || !img->rgba || img->width == 0 || img->height == 0) {
         return;
@@ -10675,9 +11132,10 @@ static void svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style, 
     svg_matrix_multiply(m, &image_m, &full_m);
 
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
-    svg_transform_bounds(&full_m, 0.0f, 0.0f, (float)img->width, (float)img->height,
-                         &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
-    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width || dev_miny > (float)ctx->height) {
+    svg_transform_bounds(&full_m, 0.0f, 0.0f, (float)img->width, (float)img->height, &dev_minx,
+                         &dev_miny, &dev_maxx, &dev_maxy);
+    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width ||
+        dev_miny > (float)ctx->height) {
         return;
     }
 
@@ -10691,12 +11149,16 @@ static void svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style, 
     int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
     int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
 
     svg_bbox bbox = {draw_x, draw_y, draw_w, draw_h};
     float opacity = svg_clamp01(style->opacity);
@@ -10733,14 +11195,15 @@ static void svg_draw_samples_image(svg_render_ctx *ctx, const svg_style *style, 
             if (sa == 0) {
                 continue;
             }
-            uint8_t *dst = ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
+            uint8_t *dst =
+                ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
             svg_blend_premul(dst, pr, pg, pb, sa);
         }
     }
 }
 
-static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                      const svg_segments *segs) {
+static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *style,
+                                      const svg_matrix *m, const svg_segments *segs) {
     if (segs->stroke_count == 0 && segs->fill_count == 0) {
         return;
     }
@@ -10751,7 +11214,8 @@ static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *styl
     float maxy = segs->maxy + half;
     float dev_minx, dev_miny, dev_maxx, dev_maxy;
     svg_transform_bounds(m, minx, miny, maxx, maxy, &dev_minx, &dev_miny, &dev_maxx, &dev_maxy);
-    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width || dev_miny > (float)ctx->height) {
+    if (dev_maxx < 0.0f || dev_maxy < 0.0f || dev_minx > (float)ctx->width ||
+        dev_miny > (float)ctx->height) {
         return;
     }
     svg_matrix inv;
@@ -10764,12 +11228,16 @@ static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *styl
     int sy0 = svg_raster_bound(dev_miny * (float)ss, 0);
     int sx1 = svg_raster_bound(dev_maxx * (float)ss, 1);
     int sy1 = svg_raster_bound(dev_maxy * (float)ss, 1);
-    if (sx0 < 0) sx0 = 0;
-    if (sy0 < 0) sy0 = 0;
+    if (sx0 < 0)
+        sx0 = 0;
+    if (sy0 < 0)
+        sy0 = 0;
     int max_sx = (int)(ctx->width * ss) - 1;
     int max_sy = (int)(ctx->height * ss) - 1;
-    if (sx1 > max_sx) sx1 = max_sx;
-    if (sy1 > max_sy) sy1 = max_sy;
+    if (sx1 > max_sx)
+        sx1 = max_sx;
+    if (sy1 > max_sy)
+        sy1 = max_sy;
 
     svg_bbox bbox;
     bbox.x = segs->minx;
@@ -10777,7 +11245,8 @@ static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *styl
     bbox.w = segs->maxx - segs->minx;
     bbox.h = segs->maxy - segs->miny;
     int has_fill = style->fill_type != SVG_PAINT_NONE && segs->fill_count > 0;
-    int has_stroke = style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f && segs->stroke_count > 0;
+    int has_stroke = style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f &&
+                     segs->stroke_count > 0;
     svg_segments dash_segs;
     int using_dash = 0;
     const svg_segments *stroke_segs = segs;
@@ -10837,13 +11306,15 @@ static void svg_draw_samples_segments(svg_render_ctx *ctx, const svg_style *styl
             }
             if (has_stroke) {
                 if (start_open && end_open) {
-                    in_stroke = svg_point_on_segments_cap(stroke_segs, style, lx, ly, half,
-                                                          start_open, end_open, join_tris, join_count);
+                    in_stroke =
+                        svg_point_on_segments_cap(stroke_segs, style, lx, ly, half, start_open,
+                                                  end_open, join_tris, join_count);
                 } else {
                     in_stroke = svg_point_on_segments(stroke_segs, lx, ly, half);
                 }
             }
-            uint8_t *dst = ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
+            uint8_t *dst =
+                ctx->hi_rgba + ((size_t)sy * (size_t)(ctx->width * ss) + (size_t)sx) * 4u;
             uint8_t mask_alpha = 255;
             if ((has_fill && inside) || (has_stroke && in_stroke)) {
                 mask_alpha = svg_sample_mask_alpha((svg_style *)style, ctx, &bbox, sx, sy);
@@ -10957,8 +11428,8 @@ static int svg_parse_points(const char *s, float **out_points, int *out_count) {
     return *out_count > 0;
 }
 
-static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, float y1,
-                             float x2, float y2, float x3, float y3, float tol, int depth) {
+static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, float y1, float x2,
+                             float y2, float x3, float y3, float tol, int depth) {
     float ux = 3.0f * x1 - 2.0f * x0 - x3;
     float uy = 3.0f * y1 - 2.0f * y0 - y3;
     float vx = 3.0f * x2 - 2.0f * x3 - x0;
@@ -10985,8 +11456,8 @@ static int svg_flatten_cubic(svg_segments *segs, float x0, float y0, float x1, f
     return svg_flatten_cubic(segs, x0123, y0123, x123, y123, x23, y23, x3, y3, tol, depth + 1);
 }
 
-static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, float y1,
-                            float x2, float y2, float tol, int depth) {
+static int svg_flatten_quad(svg_segments *segs, float x0, float y0, float x1, float y1, float x2,
+                            float y2, float tol, int depth) {
     float ux = x0 - 2.0f * x1 + x2;
     float uy = y0 - 2.0f * y1 + y2;
     float d = ux * ux + uy * uy;
@@ -11034,200 +11505,210 @@ static int svg_parse_path(const char *d, svg_segments *segs) {
         int relative = islower((unsigned char)cmd);
         char ucmd = (char)toupper((unsigned char)cmd);
         switch (ucmd) {
-        case 'M': {
-            float x = 0.0f, y = 0.0f;
-            if (!svg_parse_number(&p, &x) || !svg_parse_number(&p, &y)) {
+            case 'M': {
+                float x = 0.0f, y = 0.0f;
+                if (!svg_parse_number(&p, &x) || !svg_parse_number(&p, &y)) {
+                    return 1;
+                }
+                if (relative) {
+                    x += cx;
+                    y += cy;
+                }
+                if (subpath_open) {
+                    svg_segments_add(segs, cx, cy, sx, sy, 0, 1);
+                }
+                cx = x;
+                cy = y;
+                sx = x;
+                sy = y;
+                subpath_open = 1;
+                have_cubic = 0;
+                have_quad = 0;
+                while (svg_parse_number(&p, &x) && svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        x += cx;
+                        y += cy;
+                    }
+                    svg_segments_add(segs, cx, cy, x, y, 1, 1);
+                    cx = x;
+                    cy = y;
+                }
+                break;
+            }
+            case 'L': {
+                float x = 0.0f, y = 0.0f;
+                while (svg_parse_number(&p, &x) && svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        x += cx;
+                        y += cy;
+                    }
+                    svg_segments_add(segs, cx, cy, x, y, 1, 1);
+                    cx = x;
+                    cy = y;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'H': {
+                float x = 0.0f;
+                while (svg_parse_number(&p, &x)) {
+                    if (relative) {
+                        x += cx;
+                    }
+                    svg_segments_add(segs, cx, cy, x, cy, 1, 1);
+                    cx = x;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'V': {
+                float y = 0.0f;
+                while (svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        y += cy;
+                    }
+                    svg_segments_add(segs, cx, cy, cx, y, 1, 1);
+                    cy = y;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'C': {
+                float x1, y1, x2, y2, x3, y3;
+                while (svg_parse_number(&p, &x1) && svg_parse_number(&p, &y1) &&
+                       svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2) &&
+                       svg_parse_number(&p, &x3) && svg_parse_number(&p, &y3)) {
+                    if (relative) {
+                        x1 += cx;
+                        y1 += cy;
+                        x2 += cx;
+                        y2 += cy;
+                        x3 += cx;
+                        y3 += cy;
+                    }
+                    if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x3;
+                    cy = y3;
+                    last_cx = x2;
+                    last_cy = y2;
+                    have_cubic = 1;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'S': {
+                float x2, y2, x3, y3;
+                while (svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2) &&
+                       svg_parse_number(&p, &x3) && svg_parse_number(&p, &y3)) {
+                    float x1 = cx;
+                    float y1 = cy;
+                    if (have_cubic) {
+                        x1 = 2.0f * cx - last_cx;
+                        y1 = 2.0f * cy - last_cy;
+                    }
+                    if (relative) {
+                        x2 += cx;
+                        y2 += cy;
+                        x3 += cx;
+                        y3 += cy;
+                    }
+                    if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x3;
+                    cy = y3;
+                    last_cx = x2;
+                    last_cy = y2;
+                    have_cubic = 1;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'Q': {
+                float x1, y1, x2, y2;
+                while (svg_parse_number(&p, &x1) && svg_parse_number(&p, &y1) &&
+                       svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2)) {
+                    if (relative) {
+                        x1 += cx;
+                        y1 += cy;
+                        x2 += cx;
+                        y2 += cy;
+                    }
+                    if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x2;
+                    cy = y2;
+                    last_qx = x1;
+                    last_qy = y1;
+                    have_quad = 1;
+                    have_cubic = 0;
+                }
+                break;
+            }
+            case 'T': {
+                float x2, y2;
+                while (svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2)) {
+                    float x1 = cx;
+                    float y1 = cy;
+                    if (have_quad) {
+                        x1 = 2.0f * cx - last_qx;
+                        y1 = 2.0f * cy - last_qy;
+                    }
+                    if (relative) {
+                        x2 += cx;
+                        y2 += cy;
+                    }
+                    if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
+                        return 0;
+                    }
+                    cx = x2;
+                    cy = y2;
+                    last_qx = x1;
+                    last_qy = y1;
+                    have_quad = 1;
+                    have_cubic = 0;
+                }
+                break;
+            }
+            case 'A': {
+                float rx, ry, xrot, large_arc, sweep, x, y;
+                while (svg_parse_number(&p, &rx) && svg_parse_number(&p, &ry) &&
+                       svg_parse_number(&p, &xrot) && svg_parse_number(&p, &large_arc) &&
+                       svg_parse_number(&p, &sweep) && svg_parse_number(&p, &x) &&
+                       svg_parse_number(&p, &y)) {
+                    if (relative) {
+                        x += cx;
+                        y += cy;
+                    }
+                    svg_segments_add_arc_rot(segs, cx, cy, x, y, rx, ry, xrot,
+                                             (int)lroundf(large_arc) != 0,
+                                             (int)lroundf(sweep) != 0);
+                    cx = x;
+                    cy = y;
+                    have_cubic = 0;
+                    have_quad = 0;
+                }
+                break;
+            }
+            case 'Z': {
+                if (subpath_open) {
+                    svg_segments_add(segs, cx, cy, sx, sy, 1, 1);
+                    cx = sx;
+                    cy = sy;
+                    subpath_open = 0;
+                }
+                have_cubic = 0;
+                have_quad = 0;
+                break;
+            }
+            default:
                 return 1;
-            }
-            if (relative) {
-                x += cx;
-                y += cy;
-            }
-            if (subpath_open) {
-                svg_segments_add(segs, cx, cy, sx, sy, 0, 1);
-            }
-            cx = x;
-            cy = y;
-            sx = x;
-            sy = y;
-            subpath_open = 1;
-            have_cubic = 0;
-            have_quad = 0;
-            while (svg_parse_number(&p, &x) && svg_parse_number(&p, &y)) {
-                if (relative) {
-                    x += cx;
-                    y += cy;
-                }
-                svg_segments_add(segs, cx, cy, x, y, 1, 1);
-                cx = x;
-                cy = y;
-            }
-            break;
-        }
-        case 'L': {
-            float x = 0.0f, y = 0.0f;
-            while (svg_parse_number(&p, &x) && svg_parse_number(&p, &y)) {
-                if (relative) {
-                    x += cx;
-                    y += cy;
-                }
-                svg_segments_add(segs, cx, cy, x, y, 1, 1);
-                cx = x;
-                cy = y;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'H': {
-            float x = 0.0f;
-            while (svg_parse_number(&p, &x)) {
-                if (relative) {
-                    x += cx;
-                }
-                svg_segments_add(segs, cx, cy, x, cy, 1, 1);
-                cx = x;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'V': {
-            float y = 0.0f;
-            while (svg_parse_number(&p, &y)) {
-                if (relative) {
-                    y += cy;
-                }
-                svg_segments_add(segs, cx, cy, cx, y, 1, 1);
-                cy = y;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'C': {
-            float x1, y1, x2, y2, x3, y3;
-            while (svg_parse_number(&p, &x1) && svg_parse_number(&p, &y1) &&
-                   svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2) &&
-                   svg_parse_number(&p, &x3) && svg_parse_number(&p, &y3)) {
-                if (relative) {
-                    x1 += cx; y1 += cy;
-                    x2 += cx; y2 += cy;
-                    x3 += cx; y3 += cy;
-                }
-                if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
-                    return 0;
-                }
-                cx = x3;
-                cy = y3;
-                last_cx = x2;
-                last_cy = y2;
-                have_cubic = 1;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'S': {
-            float x2, y2, x3, y3;
-            while (svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2) &&
-                   svg_parse_number(&p, &x3) && svg_parse_number(&p, &y3)) {
-                float x1 = cx;
-                float y1 = cy;
-                if (have_cubic) {
-                    x1 = 2.0f * cx - last_cx;
-                    y1 = 2.0f * cy - last_cy;
-                }
-                if (relative) {
-                    x2 += cx; y2 += cy;
-                    x3 += cx; y3 += cy;
-                }
-                if (!svg_flatten_cubic(segs, cx, cy, x1, y1, x2, y2, x3, y3, tol, 0)) {
-                    return 0;
-                }
-                cx = x3;
-                cy = y3;
-                last_cx = x2;
-                last_cy = y2;
-                have_cubic = 1;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'Q': {
-            float x1, y1, x2, y2;
-            while (svg_parse_number(&p, &x1) && svg_parse_number(&p, &y1) &&
-                   svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2)) {
-                if (relative) {
-                    x1 += cx; y1 += cy;
-                    x2 += cx; y2 += cy;
-                }
-                if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
-                    return 0;
-                }
-                cx = x2;
-                cy = y2;
-                last_qx = x1;
-                last_qy = y1;
-                have_quad = 1;
-                have_cubic = 0;
-            }
-            break;
-        }
-        case 'T': {
-            float x2, y2;
-            while (svg_parse_number(&p, &x2) && svg_parse_number(&p, &y2)) {
-                float x1 = cx;
-                float y1 = cy;
-                if (have_quad) {
-                    x1 = 2.0f * cx - last_qx;
-                    y1 = 2.0f * cy - last_qy;
-                }
-                if (relative) {
-                    x2 += cx; y2 += cy;
-                }
-                if (!svg_flatten_quad(segs, cx, cy, x1, y1, x2, y2, tol, 0)) {
-                    return 0;
-                }
-                cx = x2;
-                cy = y2;
-                last_qx = x1;
-                last_qy = y1;
-                have_quad = 1;
-                have_cubic = 0;
-            }
-            break;
-        }
-        case 'A': {
-            float rx, ry, xrot, large_arc, sweep, x, y;
-            while (svg_parse_number(&p, &rx) && svg_parse_number(&p, &ry) &&
-                   svg_parse_number(&p, &xrot) && svg_parse_number(&p, &large_arc) &&
-                   svg_parse_number(&p, &sweep) && svg_parse_number(&p, &x) && svg_parse_number(&p, &y)) {
-                if (relative) {
-                    x += cx; y += cy;
-                }
-                svg_segments_add_arc_rot(segs, cx, cy, x, y, rx, ry, xrot,
-                                         (int)lroundf(large_arc) != 0,
-                                         (int)lroundf(sweep) != 0);
-                cx = x;
-                cy = y;
-                have_cubic = 0;
-                have_quad = 0;
-            }
-            break;
-        }
-        case 'Z': {
-            if (subpath_open) {
-                svg_segments_add(segs, cx, cy, sx, sy, 1, 1);
-                cx = sx;
-                cy = sy;
-                subpath_open = 0;
-            }
-            have_cubic = 0;
-            have_quad = 0;
-            break;
-        }
-        default:
-            return 1;
         }
     }
     if (subpath_open) {
@@ -11236,8 +11717,8 @@ static int svg_parse_path(const char *d, svg_segments *segs) {
     return 1;
 }
 
-
-static int svg_parse_length_attr(const svg_tag *tag, const char *name, float base, float dpi, float *out) {
+static int svg_parse_length_attr(const svg_tag *tag, const char *name, float base, float dpi,
+                                 float *out) {
     const char *val = svg_get_attr(tag, name);
     if (!val) {
         return 0;
@@ -11250,8 +11731,9 @@ static int svg_parse_length_attr(const svg_tag *tag, const char *name, float bas
     }
     return 0;
 }
-static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                    const svg_tag *text_tag, char **p,
+
+static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
+                                    const svg_matrix *m, const svg_tag *text_tag, char **p,
                                     const svg_defs *defs, const svg_css *css,
                                     const svg_elem_info *stack_info, int stack_depth,
                                     float base_len, float dpi, svg_bbox *out_bbox) {
@@ -11298,7 +11780,8 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
                     if (cur_path && cur_path->active) {
                         svg_render_text_run_path(ctx, &cur_style, &cur_m, norm, cur_path, out_bbox);
                     } else {
-                        svg_render_text_run(ctx, &cur_style, &cur_m, norm, &pen_x, &pen_y, out_bbox);
+                        svg_render_text_run(ctx, &cur_style, &cur_m, norm, &pen_x, &pen_y,
+                                            out_bbox);
                     }
                 }
                 free(norm);
@@ -11321,9 +11804,11 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
                     char *norm = svg_text_normalize(seg, preserve);
                     if (norm && *norm) {
                         if (cur_path && cur_path->active) {
-                            svg_render_text_run_path(ctx, &cur_style, &cur_m, norm, cur_path, out_bbox);
+                            svg_render_text_run_path(ctx, &cur_style, &cur_m, norm, cur_path,
+                                                     out_bbox);
                         } else {
-                            svg_render_text_run(ctx, &cur_style, &cur_m, norm, &pen_x, &pen_y, out_bbox);
+                            svg_render_text_run(ctx, &cur_style, &cur_m, norm, &pen_x, &pen_y,
+                                                out_bbox);
                         }
                     }
                     free(norm);
@@ -11427,7 +11912,8 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
                 char idbuf[96];
                 idbuf[0] = '\0';
                 svg_parse_href_id(href, idbuf, sizeof(idbuf));
-                const svg_path_def *pd = (idbuf[0] && defs) ? svg_defs_find_path(defs, idbuf) : NULL;
+                const svg_path_def *pd =
+                    (idbuf[0] && defs) ? svg_defs_find_path(defs, idbuf) : NULL;
                 if (pd && pd->d) {
                     if (svg_parse_path(pd->d, &tp->segs) && tp->segs.stroke_count > 0) {
                         tp->seg_count = tp->segs.stroke_count;
@@ -11488,7 +11974,8 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
                         char *after = NULL;
                         char *close = svg_find_close_tag(tmp, "textpath", &after);
                         if (close) {
-                            float text_len = svg_textpath_measure_range(tmp, close, preserve, &cur_style);
+                            float text_len =
+                                svg_textpath_measure_range(tmp, close, preserve, &cur_style);
                             if (cur_style.text_anchor == 1) {
                                 tp->pos -= text_len * 0.5f;
                             } else if (cur_style.text_anchor == 2) {
@@ -11540,7 +12027,8 @@ static void svg_render_text_element(svg_render_ctx *ctx, const svg_style *style,
         }
         *p = tmp;
     }
-    while (path_depth > 0) svg_text_path_clear(&path_stack[--path_depth]);
+    while (path_depth > 0)
+        svg_text_path_clear(&path_stack[--path_depth]);
 }
 
 static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *content,
@@ -11552,11 +12040,11 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
     float vb_y = ctx->vb_y;
     float vb_w = ctx->vb_w > 0.0f ? ctx->vb_w : (float)ctx->width;
     float vb_h = ctx->vb_h > 0.0f ? ctx->vb_h : (float)ctx->height;
-    int header_len = snprintf(NULL, 0,
-                              "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
-                              "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
-                              vb_w, vb_h, vb_x, vb_y, vb_w, vb_h,
-                              gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
+    int header_len = snprintf(
+        NULL, 0,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
+        "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
+        vb_w, vb_h, vb_x, vb_y, vb_w, vb_h, gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
     if (header_len <= 0) {
         return 0;
     }
@@ -11568,11 +12056,11 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
         return 0;
     }
     char *dst = svg;
-    dst += (size_t)snprintf(dst, (size_t)header_len + 1u,
-                            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
-                            "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
-                            vb_w, vb_h, vb_x, vb_y, vb_w, vb_h,
-                            gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
+    dst += (size_t)snprintf(
+        dst, (size_t)header_len + 1u,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%.6f\" height=\"%.6f\" "
+        "viewBox=\"%.6f %.6f %.6f %.6f\"><g transform=\"matrix(%.9g %.9g %.9g %.9g %.9g %.9g)\">",
+        vb_w, vb_h, vb_x, vb_y, vb_w, vb_h, gm->a, gm->b, gm->c, gm->d, gm->e, gm->f);
     memcpy(dst, content, content_len);
     dst += content_len;
     memcpy(dst, footer, strlen(footer));
@@ -11591,7 +12079,8 @@ static int svg_render_transformed_snippet(svg_render_ctx *ctx, const char *conte
     svg_render_ctx tmp_ctx;
     memset(&tmp_ctx, 0, sizeof(tmp_ctx));
     char errbuf[128];
-    int ok = svg_render(&tmp_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf), &opts);
+    int ok = svg_render(&tmp_ctx, (const unsigned char *)svg, strlen(svg), errbuf, sizeof(errbuf),
+                        &opts);
     free(svg);
     if (!ok || !tmp_ctx.hi_rgba) {
         free(tmp_ctx.hi_rgba);
@@ -11639,7 +12128,8 @@ static float svg_join_angle_deg(const svg_segment *prev, const svg_segment *next
 }
 
 static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, const svg_matrix *m,
-                                     float px, float py, float angle_deg, float stroke_width, float dpi) {
+                                     float px, float py, float angle_deg, float stroke_width,
+                                     float dpi) {
     if (!ctx || !mk || !m || !mk->content || !*mk->content) {
         return;
     }
@@ -11705,8 +12195,9 @@ static void svg_draw_marker_instance(svg_render_ctx *ctx, const svg_marker *mk, 
     svg_render_transformed_snippet(ctx, mk->content, &gm, dpi);
 }
 
-static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                                          const svg_segments *segs, float dpi) {
+static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *style,
+                                          const svg_matrix *m, const svg_segments *segs,
+                                          float dpi) {
     if (!ctx || !style || !m || !segs || segs->stroke_count == 0) {
         return;
     }
@@ -11718,41 +12209,35 @@ static void svg_draw_markers_for_segments(svg_render_ctx *ctx, const svg_style *
     }
     const svg_segment *first = &segs->stroke[0];
     const svg_segment *last_seg = &segs->stroke[segs->stroke_count - 1];
-    int is_closed = fabsf(first->x0 - last_seg->x1) < 1e-4f &&
-                    fabsf(first->y0 - last_seg->y1) < 1e-4f;
+    int is_closed =
+        fabsf(first->x0 - last_seg->x1) < 1e-4f && fabsf(first->y0 - last_seg->y1) < 1e-4f;
     if (style->marker_start) {
-        float a = is_closed && segs->stroke_count > 1
-            ? svg_join_angle_deg(last_seg, first)
-            : svg_segment_angle_deg(first);
+        float a = is_closed && segs->stroke_count > 1 ? svg_join_angle_deg(last_seg, first)
+                                                      : svg_segment_angle_deg(first);
         if (style->marker_start->orient_auto && style->marker_start->orient_auto_start_reverse) {
             a += 180.0f;
         }
-        svg_draw_marker_instance(ctx, style->marker_start, m,
-                                 first->x0, first->y0,
-                                 a, style->stroke_width, dpi);
+        svg_draw_marker_instance(ctx, style->marker_start, m, first->x0, first->y0, a,
+                                 style->stroke_width, dpi);
     }
     if (style->marker_mid && segs->stroke_count > 1) {
         for (size_t i = 1; i < segs->stroke_count; i++) {
             float a = svg_join_angle_deg(&segs->stroke[i - 1], &segs->stroke[i]);
-            svg_draw_marker_instance(ctx, style->marker_mid, m,
-                                     segs->stroke[i].x0, segs->stroke[i].y0,
-                                     a, style->stroke_width, dpi);
+            svg_draw_marker_instance(ctx, style->marker_mid, m, segs->stroke[i].x0,
+                                     segs->stroke[i].y0, a, style->stroke_width, dpi);
         }
     }
     if (style->marker_end) {
-        float a = is_closed && segs->stroke_count > 1
-            ? svg_join_angle_deg(last_seg, first)
-            : svg_segment_angle_deg(last_seg);
-        svg_draw_marker_instance(ctx, style->marker_end, m,
-                                 last_seg->x1, last_seg->y1,
-                                 a, style->stroke_width, dpi);
+        float a = is_closed && segs->stroke_count > 1 ? svg_join_angle_deg(last_seg, first)
+                                                      : svg_segment_angle_deg(last_seg);
+        svg_draw_marker_instance(ctx, style->marker_end, m, last_seg->x1, last_seg->y1, a,
+                                 style->stroke_width, dpi);
     }
 }
 
 static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg_matrix *m,
-                          const svg_tag *tag, const char *local, float dpi,
-                          char *child_start, float anim_time,
-                          const svg_defs *defs, svg_bbox *out_bbox) {
+                          const svg_tag *tag, const char *local, float dpi, char *child_start,
+                          float anim_time, const svg_defs *defs, svg_bbox *out_bbox) {
     if (!ctx || !style || !m || !tag || !local) {
         return 0;
     }
@@ -11767,14 +12252,17 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     if (strcmp(local, "rect") == 0) {
         int ok = 0;
         float x = svg_parse_length(svg_get_attr(tag, "x"), ctx->vb_w, dpi, &ok);
-        if (!ok) x = 0.0f;
+        if (!ok)
+            x = 0.0f;
         float y = svg_parse_length(svg_get_attr(tag, "y"), ctx->vb_h, dpi, &ok);
-        if (!ok) y = 0.0f;
+        if (!ok)
+            y = 0.0f;
         float w = svg_parse_length(svg_get_attr(tag, "width"), ctx->vb_w, dpi, &ok);
         float h = svg_parse_length(svg_get_attr(tag, "height"), ctx->vb_h, dpi, &ok);
         float rx = svg_parse_length(svg_get_attr(tag, "rx"), ctx->vb_w, dpi, &ok);
         float ry = svg_parse_length(svg_get_attr(tag, "ry"), ctx->vb_h, dpi, &ok);
-        if (!ok) rx = 0.0f;
+        if (!ok)
+            rx = 0.0f;
         if (!svg_get_attr(tag, "ry") && rx > 0.0f) {
             ry = rx;
         }
@@ -11790,10 +12278,13 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     if (strcmp(local, "circle") == 0) {
         int ok = 0;
         float cx = svg_parse_length(svg_get_attr(tag, "cx"), ctx->vb_w, dpi, &ok);
-        if (!ok) cx = 0.0f;
+        if (!ok)
+            cx = 0.0f;
         float cy = svg_parse_length(svg_get_attr(tag, "cy"), ctx->vb_h, dpi, &ok);
-        if (!ok) cy = 0.0f;
-        float r = svg_parse_length(svg_get_attr(tag, "r"), (ctx->vb_w + ctx->vb_h) * 0.5f, dpi, &ok);
+        if (!ok)
+            cy = 0.0f;
+        float r =
+            svg_parse_length(svg_get_attr(tag, "r"), (ctx->vb_w + ctx->vb_h) * 0.5f, dpi, &ok);
         if (out_bbox && r > 0.0f) {
             svg_bbox_add_rect(out_bbox, cx - r, cy - r, r * 2.0f, r * 2.0f);
             if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
@@ -11806,9 +12297,11 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     if (strcmp(local, "ellipse") == 0) {
         int ok = 0;
         float cx = svg_parse_length(svg_get_attr(tag, "cx"), ctx->vb_w, dpi, &ok);
-        if (!ok) cx = 0.0f;
+        if (!ok)
+            cx = 0.0f;
         float cy = svg_parse_length(svg_get_attr(tag, "cy"), ctx->vb_h, dpi, &ok);
-        if (!ok) cy = 0.0f;
+        if (!ok)
+            cy = 0.0f;
         float rx = svg_parse_length(svg_get_attr(tag, "rx"), ctx->vb_w, dpi, &ok);
         float ry = svg_parse_length(svg_get_attr(tag, "ry"), ctx->vb_h, dpi, &ok);
         if (out_bbox && rx > 0.0f && ry > 0.0f) {
@@ -11861,19 +12354,26 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
                 for (int i = 1; i < count; i++) {
                     float px = pts[i * 2];
                     float py = pts[i * 2 + 1];
-                    if (px < minx) minx = px;
-                    if (px > maxx) maxx = px;
-                    if (py < miny) miny = py;
-                    if (py > maxy) maxy = py;
+                    if (px < minx)
+                        minx = px;
+                    if (px > maxx)
+                        maxx = px;
+                    if (py < miny)
+                        miny = py;
+                    if (py > maxy)
+                        maxy = py;
                 }
             }
             for (int i = 0; i < count - 1; i++) {
-                svg_segments_add(&segs, pts[i * 2], pts[i * 2 + 1], pts[(i + 1) * 2], pts[(i + 1) * 2 + 1], 1, 1);
+                svg_segments_add(&segs, pts[i * 2], pts[i * 2 + 1], pts[(i + 1) * 2],
+                                 pts[(i + 1) * 2 + 1], 1, 1);
             }
             if (strcmp(local, "polygon") == 0 && count > 1) {
-                svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[0], pts[1], 1, 1);
+                svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[0],
+                                 pts[1], 1, 1);
             } else if (strcmp(local, "polyline") == 0 && count > 1) {
-                svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[0], pts[1], 0, 1);
+                svg_segments_add(&segs, pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[0],
+                                 pts[1], 0, 1);
             }
             if (out_bbox && count > 0) {
                 svg_bbox_add_rect(out_bbox, minx, miny, maxx - minx, maxy - miny);
@@ -11894,7 +12394,8 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         svg_segments_init(&segs);
         if (svg_parse_path(d, &segs)) {
             if (out_bbox && segs.stroke_count > 0) {
-                svg_bbox_add_rect(out_bbox, segs.minx, segs.miny, segs.maxx - segs.minx, segs.maxy - segs.miny);
+                svg_bbox_add_rect(out_bbox, segs.minx, segs.miny, segs.maxx - segs.minx,
+                                  segs.maxy - segs.miny);
                 if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
                     svg_bbox_expand(out_bbox, style->stroke_width * 0.5f);
                 }
@@ -11941,14 +12442,14 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         int preserve_none = 0;
         float align_x = 0.5f;
         float align_y = 0.5f;
-        svg_parse_preserve_aspect_ratio(svg_get_attr(tag, "preserveAspectRatio"),
-                                        &preserve_none, &align_x, &align_y);
+        svg_parse_preserve_aspect_ratio(svg_get_attr(tag, "preserveAspectRatio"), &preserve_none,
+                                        &align_x, &align_y);
         if (w_ok && h_ok && w > 0.0f && h > 0.0f) {
             if (out_bbox) {
                 svg_bbox_add_rect(out_bbox, x, y, w, h);
             }
-            svg_draw_samples_image(ctx, style, m, &img, x, y, w, h,
-                                   preserve_none, align_x, align_y);
+            svg_draw_samples_image(ctx, style, m, &img, x, y, w, h, preserve_none, align_x,
+                                   align_y);
         }
         cupidimage_free(&img);
         return 1;
@@ -12069,8 +12570,8 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
                 ref_style.stroke_pattern = NULL;
             }
             svg_bbox tmp_bbox;
-            int drew = svg_draw_shape(ctx, &ref_style, &use_m, &ref_tag, ref_local, dpi,
-                                      NULL, anim_time, defs, &tmp_bbox);
+            int drew = svg_draw_shape(ctx, &ref_style, &use_m, &ref_tag, ref_local, dpi, NULL,
+                                      anim_time, defs, &tmp_bbox);
             if (drew && out_bbox && svg_bbox_valid(&tmp_bbox)) {
                 *out_bbox = tmp_bbox;
             }
@@ -12084,8 +12585,8 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
         svg_segments_init(&segs);
         if (svg_parse_path(pd->d, &segs)) {
             if (out_bbox && segs.stroke_count > 0) {
-                svg_bbox_add_rect(out_bbox, segs.minx + x, segs.miny + y,
-                                  segs.maxx - segs.minx, segs.maxy - segs.miny);
+                svg_bbox_add_rect(out_bbox, segs.minx + x, segs.miny + y, segs.maxx - segs.minx,
+                                  segs.maxy - segs.miny);
                 if (style->stroke_type != SVG_PAINT_NONE && style->stroke_width > 0.0f) {
                     svg_bbox_expand(out_bbox, style->stroke_width * 0.5f);
                 }
@@ -12100,8 +12601,8 @@ static int svg_draw_shape(svg_render_ctx *ctx, const svg_style *style, const svg
     return 0;
 }
 
-static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err, size_t errcap,
-                      const cupidimage_svg_options *opts) {
+static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t size, char *err,
+                      size_t errcap, const cupidimage_svg_options *opts) {
     float dpi = opts ? opts->dpi : 96.0f;
     float anim_time = opts ? opts->animation_time : 0.0f;
     if (dpi <= 0.0f) {
@@ -12120,7 +12621,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
     }
     float intrinsic_w = pre.width_ok ? pre.width_attr : (pre.vb_ok ? pre.vb_w : 512.0f);
     float intrinsic_h = pre.height_ok ? pre.height_attr : (pre.vb_ok ? pre.vb_h : 512.0f);
-    if (!isfinite(intrinsic_w) || !isfinite(intrinsic_h) || intrinsic_w <= 0.0f || intrinsic_h <= 0.0f) {
+    if (!isfinite(intrinsic_w) || !isfinite(intrinsic_h) || intrinsic_w <= 0.0f ||
+        intrinsic_h <= 0.0f) {
         svg_defs_free(&defs);
         svg_css_free(&css);
         set_err(err, errcap, "invalid SVG dimensions");
@@ -12144,8 +12646,10 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
             out_h *= opts->scale;
         }
     }
-    if (out_w < 1.0f) out_w = 1.0f;
-    if (out_h < 1.0f) out_h = 1.0f;
+    if (out_w < 1.0f)
+        out_w = 1.0f;
+    if (out_h < 1.0f)
+        out_h = 1.0f;
     if (!svg_dimension(out_w, &ctx->width) || !svg_dimension(out_h, &ctx->height)) {
         svg_defs_free(&defs);
         svg_css_free(&css);
@@ -12306,10 +12810,11 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
             }
             continue;
         }
-        if (strcmp(local, "defs") == 0 || strcmp(local, "clippath") == 0 || strcmp(local, "mask") == 0 ||
-            strcmp(local, "lineargradient") == 0 || strcmp(local, "radialgradient") == 0 ||
-            strcmp(local, "pattern") == 0 || strcmp(local, "filter") == 0 ||
-            strcmp(local, "symbol") == 0 || strcmp(local, "marker") == 0) {
+        if (strcmp(local, "defs") == 0 || strcmp(local, "clippath") == 0 ||
+            strcmp(local, "mask") == 0 || strcmp(local, "lineargradient") == 0 ||
+            strcmp(local, "radialgradient") == 0 || strcmp(local, "pattern") == 0 ||
+            strcmp(local, "filter") == 0 || strcmp(local, "symbol") == 0 ||
+            strcmp(local, "marker") == 0) {
             if (!tag.is_self_closing) {
                 skip_depth = 1;
             }
@@ -12342,8 +12847,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
             sib_level = SVG_MAX_DEPTH - 1;
         }
         svg_sibling_frame *sib_frame = &sibling_frames[sib_level];
-        svg_css_apply(&style, &css, &defs, tmp_stack, tmp_depth,
-                      sib_frame->items, sib_frame->count, base_len, dpi);
+        svg_css_apply(&style, &css, &defs, tmp_stack, tmp_depth, sib_frame->items, sib_frame->count,
+                      base_len, dpi);
         svg_apply_inline_style_attr(&style, draw_tag, base_len, dpi, &defs);
         if (!svg_sibling_frame_push(sib_frame, &info)) {
             continue;
@@ -12441,8 +12946,9 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
                             fill_style.stroke_pattern = NULL;
                             fill_style.stroke_width = 0.0f;
                             char *tp = p;
-                            svg_render_text_element(&fill_ctx, &fill_style, &m, draw_tag, &tp, &defs, &css,
-                                                    text_stack, text_depth, base_len, dpi, NULL);
+                            svg_render_text_element(&fill_ctx, &fill_style, &m, draw_tag, &tp,
+                                                    &defs, &css, text_stack, text_depth, base_len,
+                                                    dpi, NULL);
                             fill_buf = fill_ctx.hi_rgba;
                         }
                     }
@@ -12455,8 +12961,9 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
                             stroke_style.fill_gradient = NULL;
                             stroke_style.fill_pattern = NULL;
                             char *tp = p;
-                            svg_render_text_element(&stroke_ctx, &stroke_style, &m, draw_tag, &tp, &defs, &css,
-                                                    text_stack, text_depth, base_len, dpi, NULL);
+                            svg_render_text_element(&stroke_ctx, &stroke_style, &m, draw_tag, &tp,
+                                                    &defs, &css, text_stack, text_depth, base_len,
+                                                    dpi, NULL);
                             stroke_buf = stroke_ctx.hi_rgba;
                         }
                     }
@@ -12467,8 +12974,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
                 }
                 drew = 1;
             } else {
-                drew = svg_draw_shape(&tmp_ctx, &style, &m, draw_tag, local, dpi,
-                                      NULL, anim_time, &defs, &bbox);
+                drew = svg_draw_shape(&tmp_ctx, &style, &m, draw_tag, local, dpi, NULL, anim_time,
+                                      &defs, &bbox);
                 if (drew) {
                     if (need_fill) {
                         svg_render_ctx fill_ctx = *ctx;
@@ -12479,8 +12986,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
                             fill_style.stroke_gradient = NULL;
                             fill_style.stroke_pattern = NULL;
                             fill_style.stroke_width = 0.0f;
-                            svg_draw_shape(&fill_ctx, &fill_style, &m, draw_tag, local, dpi,
-                                           NULL, anim_time, &defs, NULL);
+                            svg_draw_shape(&fill_ctx, &fill_style, &m, draw_tag, local, dpi, NULL,
+                                           anim_time, &defs, NULL);
                             fill_buf = fill_ctx.hi_rgba;
                         }
                     }
@@ -12533,8 +13040,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
                     text_style.fill_pattern = NULL;
                     text_style.stroke_pattern = NULL;
                 }
-                svg_render_text_element(ctx, &text_style, &m, draw_tag, &p, &defs, &css,
-                                        text_stack, text_depth, base_len, dpi, NULL);
+                svg_render_text_element(ctx, &text_style, &m, draw_tag, &p, &defs, &css, text_stack,
+                                        text_depth, base_len, dpi, NULL);
             }
             continue;
         }
@@ -12548,7 +13055,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
             draw_style.fill_pattern = NULL;
             draw_style.stroke_pattern = NULL;
         }
-        if (svg_draw_shape(ctx, &draw_style, &m, draw_tag, local, dpi, NULL, anim_time, &defs, NULL)) {
+        if (svg_draw_shape(ctx, &draw_style, &m, draw_tag, local, dpi, NULL, anim_time, &defs,
+                           NULL)) {
             continue;
         }
     }
@@ -12560,9 +13068,8 @@ static int svg_render(svg_render_ctx *ctx, const unsigned char *data, size_t siz
     return 1;
 }
 
-int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
-                                  uint32_t *width, uint32_t *height,
-                                  char *err, size_t errcap) {
+int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size, uint32_t *width,
+                                  uint32_t *height, char *err, size_t errcap) {
     if (!data || !width || !height) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -12605,16 +13112,15 @@ int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_svg_with_options(const unsigned char *data, size_t size,
-                                     cupidimage_image *out,
-                                     const cupidimage_svg_options *opts,
-                                     char *err, size_t errcap) {
+int cupidimage_load_svg_with_options(const unsigned char *data, size_t size, cupidimage_image *out,
+                                     const cupidimage_svg_options *opts, char *err, size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
     }
     memset(out, 0, sizeof(*out));
-    if (opts && (!isfinite(opts->scale) || !isfinite(opts->dpi) || !isfinite(opts->animation_time))) {
+    if (opts &&
+        (!isfinite(opts->scale) || !isfinite(opts->dpi) || !isfinite(opts->animation_time))) {
         set_err(err, errcap, "invalid SVG options");
         return 0;
     }
@@ -12680,8 +13186,8 @@ int cupidimage_load_svg_with_options(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap) {
+int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap) {
     cupidimage_svg_options opts;
     opts.width = 0;
     opts.height = 0;
@@ -12693,14 +13199,13 @@ int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image
     return cupidimage_load_svg_with_options(data, size, out, &opts, err, errcap);
 }
 
-int cupidimage_load_svg_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap) {
+int cupidimage_load_svg_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_svg);
 }
 
 int cupidimage_load_svg_file_with_options(const char *path, cupidimage_image *out,
-                                          const cupidimage_svg_options *opts,
-                                          char *err, size_t errcap) {
+                                          const cupidimage_svg_options *opts, char *err,
+                                          size_t errcap) {
     if (!path || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;

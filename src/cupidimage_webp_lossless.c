@@ -1,9 +1,9 @@
 #include "cupidimage_webp_lossless.h"
 
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <limits.h>
 
 #define VP8L_MAX_CODE_LENGTH 15
 
@@ -105,13 +105,16 @@ static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits
         h->table[0] = (uint32_t)only_symbol;
         return 1;
     }
-    if (!symbols) return 0;
+    if (!symbols)
+        return 0;
     int slots = 1;
     for (int bits = 1; bits <= maxlen; bits++) {
         slots = slots * 2 - count[bits];
-        if (slots < 0) return 0;
+        if (slots < 0)
+            return 0;
     }
-    if (slots != 0) return 0;
+    if (slots != 0)
+        return 0;
 
     int next_code[VP8L_MAX_CODE_LENGTH + 1];
     int code = 0;
@@ -148,7 +151,8 @@ static int huff_build(vp8l_huff *h, const uint8_t *lengths, int num, int maxbits
 }
 
 static int huff_decode(vp8l_bit_reader *br, const vp8l_huff *h, int *sym) {
-    if (br->failed || !h->table) return 0;
+    if (br->failed || !h->table)
+        return 0;
     if (h->maxbits == 0) {
         *sym = (int)h->table[0];
         return 1;
@@ -161,18 +165,18 @@ static int huff_decode(vp8l_bit_reader *br, const vp8l_huff *h, int *sym) {
         return 0;
     }
     int len = (int)(val >> 24);
-    if (len > br->bitcount) return 0;
+    if (len > br->bitcount)
+        return 0;
     *sym = (int)(val & 0xFFFFFFu);
     vp8l_br_drop(br, len);
     return 1;
 }
 
-static const uint8_t k_code_length_code_order[19] = {
-    17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-};
+static const uint8_t k_code_length_code_order[19] = {17, 18, 0, 1,  2,  3,  4,  5,  16, 6,
+                                                     7,  8,  9, 10, 11, 12, 13, 14, 15};
 
-static int read_code_lengths(vp8l_bit_reader *br, vp8l_huff *code_len_table,
-                             int max_symbol, uint8_t *lengths) {
+static int read_code_lengths(vp8l_bit_reader *br, vp8l_huff *code_len_table, int max_symbol,
+                             uint8_t *lengths) {
     int idx = 0;
     int last_nonzero = 8;
     while (idx < max_symbol) {
@@ -272,25 +276,18 @@ static int read_prefix_code(vp8l_bit_reader *br, int alphabet_size, vp8l_huff *o
 }
 
 static const int8_t k_distance_map[120][2] = {
-    {0,1}, {1,0}, {1,1}, {-1,1}, {0,2}, {2,0}, {1,2},
-    {-1,2}, {2,1}, {-2,1}, {2,2}, {-2,2}, {0,3}, {3,0},
-    {1,3}, {-1,3}, {3,1}, {-3,1}, {2,3}, {-2,3}, {3,2},
-    {-3,2}, {0,4}, {4,0}, {1,4}, {-1,4}, {4,1}, {-4,1},
-    {3,3}, {-3,3}, {2,4}, {-2,4}, {4,2}, {-4,2}, {0,5},
-    {3,4}, {-3,4}, {4,3}, {-4,3}, {5,0}, {1,5}, {-1,5},
-    {5,1}, {-5,1}, {2,5}, {-2,5}, {5,2}, {-5,2}, {4,4},
-    {-4,4}, {3,5}, {-3,5}, {5,3}, {-5,3}, {0,6}, {6,0},
-    {1,6}, {-1,6}, {6,1}, {-6,1}, {2,6}, {-2,6}, {6,2},
-    {-6,2}, {4,5}, {-4,5}, {5,4}, {-5,4}, {3,6}, {-3,6},
-    {6,3}, {-6,3}, {0,7}, {7,0}, {1,7}, {-1,7}, {5,5},
-    {-5,5}, {7,1}, {-7,1}, {4,6}, {-4,6}, {6,4}, {-6,4},
-    {2,7}, {-2,7}, {7,2}, {-7,2}, {3,7}, {-3,7}, {7,3},
-    {-7,3}, {5,6}, {-5,6}, {6,5}, {-6,5}, {8,0}, {4,7},
-    {-4,7}, {7,4}, {-7,4}, {8,1}, {8,2}, {6,6}, {-6,6},
-    {8,3}, {5,7}, {-5,7}, {7,5}, {-7,5}, {8,4}, {6,7},
-    {-6,7}, {7,6}, {-7,6}, {8,5}, {7,7}, {-7,7}, {8,6},
-    {8,7}
-};
+    {0, 1},  {1, 0},  {1, 1},  {-1, 1}, {0, 2},  {2, 0},  {1, 2},  {-1, 2}, {2, 1},  {-2, 1},
+    {2, 2},  {-2, 2}, {0, 3},  {3, 0},  {1, 3},  {-1, 3}, {3, 1},  {-3, 1}, {2, 3},  {-2, 3},
+    {3, 2},  {-3, 2}, {0, 4},  {4, 0},  {1, 4},  {-1, 4}, {4, 1},  {-4, 1}, {3, 3},  {-3, 3},
+    {2, 4},  {-2, 4}, {4, 2},  {-4, 2}, {0, 5},  {3, 4},  {-3, 4}, {4, 3},  {-4, 3}, {5, 0},
+    {1, 5},  {-1, 5}, {5, 1},  {-5, 1}, {2, 5},  {-2, 5}, {5, 2},  {-5, 2}, {4, 4},  {-4, 4},
+    {3, 5},  {-3, 5}, {5, 3},  {-5, 3}, {0, 6},  {6, 0},  {1, 6},  {-1, 6}, {6, 1},  {-6, 1},
+    {2, 6},  {-2, 6}, {6, 2},  {-6, 2}, {4, 5},  {-4, 5}, {5, 4},  {-5, 4}, {3, 6},  {-3, 6},
+    {6, 3},  {-6, 3}, {0, 7},  {7, 0},  {1, 7},  {-1, 7}, {5, 5},  {-5, 5}, {7, 1},  {-7, 1},
+    {4, 6},  {-4, 6}, {6, 4},  {-6, 4}, {2, 7},  {-2, 7}, {7, 2},  {-7, 2}, {3, 7},  {-3, 7},
+    {7, 3},  {-7, 3}, {5, 6},  {-5, 6}, {6, 5},  {-6, 5}, {8, 0},  {4, 7},  {-4, 7}, {7, 4},
+    {-7, 4}, {8, 1},  {8, 2},  {6, 6},  {-6, 6}, {8, 3},  {5, 7},  {-5, 7}, {7, 5},  {-7, 5},
+    {8, 4},  {6, 7},  {-6, 7}, {7, 6},  {-7, 6}, {8, 5},  {7, 7},  {-7, 7}, {8, 6},  {8, 7}};
 
 static int prefix_code_value(vp8l_bit_reader *br, int code) {
     if (code < 4) {
@@ -310,7 +307,8 @@ static int distance_to_offset(int distance_code, int width) {
         int x = k_distance_map[distance_code - 1][0];
         int y = k_distance_map[distance_code - 1][1];
         int dist = x + y * width;
-        if (dist < 1) dist = 1;
+        if (dist < 1)
+            dist = 1;
         return dist;
     }
     return distance_code - 120;
@@ -383,7 +381,8 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
                 free(color_cache);
                 return 0;
             }
-            meta_prefix = (uint16_t *)malloc((size_t)prefix_w * (size_t)prefix_h * sizeof(uint16_t));
+            meta_prefix =
+                (uint16_t *)malloc((size_t)prefix_w * (size_t)prefix_h * sizeof(uint16_t));
             if (!meta_prefix) {
                 free(color_cache);
                 free(entropy_pixels);
@@ -409,7 +408,8 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
         return 0;
     }
 
-    vp8l_prefix_group *groups = (vp8l_prefix_group *)calloc((size_t)num_groups, sizeof(vp8l_prefix_group));
+    vp8l_prefix_group *groups =
+        (vp8l_prefix_group *)calloc((size_t)num_groups, sizeof(vp8l_prefix_group));
     if (!groups) {
         free(color_cache);
         free(meta_prefix);
@@ -483,7 +483,7 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
 
         int gsym = 0;
         if (!huff_decode(br, &pg->codes[0], &gsym)) {
-            set_err(err, errcap, "VP8L decode failed (green)" );
+            set_err(err, errcap, "VP8L decode failed (green)");
             free(pixels);
             for (int g = 0; g < num_groups; g++) {
                 prefix_group_free(&groups[g]);
@@ -496,10 +496,9 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
 
         if (gsym < 256) {
             int rsym = 0, bsym = 0, asym = 0;
-            if (!huff_decode(br, &pg->codes[1], &rsym) ||
-                !huff_decode(br, &pg->codes[2], &bsym) ||
+            if (!huff_decode(br, &pg->codes[1], &rsym) || !huff_decode(br, &pg->codes[2], &bsym) ||
                 !huff_decode(br, &pg->codes[3], &asym)) {
-                set_err(err, errcap, "VP8L decode failed (color)" );
+                set_err(err, errcap, "VP8L decode failed (color)");
                 free(pixels);
                 for (int g = 0; g < num_groups; g++) {
                     prefix_group_free(&groups[g]);
@@ -509,10 +508,8 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
                 free(meta_prefix);
                 return 0;
             }
-            uint32_t color = ((uint32_t)(asym & 0xFF) << 24) |
-                             ((uint32_t)(rsym & 0xFF) << 16) |
-                             ((uint32_t)(gsym & 0xFF) << 8) |
-                             ((uint32_t)(bsym & 0xFF));
+            uint32_t color = ((uint32_t)(asym & 0xFF) << 24) | ((uint32_t)(rsym & 0xFF) << 16) |
+                             ((uint32_t)(gsym & 0xFF) << 8) | ((uint32_t)(bsym & 0xFF));
             pixels[pos] = color;
             if (color_cache) {
                 uint32_t idx = color_cache_hash(color, color_cache_bits);
@@ -523,7 +520,7 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
             int length = prefix_code_value(br, gsym - 256);
             int dist_sym = 0;
             if (!huff_decode(br, &pg->codes[4], &dist_sym)) {
-                set_err(err, errcap, "VP8L decode failed (distance)" );
+                set_err(err, errcap, "VP8L decode failed (distance)");
                 free(pixels);
                 for (int g = 0; g < num_groups; g++) {
                     prefix_group_free(&groups[g]);
@@ -536,7 +533,7 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
             int dist_code = prefix_code_value(br, dist_sym);
             int dist = distance_to_offset(dist_code, width);
             if ((size_t)dist > pos) {
-                set_err(err, errcap, "VP8L invalid distance" );
+                set_err(err, errcap, "VP8L invalid distance");
                 free(pixels);
                 for (int g = 0; g < num_groups; g++) {
                     prefix_group_free(&groups[g]);
@@ -605,8 +602,10 @@ static int decode_image_data(vp8l_bit_reader *br, int width, int height, int use
 }
 
 static uint8_t clamp_u8(int v) {
-    if (v < 0) return 0;
-    if (v > 255) return 255;
+    if (v < 0)
+        return 0;
+    if (v > 255)
+        return 255;
     return (uint8_t)v;
 }
 
@@ -619,10 +618,8 @@ static uint32_t avg2_color(uint32_t a, uint32_t b) {
     uint8_t bR = (b >> 16) & 0xFF;
     uint8_t bG = (b >> 8) & 0xFF;
     uint8_t bB = b & 0xFF;
-    return ((uint32_t)((aA + bA) >> 1) << 24) |
-           ((uint32_t)((aR + bR) >> 1) << 16) |
-           ((uint32_t)((aG + bG) >> 1) << 8) |
-           ((uint32_t)((aB + bB) >> 1));
+    return ((uint32_t)((aA + bA) >> 1) << 24) | ((uint32_t)((aR + bR) >> 1) << 16) |
+           ((uint32_t)((aG + bG) >> 1) << 8) | ((uint32_t)((aB + bB) >> 1));
 }
 
 static uint32_t add_argb(uint32_t a, uint32_t b) {
@@ -634,10 +631,8 @@ static uint32_t add_argb(uint32_t a, uint32_t b) {
     uint8_t bR = (b >> 16) & 0xFF;
     uint8_t bG = (b >> 8) & 0xFF;
     uint8_t bB = b & 0xFF;
-    return ((uint32_t)((aA + bA) & 0xFF) << 24) |
-           ((uint32_t)((aR + bR) & 0xFF) << 16) |
-           ((uint32_t)((aG + bG) & 0xFF) << 8) |
-           ((uint32_t)((aB + bB) & 0xFF));
+    return ((uint32_t)((aA + bA) & 0xFF) << 24) | ((uint32_t)((aR + bR) & 0xFF) << 16) |
+           ((uint32_t)((aG + bG) & 0xFF) << 8) | ((uint32_t)((aB + bB) & 0xFF));
 }
 
 static uint32_t clamp_add_sub(uint32_t a, uint32_t b, uint32_t c) {
@@ -653,10 +648,8 @@ static uint32_t clamp_add_sub(uint32_t a, uint32_t b, uint32_t c) {
     int cR = (c >> 16) & 0xFF;
     int cG = (c >> 8) & 0xFF;
     int cB = c & 0xFF;
-    return ((uint32_t)clamp_u8(aA + bA - cA) << 24) |
-           ((uint32_t)clamp_u8(aR + bR - cR) << 16) |
-           ((uint32_t)clamp_u8(aG + bG - cG) << 8) |
-           ((uint32_t)clamp_u8(aB + bB - cB));
+    return ((uint32_t)clamp_u8(aA + bA - cA) << 24) | ((uint32_t)clamp_u8(aR + bR - cR) << 16) |
+           ((uint32_t)clamp_u8(aG + bG - cG) << 8) | ((uint32_t)clamp_u8(aB + bB - cB));
 }
 
 static uint32_t clamp_add_sub_half(uint32_t a, uint32_t b) {
@@ -701,36 +694,36 @@ static uint32_t select_color(uint32_t a, uint32_t b, uint32_t c) {
 
 static uint32_t predictor_value(int mode, uint32_t L, uint32_t T, uint32_t TL, uint32_t TR) {
     switch (mode) {
-    case 0: /* black */
-        return 0xFF000000u;
-    case 1: /* L */
-        return L;
-    case 2: /* T */
-        return T;
-    case 3: /* TR */
-        return TR;
-    case 4: /* TL */
-        return TL;
-    case 5: /* average2(L, TR), T */
-        return avg2_color(avg2_color(L, TR), T);
-    case 6: /* average2(L, TL) */
-        return avg2_color(L, TL);
-    case 7: /* average2(L, T) */
-        return avg2_color(L, T);
-    case 8: /* average2(TL, T) */
-        return avg2_color(TL, T);
-    case 9: /* average2(T, TR) */
-        return avg2_color(T, TR);
-    case 10: /* average2(average2(L, TL), average2(T, TR)) */
-        return avg2_color(avg2_color(L, TL), avg2_color(T, TR));
-    case 11: /* select */
-        return select_color(L, T, TL);
-    case 12: /* clamp add subtract full */
-        return clamp_add_sub(L, T, TL);
-    case 13: /* clamp add subtract half */
-        return clamp_add_sub_half(avg2_color(L, T), TL);
-    default:
-        return L;
+        case 0: /* black */
+            return 0xFF000000u;
+        case 1: /* L */
+            return L;
+        case 2: /* T */
+            return T;
+        case 3: /* TR */
+            return TR;
+        case 4: /* TL */
+            return TL;
+        case 5: /* average2(L, TR), T */
+            return avg2_color(avg2_color(L, TR), T);
+        case 6: /* average2(L, TL) */
+            return avg2_color(L, TL);
+        case 7: /* average2(L, T) */
+            return avg2_color(L, T);
+        case 8: /* average2(TL, T) */
+            return avg2_color(TL, T);
+        case 9: /* average2(T, TR) */
+            return avg2_color(T, TR);
+        case 10: /* average2(average2(L, TL), average2(T, TR)) */
+            return avg2_color(avg2_color(L, TL), avg2_color(T, TR));
+        case 11: /* select */
+            return select_color(L, T, TL);
+        case 12: /* clamp add subtract full */
+            return clamp_add_sub(L, T, TL);
+        case 13: /* clamp add subtract half */
+            return clamp_add_sub_half(avg2_color(L, T), TL);
+        default:
+            return L;
     }
 }
 
@@ -802,7 +795,8 @@ static void apply_color_transform(uint32_t *pixels, int width, int height,
             int delta_rb = (red_to_blue * r_s) >> 5;
             int tmp_b = (b + delta_gb + delta_rb) & 0xFF;
 
-            pixels[idx] = ((uint32_t)a << 24) | ((uint32_t)tmp_r << 16) | ((uint32_t)g << 8) | (uint32_t)tmp_b;
+            pixels[idx] = ((uint32_t)a << 24) | ((uint32_t)tmp_r << 16) | ((uint32_t)g << 8) |
+                          (uint32_t)tmp_b;
         }
     }
 }
@@ -892,8 +886,8 @@ static void transform_free(vp8l_transform *t) {
     t->color_table = NULL;
 }
 
-int cupidimage_decode_vp8l(const unsigned char *data, size_t size,
-                            cupidimage_image *out, char *err, size_t errcap) {
+int cupidimage_decode_vp8l(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                           size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -933,7 +927,8 @@ int cupidimage_decode_vp8l(const unsigned char *data, size_t size,
     while (vp8l_br_read(&br, 1)) {
         int type = (int)vp8l_br_read(&br, 2);
         if (transform_count >= 4 || (seen_transforms & (1u << type))) {
-            for (int i = 0; i < transform_count; i++) transform_free(&transforms[i]);
+            for (int i = 0; i < transform_count; i++)
+                transform_free(&transforms[i]);
             set_err(err, errcap, "repeated VP8L transform");
             return 0;
         }
@@ -999,8 +994,8 @@ int cupidimage_decode_vp8l(const unsigned char *data, size_t size,
                 uint8_t r = (uint8_t)(((prev >> 16) & 0xFF) + ((c >> 16) & 0xFF));
                 uint8_t g = (uint8_t)(((prev >> 8) & 0xFF) + ((c >> 8) & 0xFF));
                 uint8_t b = (uint8_t)((prev & 0xFF) + (c & 0xFF));
-                t->color_table[i] = ((uint32_t)a << 24) | ((uint32_t)r << 16) |
-                                    ((uint32_t)g << 8) | (uint32_t)b;
+                t->color_table[i] =
+                    ((uint32_t)a << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
                 prev = t->color_table[i];
             }
             free(table_raw);
@@ -1029,28 +1024,30 @@ int cupidimage_decode_vp8l(const unsigned char *data, size_t size,
     for (int i = transform_count - 1; i >= 0; i--) {
         vp8l_transform *t = &transforms[i];
         switch (t->type) {
-        case TRANS_PREDICTOR:
-            apply_predictor_transform(pixels, img_width, img_height, t->data, t->size_bits, t->width);
-            break;
-        case TRANS_COLOR:
-            apply_color_transform(pixels, img_width, img_height, t->data, t->size_bits, t->width);
-            break;
-        case TRANS_SUBGREEN:
-            apply_subtract_green(pixels, img_width, img_height);
-            break;
-        case TRANS_INDEX:
-            if (!apply_color_indexing(&pixels, &img_width, img_height,
-                                      t->color_table, t->color_table_size, t->width_bits,
-                                      t->orig_width, err, errcap)) {
-                for (int j = 0; j < transform_count; j++) {
-                    transform_free(&transforms[j]);
+            case TRANS_PREDICTOR:
+                apply_predictor_transform(pixels, img_width, img_height, t->data, t->size_bits,
+                                          t->width);
+                break;
+            case TRANS_COLOR:
+                apply_color_transform(pixels, img_width, img_height, t->data, t->size_bits,
+                                      t->width);
+                break;
+            case TRANS_SUBGREEN:
+                apply_subtract_green(pixels, img_width, img_height);
+                break;
+            case TRANS_INDEX:
+                if (!apply_color_indexing(&pixels, &img_width, img_height, t->color_table,
+                                          t->color_table_size, t->width_bits, t->orig_width, err,
+                                          errcap)) {
+                    for (int j = 0; j < transform_count; j++) {
+                        transform_free(&transforms[j]);
+                    }
+                    free(pixels);
+                    return 0;
                 }
-                free(pixels);
-                return 0;
-            }
-            break;
-        default:
-            break;
+                break;
+            default:
+                break;
         }
     }
 

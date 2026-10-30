@@ -74,171 +74,134 @@ typedef struct cupidimage_svg_options {
 } cupidimage_svg_options;
 
 typedef struct cupidimage_kitty_options {
-    uint32_t image_id;           /* 0 = auto-generate */
-    uint32_t placement_id;       /* 0 = auto-generate */
-    int compression;             /* 1 = zlib (default), 0 = none */
-    int delete_previous;         /* 1 = delete before render, 0 = keep (default) */
+    uint32_t image_id;     /* 0 = auto-generate */
+    uint32_t placement_id; /* 0 = auto-generate */
+    int compression;       /* 1 = zlib (default), 0 = none */
+    int delete_previous;   /* 1 = delete before render, 0 = keep (default) */
 } cupidimage_kitty_options;
 
 typedef struct cupidimage_sixel_options {
-    uint32_t max_colors;         /* 2-256, default 256 */
-    uint8_t dither_mode;         /* 0=none, 1=Floyd-Steinberg (default), 2=Atkinson, 3=ordered */
-    uint8_t use_transparency;    /* 0=blend with bg (default), 1=native transparency */
-    uint32_t background_color;   /* RGB for alpha blending, default 0xFFFFFF (white) */
-    float pixel_aspect_ratio;    /* 0=auto-detect (2.0), >0=manual */
-    int delete_previous;         /* 1=clear before render, 0=keep (default) */
+    uint32_t max_colors;       /* 2-256, default 256 */
+    uint8_t dither_mode;       /* 0=none, 1=Floyd-Steinberg (default), 2=Atkinson, 3=ordered */
+    uint8_t use_transparency;  /* 0=blend with bg (default), 1=native transparency */
+    uint32_t background_color; /* RGB for alpha blending, default 0xFFFFFF (white) */
+    float pixel_aspect_ratio;  /* 0=auto-detect (2.0), >0=manual */
+    int delete_previous;       /* 1=clear before render, 0=keep (default) */
 } cupidimage_sixel_options;
 
-int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap);
-int cupidimage_load_png_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap);
-int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out,
-                         char *err, size_t errcap);
-int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out,
-                              char *err, size_t errcap);
-int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out,
-                         char *err, size_t errcap);
-int cupidimage_load_webp_file(const char *path, cupidimage_image *out,
-                              char *err, size_t errcap);
-int cupidimage_load_gif(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap);
-int cupidimage_load_gif_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap);
-int cupidimage_load_bmp(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap);
-int cupidimage_load_bmp_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap);
-int cupidimage_load_ico(const unsigned char *data, size_t size,
-                        cupidimage_image *out,
-                        char *err, size_t errcap);
-int cupidimage_load_ico_page(const char *path,
-                             int page,
-                             cupidimage_image *out,
-                             char *err, size_t errcap);
-int cupidimage_ico_get_directory(const char *path,
-                                 cupidimage_ico_entry **entries,
-                                 int *count,
-                                 int *is_cursor,
-                                 char *err, size_t errcap);
-int cupidimage_load_tiff(const unsigned char *data, size_t size, cupidimage_image *out,
-                         char *err, size_t errcap);
-int cupidimage_load_tiff_file(const char *path, cupidimage_image *out,
-                              char *err, size_t errcap);
-int cupidimage_load_tiff_page(const unsigned char *data, size_t size,
-                              cupidimage_image *out,
-                              int page_index,
-                              char *err, size_t errcap);
-int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size,
-                                   int *count,
-                                   char *err, size_t errcap);
-int cupidimage_load_tga(const unsigned char *data, size_t size,
-                        cupidimage_image *out, char *err, size_t errcap);
-int cupidimage_load_tga_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap);
-int cupidimage_load_tga_with_metadata(const unsigned char *data, size_t size,
-                                      cupidimage_image *out,
-                                      cupidimage_tga_metadata *meta,
-                                      int apply_corrections,
+int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_png_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap);
+int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap);
+int cupidimage_load_webp_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_gif(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_gif_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_bmp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_bmp_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_ico(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_ico_page(const char *path, int page, cupidimage_image *out, char *err,
+                             size_t errcap);
+int cupidimage_ico_get_directory(const char *path, cupidimage_ico_entry **entries, int *count,
+                                 int *is_cursor, char *err, size_t errcap);
+int cupidimage_load_tiff(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap);
+int cupidimage_load_tiff_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_tiff_page(const unsigned char *data, size_t size, cupidimage_image *out,
+                              int page_index, char *err, size_t errcap);
+int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size, int *count, char *err,
+                                   size_t errcap);
+int cupidimage_load_tga(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_tga_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_tga_with_metadata(const unsigned char *data, size_t size, cupidimage_image *out,
+                                      cupidimage_tga_metadata *meta, int apply_corrections,
                                       char *err, size_t errcap);
 void cupidimage_free_tga_metadata(cupidimage_tga_metadata *meta);
-int cupidimage_load_pdf(const unsigned char *data, size_t size,
-                        cupidimage_image *out, char *err, size_t errcap);
-int cupidimage_load_pdf_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap);
-int cupidimage_load_pdf_page(const unsigned char *data, size_t size,
-                             cupidimage_image *out,
-                             int page_index,
-                             char *err, size_t errcap);
-int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *out,
-                                  int page_index,
+int cupidimage_load_pdf(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_pdf_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
+int cupidimage_load_pdf_page(const unsigned char *data, size_t size, cupidimage_image *out,
+                             int page_index, char *err, size_t errcap);
+int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *out, int page_index,
                                   char *err, size_t errcap);
-int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size,
-                                  int *count,
-                                  char *err, size_t errcap);
-int cupidimage_get_pdf_page_count_file(const char *path,
-                                       int *count,
-                                       char *err, size_t errcap);
-int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap);
-int cupidimage_load_svg_with_options(const unsigned char *data, size_t size,
-                                     cupidimage_image *out,
-                                     const cupidimage_svg_options *opts,
-                                     char *err, size_t errcap);
-int cupidimage_load_svg_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap);
+int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
+                                  size_t errcap);
+int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, size_t errcap);
+int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap);
+int cupidimage_load_svg_with_options(const unsigned char *data, size_t size, cupidimage_image *out,
+                                     const cupidimage_svg_options *opts, char *err, size_t errcap);
+int cupidimage_load_svg_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
 int cupidimage_load_svg_file_with_options(const char *path, cupidimage_image *out,
-                                          const cupidimage_svg_options *opts,
-                                          char *err, size_t errcap);
-int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size,
-                                  uint32_t *width, uint32_t *height,
+                                          const cupidimage_svg_options *opts, char *err,
+                                          size_t errcap);
+int cupidimage_svg_get_dimensions(const unsigned char *data, size_t size, uint32_t *width,
+                                  uint32_t *height, char *err, size_t errcap);
+int cupidimage_load_gif_animation(const unsigned char *data, size_t size, cupidimage_animation *out,
                                   char *err, size_t errcap);
-int cupidimage_load_gif_animation(const unsigned char *data, size_t size,
-                                  cupidimage_animation *out,
-                                  char *err, size_t errcap);
-int cupidimage_load_gif_animation_file(const char *path,
-                                       cupidimage_animation *out,
-                                       char *err, size_t errcap);
-int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out,
-                          char *err, size_t errcap);
-int cupidimage_load_image_file(const char *path, cupidimage_image *out,
-                               char *err, size_t errcap);
+int cupidimage_load_gif_animation_file(const char *path, cupidimage_animation *out, char *err,
+                                       size_t errcap);
+int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                          size_t errcap);
+int cupidimage_load_image_file(const char *path, cupidimage_image *out, char *err, size_t errcap);
 void cupidimage_free(cupidimage_image *img);
 void cupidimage_free_animation(cupidimage_animation *anim);
 
-int cupidimage_render_ansi(const cupidimage_image *img, FILE *out,
-                           int max_width, int max_height);
+int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width, int max_height);
 
 /* Kitty graphics protocol */
 int cupidimage_is_kitty_terminal(void);
 
-int cupidimage_render_kitty(const cupidimage_image *img, FILE *out,
-                           uint32_t term_width, uint32_t term_height,
-                           char *err, size_t errcap);
+int cupidimage_render_kitty(const cupidimage_image *img, FILE *out, uint32_t term_width,
+                            uint32_t term_height, char *err, size_t errcap);
 
 int cupidimage_render_kitty_with_options(const cupidimage_image *img, FILE *out,
-                                        uint32_t term_width, uint32_t term_height,
-                                        const cupidimage_kitty_options *opts,
-                                        char *err, size_t errcap);
+                                         uint32_t term_width, uint32_t term_height,
+                                         const cupidimage_kitty_options *opts, char *err,
+                                         size_t errcap);
 
 int cupidimage_render_kitty_animation(const cupidimage_animation *anim, FILE *out,
-                                     uint32_t term_width, uint32_t term_height,
-                                     char *err, size_t errcap);
+                                      uint32_t term_width, uint32_t term_height, char *err,
+                                      size_t errcap);
 
 int cupidimage_render_kitty_animation_with_options(const cupidimage_animation *anim, FILE *out,
                                                    uint32_t term_width, uint32_t term_height,
-                                                   const cupidimage_kitty_options *opts,
-                                                   char *err, size_t errcap);
+                                                   const cupidimage_kitty_options *opts, char *err,
+                                                   size_t errcap);
 
-int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id,
-                                 char *err, size_t errcap);
+int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id, char *err, size_t errcap);
 
-int cupidimage_kitty_delete_placement(FILE *out, uint32_t image_id,
-                                     uint32_t placement_id,
-                                     char *err, size_t errcap);
+int cupidimage_kitty_delete_placement(FILE *out, uint32_t image_id, uint32_t placement_id,
+                                      char *err, size_t errcap);
 
 int cupidimage_kitty_delete_all(FILE *out, char *err, size_t errcap);
 
 /* Sixel graphics protocol */
 int cupidimage_is_sixel_terminal(void);
 
-int cupidimage_render_sixel(const cupidimage_image *img, FILE *out,
-                            uint32_t term_width, uint32_t term_height,
-                            char *err, size_t errcap);
+int cupidimage_render_sixel(const cupidimage_image *img, FILE *out, uint32_t term_width,
+                            uint32_t term_height, char *err, size_t errcap);
 
 int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
-                                        uint32_t term_width, uint32_t term_height,
-                                        const cupidimage_sixel_options *opts,
-                                        char *err, size_t errcap);
+                                         uint32_t term_width, uint32_t term_height,
+                                         const cupidimage_sixel_options *opts, char *err,
+                                         size_t errcap);
 
 int cupidimage_render_sixel_animation(const cupidimage_animation *anim, FILE *out,
-                                     uint32_t term_width, uint32_t term_height,
-                                     char *err, size_t errcap);
+                                      uint32_t term_width, uint32_t term_height, char *err,
+                                      size_t errcap);
 
 int cupidimage_render_sixel_animation_with_options(const cupidimage_animation *anim, FILE *out,
                                                    uint32_t term_width, uint32_t term_height,
-                                                   const cupidimage_sixel_options *opts,
-                                                   char *err, size_t errcap);
+                                                   const cupidimage_sixel_options *opts, char *err,
+                                                   size_t errcap);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -174,9 +174,7 @@ static int build_dynamic_tables(struct bitstream *bs, huff_table *litlen, huff_t
         return 0;
     }
 
-    static const int order[19] = {
-        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-    };
+    static const int order[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
     uint8_t clen_lengths[19];
     for (int i = 0; i < 19; i++) {
@@ -241,30 +239,16 @@ static int build_dynamic_tables(struct bitstream *bs, huff_table *litlen, huff_t
 }
 
 static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, size_t *outlen) {
-    static const int length_base[29] = {
-        3, 4, 5, 6, 7, 8, 9, 10,
-        11, 13, 15, 17, 19, 23, 27, 31,
-        35, 43, 51, 59, 67, 83, 99, 115,
-        131, 163, 195, 227, 258
-    };
-    static const int length_extra[29] = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 2, 2, 2, 2,
-        3, 3, 3, 3, 4, 4, 4, 4,
-        5, 5, 5, 5, 0
-    };
+    static const int length_base[29] = {3,  4,  5,  6,   7,   8,   9,   10,  11, 13,
+                                        15, 17, 19, 23,  27,  31,  35,  43,  51, 59,
+                                        67, 83, 99, 115, 131, 163, 195, 227, 258};
+    static const int length_extra[29] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                         2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0};
     static const int dist_base[30] = {
-        1, 2, 3, 4, 5, 7, 9, 13,
-        17, 25, 33, 49, 65, 97, 129, 193,
-        257, 385, 513, 769, 1025, 1537, 2049, 3073,
-        4097, 6145, 8193, 12289, 16385, 24577
-    };
-    static const int dist_extra[30] = {
-        0, 0, 0, 0, 1, 1, 2, 2,
-        3, 3, 4, 4, 5, 5, 6, 6,
-        7, 7, 8, 8, 9, 9, 10, 10,
-        11, 11, 12, 12, 13, 13
-    };
+        1,   2,   3,   4,   5,   7,    9,    13,   17,   25,   33,   49,   65,    97,    129,
+        193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577};
+    static const int dist_extra[30] = {0, 0, 0, 0, 1, 1, 2, 2,  3,  3,  4,  4,  5,  5,  6,
+                                       6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
 
     size_t outpos = 0;
     int final_block = 0;
@@ -383,7 +367,8 @@ static int deflate_decode(struct bitstream *bs, uint8_t *out, size_t outcap, siz
     return 1;
 }
 
-static int zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap, size_t *outlen) {
+static int zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
+                           size_t *outlen) {
     if (size < 2) {
         return 0;
     }
@@ -440,38 +425,40 @@ static int unfilter(const uint8_t *raw, size_t raw_size, uint8_t *recon, size_t 
         uint8_t filter = raw[y * (rowbytes + 1)];
 
         switch (filter) {
-        case 0:
-            memcpy(out, in, rowbytes);
-            break;
-        case 1:
-            for (size_t x = 0; x < rowbytes; x++) {
-                uint8_t left = (x >= (size_t)bpp) ? out[x - (size_t)bpp] : 0;
-                out[x] = (uint8_t)(in[x] + left);
-            }
-            break;
-        case 2:
-            for (size_t x = 0; x < rowbytes; x++) {
-                uint8_t up = (y > 0) ? recon[(y - 1) * rowbytes + x] : 0;
-                out[x] = (uint8_t)(in[x] + up);
-            }
-            break;
-        case 3:
-            for (size_t x = 0; x < rowbytes; x++) {
-                uint8_t left = (x >= (size_t)bpp) ? out[x - (size_t)bpp] : 0;
-                uint8_t up = (y > 0) ? recon[(y - 1) * rowbytes + x] : 0;
-                out[x] = (uint8_t)(in[x] + (uint8_t)(((int)left + (int)up) / 2));
-            }
-            break;
-        case 4:
-            for (size_t x = 0; x < rowbytes; x++) {
-                uint8_t left = (x >= (size_t)bpp) ? out[x - (size_t)bpp] : 0;
-                uint8_t up = (y > 0) ? recon[(y - 1) * rowbytes + x] : 0;
-                uint8_t up_left = (y > 0 && x >= (size_t)bpp) ? recon[(y - 1) * rowbytes + x - (size_t)bpp] : 0;
-                out[x] = (uint8_t)(in[x] + paeth(left, up, up_left));
-            }
-            break;
-        default:
-            return 0;
+            case 0:
+                memcpy(out, in, rowbytes);
+                break;
+            case 1:
+                for (size_t x = 0; x < rowbytes; x++) {
+                    uint8_t left = (x >= (size_t)bpp) ? out[x - (size_t)bpp] : 0;
+                    out[x] = (uint8_t)(in[x] + left);
+                }
+                break;
+            case 2:
+                for (size_t x = 0; x < rowbytes; x++) {
+                    uint8_t up = (y > 0) ? recon[(y - 1) * rowbytes + x] : 0;
+                    out[x] = (uint8_t)(in[x] + up);
+                }
+                break;
+            case 3:
+                for (size_t x = 0; x < rowbytes; x++) {
+                    uint8_t left = (x >= (size_t)bpp) ? out[x - (size_t)bpp] : 0;
+                    uint8_t up = (y > 0) ? recon[(y - 1) * rowbytes + x] : 0;
+                    out[x] = (uint8_t)(in[x] + (uint8_t)(((int)left + (int)up) / 2));
+                }
+                break;
+            case 4:
+                for (size_t x = 0; x < rowbytes; x++) {
+                    uint8_t left = (x >= (size_t)bpp) ? out[x - (size_t)bpp] : 0;
+                    uint8_t up = (y > 0) ? recon[(y - 1) * rowbytes + x] : 0;
+                    uint8_t up_left = (y > 0 && x >= (size_t)bpp)
+                                          ? recon[(y - 1) * rowbytes + x - (size_t)bpp]
+                                          : 0;
+                    out[x] = (uint8_t)(in[x] + paeth(left, up, up_left));
+                }
+                break;
+            default:
+                return 0;
         }
     }
 
@@ -548,23 +535,24 @@ static uint16_t read_be16(const uint8_t *p) {
 }
 
 static uint8_t transparency_alpha(const uint8_t *row, uint32_t x, uint8_t bit_depth,
-                                   uint8_t color_type, const uint8_t *trns) {
+                                  uint8_t color_type, const uint8_t *trns) {
     unsigned mask = (1u << bit_depth) - 1u;
     if (color_type == 0) {
-        uint16_t sample = bit_depth == 16 ? read_be16(row + (size_t)x * 2u)
-                                         : gray_sample_at(row, x, bit_depth);
+        uint16_t sample =
+            bit_depth == 16 ? read_be16(row + (size_t)x * 2u) : gray_sample_at(row, x, bit_depth);
         return sample == (read_be16(trns) & mask) ? 0 : 255;
     }
     for (unsigned c = 0; c < 3; c++) {
         size_t offset = (size_t)x * 3u + c;
         uint16_t sample = bit_depth == 16 ? read_be16(row + offset * 2u) : row[offset];
-        if (sample != (read_be16(trns + c * 2u) & mask)) return 255;
+        if (sample != (read_be16(trns + c * 2u) & mask))
+            return 255;
     }
     return 0;
 }
 
-int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image *out,
-                        char *err, size_t errcap) {
+int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -674,10 +662,10 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
         set_err(err, errcap, "unsupported PNG method");
         return 0;
     }
-    if (have_trns && ((color_type == 0 && trns_entries != 2) ||
-                      (color_type == 2 && trns_entries != 6) ||
-                      (color_type == 3 && trns_entries > palette_entries) ||
-                      color_type == 4 || color_type == 6)) {
+    if (have_trns &&
+        ((color_type == 0 && trns_entries != 2) || (color_type == 2 && trns_entries != 6) ||
+         (color_type == 3 && trns_entries > palette_entries) || color_type == 4 ||
+         color_type == 6)) {
         free(idat);
         set_err(err, errcap, "invalid tRNS");
         return 0;
@@ -693,9 +681,11 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
             set_err(err, errcap, "missing PLTE");
             return 0;
         }
-        if (have_trns) memcpy(palette_alpha, trns, (size_t)trns_entries);
+        if (have_trns)
+            memcpy(palette_alpha, trns, (size_t)trns_entries);
     } else if (color_type == 0) {
-        if (!(bit_depth == 1 || bit_depth == 2 || bit_depth == 4 || bit_depth == 8 || bit_depth == 16)) {
+        if (!(bit_depth == 1 || bit_depth == 2 || bit_depth == 4 || bit_depth == 8 ||
+              bit_depth == 16)) {
             free(idat);
             set_err(err, errcap, "unsupported grayscale bit depth");
             return 0;
@@ -710,15 +700,25 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
 
     int channels = 0;
     switch (color_type) {
-    case 0: channels = 1; break;
-    case 2: channels = 3; break;
-    case 3: channels = 1; break;
-    case 4: channels = 2; break;
-    case 6: channels = 4; break;
-    default:
-        free(idat);
-        set_err(err, errcap, "unsupported color type");
-        return 0;
+        case 0:
+            channels = 1;
+            break;
+        case 2:
+            channels = 3;
+            break;
+        case 3:
+            channels = 1;
+            break;
+        case 4:
+            channels = 2;
+            break;
+        case 6:
+            channels = 4;
+            break;
+        default:
+            free(idat);
+            set_err(err, errcap, "unsupported color type");
+            return 0;
     }
 
     size_t rowbytes = 0;
@@ -785,31 +785,31 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
         for (uint32_t y = 0; y < height; y++) {
             const uint8_t *src = recon + (size_t)y * rowbytes;
             uint8_t *dst = rgba + (size_t)y * (size_t)width * 4u;
-        for (uint32_t x = 0; x < width; x++) {
-            if (color_type == 0) {
-                if (bit_depth == 16) {
-                    size_t off = (size_t)x * 2u;
-                    uint16_t g16 = (uint16_t)((src[off] << 8) | src[off + 1]);
-                    uint8_t g = sample16_to_8(g16);
-                    dst[x * 4 + 0] = g;
-                    dst[x * 4 + 1] = g;
-                    dst[x * 4 + 2] = g;
-                    dst[x * 4 + 3] = 255;
-                } else if (bit_depth == 8) {
-                    uint8_t g = src[x];
-                    dst[x * 4 + 0] = g;
-                    dst[x * 4 + 1] = g;
-                    dst[x * 4 + 2] = g;
-                    dst[x * 4 + 3] = 255;
-                } else {
-                    uint8_t v = gray_sample_at(src, x, bit_depth);
-                    unsigned maxv = (1u << bit_depth) - 1u;
-                    uint8_t g = (uint8_t)((v * 255u + maxv / 2u) / maxv);
-                    dst[x * 4 + 0] = g;
-                    dst[x * 4 + 1] = g;
-                    dst[x * 4 + 2] = g;
-                    dst[x * 4 + 3] = 255;
-                }
+            for (uint32_t x = 0; x < width; x++) {
+                if (color_type == 0) {
+                    if (bit_depth == 16) {
+                        size_t off = (size_t)x * 2u;
+                        uint16_t g16 = (uint16_t)((src[off] << 8) | src[off + 1]);
+                        uint8_t g = sample16_to_8(g16);
+                        dst[x * 4 + 0] = g;
+                        dst[x * 4 + 1] = g;
+                        dst[x * 4 + 2] = g;
+                        dst[x * 4 + 3] = 255;
+                    } else if (bit_depth == 8) {
+                        uint8_t g = src[x];
+                        dst[x * 4 + 0] = g;
+                        dst[x * 4 + 1] = g;
+                        dst[x * 4 + 2] = g;
+                        dst[x * 4 + 3] = 255;
+                    } else {
+                        uint8_t v = gray_sample_at(src, x, bit_depth);
+                        unsigned maxv = (1u << bit_depth) - 1u;
+                        uint8_t g = (uint8_t)((v * 255u + maxv / 2u) / maxv);
+                        dst[x * 4 + 0] = g;
+                        dst[x * 4 + 1] = g;
+                        dst[x * 4 + 2] = g;
+                        dst[x * 4 + 3] = 255;
+                    }
                 } else if (color_type == 2) {
                     if (bit_depth == 16) {
                         size_t off = (size_t)x * 6u;
@@ -894,8 +894,10 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
 
     size_t total_raw = 0;
     for (int p = 0; p < 7; p++) {
-        uint32_t pw = (width > pass_x[p]) ? ((width - pass_x[p] + pass_dx[p] - 1u) / pass_dx[p]) : 0u;
-        uint32_t ph = (height > pass_y[p]) ? ((height - pass_y[p] + pass_dy[p] - 1u) / pass_dy[p]) : 0u;
+        uint32_t pw =
+            (width > pass_x[p]) ? ((width - pass_x[p] + pass_dx[p] - 1u) / pass_dx[p]) : 0u;
+        uint32_t ph =
+            (height > pass_y[p]) ? ((height - pass_y[p] + pass_dy[p] - 1u) / pass_dy[p]) : 0u;
         if (pw == 0 || ph == 0) {
             continue;
         }
@@ -944,8 +946,10 @@ int cupidimage_load_png(const unsigned char *data, size_t size, cupidimage_image
 
     size_t offset = 0;
     for (int p = 0; p < 7; p++) {
-        uint32_t pw = (width > pass_x[p]) ? ((width - pass_x[p] + pass_dx[p] - 1u) / pass_dx[p]) : 0u;
-        uint32_t ph = (height > pass_y[p]) ? ((height - pass_y[p] + pass_dy[p] - 1u) / pass_dy[p]) : 0u;
+        uint32_t pw =
+            (width > pass_x[p]) ? ((width - pass_x[p] + pass_dx[p] - 1u) / pass_dx[p]) : 0u;
+        uint32_t ph =
+            (height > pass_y[p]) ? ((height - pass_y[p] + pass_dy[p] - 1u) / pass_dy[p]) : 0u;
         if (pw == 0 || ph == 0) {
             continue;
         }

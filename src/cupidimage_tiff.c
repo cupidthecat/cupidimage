@@ -1,10 +1,10 @@
 #include "cupidimage.h"
 #include "cupidimage_internal.h"
 
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <limits.h>
 
 #ifdef CUPIDIMAGE_TIFF_DEBUG
 #define TIFF_DEBUG(...) fprintf(stderr, "TIFF: " __VA_ARGS__)
@@ -123,7 +123,8 @@ static void write_u16(const tiff_context *ctx, uint8_t *p, uint16_t v) {
 
 static uint32_t read_u32(const tiff_context *ctx, const uint8_t *p) {
     if (ctx->big_endian) {
-        return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
+        return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) |
+               (uint32_t)p[3];
     }
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
@@ -149,11 +150,11 @@ static size_t tiff_type_size(uint16_t type) {
         case 3: /* SHORT */
         case 8: /* SSHORT */
             return 2;
-        case 4: /* LONG */
-        case 9: /* SLONG */
+        case 4:  /* LONG */
+        case 9:  /* SLONG */
         case 11: /* FLOAT */
             return 4;
-        case 5: /* RATIONAL */
+        case 5:  /* RATIONAL */
         case 10: /* SRATIONAL */
         case 12: /* DOUBLE */
         case 16: /* LONG8 */
@@ -216,7 +217,8 @@ static int tiff_read_entry(const tiff_context *ctx, const uint8_t *entry_ptr, ti
     return 1;
 }
 
-static int tiff_entry_get_u64(const tiff_context *ctx, const tiff_entry *entry, uint64_t index, uint64_t *out) {
+static int tiff_entry_get_u64(const tiff_context *ctx, const tiff_entry *entry, uint64_t index,
+                              uint64_t *out) {
     if (!entry->value_ptr || index >= entry->count) {
         return 0;
     }
@@ -248,12 +250,12 @@ static int tiff_entry_get_u64(const tiff_context *ctx, const tiff_entry *entry, 
             *out = v;
             return 1;
         }
-        case 4: /* LONG */
-        case 9: /* SLONG */
+        case 4:  /* LONG */
+        case 9:  /* SLONG */
         case 11: /* FLOAT */
             *out = read_u32(ctx, p);
             return 1;
-        case 5: /* RATIONAL */
+        case 5:  /* RATIONAL */
         case 10: /* SRATIONAL */
         case 12: /* DOUBLE */
         case 16: /* LONG8 */
@@ -332,8 +334,8 @@ static void tiff_info_free(tiff_image_info *info) {
     info->color_map = NULL;
 }
 
-static int tiff_parse_header(const unsigned char *data, size_t size, tiff_context *ctx,
-                             char *err, size_t errcap) {
+static int tiff_parse_header(const unsigned char *data, size_t size, tiff_context *ctx, char *err,
+                             size_t errcap) {
     if (size < 8) {
         set_err(err, errcap, "truncated TIFF header");
         return 0;
@@ -392,9 +394,8 @@ static int tiff_parse_header(const unsigned char *data, size_t size, tiff_contex
     return 0;
 }
 
-static int tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset,
-                                uint64_t *entry_count, uint64_t *next_ifd,
-                                char *err, size_t errcap) {
+static int tiff_read_ifd_header(const tiff_context *ctx, uint64_t offset, uint64_t *entry_count,
+                                uint64_t *next_ifd, char *err, size_t errcap) {
     if (offset >= ctx->size) {
         set_err(err, errcap, "invalid TIFF IFD offset");
         return 0;
@@ -459,9 +460,8 @@ static int tiff_ifd_list_append(uint64_t **list, size_t *count, size_t *cap, uin
     return 1;
 }
 
-static int tiff_collect_subifds(const tiff_context *ctx, uint64_t ifd_offset,
-                                uint64_t **list, size_t *count, size_t *cap,
-                                char *err, size_t errcap) {
+static int tiff_collect_subifds(const tiff_context *ctx, uint64_t ifd_offset, uint64_t **list,
+                                size_t *count, size_t *cap, char *err, size_t errcap) {
     uint64_t entry_count = 0;
     uint64_t next_ifd = 0;
     if (!tiff_read_ifd_header(ctx, ifd_offset, &entry_count, &next_ifd, err, errcap)) {
@@ -606,7 +606,8 @@ static int tiff_parse_image_info(const tiff_context *ctx, uint64_t ifd_offset,
                     return 0;
                 }
                 info->strip_byte_counts_count = entry.count;
-                info->strip_byte_counts = (uint64_t *)malloc((size_t)entry.count * sizeof(uint64_t));
+                info->strip_byte_counts =
+                    (uint64_t *)malloc((size_t)entry.count * sizeof(uint64_t));
                 if (!info->strip_byte_counts) {
                     set_err(err, errcap, "out of memory");
                     return 0;
@@ -779,8 +780,7 @@ static int tiff_parse_image_info(const tiff_context *ctx, uint64_t ifd_offset,
             case TIFF_TAG_YCBCR_SUBSAMPLING: {
                 uint64_t v0 = 0;
                 uint64_t v1 = 0;
-                if (entry.count >= 2 &&
-                    tiff_entry_get_u64(ctx, &entry, 0, &v0) &&
+                if (entry.count >= 2 && tiff_entry_get_u64(ctx, &entry, 0, &v0) &&
                     tiff_entry_get_u64(ctx, &entry, 1, &v1)) {
                     info->ycbcr_subsampling[0] = (uint16_t)v0;
                     info->ycbcr_subsampling[1] = (uint16_t)v1;
@@ -837,8 +837,7 @@ static int tiff_parse_image_info(const tiff_context *ctx, uint64_t ifd_offset,
     if (info->sample_format == 0) {
         info->sample_format = TIFF_SAMPLE_FORMAT_UINT;
     }
-    if (info->sample_format != TIFF_SAMPLE_FORMAT_UINT &&
-        info->sample_format != 2 &&
+    if (info->sample_format != TIFF_SAMPLE_FORMAT_UINT && info->sample_format != 2 &&
         info->sample_format != 3) {
         set_err(err, errcap, "TIFF sample format not supported");
         return 0;
@@ -871,8 +870,7 @@ static int tiff_parse_image_info(const tiff_context *ctx, uint64_t ifd_offset,
     return 1;
 }
 
-static int tiff_packbits_decode(const uint8_t *src, size_t src_size,
-                                uint8_t *dst, size_t dst_size,
+static int tiff_packbits_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
                                 char *err, size_t errcap) {
     size_t pos = 0;
     size_t out = 0;
@@ -1058,7 +1056,8 @@ static int tiff_build_fixed_tables(tiff_huff_table *litlen, tiff_huff_table *dis
     return 1;
 }
 
-static int tiff_build_dynamic_tables(tiff_bitstream *bs, tiff_huff_table *litlen, tiff_huff_table *dist) {
+static int tiff_build_dynamic_tables(tiff_bitstream *bs, tiff_huff_table *litlen,
+                                     tiff_huff_table *dist) {
     int hlit = (int)tiff_bs_read(bs, 5) + 257;
     int hdist = (int)tiff_bs_read(bs, 5) + 1;
     int hclen = (int)tiff_bs_read(bs, 4) + 4;
@@ -1066,9 +1065,7 @@ static int tiff_build_dynamic_tables(tiff_bitstream *bs, tiff_huff_table *litlen
         return 0;
     }
 
-    static const int order[19] = {
-        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-    };
+    static const int order[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
     uint8_t clen_lengths[19];
     for (int i = 0; i < 19; i++) {
@@ -1133,30 +1130,16 @@ static int tiff_build_dynamic_tables(tiff_bitstream *bs, tiff_huff_table *litlen
 }
 
 static int tiff_deflate_decode(tiff_bitstream *bs, uint8_t *out, size_t outcap, size_t *outlen) {
-    static const int length_base[29] = {
-        3, 4, 5, 6, 7, 8, 9, 10,
-        11, 13, 15, 17, 19, 23, 27, 31,
-        35, 43, 51, 59, 67, 83, 99, 115,
-        131, 163, 195, 227, 258
-    };
-    static const int length_extra[29] = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 2, 2, 2, 2,
-        3, 3, 3, 3, 4, 4, 4, 4,
-        5, 5, 5, 5, 0
-    };
+    static const int length_base[29] = {3,  4,  5,  6,   7,   8,   9,   10,  11, 13,
+                                        15, 17, 19, 23,  27,  31,  35,  43,  51, 59,
+                                        67, 83, 99, 115, 131, 163, 195, 227, 258};
+    static const int length_extra[29] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                         2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0};
     static const int dist_base[30] = {
-        1, 2, 3, 4, 5, 7, 9, 13,
-        17, 25, 33, 49, 65, 97, 129, 193,
-        257, 385, 513, 769, 1025, 1537, 2049, 3073,
-        4097, 6145, 8193, 12289, 16385, 24577
-    };
-    static const int dist_extra[30] = {
-        0, 0, 0, 0, 1, 1, 2, 2,
-        3, 3, 4, 4, 5, 5, 6, 6,
-        7, 7, 8, 8, 9, 9, 10, 10,
-        11, 11, 12, 12, 13, 13
-    };
+        1,   2,   3,   4,   5,   7,    9,    13,   17,   25,   33,   49,   65,    97,    129,
+        193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577};
+    static const int dist_extra[30] = {0, 0, 0, 0, 1, 1, 2, 2,  3,  3,  4,  4,  5,  5,  6,
+                                       6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
 
     size_t outpos = 0;
     int final_block = 0;
@@ -1275,7 +1258,8 @@ static int tiff_deflate_decode(tiff_bitstream *bs, uint8_t *out, size_t outcap, 
     return 1;
 }
 
-static int tiff_zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap, size_t *outlen) {
+static int tiff_zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
+                                size_t *outlen) {
     if (size < 2) {
         return 0;
     }
@@ -1305,7 +1289,8 @@ static int tiff_zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, 
     return 1;
 }
 
-static int tiff_inflate(const uint8_t *data, size_t size, uint8_t *out, size_t outcap, size_t *outlen) {
+static int tiff_inflate(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
+                        size_t *outlen) {
     if (tiff_zlib_decompress(data, size, out, outcap, outlen)) {
         return 1;
     }
@@ -1340,8 +1325,7 @@ static int tiff_lzw_read_code(tiff_lzw *lz, int code_size, uint32_t *out) {
     return 1;
 }
 
-static int tiff_lzw_decode(const uint8_t *src, size_t src_size,
-                           uint8_t *dst, size_t dst_size,
+static int tiff_lzw_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
                            char *err, size_t errcap) {
     uint16_t prefix[4096];
     uint8_t suffix[4096];
@@ -1461,68 +1445,50 @@ typedef struct ccitt_code {
 } ccitt_code;
 
 static const ccitt_code ccitt_white_term[] = {
-    {0x35, 8, 0}, {0x7, 6, 1}, {0x7, 4, 2}, {0x8, 4, 3},
-    {0xB, 4, 4}, {0xC, 4, 5}, {0xE, 4, 6}, {0xF, 4, 7},
-    {0x13, 5, 8}, {0x14, 5, 9}, {0x7, 5, 10}, {0x8, 5, 11},
-    {0x8, 6, 12}, {0x3, 6, 13}, {0x34, 6, 14}, {0x35, 6, 15},
-    {0x2A, 6, 16}, {0x2B, 6, 17}, {0x27, 7, 18}, {0xC, 7, 19},
-    {0x8, 7, 20}, {0x17, 7, 21}, {0x3, 7, 22}, {0x4, 7, 23},
-    {0x28, 7, 24}, {0x2B, 7, 25}, {0x13, 7, 26}, {0x24, 7, 27},
-    {0x18, 7, 28}, {0x2, 8, 29}, {0x3, 8, 30}, {0x1A, 8, 31},
-    {0x1B, 8, 32}, {0x12, 8, 33}, {0x13, 8, 34}, {0x14, 8, 35},
-    {0x15, 8, 36}, {0x16, 8, 37}, {0x17, 8, 38}, {0x28, 8, 39},
-    {0x29, 8, 40}, {0x2A, 8, 41}, {0x2B, 8, 42}, {0x2C, 8, 43},
-    {0x2D, 8, 44}, {0x4, 8, 45}, {0x5, 8, 46}, {0xA, 8, 47},
-    {0xB, 8, 48}, {0x52, 8, 49}, {0x53, 8, 50}, {0x54, 8, 51},
-    {0x55, 8, 52}, {0x24, 8, 53}, {0x25, 8, 54}, {0x58, 8, 55},
-    {0x59, 8, 56}, {0x5A, 8, 57}, {0x5B, 8, 58}, {0x4A, 8, 59},
-    {0x4B, 8, 60}, {0x32, 8, 61}, {0x33, 8, 62}, {0x34, 8, 63}
-};
+    {0x35, 8, 0},  {0x7, 6, 1},   {0x7, 4, 2},   {0x8, 4, 3},   {0xB, 4, 4},   {0xC, 4, 5},
+    {0xE, 4, 6},   {0xF, 4, 7},   {0x13, 5, 8},  {0x14, 5, 9},  {0x7, 5, 10},  {0x8, 5, 11},
+    {0x8, 6, 12},  {0x3, 6, 13},  {0x34, 6, 14}, {0x35, 6, 15}, {0x2A, 6, 16}, {0x2B, 6, 17},
+    {0x27, 7, 18}, {0xC, 7, 19},  {0x8, 7, 20},  {0x17, 7, 21}, {0x3, 7, 22},  {0x4, 7, 23},
+    {0x28, 7, 24}, {0x2B, 7, 25}, {0x13, 7, 26}, {0x24, 7, 27}, {0x18, 7, 28}, {0x2, 8, 29},
+    {0x3, 8, 30},  {0x1A, 8, 31}, {0x1B, 8, 32}, {0x12, 8, 33}, {0x13, 8, 34}, {0x14, 8, 35},
+    {0x15, 8, 36}, {0x16, 8, 37}, {0x17, 8, 38}, {0x28, 8, 39}, {0x29, 8, 40}, {0x2A, 8, 41},
+    {0x2B, 8, 42}, {0x2C, 8, 43}, {0x2D, 8, 44}, {0x4, 8, 45},  {0x5, 8, 46},  {0xA, 8, 47},
+    {0xB, 8, 48},  {0x52, 8, 49}, {0x53, 8, 50}, {0x54, 8, 51}, {0x55, 8, 52}, {0x24, 8, 53},
+    {0x25, 8, 54}, {0x58, 8, 55}, {0x59, 8, 56}, {0x5A, 8, 57}, {0x5B, 8, 58}, {0x4A, 8, 59},
+    {0x4B, 8, 60}, {0x32, 8, 61}, {0x33, 8, 62}, {0x34, 8, 63}};
 
 static const ccitt_code ccitt_white_makeup[] = {
-    {0x1B, 5, 64}, {0x12, 5, 128}, {0x17, 6, 192}, {0x37, 7, 256},
-    {0x36, 8, 320}, {0x37, 8, 384}, {0x64, 8, 448}, {0x65, 8, 512},
-    {0x68, 8, 576}, {0x67, 8, 640}, {0xCC, 9, 704}, {0xCD, 9, 768},
-    {0xD2, 9, 832}, {0xD3, 9, 896}, {0xD4, 9, 960}, {0xD5, 9, 1024},
-    {0xD6, 9, 1088}, {0xD7, 9, 1152}, {0xD8, 9, 1216}, {0xD9, 9, 1280},
-    {0xDA, 9, 1344}, {0xDB, 9, 1408}, {0x98, 9, 1472}, {0x99, 9, 1536},
-    {0x9A, 9, 1600}, {0x18, 6, 1664}, {0x9B, 9, 1728}, {0x8, 11, 1792},
-    {0xC, 11, 1856}, {0xD, 11, 1920}, {0x12, 12, 1984}, {0x13, 12, 2048},
-    {0x14, 12, 2112}, {0x15, 12, 2176}, {0x16, 12, 2240}, {0x17, 12, 2304},
-    {0x1C, 12, 2368}, {0x1D, 12, 2432}, {0x1E, 12, 2496}, {0x1F, 12, 2560}
-};
+    {0x1B, 5, 64},    {0x12, 5, 128},   {0x17, 6, 192},   {0x37, 7, 256},   {0x36, 8, 320},
+    {0x37, 8, 384},   {0x64, 8, 448},   {0x65, 8, 512},   {0x68, 8, 576},   {0x67, 8, 640},
+    {0xCC, 9, 704},   {0xCD, 9, 768},   {0xD2, 9, 832},   {0xD3, 9, 896},   {0xD4, 9, 960},
+    {0xD5, 9, 1024},  {0xD6, 9, 1088},  {0xD7, 9, 1152},  {0xD8, 9, 1216},  {0xD9, 9, 1280},
+    {0xDA, 9, 1344},  {0xDB, 9, 1408},  {0x98, 9, 1472},  {0x99, 9, 1536},  {0x9A, 9, 1600},
+    {0x18, 6, 1664},  {0x9B, 9, 1728},  {0x8, 11, 1792},  {0xC, 11, 1856},  {0xD, 11, 1920},
+    {0x12, 12, 1984}, {0x13, 12, 2048}, {0x14, 12, 2112}, {0x15, 12, 2176}, {0x16, 12, 2240},
+    {0x17, 12, 2304}, {0x1C, 12, 2368}, {0x1D, 12, 2432}, {0x1E, 12, 2496}, {0x1F, 12, 2560}};
 
 static const ccitt_code ccitt_black_term[] = {
-    {0x37, 10, 0}, {0x2, 3, 1}, {0x3, 2, 2}, {0x2, 2, 3},
-    {0x3, 3, 4}, {0x3, 4, 5}, {0x2, 4, 6}, {0x3, 5, 7},
-    {0x5, 6, 8}, {0x4, 6, 9}, {0x4, 7, 10}, {0x5, 7, 11},
-    {0x7, 7, 12}, {0x4, 8, 13}, {0x7, 8, 14}, {0x18, 9, 15},
-    {0x17, 10, 16}, {0x18, 10, 17}, {0x8, 10, 18}, {0x67, 11, 19},
-    {0x68, 11, 20}, {0x6C, 11, 21}, {0x37, 11, 22}, {0x28, 11, 23},
-    {0x17, 11, 24}, {0x18, 11, 25}, {0xCA, 12, 26}, {0xCB, 12, 27},
-    {0xCC, 12, 28}, {0xCD, 12, 29}, {0x68, 12, 30}, {0x69, 12, 31},
-    {0x6A, 12, 32}, {0x6B, 12, 33}, {0xD2, 12, 34}, {0xD3, 12, 35},
-    {0xD4, 12, 36}, {0xD5, 12, 37}, {0xD6, 12, 38}, {0xD7, 12, 39},
-    {0x6C, 12, 40}, {0x6D, 12, 41}, {0xDA, 12, 42}, {0xDB, 12, 43},
-    {0x54, 12, 44}, {0x55, 12, 45}, {0x56, 12, 46}, {0x57, 12, 47},
-    {0x64, 12, 48}, {0x65, 12, 49}, {0x52, 12, 50}, {0x53, 12, 51},
-    {0x24, 12, 52}, {0x37, 12, 53}, {0x38, 12, 54}, {0x27, 12, 55},
-    {0x28, 12, 56}, {0x58, 12, 57}, {0x59, 12, 58}, {0x2B, 12, 59},
-    {0x2C, 12, 60}, {0x5A, 12, 61}, {0x66, 12, 62}, {0x67, 12, 63}
-};
+    {0x37, 10, 0},  {0x2, 3, 1},    {0x3, 2, 2},    {0x2, 2, 3},    {0x3, 3, 4},    {0x3, 4, 5},
+    {0x2, 4, 6},    {0x3, 5, 7},    {0x5, 6, 8},    {0x4, 6, 9},    {0x4, 7, 10},   {0x5, 7, 11},
+    {0x7, 7, 12},   {0x4, 8, 13},   {0x7, 8, 14},   {0x18, 9, 15},  {0x17, 10, 16}, {0x18, 10, 17},
+    {0x8, 10, 18},  {0x67, 11, 19}, {0x68, 11, 20}, {0x6C, 11, 21}, {0x37, 11, 22}, {0x28, 11, 23},
+    {0x17, 11, 24}, {0x18, 11, 25}, {0xCA, 12, 26}, {0xCB, 12, 27}, {0xCC, 12, 28}, {0xCD, 12, 29},
+    {0x68, 12, 30}, {0x69, 12, 31}, {0x6A, 12, 32}, {0x6B, 12, 33}, {0xD2, 12, 34}, {0xD3, 12, 35},
+    {0xD4, 12, 36}, {0xD5, 12, 37}, {0xD6, 12, 38}, {0xD7, 12, 39}, {0x6C, 12, 40}, {0x6D, 12, 41},
+    {0xDA, 12, 42}, {0xDB, 12, 43}, {0x54, 12, 44}, {0x55, 12, 45}, {0x56, 12, 46}, {0x57, 12, 47},
+    {0x64, 12, 48}, {0x65, 12, 49}, {0x52, 12, 50}, {0x53, 12, 51}, {0x24, 12, 52}, {0x37, 12, 53},
+    {0x38, 12, 54}, {0x27, 12, 55}, {0x28, 12, 56}, {0x58, 12, 57}, {0x59, 12, 58}, {0x2B, 12, 59},
+    {0x2C, 12, 60}, {0x5A, 12, 61}, {0x66, 12, 62}, {0x67, 12, 63}};
 
 static const ccitt_code ccitt_black_makeup[] = {
-    {0xF, 10, 64}, {0xC8, 12, 128}, {0xC9, 12, 192}, {0x5B, 12, 256},
-    {0x33, 12, 320}, {0x34, 12, 384}, {0x35, 12, 448}, {0x6C, 13, 512},
-    {0x6D, 13, 576}, {0x4A, 13, 640}, {0x4B, 13, 704}, {0x4C, 13, 768},
-    {0x4D, 13, 832}, {0x72, 13, 896}, {0x73, 13, 960}, {0x74, 13, 1024},
-    {0x75, 13, 1088}, {0x76, 13, 1152}, {0x77, 13, 1216}, {0x52, 13, 1280},
-    {0x53, 13, 1344}, {0x54, 13, 1408}, {0x55, 13, 1472}, {0x5A, 13, 1536},
-    {0x5B, 13, 1600}, {0x64, 13, 1664}, {0x65, 13, 1728}, {0x8, 11, 1792},
-    {0xC, 11, 1856}, {0xD, 11, 1920}, {0x12, 12, 1984}, {0x13, 12, 2048},
-    {0x14, 12, 2112}, {0x15, 12, 2176}, {0x16, 12, 2240}, {0x17, 12, 2304},
-    {0x1C, 12, 2368}, {0x1D, 12, 2432}, {0x1E, 12, 2496}, {0x1F, 12, 2560}
-};
+    {0xF, 10, 64},    {0xC8, 12, 128},  {0xC9, 12, 192},  {0x5B, 12, 256},  {0x33, 12, 320},
+    {0x34, 12, 384},  {0x35, 12, 448},  {0x6C, 13, 512},  {0x6D, 13, 576},  {0x4A, 13, 640},
+    {0x4B, 13, 704},  {0x4C, 13, 768},  {0x4D, 13, 832},  {0x72, 13, 896},  {0x73, 13, 960},
+    {0x74, 13, 1024}, {0x75, 13, 1088}, {0x76, 13, 1152}, {0x77, 13, 1216}, {0x52, 13, 1280},
+    {0x53, 13, 1344}, {0x54, 13, 1408}, {0x55, 13, 1472}, {0x5A, 13, 1536}, {0x5B, 13, 1600},
+    {0x64, 13, 1664}, {0x65, 13, 1728}, {0x8, 11, 1792},  {0xC, 11, 1856},  {0xD, 11, 1920},
+    {0x12, 12, 1984}, {0x13, 12, 2048}, {0x14, 12, 2112}, {0x15, 12, 2176}, {0x16, 12, 2240},
+    {0x17, 12, 2304}, {0x1C, 12, 2368}, {0x1D, 12, 2432}, {0x1E, 12, 2496}, {0x1F, 12, 2560}};
 
 typedef struct ccitt_bitstream {
     const uint8_t *data;
@@ -1547,10 +1513,9 @@ static int ccitt_read_bit(ccitt_bitstream *bs, int *out) {
     return 1;
 }
 
-static int ccitt_decode_single(ccitt_bitstream *bs,
-                               const ccitt_code *term, size_t term_len,
-                               const ccitt_code *makeup, size_t makeup_len,
-                               uint32_t *run, int *is_makeup) {
+static int ccitt_decode_single(ccitt_bitstream *bs, const ccitt_code *term, size_t term_len,
+                               const ccitt_code *makeup, size_t makeup_len, uint32_t *run,
+                               int *is_makeup) {
     uint32_t code = 0;
     for (int len = 1; len <= 13; len++) {
         int bit = 0;
@@ -1616,7 +1581,8 @@ static int ccitt_get_bit(const uint8_t *row, uint32_t x) {
     return (row[x / 8u] & mask) ? 1 : 0;
 }
 
-static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32_t start, int color) {
+static uint32_t ccitt_next_transition(const uint8_t *row, uint32_t width, uint32_t start,
+                                      int color) {
     uint32_t x = start;
     while (x < width) {
         if (ccitt_get_bit(row, x) != color) {
@@ -1666,11 +1632,7 @@ static int ccitt_decode_1d_line(ccitt_bitstream *bs, uint32_t width, uint8_t *ro
     return 1;
 }
 
-enum {
-    CCITT_2D_PASS = 0,
-    CCITT_2D_HORIZ = 1,
-    CCITT_2D_VERT = 2
-};
+enum { CCITT_2D_PASS = 0, CCITT_2D_HORIZ = 1, CCITT_2D_VERT = 2 };
 
 static int ccitt_decode_2d_code(ccitt_bitstream *bs, int *type, int *val) {
     uint32_t code = 0;
@@ -1732,8 +1694,8 @@ static int ccitt_decode_2d_code(ccitt_bitstream *bs, int *type, int *val) {
     return 0;
 }
 
-static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width,
-                                const uint8_t *ref, uint8_t *row) {
+static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width, const uint8_t *ref,
+                                uint8_t *row) {
     uint32_t a0 = 0;
     int color = 0;
     while (a0 < width) {
@@ -1752,8 +1714,7 @@ static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width,
         } else if (type == CCITT_2D_HORIZ) {
             uint32_t run1 = 0;
             uint32_t run2 = 0;
-            if (!ccitt_decode_run(bs, color, &run1) ||
-                !ccitt_decode_run(bs, !color, &run2)) {
+            if (!ccitt_decode_run(bs, color, &run1) || !ccitt_decode_run(bs, !color, &run2)) {
                 return 0;
             }
             if (a0 + run1 + run2 > width) {
@@ -1781,11 +1742,9 @@ static int ccitt_decode_2d_line(ccitt_bitstream *bs, uint32_t width,
     return 1;
 }
 
-static int tiff_ccitt_decode(const uint8_t *src, size_t src_size,
-                             uint8_t *dst, size_t dst_size,
-                             uint32_t width, uint32_t height,
-                             uint16_t compression, uint32_t group3_options,
-                             int fill_order, char *err, size_t errcap) {
+static int tiff_ccitt_decode(const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
+                             uint32_t width, uint32_t height, uint16_t compression,
+                             uint32_t group3_options, int fill_order, char *err, size_t errcap) {
     size_t row_bytes = ((size_t)width + 7u) / 8u;
     if (dst_size < row_bytes * (size_t)height) {
         set_err(err, errcap, "invalid CCITT buffer");
@@ -1926,8 +1885,8 @@ static uint8_t tiff_scale_float(double v) {
     return 255;
 }
 
-static double tiff_read_sample_float(const tiff_context *ctx, const uint8_t *row,
-                                     uint32_t index, uint16_t bps) {
+static double tiff_read_sample_float(const tiff_context *ctx, const uint8_t *row, uint32_t index,
+                                     uint16_t bps) {
     if (bps == 32) {
         const uint8_t *p = row + (size_t)index * 4u;
         uint32_t u = read_u32(ctx, p);
@@ -1973,8 +1932,8 @@ static int tiff_apply_predictor_row(const tiff_context *ctx, uint8_t *row, size_
     return 0;
 }
 
-static int tiff_apply_predictor(const tiff_context *ctx, const tiff_image_info *info,
-                                uint8_t *raw, size_t row_bytes, char *err, size_t errcap) {
+static int tiff_apply_predictor(const tiff_context *ctx, const tiff_image_info *info, uint8_t *raw,
+                                size_t row_bytes, char *err, size_t errcap) {
     if (info->predictor != 2) {
         return 1;
     }
@@ -1994,10 +1953,8 @@ static int tiff_apply_predictor(const tiff_context *ctx, const tiff_image_info *
 }
 
 static int tiff_decompress_block(const tiff_context *ctx, const tiff_image_info *info,
-                                 const uint8_t *src, size_t src_size,
-                                 uint8_t *dst, size_t dst_size,
-                                 uint32_t width, uint32_t rows,
-                                 char *err, size_t errcap) {
+                                 const uint8_t *src, size_t src_size, uint8_t *dst, size_t dst_size,
+                                 uint32_t width, uint32_t rows, char *err, size_t errcap) {
     (void)ctx;
     switch (info->compression) {
         case TIFF_COMPRESSION_NONE:
@@ -2023,9 +1980,8 @@ static int tiff_decompress_block(const tiff_context *ctx, const tiff_image_info 
         case TIFF_COMPRESSION_CCITT_RLE:
         case TIFF_COMPRESSION_CCITT_G3:
         case TIFF_COMPRESSION_CCITT_G4:
-            return tiff_ccitt_decode(src, src_size, dst, dst_size, width, rows,
-                                     info->compression, info->group3_options,
-                                     info->fill_order, err, errcap);
+            return tiff_ccitt_decode(src, src_size, dst, dst_size, width, rows, info->compression,
+                                     info->group3_options, info->fill_order, err, errcap);
         default:
             set_err(err, errcap, "unsupported TIFF compression");
             return 0;
@@ -2033,9 +1989,10 @@ static int tiff_decompress_block(const tiff_context *ctx, const tiff_image_info 
 }
 
 static int tiff_decode_strips_chunky(const tiff_context *ctx, const tiff_image_info *info,
-                                     uint8_t *raw, size_t raw_size,
-                                     size_t row_bytes, char *err, size_t errcap) {
-    uint64_t strips_expected = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+                                     uint8_t *raw, size_t raw_size, size_t row_bytes, char *err,
+                                     size_t errcap) {
+    uint64_t strips_expected =
+        ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     uint64_t strip_count = info->strip_offsets_count;
     if (strip_count < strips_expected) {
         set_err(err, errcap, "invalid number of strips");
@@ -2097,9 +2054,8 @@ static int tiff_decode_strips_chunky(const tiff_context *ctx, const tiff_image_i
             return 0;
         }
 
-        if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size,
-                                   raw + dst_off, expected, info->width, strip_rows,
-                                   err, errcap)) {
+        if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size, raw + dst_off,
+                                   expected, info->width, strip_rows, err, errcap)) {
             return 0;
         }
     }
@@ -2108,16 +2064,16 @@ static int tiff_decode_strips_chunky(const tiff_context *ctx, const tiff_image_i
 }
 
 static int tiff_decode_strips_planar(const tiff_context *ctx, const tiff_image_info *info,
-                                     uint8_t *raw, size_t raw_size,
-                                     size_t row_bytes, size_t bytes_per_sample,
-                                     char *err, size_t errcap) {
+                                     uint8_t *raw, size_t raw_size, size_t row_bytes,
+                                     size_t bytes_per_sample, char *err, size_t errcap) {
     (void)raw_size;
     if ((info->bits_per_sample[0] & 7u) != 0) {
         set_err(err, errcap, "planar TIFF requires byte-aligned samples");
         return 0;
     }
 
-    uint64_t strips_per_plane = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_per_plane =
+        ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     uint64_t required = strips_per_plane * info->samples_per_pixel;
     if (info->strip_offsets_count < required) {
         set_err(err, errcap, "invalid number of planar strips");
@@ -2192,9 +2148,8 @@ static int tiff_decode_strips_planar(const tiff_context *ctx, const tiff_image_i
                 return 0;
             }
 
-            if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size,
-                                       plane_buf, expected, info->width, strip_rows,
-                                       err, errcap)) {
+            if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size, plane_buf,
+                                       expected, info->width, strip_rows, err, errcap)) {
                 free(plane_buf);
                 return 0;
             }
@@ -2234,9 +2189,8 @@ static int tiff_decode_strips_planar(const tiff_context *ctx, const tiff_image_i
 }
 
 static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_info *info,
-                                    uint8_t *raw, size_t raw_size,
-                                    size_t row_bytes, size_t bytes_per_pixel,
-                                    char *err, size_t errcap) {
+                                    uint8_t *raw, size_t raw_size, size_t row_bytes,
+                                    size_t bytes_per_pixel, char *err, size_t errcap) {
     (void)raw_size;
     if (info->tile_width == 0 || info->tile_length == 0) {
         set_err(err, errcap, "invalid TIFF tile size");
@@ -2306,10 +2260,9 @@ static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_in
             return 0;
         }
 
-        if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size,
-                                   tile_buf, tile_buf_size,
-                                   info->tile_width, info->tile_length,
-                                   err, errcap)) {
+        if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size, tile_buf,
+                                   tile_buf_size, info->tile_width, info->tile_length, err,
+                                   errcap)) {
             free(tile_buf);
             return 0;
         }
@@ -2339,8 +2292,8 @@ static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_in
 
         for (uint32_t r = 0; r < copy_h; r++) {
             const uint8_t *src_row = tile_buf + (size_t)r * tile_row_bytes;
-            uint8_t *dst_row = raw + (size_t)(tile_y + r) * row_bytes +
-                               (size_t)tile_x * bytes_per_pixel;
+            uint8_t *dst_row =
+                raw + (size_t)(tile_y + r) * row_bytes + (size_t)tile_x * bytes_per_pixel;
             memcpy(dst_row, src_row, (size_t)copy_w * bytes_per_pixel);
         }
     }
@@ -2353,9 +2306,8 @@ static int tiff_decode_tiles_chunky(const tiff_context *ctx, const tiff_image_in
 }
 
 static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_info *info,
-                                    uint8_t *raw, size_t raw_size,
-                                    size_t row_bytes, size_t bytes_per_sample,
-                                    char *err, size_t errcap) {
+                                    uint8_t *raw, size_t raw_size, size_t row_bytes,
+                                    size_t bytes_per_sample, char *err, size_t errcap) {
     (void)raw_size;
     if (info->tile_width == 0 || info->tile_length == 0) {
         set_err(err, errcap, "invalid TIFF tile size");
@@ -2428,10 +2380,9 @@ static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_in
                 return 0;
             }
 
-            if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size,
-                                       tile_buf, tile_buf_size,
-                                       info->tile_width, info->tile_length,
-                                       err, errcap)) {
+            if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size, tile_buf,
+                                       tile_buf_size, info->tile_width, info->tile_length, err,
+                                       errcap)) {
                 free(tile_buf);
                 return 0;
             }
@@ -2462,8 +2413,9 @@ static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_in
                 const uint8_t *src_row = tile_buf + (size_t)r * tile_row_bytes;
                 uint8_t *dst_row = raw + (size_t)(tile_y + r) * row_bytes;
                 for (uint32_t x = 0; x < copy_w; x++) {
-                    size_t dst = (size_t)(tile_x + x) * (size_t)info->samples_per_pixel * bytes_per_sample +
-                                 (size_t)s * bytes_per_sample;
+                    size_t dst =
+                        (size_t)(tile_x + x) * (size_t)info->samples_per_pixel * bytes_per_sample +
+                        (size_t)s * bytes_per_sample;
                     memcpy(dst_row + dst, src_row + (size_t)x * bytes_per_sample, bytes_per_sample);
                 }
             }
@@ -2477,10 +2429,9 @@ static int tiff_decode_tiles_planar(const tiff_context *ctx, const tiff_image_in
     return 1;
 }
 
-static int tiff_decode_image(const tiff_context *ctx, const tiff_image_info *info,
-                             uint8_t *raw, size_t raw_size,
-                             size_t row_bytes, size_t bytes_per_pixel,
-                             char *err, size_t errcap) {
+static int tiff_decode_image(const tiff_context *ctx, const tiff_image_info *info, uint8_t *raw,
+                             size_t raw_size, size_t row_bytes, size_t bytes_per_pixel, char *err,
+                             size_t errcap) {
     if (info->tile_offsets && info->tile_offsets_count > 0) {
         if (info->planar_config == TIFF_PLANAR_CHUNKY) {
             return tiff_decode_tiles_chunky(ctx, info, raw, raw_size, row_bytes, bytes_per_pixel,
@@ -2497,23 +2448,22 @@ static int tiff_decode_image(const tiff_context *ctx, const tiff_image_info *inf
                                      bytes_per_pixel / info->samples_per_pixel, err, errcap);
 }
 
-static int tiff_build_jpeg_stream(const uint8_t *tables, size_t tables_size,
-                                  const uint8_t *data, size_t data_size,
-                                  uint8_t **out, size_t *out_size,
-                                  char *err, size_t errcap) {
+static int tiff_build_jpeg_stream(const uint8_t *tables, size_t tables_size, const uint8_t *data,
+                                  size_t data_size, uint8_t **out, size_t *out_size, char *err,
+                                  size_t errcap) {
     int tables_has_soi = tables_size >= 2 && tables[0] == 0xFF && tables[1] == 0xD8;
-    int tables_has_eoi = tables_size >= 2 &&
-                         tables[tables_size - 2] == 0xFF && tables[tables_size - 1] == 0xD9;
+    int tables_has_eoi =
+        tables_size >= 2 && tables[tables_size - 2] == 0xFF && tables[tables_size - 1] == 0xD9;
     size_t tables_start = tables_has_soi ? 2u : 0u;
     size_t tables_end = tables_has_eoi ? (tables_size - 2u) : tables_size;
 
     int data_has_soi = data_size >= 2 && data[0] == 0xFF && data[1] == 0xD8;
-    int data_has_eoi = data_size >= 2 &&
-                       data[data_size - 2] == 0xFF && data[data_size - 1] == 0xD9;
+    int data_has_eoi = data_size >= 2 && data[data_size - 2] == 0xFF && data[data_size - 1] == 0xD9;
     size_t data_start = data_has_soi ? 2u : 0u;
     size_t data_end = data_size;
 
-    size_t total = 2u + (tables_end - tables_start) + (data_end - data_start) + (data_has_eoi ? 0u : 2u);
+    size_t total =
+        2u + (tables_end - tables_start) + (data_end - data_start) + (data_has_eoi ? 0u : 2u);
     uint8_t *buf = (uint8_t *)malloc(total);
     if (!buf) {
         set_err(err, errcap, "out of memory");
@@ -2541,10 +2491,9 @@ static int tiff_build_jpeg_stream(const uint8_t *tables, size_t tables_size,
     return 1;
 }
 
-static int tiff_decode_jpeg_stream(const unsigned char *data, size_t size,
-                                   uint32_t expected_w, uint32_t expected_h,
-                                   uint8_t *rgba, size_t rgba_size,
-                                   char *err, size_t errcap) {
+static int tiff_decode_jpeg_stream(const unsigned char *data, size_t size, uint32_t expected_w,
+                                   uint32_t expected_h, uint8_t *rgba, size_t rgba_size, char *err,
+                                   size_t errcap) {
     cupidimage_image img;
     if (!cupidimage_load_jpeg(data, size, &img, err, errcap)) {
         return 0;
@@ -2566,8 +2515,7 @@ static int tiff_decode_jpeg_stream(const unsigned char *data, size_t size,
 }
 
 static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info *info,
-                                  uint8_t **out_rgba,
-                                  uint32_t *out_width, uint32_t *out_height,
+                                  uint8_t **out_rgba, uint32_t *out_width, uint32_t *out_height,
                                   char *err, size_t errcap) {
     if (info->tile_offsets && info->tile_offsets_count > 0) {
         set_err(err, errcap, "JPEG-in-TIFF tiles not supported");
@@ -2591,7 +2539,8 @@ static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info
         return 1;
     }
 
-    uint64_t strips_expected = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_expected =
+        ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     if (info->strip_offsets_count < strips_expected) {
         set_err(err, errcap, "invalid number of strips");
         return 0;
@@ -2630,16 +2579,16 @@ static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info
 
         uint8_t *stream = NULL;
         size_t stream_size = 0;
-        if (!tiff_build_jpeg_stream(info->jpeg_tables, info->jpeg_tables_size,
-                                    src, src_size, &stream, &stream_size, err, errcap)) {
+        if (!tiff_build_jpeg_stream(info->jpeg_tables, info->jpeg_tables_size, src, src_size,
+                                    &stream, &stream_size, err, errcap)) {
             free(rgba);
             return 0;
         }
 
         size_t strip_rgba_size = (size_t)info->width * (size_t)strip_rows * 4u;
         uint8_t *strip_rgba = rgba + (size_t)row_start * (size_t)info->width * 4u;
-        if (!tiff_decode_jpeg_stream(stream, stream_size, info->width, strip_rows,
-                                     strip_rgba, strip_rgba_size, err, errcap)) {
+        if (!tiff_decode_jpeg_stream(stream, stream_size, info->width, strip_rows, strip_rgba,
+                                     strip_rgba_size, err, errcap)) {
             free(stream);
             free(rgba);
             return 0;
@@ -2654,8 +2603,7 @@ static int tiff_decode_jpeg_image(const tiff_context *ctx, const tiff_image_info
 }
 
 static int tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_image_info *info,
-                                        uint8_t *rgba, size_t rgba_size,
-                                        char *err, size_t errcap) {
+                                        uint8_t *rgba, size_t rgba_size, char *err, size_t errcap) {
     if (info->planar_config != TIFF_PLANAR_CHUNKY) {
         set_err(err, errcap, "YCbCr planar TIFF not supported");
         return 0;
@@ -2689,7 +2637,8 @@ static int tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_imag
         return 0;
     }
 
-    uint64_t strips_expected = ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
+    uint64_t strips_expected =
+        ((uint64_t)info->height + info->rows_per_strip - 1u) / info->rows_per_strip;
     if (info->strip_offsets_count < strips_expected) {
         set_err(err, errcap, "invalid number of strips");
         return 0;
@@ -2748,8 +2697,8 @@ static int tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_imag
             set_err(err, errcap, "out of memory");
             return 0;
         }
-        if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size,
-                                   buf, expected, info->width, strip_rows, err, errcap)) {
+        if (!tiff_decompress_block(ctx, info, ctx->data + (size_t)off, src_size, buf, expected,
+                                   info->width, strip_rows, err, errcap)) {
             free(buf);
             return 0;
         }
@@ -2814,9 +2763,8 @@ static int tiff_decode_ycbcr_subsampled(const tiff_context *ctx, const tiff_imag
 }
 
 static int tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *info,
-                                const uint8_t *raw, size_t row_bytes,
-                                uint8_t *rgba, size_t rgba_size,
-                                char *err, size_t errcap) {
+                                const uint8_t *raw, size_t row_bytes, uint8_t *rgba,
+                                size_t rgba_size, char *err, size_t errcap) {
     uint16_t bps = info->bits_per_sample[0];
     int photometric = info->photometric;
     int samples = info->samples_per_pixel;
@@ -2902,9 +2850,12 @@ static int tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *
                     g = tiff_scale_float(tiff_read_sample_float(ctx, row, sample_base + 1u, bps));
                     b = tiff_scale_float(tiff_read_sample_float(ctx, row, sample_base + 2u, bps));
                 } else {
-                    uint32_t r0 = tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order);
-                    uint32_t g0 = tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order);
-                    uint32_t b0 = tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order);
+                    uint32_t r0 =
+                        tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order);
+                    uint32_t g0 =
+                        tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order);
+                    uint32_t b0 =
+                        tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order);
                     r = tiff_scale_sample(r0, bps);
                     g = tiff_scale_sample(g0, bps);
                     b = tiff_scale_sample(b0, bps);
@@ -2942,18 +2893,25 @@ static int tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *
                     yv = tiff_scale_float(tiff_read_sample_float(ctx, row, sample_base + 2u, bps));
                     k = tiff_scale_float(tiff_read_sample_float(ctx, row, sample_base + 3u, bps));
                 } else {
-                    c = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
-                    m = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
-                    yv = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
-                    k = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 3u, bps, info->fill_order), bps);
+                    c = tiff_scale_sample(
+                        tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
+                    m = tiff_scale_sample(
+                        tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
+                    yv = tiff_scale_sample(
+                        tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
+                    k = tiff_scale_sample(
+                        tiff_read_sample(ctx, row, sample_base + 3u, bps, info->fill_order), bps);
                 }
                 r = (uint8_t)(((255u - c) * (255u - k) + 127u) / 255u);
                 g = (uint8_t)(((255u - m) * (255u - k) + 127u) / 255u);
                 b = (uint8_t)(((255u - yv) * (255u - k) + 127u) / 255u);
             } else if (photometric == TIFF_PHOTOMETRIC_YCBCR) {
-                uint8_t yv = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
-                uint8_t cb = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
-                uint8_t cr = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
+                uint8_t yv = tiff_scale_sample(
+                    tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
+                uint8_t cb = tiff_scale_sample(
+                    tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
+                uint8_t cr = tiff_scale_sample(
+                    tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
                 int cbi = (int)cb - 128;
                 int cri = (int)cr - 128;
                 double cbi_d = (double)cbi;
@@ -2965,9 +2923,12 @@ static int tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *
                 g = tiff_clamp8(gi);
                 b = tiff_clamp8(bi);
             } else if (photometric == TIFF_PHOTOMETRIC_CIELAB) {
-                uint8_t l8 = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
-                uint8_t a8 = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
-                uint8_t b8 = tiff_scale_sample(tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
+                uint8_t l8 = tiff_scale_sample(
+                    tiff_read_sample(ctx, row, sample_base + 0u, bps, info->fill_order), bps);
+                uint8_t a8 = tiff_scale_sample(
+                    tiff_read_sample(ctx, row, sample_base + 1u, bps, info->fill_order), bps);
+                uint8_t b8 = tiff_scale_sample(
+                    tiff_read_sample(ctx, row, sample_base + 2u, bps, info->fill_order), bps);
                 double L = ((double)l8 * 100.0) / 255.0;
                 double aa = (double)a8 - 128.0;
                 double bb = (double)b8 - 128.0;
@@ -2993,7 +2954,8 @@ static int tiff_convert_to_rgba(const tiff_context *ctx, const tiff_image_info *
 
             if (alpha_index >= 0) {
                 if (float_samples) {
-                    a = tiff_scale_float(tiff_read_sample_float(ctx, row, sample_base + (uint32_t)alpha_index, bps));
+                    a = tiff_scale_float(
+                        tiff_read_sample_float(ctx, row, sample_base + (uint32_t)alpha_index, bps));
                 } else {
                     uint32_t av = tiff_read_sample(ctx, row, sample_base + (uint32_t)alpha_index,
                                                    bps, info->fill_order);
@@ -3043,15 +3005,42 @@ static int tiff_apply_orientation_rgba(uint8_t **rgba, uint32_t *width, uint32_t
             uint32_t sx = 0;
             uint32_t sy = 0;
             switch (orientation) {
-                case 1: sx = x; sy = y; break;
-                case 2: sx = src_w - 1u - x; sy = y; break;
-                case 3: sx = src_w - 1u - x; sy = src_h - 1u - y; break;
-                case 4: sx = x; sy = src_h - 1u - y; break;
-                case 5: sx = y; sy = x; break;
-                case 6: sx = y; sy = src_h - 1u - x; break;
-                case 7: sx = src_w - 1u - y; sy = src_h - 1u - x; break;
-                case 8: sx = src_w - 1u - y; sy = x; break;
-                default: sx = x; sy = y; break;
+                case 1:
+                    sx = x;
+                    sy = y;
+                    break;
+                case 2:
+                    sx = src_w - 1u - x;
+                    sy = y;
+                    break;
+                case 3:
+                    sx = src_w - 1u - x;
+                    sy = src_h - 1u - y;
+                    break;
+                case 4:
+                    sx = x;
+                    sy = src_h - 1u - y;
+                    break;
+                case 5:
+                    sx = y;
+                    sy = x;
+                    break;
+                case 6:
+                    sx = y;
+                    sy = src_h - 1u - x;
+                    break;
+                case 7:
+                    sx = src_w - 1u - y;
+                    sy = src_h - 1u - x;
+                    break;
+                case 8:
+                    sx = src_w - 1u - y;
+                    sy = x;
+                    break;
+                default:
+                    sx = x;
+                    sy = y;
+                    break;
             }
             size_t src_idx = ((size_t)sy * (size_t)src_w + sx) * 4u;
             size_t dst_idx = ((size_t)y * (size_t)dst_w + x) * 4u;
@@ -3069,10 +3058,8 @@ static int tiff_apply_orientation_rgba(uint8_t **rgba, uint32_t *width, uint32_t
     return 1;
 }
 
-static int tiff_load_page(const unsigned char *data, size_t size,
-                          int page_index,
-                          cupidimage_image *out,
-                          char *err, size_t errcap) {
+static int tiff_load_page(const unsigned char *data, size_t size, int page_index,
+                          cupidimage_image *out, char *err, size_t errcap) {
     tiff_context ctx;
     if (!tiff_parse_header(data, size, &ctx, err, errcap)) {
         return 0;
@@ -3258,8 +3245,7 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (info.compression != TIFF_COMPRESSION_NONE &&
-        info.compression != TIFF_COMPRESSION_LZW &&
+    if (info.compression != TIFF_COMPRESSION_NONE && info.compression != TIFF_COMPRESSION_LZW &&
         info.compression != TIFF_COMPRESSION_PACKBITS &&
         info.compression != TIFF_COMPRESSION_DEFLATE &&
         info.compression != TIFF_COMPRESSION_ADOBE_DEFLATE &&
@@ -3300,7 +3286,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
             tiff_info_free(&info);
             return 0;
         }
-        if (!tiff_apply_orientation_rgba(&jpeg_rgba, &jpeg_w, &jpeg_h, info.orientation, err, errcap)) {
+        if (!tiff_apply_orientation_rgba(&jpeg_rgba, &jpeg_w, &jpeg_h, info.orientation, err,
+                                         errcap)) {
             free(jpeg_rgba);
             tiff_info_free(&info);
             return 0;
@@ -3365,7 +3352,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
 
     size_t bytes_per_pixel = 0;
     if ((bps & 7u) == 0) {
-        if (mul_overflow_size_t((size_t)info.samples_per_pixel, (size_t)(bps / 8u), &bytes_per_pixel)) {
+        if (mul_overflow_size_t((size_t)info.samples_per_pixel, (size_t)(bps / 8u),
+                                &bytes_per_pixel)) {
             set_err(err, errcap, "invalid TIFF pixel size");
             tiff_info_free(&info);
             return 0;
@@ -3399,8 +3387,7 @@ static int tiff_load_page(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (info.predictor == 2 &&
-        info.planar_config == TIFF_PLANAR_CHUNKY &&
+    if (info.predictor == 2 && info.planar_config == TIFF_PLANAR_CHUNKY &&
         (info.tile_offsets == NULL || info.tile_offsets_count == 0)) {
         if (!tiff_apply_predictor(&ctx, &info, raw, row_bytes, err, errcap)) {
             free(raw);
@@ -3440,10 +3427,8 @@ static int tiff_load_page(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_tiff_page(const unsigned char *data, size_t size,
-                              cupidimage_image *out,
-                              int page_index,
-                              char *err, size_t errcap) {
+int cupidimage_load_tiff_page(const unsigned char *data, size_t size, cupidimage_image *out,
+                              int page_index, char *err, size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -3453,15 +3438,13 @@ int cupidimage_load_tiff_page(const unsigned char *data, size_t size,
     return tiff_load_page(data, size, page_index, out, err, errcap);
 }
 
-int cupidimage_load_tiff(const unsigned char *data, size_t size,
-                         cupidimage_image *out,
-                         char *err, size_t errcap) {
+int cupidimage_load_tiff(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap) {
     return cupidimage_load_tiff_page(data, size, out, 0, err, errcap);
 }
 
-int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size,
-                                   int *count,
-                                   char *err, size_t errcap) {
+int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size, int *count, char *err,
+                                   size_t errcap) {
     if (!data || !count) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -3517,8 +3500,6 @@ int cupidimage_get_tiff_page_count(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_tiff_file(const char *path,
-                              cupidimage_image *out,
-                              char *err, size_t errcap) {
+int cupidimage_load_tiff_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_tiff);
 }

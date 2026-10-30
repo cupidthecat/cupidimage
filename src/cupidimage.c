@@ -1,7 +1,7 @@
 #include "cupidimage.h"
 
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
 
 void cupidimage_free(cupidimage_image *img) {
     if (!img) {
@@ -19,8 +19,8 @@ static void write_ansi_bg(FILE *out, uint8_t r, uint8_t g, uint8_t b) {
     fprintf(out, "\x1b[48;2;%u;%u;%um", r, g, b);
 }
 
-static void sample_blended_rgb(const cupidimage_image *img, int src_x, int src_y,
-                               unsigned *r, unsigned *g, unsigned *b) {
+static void sample_blended_rgb(const cupidimage_image *img, int src_x, int src_y, unsigned *r,
+                               unsigned *g, unsigned *b) {
     const uint8_t *px = img->rgba + ((size_t)src_y * (size_t)img->width + (size_t)src_x) * 4u;
     unsigned a = (unsigned)px[3];
     unsigned inv = 255u - a;
@@ -33,8 +33,8 @@ int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width
     if (!img || !img->rgba || !out || img->width == 0 || img->height == 0) {
         return 0;
     }
-    if (img->width > INT_MAX || img->height > INT_MAX ||
-        img->width > SIZE_MAX / 4u / img->height) return 0;
+    if (img->width > INT_MAX || img->height > INT_MAX || img->width > SIZE_MAX / 4u / img->height)
+        return 0;
 
     int width = (int)img->width;
     int height = (int)img->height;
@@ -54,8 +54,10 @@ int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width
 
     int out_w = (int)(width * scale);
     int out_h = (int)(height * scale);
-    if (out_w < 1) out_w = 1;
-    if (out_h < 1) out_h = 1;
+    if (out_w < 1)
+        out_w = 1;
+    if (out_h < 1)
+        out_h = 1;
     int downsampling = (out_w < width) || (out_h < height);
 
     uint8_t last_r = 0, last_g = 0, last_b = 0;
@@ -85,13 +87,17 @@ int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width
                 for (int sy = 0; sy < sy_count; sy++) {
                     double py = y0 + ((double)sy + 0.5) * (y1 - y0) / (double)sy_count;
                     int src_y = (int)py;
-                    if (src_y < 0) src_y = 0;
-                    if (src_y >= height) src_y = height - 1;
+                    if (src_y < 0)
+                        src_y = 0;
+                    if (src_y >= height)
+                        src_y = height - 1;
                     for (int sx = 0; sx < sx_count; sx++) {
                         double px = x0 + ((double)sx + 0.5) * (x1 - x0) / (double)sx_count;
                         int src_x = (int)px;
-                        if (src_x < 0) src_x = 0;
-                        if (src_x >= width) src_x = width - 1;
+                        if (src_x < 0)
+                            src_x = 0;
+                        if (src_x >= width)
+                            src_x = width - 1;
                         sample_blended_rgb(img, src_x, src_y, &sum_r, &sum_g, &sum_b);
                         samples++;
                     }
@@ -114,7 +120,8 @@ int cupidimage_render_ansi(const cupidimage_image *img, FILE *out, int max_width
             fputc(' ', out);
         }
         fprintf(out, "\x1b[0m\n");
-        if (ferror(out)) return 0;
+        if (ferror(out))
+            return 0;
         have_last = 0;
     }
 

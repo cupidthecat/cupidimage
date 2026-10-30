@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "../src/cupidimage.h"
 #include <assert.h>
 #include <stdint.h>
-#include "../src/cupidimage.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(void) {
     cupidimage_image img = {0};
@@ -30,7 +30,7 @@ int main(void) {
     fseek(f, 0, SEEK_END);
     long size = ftell(f);
     printf("Output size: %ld bytes\n", size);
-    
+
     /* Should have multiple chunks for 100x100 image */
     assert(size > 1000);
 
