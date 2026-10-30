@@ -171,7 +171,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
         return;
     }
     pdf_paint_group combined = {0};
-    if (area && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined)) {
+    if (area && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined, 0)) {
         free(stroke);
         return;
     }

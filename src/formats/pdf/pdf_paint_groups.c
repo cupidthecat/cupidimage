@@ -3,11 +3,13 @@
 
 /* ISO 32000-1 11.7.4.4: a combined fill/stroke is one knockout object.
  * Full stroke shape permits direct stroke precedence. Partial shape does not. */
-int cupidimage_pdf_fill_stroke_begin(pdf_render_state *st, pdf_paint_group *paint) {
+int cupidimage_pdf_fill_stroke_begin(pdf_render_state *st, pdf_paint_group *paint,
+                                     int fractional_stroke) {
     memset(paint, 0, sizeof(*paint));
     if (cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern) ||
         cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern) ||
-        (!st->gs.stroke_space.pattern && (!st->gs.alpha_is_shape || st->gs.stroke_alpha == 1)))
+        (!fractional_stroke && !st->gs.stroke_space.pattern &&
+         (!st->gs.alpha_is_shape || st->gs.stroke_alpha == 1)))
         return 1;
     pdf_transparency_group *group = &paint->surface;
     group->lazy_backdrop = 1;

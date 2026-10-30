@@ -836,6 +836,6 @@ A bounded line/quadratic/cubic [coverage converter](pdf-coverage.md) now has
 analytic area, independent bitmap and allocation-failure tests. Page painting can
 use it for TrueType/CFF/Type 1 fills through `--pdf-text-aa` or the PDF options API.
 The default remains center-point coverage. Page glyphs remain unhinted unless
-`--pdf-tt-hinting` is also enabled for TrueType programs. Stroke/clip coverage is
-still binary. Standalone bitmap tests and page tests have separate qualification
+`--pdf-tt-hinting` is also enabled for TrueType programs. Text strokes use [analytic union coverage](pdf-stroke-outlines.md) with the
+same option; text clip coverage is still binary. Standalone bitmap tests and page tests have separate qualification
 scopes; neither establishes complete font fidelity.

@@ -82,6 +82,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_soft_masks.c"
 #include "../src/formats/pdf/pdf_standard_font.c"
 #include "../src/formats/pdf/pdf_stroke.c"
+#include "../src/formats/pdf/pdf_stroke_geometry.c"
 #include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_tint.c"
 static int test_text_lazy_enabled = 1;
@@ -101,6 +102,7 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/raster/coverage.c"
 #include "../src/formats/pdf/raster/font_coverage.c"
+#include "../src/formats/pdf/raster/stroke_union.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/pdf_intents.c"
 #include "../src/formats/pdf/pdf_transparency.c"

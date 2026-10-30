@@ -247,7 +247,7 @@ def main():
                 geometry = ' '.join(commands)
                 glyph = f'BT /F 18 Tf MODE Tr 20.1875 30.1875 Td ({char}) Tj ET'
                 for style in ('1 w', '1 w 1 J 1 j', '1 w 2 J 2 j [2 1] .5 d'):
-                    assert render(style + ' ' + glyph.replace('MODE', '1')) == render(style + ' ' + geometry + ' S'), 'hinted stroke device outline'
+                    assert render(style + ' ' + glyph.replace('MODE', '1'), aa=0) == render(style + ' ' + geometry + ' S', aa=0), 'binary hinted stroke device outline'
                 paint = '1 0 0 rg 0 0 120 90 re f'
                 assert render(glyph.replace('MODE', '7') + ' ' + paint) == render(geometry + ' W n ' + paint), 'hinted clip device outline'
             for name, stem in FONTS.items():

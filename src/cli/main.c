@@ -24,7 +24,7 @@ static void usage(const char *prog) {
             prog);
     fprintf(
         stderr,
-        "  --pdf-text-aa: enable grayscale PDF outline text fill (strokes/clips remain binary)\n");
+        "  --pdf-text-aa: enable grayscale PDF outline text fill/stroke (clips remain binary)\n");
     fprintf(stderr, "  --pdf-tt-hinting: execute the native legacy TrueType hinting profile\n");
     fprintf(stderr, "  --pdf-cff-hinting: enable native CFF outline hinting\n");
     fprintf(stderr, "  --pdf-type1-hinting: enable native Type 1 outline hinting\n");

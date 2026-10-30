@@ -2,13 +2,13 @@
 
 `--pdf-tt-hinting` enables the native legacy TrueType instruction profile for
 page glyphs. The API equivalent is `cupidimage_pdf_options.truetype_hinting = 1`.
-Combine it with `--pdf-text-aa` for grayscale fill coverage. Both options default
+Combine it with `--pdf-text-aa` for grayscale fill and stroke coverage. Both options default
 to zero, so existing callers and asset oracles retain their previous rendering.
 
 The option applies to supported embedded and substitute TrueType programs. It
 executes font/preparation/glyph instructions and uses the resulting device
 outline for fill, stroke and text clipping. CFF, Type 1 and bitmap glyphs keep
-their existing paths. Stroke and clip coverage remain binary.
+their existing paths. Stroke coverage follows `--pdf-text-aa`; clip coverage remains binary.
 
 ## Sizing and placement
 

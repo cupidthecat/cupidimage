@@ -92,6 +92,9 @@ def main():
         check('zero-gap','[6 0] 0 d 3 w 6 15 m 30 15 l S',equivalent='3 w 6 15 m 30 15 l S')
         check('round-zero-dashes','[0 6] 0 d 1 J 3 w 6 15 m 30 15 l S',
               expected=lambda x,y:min((x-at)**2+(y-15)**2 for at in (6,12,18,24,30))<=2.25,reference=False)
+        check('square-zero-dashes','[0 6] 0 d 2 J 3 w 6 15 m 29 15 l S',
+              expected=lambda x,y:abs(y-15)<=1.5 and any(abs(x-at)<=1.5 for at in (6,12,18,24)),
+              secondary=True)
         check('closed-dash-endpoints','[100 1] 0 d 6 w 9 9 18 12 re S',equivalent='6 w 9 9 m 27 9 l 27 21 l 9 21 l 9 9 l S',secondary=True)
         check('redundant-corner-point','6 w 9 6 m 9 21 l 9 21 l 30 21 l S',equivalent='6 w 9 6 m 9 21 l 30 21 l S',secondary=True)
         check('redundant-start','6 w 9 6 m 9 6 l 9 21 l 30 21 l S',equivalent='6 w 9 6 m 9 21 l 30 21 l S',secondary=True)

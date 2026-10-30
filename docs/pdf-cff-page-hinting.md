@@ -36,7 +36,7 @@ control text advancement.
 
 Fitted outlines are owned by the glyph draw call. They are not stored in the
 font-space outline cache. The same device outline reaches fills, strokes and
-deferred text clipping. Stroke and clip coverage remain binary. Forms inherit
+deferred text clipping. Stroke coverage follows `--pdf-text-aa`; clip coverage remains binary. Forms inherit
 the option, and a Form-local font can be released when its draw is finished.
 
 ## Work and failure handling
@@ -79,5 +79,5 @@ Its complete page raster remains decoded-unverified.
 
 Flex policy, stem darkening, synthetic bold, fractional
 private parameters, broader charstring arithmetic and larger fitting ranges
-remain unfinished. Text clipping and strokes still need fractional coverage.
+remain unfinished. Text clipping still needs fractional coverage; stroke curves need broader qualification.
 The tested profile is not complete CFF or PDF rendering parity.

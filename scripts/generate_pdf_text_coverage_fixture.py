@@ -10,7 +10,7 @@ BT /Label 9 Tf 12 141 Td (Use --pdf-text-aa to compare glyph edges.) Tj ET
 0.15 0.3 0.8 rg BT /F 18 Tf 12.1875 112.1875 Td (ACFG) Tj ET
 0.8 0.2 0.1 rg BT /F 27 Tf 12.375 76.375 Td (ACFG) Tj ET
 0.1 0.5 0.2 rg BT /F 18 Tf 1 .25 -.125 1 20 37 Tm (ACFG) Tj ET
-0 0 0 rg BT /Label 9 Tf 12 14 Td (Text fills only; strokes and clips remain binary.) Tj ET
+0 0 0 rg BT /Label 9 Tf 12 14 Td (Grayscale text fills and strokes; clips remain binary.) Tj ET
 '''
 PAGE = b'''<< /Type /Page /Parent 2 0 R /Contents 4 0 R
 /MediaBox [0 0 240 180] /Resources << /Font << /F 5 0 R /Label 11 0 R >> >> >>'''

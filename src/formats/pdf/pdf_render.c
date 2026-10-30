@@ -401,7 +401,7 @@ static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
     }
     cupidimage_pdf_stroke_segments(st, &st->path, stroke);
     pdf_paint_group combined = {0};
-    if (!st->image_failed && cupidimage_pdf_fill_stroke_begin(st, &combined)) {
+    if (!st->image_failed && cupidimage_pdf_fill_stroke_begin(st, &combined, 0)) {
         for (size_t pixel = 0; pixel < pixels && !st->image_failed; pixel++) {
             unsigned bit = 1u << (pixel % 8);
             int x = (int)(pixel % st->img->width), y = (int)(pixel / st->img->width);

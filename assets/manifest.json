@@ -944,7 +944,11 @@
     },
     {
       "path": "assets/pdf/text-coverage.pdf",
-      "sha256": "e1b32500626a5044fdcd4d8dc2d27502d448a656c901f6aacafcc49021937590"
+      "sha256": "d6800a7e5a2b998e586238007a5f125489a9e3ea961ca9188b683f01c5575848"
+    },
+    {
+      "path": "assets/pdf/text-strokes.pdf",
+      "sha256": "3b5c6374a1b8bdc91618254d3556565c613ec8222fdb4f1989973510c302bce9"
     },
     {
       "path": "assets/pdf/type1-counter-hints.pdf",

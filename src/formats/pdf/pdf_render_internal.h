@@ -205,7 +205,7 @@ typedef struct {
     pdf_soft_mask *mask;
 } pdf_paint_group;
 
-int cupidimage_pdf_fill_stroke_begin(pdf_render_state *, pdf_paint_group *);
+int cupidimage_pdf_fill_stroke_begin(pdf_render_state *, pdf_paint_group *, int);
 int cupidimage_pdf_fill_stroke_end(pdf_render_state *, pdf_paint_group *, int);
 void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
                                 double alpha, double shape, int blend_mode);
@@ -315,6 +315,8 @@ int cupidimage_pdf_text_clip_prepare(pdf_render_state *st);
 void cupidimage_pdf_text_end(pdf_render_state *st);
 void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path,
                                     unsigned char *target);
+int cupidimage_pdf_stroke_path_coverage(pdf_render_state *, const pdf_path *, int, int, int, int,
+                                        unsigned char **);
 void cupidimage_pdf_text_begin(pdf_render_state *st);
 void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y);
 void cupidimage_pdf_text_advance(pdf_render_state *st, double distance);

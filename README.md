@@ -38,6 +38,7 @@ make -j2
 ./bin/cupidimage --ansi assets/jpeg/cat.jpeg 120 60
 ./bin/cupidimage --pdf-page 2 assets/pdf/pdfjs/basicapi.pdf
 ./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-coverage.pdf
+./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-strokes.pdf
 ./bin/cupidimage --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting --pdf-type1-hinting \
   --sixel assets/pdf/native-cff-hinting.pdf
 ./bin/cupidimage --sixel assets/webp/reference/quadrants.webp
