@@ -152,6 +152,40 @@ static void octree_get_palette_recursive(octree_node *node, uint8_t *palette, in
     }
 }
 
+static void map_colors(const uint8_t *rgba, uint32_t width, uint32_t height, const uint8_t *palette,
+                       uint32_t palette_size, int use_transparency, uint8_t *indexed) {
+    /* Map pixels to palette indices using nearest-color search */
+    for (uint32_t i = 0; i < width * height; i++) {
+        uint8_t a = rgba[i * 4 + 3];
+
+        if (use_transparency && a < 128) {
+            indexed[i] = 0;
+        } else {
+            uint8_t r = rgba[i * 4 + 0];
+            uint8_t g = rgba[i * 4 + 1];
+            uint8_t b = rgba[i * 4 + 2];
+
+            /* Find nearest color in palette */
+            int best_dist = INT_MAX;
+            uint8_t best_idx = 0;
+
+            for (uint32_t p = (use_transparency ? 1u : 0u); p < palette_size; p++) {
+                int dr = (int)r - palette[p * 3 + 0];
+                int dg = (int)g - palette[p * 3 + 1];
+                int db = (int)b - palette[p * 3 + 2];
+                int dist = dr * dr + dg * dg + db * db;
+
+                if (dist < best_dist) {
+                    best_dist = dist;
+                    best_idx = (uint8_t)p;
+                }
+            }
+
+            indexed[i] = best_idx;
+        }
+    }
+}
+
 static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height, uint8_t *palette,
                            uint32_t max_colors, uint32_t *palette_size, int use_transparency,
                            uint8_t *indexed) {
@@ -195,43 +229,15 @@ static int quantize_colors(const uint8_t *rgba, uint32_t width, uint32_t height,
 
     octree_free(qt.root);
 
-    /* Map pixels to palette indices using nearest-color search */
-    for (uint32_t i = 0; i < width * height; i++) {
-        uint8_t a = rgba[i * 4 + 3];
-
-        if (use_transparency && a < 128) {
-            indexed[i] = 0;
-        } else {
-            uint8_t r = rgba[i * 4 + 0];
-            uint8_t g = rgba[i * 4 + 1];
-            uint8_t b = rgba[i * 4 + 2];
-
-            /* Find nearest color in palette */
-            int best_dist = INT_MAX;
-            uint8_t best_idx = 0;
-
-            for (uint32_t p = (uint32_t)palette_offset; p < *palette_size; p++) {
-                int dr = (int)r - palette[p * 3 + 0];
-                int dg = (int)g - palette[p * 3 + 1];
-                int db = (int)b - palette[p * 3 + 2];
-                int dist = dr * dr + dg * dg + db * db;
-
-                if (dist < best_dist) {
-                    best_dist = dist;
-                    best_idx = (uint8_t)p;
-                }
-            }
-
-            indexed[i] = best_idx;
-        }
-    }
+    if (indexed)
+        map_colors(rgba, width, height, palette, *palette_size, use_transparency, indexed);
 
     return 1;
 }
 
-static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t height,
-                                         const uint8_t *palette, uint32_t palette_size,
-                                         int use_transparency, uint8_t *indexed) {
+static int apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t height,
+                                        const uint8_t *palette, uint32_t palette_size,
+                                        int use_transparency, uint8_t *indexed) {
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -240,14 +246,16 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
         free(error_r);
         free(error_g);
         free(error_b);
-        return;
+        return 0;
     }
 
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
-            if (use_transparency && rgba[i * 4 + 3] < 128)
+            if (use_transparency && rgba[i * 4 + 3] < 128) {
+                indexed[i] = 0;
                 continue;
+            }
 
             int r = (int)rgba[i * 4 + 0] + error_r[i];
             int g = (int)rgba[i * 4 + 1] + error_g[i];
@@ -258,7 +266,7 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
             b = b < 0 ? 0 : (b > 255 ? 255 : b);
 
             /* Find nearest color */
-            uint8_t best_idx = indexed[i];
+            uint8_t best_idx = 0;
             int best_dist = INT_MAX;
 
             for (uint32_t p = use_transparency ? 1u : 0u; p < palette_size; p++) {
@@ -313,11 +321,12 @@ static void apply_floyd_steinberg_dither(uint8_t *rgba, uint32_t width, uint32_t
     free(error_r);
     free(error_g);
     free(error_b);
+    return 1;
 }
 
-static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height,
-                                  const uint8_t *palette, uint32_t palette_size,
-                                  int use_transparency, uint8_t *indexed) {
+static int apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height,
+                                 const uint8_t *palette, uint32_t palette_size,
+                                 int use_transparency, uint8_t *indexed) {
     int *error_r = (int *)calloc(width * height, sizeof(int));
     int *error_g = (int *)calloc(width * height, sizeof(int));
     int *error_b = (int *)calloc(width * height, sizeof(int));
@@ -326,14 +335,16 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
         free(error_r);
         free(error_g);
         free(error_b);
-        return;
+        return 0;
     }
 
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
-            if (use_transparency && rgba[i * 4 + 3] < 128)
+            if (use_transparency && rgba[i * 4 + 3] < 128) {
+                indexed[i] = 0;
                 continue;
+            }
 
             int r = (int)rgba[i * 4 + 0] + error_r[i];
             int g = (int)rgba[i * 4 + 1] + error_g[i];
@@ -344,7 +355,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
             b = b < 0 ? 0 : (b > 255 ? 255 : b);
 
             /* Find nearest color */
-            uint8_t best_idx = indexed[i];
+            uint8_t best_idx = 0;
             int best_dist = INT_MAX;
 
             for (uint32_t p = use_transparency ? 1u : 0u; p < palette_size; p++) {
@@ -385,6 +396,7 @@ static void apply_atkinson_dither(uint8_t *rgba, uint32_t width, uint32_t height
     free(error_r);
     free(error_g);
     free(error_b);
+    return 1;
 }
 
 static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
@@ -397,8 +409,10 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t i = y * width + x;
-            if (use_transparency && rgba[i * 4 + 3] < 128)
+            if (use_transparency && rgba[i * 4 + 3] < 128) {
+                indexed[i] = 0;
                 continue;
+            }
 
             int threshold = bayer4x4[y % 4][x % 4] * 16;
 
@@ -411,7 +425,7 @@ static void apply_ordered_dither(uint8_t *rgba, uint32_t width, uint32_t height,
             b = b < 0 ? 0 : (b > 255 ? 255 : b);
 
             /* Find nearest color */
-            uint8_t best_idx = indexed[i];
+            uint8_t best_idx = 0;
             int best_dist = INT_MAX;
 
             for (uint32_t p = use_transparency ? 1u : 0u; p < palette_size; p++) {
@@ -673,7 +687,8 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
 
     uint32_t palette_size = 0;
     if (!quantize_colors(rgba_copy, img->width, img->height, palette, max_colors, &palette_size,
-                         use_transparency, indexed)) {
+                         use_transparency,
+                         (dither_mode >= 1 && dither_mode <= 3) ? NULL : indexed)) {
         free(rgba_copy);
         free(palette);
         free(indexed);
@@ -683,11 +698,15 @@ int cupidimage_render_sixel_with_options(const cupidimage_image *img, FILE *out,
 
     /* Apply dithering */
     if (dither_mode == 1) {
-        apply_floyd_steinberg_dither(rgba_copy, img->width, img->height, palette, palette_size,
-                                     use_transparency, indexed);
+        if (!apply_floyd_steinberg_dither(rgba_copy, img->width, img->height, palette, palette_size,
+                                          use_transparency, indexed))
+            map_colors(rgba_copy, img->width, img->height, palette, palette_size, use_transparency,
+                       indexed);
     } else if (dither_mode == 2) {
-        apply_atkinson_dither(rgba_copy, img->width, img->height, palette, palette_size,
-                              use_transparency, indexed);
+        if (!apply_atkinson_dither(rgba_copy, img->width, img->height, palette, palette_size,
+                                   use_transparency, indexed))
+            map_colors(rgba_copy, img->width, img->height, palette, palette_size, use_transparency,
+                       indexed);
     } else if (dither_mode == 3) {
         apply_ordered_dither(rgba_copy, img->width, img->height, palette, palette_size,
                              use_transparency, indexed);
