@@ -69,7 +69,7 @@ spot-aware blending still need work.
 ## Tests
 
 `make test-pdf-cie-groups` runs 295,604 inverse-curve and matrix checks, 214 page
-checks and 1,757 allocation-failure checks. Page cases cover native-component
+checks and 1,743 allocation-failure checks. Page cases cover native-component
 blending, isolated/non-isolated forms, source images, Type 3 glyphs, text,
 pattern-cache changes, wide-gamut transport, soft-mask luminosity, intent state
 and rejected inverse transforms. Paired native compositions require exact

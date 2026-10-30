@@ -115,3 +115,9 @@ PNG prediction, 16-bit TIFF prediction, stencil masks, and color-key transparenc
 Their full expected pixels are in `tests/fixtures/pdf-image-reference.json` and
 are checked by the all-asset runner. Regenerate them with
 `scripts/generate_pdf_image_reference.py`, which needs only Python's standard library.
+
+The nested-mask-surfaces.pdf reference is literal opaque red after four isolated
+luminosity masks, independently matched at 96 DPI. Its compressed RGBA oracle is
+in the PDF reference inventory. The clipped-shading-work.pdf fixture still has a
+known independent device-CMYK conversion difference; its focused native pixel
+checks do not promote it to a full-raster match.

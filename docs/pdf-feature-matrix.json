@@ -2526,7 +2526,8 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_functions.c",
-            "scripts/test_pdf_functions.py"
+            "scripts/test_pdf_functions.py",
+            "docs/pdf-group-work.md"
           ],
           "limitations": [
             "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
@@ -2535,8 +2536,11 @@
             "1",
             "2"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "audit": "First/last degenerate endpoints, interior ordering, Encode mapping, component arrays and tree bounds tested; full integration audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.10.4",
+            "ISO 32000-2:2020 7.10.4"
+          ]
         },
         {
           "id": "12.4",
@@ -2941,7 +2945,9 @@
             "docs/pdf-cmyk-blending.md",
             "src/formats/pdf/color/black_generation.c",
             "scripts/test_pdf_cmyk_groups.py",
-            "tests/test_pdf_color_transfer.c"
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
             "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
@@ -2975,7 +2981,9 @@
             "docs/pdf-cmyk-blending.md",
             "src/formats/pdf/color/black_generation.c",
             "scripts/test_pdf_cmyk_groups.py",
-            "tests/test_pdf_color_transfer.c"
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
             "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
@@ -3047,7 +3055,9 @@
             "docs/pdf-cmyk-blending.md",
             "src/formats/pdf/color/black_generation.c",
             "scripts/test_pdf_cmyk_groups.py",
-            "tests/test_pdf_color_transfer.c"
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
             "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
@@ -3111,7 +3121,9 @@
             "docs/pdf-cmyk-blending.md",
             "src/formats/pdf/color/black_generation.c",
             "scripts/test_pdf_cmyk_groups.py",
-            "tests/test_pdf_color_transfer.c"
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
             "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."

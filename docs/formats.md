@@ -331,9 +331,12 @@ renderer applies shading Domain and Extend values, BBox, the current transform,
 path/form clipping, opacity, and blend mode. Numeric arrays and exponents may
 be indirect objects. Gray functions can use the default C0/C1 values.
 
-Each page has a shared budget of 128 million color-function evaluations, including
-nested forms and stitched/component functions. Function trees are limited to
-64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
+Each page has 134,217,728 function-work units, shared by nested forms and
+stitched/component functions. Function trees are limited to
+64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting.
+The first and last stitching intervals may collapse to their domain endpoints;
+selection and Encode mapping follow ISO 32000-2 section 7.10.4. Interior bounds
+still increase strictly. Unknown shading or function types return an error rather than
 silently leaving a blank area. Cubic sampled interpolation and color-managed
 shading spaces remain unsupported.
 

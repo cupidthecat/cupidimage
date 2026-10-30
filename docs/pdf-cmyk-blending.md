@@ -65,7 +65,7 @@ have four components in a CMYK group. Alpha masks remain independent of color.
 ## Tests and limits
 
 The test-pdf-cmyk-groups Make target runs 6,718 black-generation unit checks,
-720 native four-component blend comparisons, 203 page tests and 488
+720 native four-component blend comparisons, 213 page tests and 600
 allocation-failure checks.
 The tests inspect native components as well as final RGB pixels, because different
 ink combinations can produce the same RGB result. They include all 16 blend
@@ -83,7 +83,6 @@ other device profiles. Multiprocess ICC elements, alternate output targets,
 overprint and complete document fidelity remain unfinished.
 
 A focused audit of two original corpus documents still reports page failures.
-One reaches a stitching function whose first bound equals the lower domain
-endpoint; the other exceeds the shared full-page group-buffer limit while
-constructing nested masks. CMYK group admission alone does not resolve those
-dependencies, and neither document is counted as a rendering success.
+After fixes for stitching endpoints, mask storage and clipped color work, they
+proceed further but reach dense-path and geometric clipping limits. Neither
+document is counted as a rendering success. See [group work](pdf-group-work.md).

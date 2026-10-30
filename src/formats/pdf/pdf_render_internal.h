@@ -193,6 +193,7 @@ typedef struct {
     pdf_palette_store *palettes;
     unsigned pattern_depth;
     int pattern_uncolored, mask_rendering;
+    pdf_object_id mask_root_object;
     pdf_graphics_state gs_stack[32];
     int gs_stack_len;
     pdf_path path;
@@ -340,6 +341,7 @@ int cupidimage_pdf_apply_extgstate(pdf_render_state *st, const char *name);
 void cupidimage_pdf_blend_components(int, const double *, const double *, double[4], unsigned);
 void cupidimage_pdf_blend_colors(int mode, const double source[3], const double backdrop[3],
                                  double result[3]);
+int cupidimage_pdf_pixel_visible(const pdf_render_state *, int, int);
 void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const double source[3],
                                     double alpha, double shape);
 void cupidimage_pdf_blend_rgb(int mode, const uint8_t source[3], const uint8_t backdrop[3],

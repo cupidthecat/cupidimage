@@ -110,10 +110,25 @@ def main():
         render(doc,(0,0,26));fault(doc)
         bad=page(DEVICE,'/Half gs 0 g '+FULL,objects={30:'<< /BG2 /Identity >>'})
         render(bad,reject=True);fault(bad,True)
+        endpoint='<< /FunctionType 3 /Domain [0 1] /Functions [<< /FunctionType 2 /Domain [0 1] /C0 [1] /C1 [1] /N 1 >> << /FunctionType 2 /Domain [0 1] /N 1 >>] /Bounds [0] /Encode [0 1 0 1] >>'
+        doc=page(DEVICE,'/Half gs 1 1 1 rg '+FULL,objects={30:'<< /BG2 '+endpoint+' >>'})
+        render(doc,(0,0,0));fault(doc)
         # Page-native CMYK components reach the mask's fourth backdrop component.
         child=form('','/BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceCMYK >>')
         data=page(DEVICE,'/Half gs 0 g '+FULL,group=False,objects={20:child,30:'<< /SMask << /S /Luminosity /G 20 0 R /BC [0 0 0 .5] >> >>'})
         render(data,(128,128,128));fault(data)
+        # The implicit backdrop is the color space's initial value. DeviceCMYK
+        # starts at black K=1, while ICCBased starts at zero components.
+        for explicit in (False,True):
+            mask='<< /SMask << /S /Luminosity /G 20 0 R '+('/BC [0 0 0 1]' if explicit else '')+' >> >>'
+            doc=page(DEVICE,'/Half gs 0 g '+FULL,group=False,objects={20:child,30:mask})
+            render(doc,(255,255,255));fault(doc)
+        white_half=form('0 0 0 0 k 0 0 9 12 re f','/BBox [0 0 18 12] /Group << /S /Transparency /I true /CS /DeviceCMYK >>')
+        doc=page(DEVICE,'/Half gs 0 g '+FULL,group=False,objects={20:white_half,30:'<< /SMask << /S /Luminosity /G 20 0 R >> >>'})
+        actual=render(doc)
+        assert actual==bytes(c for y in range(16) for x in range(24) for c in ((0,0,0,255) if x<12 else (255,255,255,255)))
+        fault(doc)
+        render(page(DEVICE,'/C cs '+FULL),(0,0,0))
         # Gray/RGB/CMYK cache transitions preserve all four components and can
         # grow the cached color planes without changing the shared definition.
         for shading in (False,True):
@@ -152,6 +167,14 @@ def main():
         doc=page(spec,'/Source cs .2 .4 .6 scn '+FULL,spaces='/Source '+space)
         assert render(doc)==render(page(spec,color(native)+FULL,group=False))
         fault(doc)
+        # CS/cs must not give an ICC CMYK profile the DeviceCMYK K=1 default.
+        chosen=tags(profile(forward_lut(4,transform=lambda x:(x[0],x[3],x[1])),inputs=4,lab=False),{b'B2A0':lut(4)})
+        spec=('ICC defaults',4,'[/ICCBased 100 0 R]',{100:stream(chosen,'/N 4')},False)
+        for grouped in (False,True):
+            assert render(page(spec,'/C cs '+FULL,group=grouped))==render(page(spec,color((0,)*4)+FULL,group=grouped))
+        child=form('','/BBox [0 0 18 12] /Group << /S /Transparency /I true /CS '+spec[2]+' >>')
+        doc=page(spec,'/Half gs 0 g '+FULL,group=False,objects={20:child,30:'<< /SMask << /S /Luminosity /G 20 0 R >> >>'})
+        render(doc,(255,255,255));fault(doc)
     print(f'PDF CMYK groups: {component_checks} native component checks; {checks} page checks; {allocations} allocation checks')
 
 if __name__=='__main__':main()

@@ -486,6 +486,10 @@
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },
     {
+      "path": "assets/pdf/clipped-shading-work.pdf",
+      "sha256": "8120b45ac251318dd73bbdd30cc46ffcd44110c84aad0b83af2a6fca5e371689"
+    },
+    {
       "path": "assets/pdf/cmyk-blending.pdf",
       "sha256": "880c52c64fd0569cf881e4a36469838f2578265340816489f6ec720415568d16"
     },
@@ -553,6 +557,10 @@
       "path": "assets/pdf/negative/incorrect-stream-length.pdf",
       "sha256": "4694d77d16c82c01296852ad2be9b1d028e72e54d34eba9e62d09ada01780b95",
       "negative_reason": "Legacy fixture declares a 44-byte content stream containing only 38 bytes and has stale object offsets."
+    },
+    {
+      "path": "assets/pdf/nested-mask-surfaces.pdf",
+      "sha256": "90f4a096fc9d09371bf33f7ade8fa434841857f9f94ff2e718da00ed58f13d8f"
     },
     {
       "path": "assets/pdf/nonembedded-latin-families.pdf",

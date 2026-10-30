@@ -72,3 +72,12 @@ Regenerate it with `scripts/generate_pdf_icc_destination_fixture.py`.
 The owned pdf/cmyk-blending.pdf fixture exercises native four-component opacity,
 nonseparable blending, black generation and ICC groups. Its full raster is
 decoded-unverified. Regenerate it with scripts/generate_pdf_cmyk_blend_fixture.py.
+
+The nested-mask-surfaces.pdf fixture is deliberately a plain red page: four
+levels of isolated masks must preserve every pixel within the existing memory
+limit. The clipped-shading-work.pdf fixture repeatedly paints a small clipped
+region without evaluating hidden tint colors. The nested-mask page has an exact
+full-raster oracle, independently matched at 96 DPI. The clipped shading page
+remains decoded-unverified because the independent device-color conversion
+differs. Regenerate them with
+scripts/generate_pdf_group_work_fixtures.py.

@@ -128,7 +128,8 @@ it. q/Q saves and restores the mask; None clears it and null leaves it unchanged
 A new mask replaces the previous one rather than intersecting it.
 
 Alpha uses the group's accumulated opacity. Luminosity composites the group
-against BC, which defaults to black, then converts its color to gray. Luminosity
+against BC, which defaults to the color space's initial components, then converts
+its color to gray. Luminosity
 requires an explicit group blending space. BC is ignored for Alpha. Isolated
 mask groups blend their members without BC; non-isolated groups blend against BC.
 The resulting mask passes through TR, either Identity or a supported one-input,
@@ -144,6 +145,15 @@ Masks are reference-counted across saved states and nested forms. Each new gs
 invocation renders its mask again; there is no cross-invocation mask cache.
 Recursive definitions, malformed functions and exhausted budgets return an
 error. Mask evaluation uses the shared function-evaluation and pixel-work budgets.
+
+## Isolated mask storage
+
+Isolated mask roots use one prepared surface. Their completed native components
+are combined with BC before luminosity conversion; non-isolated roots keep the
+backdrop-dependent path. Nested forms retain their own groups. This avoids a
+redundant page buffer without increasing the memory limit. DeviceCMYK's default
+BC has K = 1; an ICCBased space starts with zero components.
+See [mask and color-function work](pdf-group-work.md) for tests and remaining limits.
 
 ## Limits
 

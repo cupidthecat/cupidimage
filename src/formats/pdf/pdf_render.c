@@ -61,7 +61,7 @@ unsigned char cupidimage_pdf_clamp_u8(double v) {
     return (unsigned char)nextafter(v * 255.0 + 0.5, INFINITY);
 }
 
-static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
+int cupidimage_pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
     const cupidimage_image *img = st->img;
     if (!img || !img->rgba)
         return 0;
@@ -91,7 +91,7 @@ static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
 
 void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t g,
                                     uint8_t b, double alpha, double shape) {
-    if (shape <= 0 || !pdf_pixel_visible(st, x, y))
+    if (shape <= 0 || !cupidimage_pdf_pixel_visible(st, x, y))
         return;
     cupidimage_image *img = st->img;
     size_t pixel = (size_t)y * img->width + (size_t)x;
@@ -171,7 +171,7 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
 
 void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const double source[3],
                                     double alpha, double shape) {
-    if (shape <= 0 || !pdf_pixel_visible(st, x, y))
+    if (shape <= 0 || !cupidimage_pdf_pixel_visible(st, x, y))
         return;
     size_t pixel = (size_t)y * st->img->width + (size_t)x;
     if (!st->paint_coverage_clipped && st->gs.clip && st->gs.clip->coverage) {
@@ -244,7 +244,7 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
 
 void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const double values[4],
                                     const pdf_image_colors *space, double alpha, double shape) {
-    if (st->image_failed)
+    if (st->image_failed || shape <= 0 || !cupidimage_pdf_pixel_visible(st, x, y))
         return;
     if (space->tint) {
         cupidimage_pdf_tint_paint(st, x, y, values, space->tint, alpha, shape);
@@ -843,8 +843,8 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
                 initial[i].num =
                     colors.indexed
                         ? cupidimage_pdf_color_palette_value(&colors, i, colors.palette[i])
-                    : colors.tint || (colors.components == 4 && i == 3) ? 1
-                                                                        : 0;
+                    : colors.tint || (!colors.icc && colors.components == 4 && i == 3) ? 1
+                                                                                       : 0;
             }
             pdf_set_source_color(st, stroke, &colors, initial, colors.components);
             if (stroke) {

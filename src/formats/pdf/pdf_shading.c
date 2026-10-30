@@ -182,11 +182,21 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
                 t = fmin(1, fmax(0, t));
                 input[0] = domain[0] + t * (domain[1] - domain[0]);
             }
+            if (!cupidimage_pdf_pixel_visible(st, (int)x, (int)y)) {
+                /* Keep a bounded scan cost, but do not evaluate color or tint
+                 * functions for a pixel the compositor will discard. */
+                if (!st->form_budget->shade_evaluations_left)
+                    return 0;
+                st->form_budget->shade_evaluations_left--;
+                continue;
+            }
             if (!cupidimage_pdf_evaluate_function(function, input, values,
                                                   &st->form_budget->shade_evaluations_left))
                 return 0;
             cupidimage_pdf_composite_space(st, (int)x, (int)y, values, &colors, st->gs.fill_alpha,
                                            st->gs.alpha_is_shape ? st->gs.fill_alpha : 1);
+            if (st->image_failed)
+                return 0;
         }
     return 1;
 }

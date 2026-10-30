@@ -202,6 +202,13 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
 int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *parent,
                                const pdf_object_view *form, pdf_transparency_group *group) {
     size_t pos;
+    /* The isolated mask root already owns its prepared surface. Nested forms
+     * still allocate their own groups and honor their own attributes. */
+    if (parent->mask_root_object && child->form_depth > 0 &&
+        child->form_objects[child->form_depth - 1] == parent->mask_root_object) {
+        child->mask_root_object = 0;
+        return 1;
+    }
     if (!cupidimage_pdf_page_value(form, "Group", &pos))
         return 1;
     pdf_object_view attributes = {0};
