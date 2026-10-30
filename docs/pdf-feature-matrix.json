@@ -1539,7 +1539,10 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
             "Full raster fidelity, remaining group color models and all cross-feature interactions remain incomplete."
@@ -1550,7 +1553,7 @@
             "5",
             "6"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2271,22 +2274,26 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Reverse mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and additional ICC blending models remain incomplete."
+            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and additional ICC blending models remain incomplete."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.5.5",
             "ICC.1:2022 10.6, 10.18 and Annex F",
             "ICC.1:2022 8.10, 10.10 and 10.11",
-            "ICC.1:2022 10.12"
+            "ICC.1:2022 10.12",
+            "ICC.1:2022 10.13"
           ]
         },
         {
@@ -2887,10 +2894,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2898,7 +2908,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2912,10 +2922,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2923,7 +2936,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2939,10 +2952,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2950,7 +2966,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4"
           ]
@@ -2969,10 +2985,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2980,7 +2999,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4",
             "ISO 32000-1/2 9.3.6"
@@ -2997,10 +3016,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3008,7 +3030,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -3022,10 +3044,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3033,7 +3058,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -3047,10 +3072,13 @@
             "docs/pdf-blending-colors.md",
             "src/formats/pdf/color/blend.c",
             "scripts/test_pdf_cie_groups.py",
-            "tests/test_pdf_icc_inverse.c"
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c"
           ],
           "limitations": [
-            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3058,7 +3086,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         }
       ],

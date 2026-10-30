@@ -110,7 +110,7 @@ tables fall back to A2B0, then matrix/curve tags. Unsupported selected A2B types
 and profiles containing D2B transforms are rejected rather than silently replaced
 with matrix tags. A malformed transform for an unused intent does not prevent
 using another supported transform. Output profiles, black-point compensation and
-ICC LUT destination transforms remain unfinished. Matrix/TRC blending spaces
+ICC multiprocess destination transforms remain unfinished. Matrix/TRC and lookup blending spaces
 are covered in [blending colors](pdf-blending-colors.md).
 
 PDF N must match the supported profile's channel count. Range may be absent,
@@ -346,7 +346,7 @@ profile produces gray 119 without compensation; the comparison renderer maps its
 nonzero source black point to black. A separate uncompensated color-engine check
 confirmed the native result. The compensated result is not used as an oracle for
 the current uncompensated relative-colorimetric path. Black-point compensation,
-output profiles, reverse tables, multiprocess tags and additional ICC blending spaces still require
+output profiles, multiprocess tags and additional ICC blending spaces still require
 work. The intent support below does not resolve those differences.
 
 
@@ -418,8 +418,8 @@ profile cache, with no per-pixel allocation.
 These profiles use the full-range version 4 PCS Lab encoding, not the older
 lut16 Lab scale. PCSXYZ values above 1 remain available to the output conversion.
 Version 2 profiles containing mAB tags are rejected. The existing per-intent source
-selection applies to the new stages; reverse mBA tables and multiprocess elements
-remain unfinished.
+selection applies to the new stages. Reverse mBA tables now support selected
+[blending spaces](pdf-blending-colors.md); multiprocess elements remain unfinished.
 
 `make test-pdf-icc-mab` checks stage order, each permitted combination, curve
 sharing, nonuniform grids, malformed offsets, clipping and PDF source integration.

@@ -514,6 +514,10 @@
       "sha256": "a692033a57b80a1194d2b0abaaaf408effd044dbea4e93543724bb82bf2b00c1"
     },
     {
+      "path": "assets/pdf/icc-destination-blending.pdf",
+      "sha256": "eef0eb72bd916c81253590f82aa03efe51fcbe78901ed72ae09ce7a9de6219dd"
+    },
+    {
       "path": "assets/pdf/image-interpolation.pdf",
       "sha256": "ca4c8823d58daa237b8954402ce3d2f2d6e1d19c67a46b5aa4a9942c04e8ee07"
     },

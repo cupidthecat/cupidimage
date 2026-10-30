@@ -63,3 +63,8 @@ Regenerate it with `scripts/generate_pdf_image_interpolation_fixture.py`.
 `pdf/cie-blending.pdf` compares device and ICC blending, wide-gamut color
 transport and CIE luminosity masks. Its full raster is decoded-unverified.
 Regenerate it with `scripts/generate_pdf_cie_blend_fixture.py`.
+
+`pdf/icc-destination-blending.pdf` exercises XYZ/Lab reverse lookup tables and
+multistage ICC destination transforms. The authored profiles test pipeline
+behavior, not physical devices. Its complete raster is decoded-unverified.
+Regenerate it with `scripts/generate_pdf_icc_destination_fixture.py`.

@@ -15,7 +15,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [Native TrueType loading](pdf-truetype-loader.md): glyphs, phantom points and preparation lifetimes.
 - [TrueType composites](pdf-truetype-composites.md): component transforms, attachments, shared state and bounds.
 - [PDF colors](pdf-colors.md): device and calibrated source conversion, tests and limits.
-- [PDF blending colors](pdf-blending-colors.md): native group encodings, inverse transforms and luminosity.
+- [PDF blending colors](pdf-blending-colors.md): native group encodings, inverse curves, lookup transforms and luminosity.
 - [PDF images](pdf-images.md): native samples, DCT transforms, filter chains and image limits.
 - [PDF image interpolation](pdf-image-interpolation.md): decoded-component filtering, masks, Matte and profile limits.
 - [PDF patterns](pdf-patterns.md): tiling, backdrop-dependent evaluation and cache limits.

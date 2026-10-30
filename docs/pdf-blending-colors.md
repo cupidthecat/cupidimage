@@ -6,9 +6,10 @@ nonlinear or wide-gamut spaces. Conversion happens when a source enters a group
 and when the finished group enters its parent.
 
 The supported group spaces are DeviceGray, DeviceRGB, CalGray, CalRGB and
-one- or three-component ICC matrix/TRC profiles with usable inverse transforms.
-Gray ICC profiles with a Lab connection space are supported as gray spaces.
-Lab itself is not a permitted PDF blending space. CMYK groups, ICC lookup-table
+one- or three-component ICC profiles with usable matrix/TRC inverses or selected
+B2A lookup transforms. Their PCS may be XYZ or Lab; blending still operates on
+the profile's gray or RGB device components.
+Lab itself is not a permitted PDF blending space. CMYK groups, multiprocess
 destination transforms, output profiles and black-point compensation remain
 unfinished. An unsupported group fails; it does not silently become DeviceRGB.
 
@@ -61,8 +62,8 @@ larger than 1e-9. An inverse that underflows to an incorrect color fails instead
 of returning a plausible but wrong black pixel.
 
 These bounds are implementation limits, not additional PDF or ICC requirements.
-They do not establish full color-management conformance. Unsupported LUT reverse
-pipelines, multiprocess elements, nonzero calibrated black points, overprint and
+They do not establish full color-management conformance. Multiprocess elements,
+nonzero calibrated black points, overprint and
 spot-aware blending still need work.
 
 ## Tests
@@ -90,3 +91,43 @@ all five optional text/hinting/graphics profiles enabled, mean absolute channel
 errors were 2.52905 and 0.06397, respectively. Both still differ from the reference
 raster. The larger document also required exact canvas cropping of an oversized
 axis-aligned Form boundary. Neither result establishes complete document fidelity.
+
+
+## Lookup-based destination transforms
+
+Destination selection uses B2A1 for relative or supported absolute colorimetry,
+B2A0 for perceptual intent and B2A2 for saturation. A missing selected table falls
+back to B2A0. Only when neither exists may an invertible matrix/TRC model supply
+the reverse transform. A malformed selected table fails; unused malformed intent
+tables do not disable a different valid intent. Unsupported B2D elements reject
+destination use without disabling an otherwise supported forward source profile.
+
+The native table engine supports `mft1`, `mft2` and version 4 `mBA ` destinations.
+Legacy tables apply the permitted PCSXYZ matrix before the input tables, CLUT
+and output tables. `mBA ` applies B curves, matrix, M curves, CLUT and A curves in
+that order, using only the combinations permitted by ICC.1:2022 section 10.13.
+Curve elements may share storage. CLUT grids may differ by axis. Stage extents,
+reserved fields, channel counts and nonfinite inputs are checked before use.
+
+PCS input encoding distinguishes XYZ, modern Lab and legacy 16-bit Lab. Eight-bit
+PCSXYZ is undefined by ICC.1 and remains rejected. Perceptual conversion restores
+the reference-medium black encoding before the destination table; saturation
+uses that encoding when `rig2` selects the perceptual reference medium. Supported
+absolute conversion removes the media-white scaling before table evaluation.
+
+The table core supports one, three and four output channels, but the PDF group
+compositor still admits only gray and RGB profiles. Four-channel kernel tests are
+not evidence of CMYK group support. This also does not add a monitor-profile API,
+black-point compensation or arbitrary output intents.
+
+`make test-pdf-icc-reverse` adds 10,700 raw pipeline checks, 94 page checks and
+435 allocation-failure checks. Cases cover stage order, table priority, intent
+selection, XYZ/Lab encodings, soft-mask luminosity, in-place evaluation, output
+bounds and every truncation of selected table fixtures. The optional independent
+pipeline comparison covers 348 samples:
+
+    python3 scripts/test_pdf_icc_reverse.py bin/test_pdf_icc_reverse --reference
+
+`assets/pdf/icc-destination-blending.pdf` contains authored lookup transforms,
+not a physical device characterization. Its full raster is decoded-unverified.
+Rebuild it with `scripts/generate_pdf_icc_destination_fixture.py`.

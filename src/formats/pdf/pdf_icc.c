@@ -15,6 +15,9 @@ typedef struct {
     pdf_icc_curve curves[3];
     pdf_icc_lut lut;
     pdf_icc_mab mab;
+    pdf_icc_lut reverse_lut;
+    pdf_icc_mab reverse_mba;
+    int reverse_reference_black;
     pdf_image_colors output;
     int valid, reference_black, matrix_model, inverse_state;
     pdf_icc_inverse_curve inverse_curves[3];
@@ -356,8 +359,14 @@ int cupidimage_pdf_icc_bidirectional(pdf_icc_profile *profile, int intent, size_
     pdf_icc_transform *transform = profile->transforms + intent;
     if (transform->inverse_state)
         return transform->inverse_state == 1;
-    if (!transform->valid || !transform->matrix_model)
+    if (!transform->valid)
         return 0;
+    /* Unsupported floating-point destination tags must not be replaced by
+     * legacy tables or an inferred matrix inverse. Source use remains valid. */
+    unsigned tag_count = icc_u32(profile->data + 128);
+    for (unsigned i = 0; i < tag_count; i++)
+        if (!memcmp(profile->data + 132 + i * 12, "B2D", 3))
+            return 0;
     if (*work < 64) {
         *work = 0;
         return 0;
@@ -365,6 +374,39 @@ int cupidimage_pdf_icc_bidirectional(pdf_icc_profile *profile, int intent, size_
     *work -= 64;
     if (!cupidimage_pdf_color_matrix_inverse(transform->output.adaptation,
                                              transform->inverse_adaptation))
+        return 0;
+    static const char *reverse_tags[] = {"B2A1", "B2A0", "B2A2", "B2A1"};
+    const unsigned char *table = NULL;
+    size_t length = 0;
+    int selected = icc_tag(profile, reverse_tags[intent], &table, &length);
+    if (!selected)
+        selected = icc_tag(profile, "B2A0", &table, &length);
+    if (selected < 0)
+        return 0;
+    if (selected) {
+        if (!memcmp(table, "mBA ", 4)) {
+            if (profile->data[8] != 4 ||
+                !cupidimage_pdf_icc_mba_parse(&transform->reverse_mba, table, length,
+                                              (unsigned)profile->components))
+                return 0;
+        } else if (!cupidimage_pdf_icc_lut_parse_reverse(&transform->reverse_lut, table, length,
+                                                         (unsigned)profile->components,
+                                                         profile->lab_pcs))
+            return 0;
+        transform->reverse_reference_black = profile->data[8] == 4 && intent == 1;
+        if (profile->data[8] == 4 && intent == 2) {
+            const unsigned char *gamut = NULL;
+            size_t gamut_length = 0;
+            int present = icc_tag(profile, "rig2", &gamut, &gamut_length);
+            if (present < 0 ||
+                (present && (gamut_length != 12 || memcmp(gamut, "sig ", 4) || icc_u32(gamut + 4))))
+                return 0;
+            transform->reverse_reference_black = present && !memcmp(gamut + 8, "prmg", 4);
+        }
+        transform->inverse_state = 1;
+        return 1;
+    }
+    if (!transform->matrix_model)
         return 0;
     if (profile->components == 3) {
         double matrix[9];
@@ -396,6 +438,33 @@ int cupidimage_pdf_icc_from_working(pdf_icc_profile *profile, const double input
     double xyz[3], linear[3] = {0};
     if (!cupidimage_pdf_color_matrix_apply(transform->inverse_adaptation, input, xyz))
         return 0;
+    if (transform->reverse_lut.inputs || transform->reverse_mba.inputs) {
+        if (transform->reverse_reference_black) {
+            static const double black[3] = {.003357, .003479, .002869};
+            for (unsigned i = 0; i < 3; i++)
+                xyz[i] = xyz[i] * (1 - black[i] / transform->output.white[i]) + black[i];
+        }
+        double pcs[3];
+        if (profile->lab_pcs) {
+            double f[3];
+            for (unsigned i = 0; i < 3; i++) {
+                double value = xyz[i] / transform->output.white[i];
+                f[i] = value > 216.0 / 24389.0 ? cbrt(value) : (24389.0 / 27.0 * value + 16) / 116;
+            }
+            double factor = transform->reverse_lut.bytes == 2 ? 65280.0 / 65535.0 : 1;
+            pcs[0] = fmax(0, fmin(100, 116 * f[1] - 16)) / 100 * factor;
+            pcs[1] = (500 * (f[0] - f[1]) + 128) / 255 * factor;
+            pcs[2] = (200 * (f[1] - f[2]) + 128) / 255 * factor;
+        } else
+            for (unsigned i = 0; i < 3; i++)
+                pcs[i] = xyz[i] * 32768.0 / 65535.0;
+        int ok = transform->reverse_mba.inputs
+                     ? cupidimage_pdf_icc_mba_value(&transform->reverse_mba, pcs, output)
+                     : cupidimage_pdf_icc_lut_value(&transform->reverse_lut, pcs, output);
+        if (ok && profile->components == 1)
+            output[1] = output[2] = output[0];
+        return ok;
+    }
     if (profile->components == 3) {
         if (!cupidimage_pdf_color_matrix_apply(transform->inverse_matrix, xyz, linear))
             return 0;

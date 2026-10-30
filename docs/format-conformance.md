@@ -693,10 +693,10 @@ semantics instead. The remaining optional-value audit is still tracked in #48.
 
 ## Calibrated and ICC group conversion
 
-CalGray, CalRGB and invertible one-/three-component ICC matrix/TRC profiles now
+CalGray, CalRGB and bidirectional one-/three-component ICC matrix/TRC and lookup profiles now
 retain native components through transparency groups. Tests cover inverse curves,
 wide-gamut transport, pattern cache encodings, Type 3 glyphs, intent state and CIE
-luminosity masks. CMYK groups, ICC LUT destination pipelines, output profiles and
+luminosity masks. CMYK groups, ICC multiprocess destination pipelines, output profiles and
 black-point compensation remain unfinished. See [blending colors](pdf-blending-colors.md)
 for the exact limits and focused evidence. The owned fixture is decoded-unverified.
 

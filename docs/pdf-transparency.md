@@ -30,7 +30,7 @@ rounding errors being amplified by backdrop removal. Pattern and shading cache
 construction does not modify the containing group's alpha.
 
 Supported blending spaces are DeviceRGB, DeviceGray, CalGray, CalRGB and
-selected bidirectional ICC matrix/TRC spaces, explicit or inherited. See
+selected bidirectional ICC matrix/TRC and lookup spaces, explicit or inherited. See
 [blending colors](pdf-blending-colors.md) for conversion rules and limits.
 Explicit spaces are complete color-space objects, not ColorSpace resource aliases.
 Built-in names, single-element arrays and indirect objects are supported. A non-isolated
@@ -52,7 +52,7 @@ Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
 remap painted source colors. A group without an explicit CS inherits its parent
 blending space; an explicit CS is remapped and must still resolve to a supported
-blending space. CMYK groups and ICC LUT destination transforms remain unsupported.
+blending space. CMYK groups and ICC multiprocess destination transforms remain unsupported.
 
 ## Knockout and shape
 
@@ -146,7 +146,7 @@ error. Mask evaluation uses the shared function-evaluation and pixel-work budget
 
 ## Limits
 
-- CMYK groups and ICC LUT destination transforms are not implemented.
+- CMYK groups and ICC multiprocess destination transforms are not implemented.
   An omitted I flag uses the supported non-isolated behavior.
 - Overprinting remains incomplete. Additional color spaces and device color
   management are still separate work.
