@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import zlib
 from test_pdf_pages import document
+from test_pdf_shading_work import page as shading_page
 
 
 def fixtures():
@@ -18,6 +19,9 @@ def fixtures():
     pixels = bytes(v for y in range(1056) for x in range(816)
                    for v in ((0, 0, 0, 255) if x < 16 and y >= 1040 else (255,) * 4))
     yield 'localized-clip-work.pdf', clip, 816, 1056, pixels
+    green = bytes(v for y in range(1056) for x in range(816)
+                  for v in ((0, 255, 0, 255) if 4 <= x < 16 and 1044 <= y < 1052 else (255,) * 4))
+    yield 'bounded-shading-work.pdf', shading_page(repeats=192), 816, 1056, green
 
 
 def main():

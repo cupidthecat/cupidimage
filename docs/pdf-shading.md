@@ -184,8 +184,12 @@ Indexed Lab patch asset also has an analytic neutral-gray reference.
 ## Visible color work
 
 Clipped shading samples no longer evaluate color or tint functions that cannot
-affect the output. Each discarded sample still consumes a work unit; visible
+affect the output. The scan is restricted to conservative clip bounds. Each
+scanned pixel still consumes a work unit; visible
 samples retain the existing function and calculator costs. Other painting paths
 also skip color conversion when the compositor will discard the pixel.
 The memory and work budgets are unchanged. See [group work](pdf-group-work.md)
 for retained-limit and pixel regressions.
+
+See [bounded rendering work](pdf-dense-paths.md) for clip-bound scans, retained
+limits and the repeated-shading fixture.

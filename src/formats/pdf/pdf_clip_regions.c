@@ -45,7 +45,7 @@ int cupidimage_pdf_clip_finish_geometry(pdf_render_state *st, pdf_clip_mask *cli
     if (st->gs.clip && clip->geometry == st->gs.clip->geometry &&
         clip->captured_form_depth == st->gs.clip->captured_form_depth)
         return 1;
-    return cupidimage_pdf_clip_render_geometry(st, clip);
+    return cupidimage_pdf_clip_render_geometry(st, clip, 1);
 }
 
 int cupidimage_pdf_clip_path_geometry(pdf_render_state *st, pdf_clip_mask *clip,
@@ -63,7 +63,7 @@ int cupidimage_pdf_clip_path_geometry(pdf_render_state *st, pdf_clip_mask *clip,
     if (st->gs.clip && clip->geometry && clip->geometry == st->gs.clip->geometry &&
         clip->captured_form_depth == st->gs.clip->captured_form_depth)
         return 1;
-    return clip->geometry && cupidimage_pdf_clip_render_geometry(st, clip);
+    return clip->geometry && cupidimage_pdf_clip_render_geometry(st, clip, 0);
 }
 
 int cupidimage_pdf_clip_append_edge(pdf_render_state *st, double x0, double y0, double x1,
@@ -78,7 +78,7 @@ void cupidimage_pdf_clip_pending_clear(pdf_render_state *st, pdf_clip_mask *clip
     clip->pending_count = clip->pending_capacity = 0;
 }
 
-int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *clip) {
+int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *clip, int clear_bits) {
     size_t pixels = (size_t)st->img->width * st->img->height;
     if (!clip->geometry || clip->coverage || pixels > 16u * 1024u * 1024u ||
         st->clip_budget->bytes_used > 64u * 1024u * 1024u ||
@@ -94,7 +94,7 @@ int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *cli
                       : 0;
     /* Geometric tests only visit the bounded region. The full-sized zeroed
      * coverage allocation remains subject to the independent memory limit. */
-    size_t work = area + clip->bytes;
+    size_t work = area + (clear_bits ? clip->bytes : 0);
     if (work > st->clip_budget->tests_left)
         return 0;
     st->clip_budget->tests_left -= work;
@@ -103,7 +103,10 @@ int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *cli
         return 0;
     clip->coverage_bytes = pixels;
     st->clip_budget->bytes_used += pixels;
-    memset(clip->bits, 0, clip->bytes);
+    /* Path and Form masks are freshly zeroed. Text masks may contain the
+     * provisional center-sampled glyph winding and must be rebuilt. */
+    if (clear_bits)
+        memset(clip->bits, 0, clip->bytes);
     if (!area)
         return 1;
     if (clip->geometry->rectangle) {
@@ -278,7 +281,7 @@ int cupidimage_pdf_clip_capture_forms(pdf_render_state *st) {
         clip->geometry = cupidimage_pdf_clip_geometry_create(
             st->gs.clip ? st->gs.clip->geometry : NULL, edges, 4, 0, &st->clip_budget->bytes_used,
             &st->clip_budget->tests_left);
-        if (!clip->geometry || !cupidimage_pdf_clip_render_geometry(st, clip)) {
+        if (!clip->geometry || !cupidimage_pdf_clip_render_geometry(st, clip, 0)) {
             cupidimage_pdf_clip_release(st, clip);
             return 0;
         }

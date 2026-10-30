@@ -36,9 +36,9 @@ does not skip zero-opacity objects that still have shape, which can affect a
 knockout group.
 
 Type 1, axial and radial shading evaluate color functions only for visible
-pixels. A discarded shading sample still consumes one work unit, so repeated
-clipped shading cannot bypass the work limit. Visible samples retain the normal
-function-node and calculator costs. The page's color-function budget is unchanged.
+pixels. Shading scans are restricted to conservative clip bounds. Every scanned
+pixel consumes a work unit, and visible samples retain the additional function-node
+and calculator costs. The page's color-function budget is unchanged.
 
 The clipped-work fixture repeatedly paints a small clipped region using an
 expensive tint function. Shading and image variants produce the same pixels as
@@ -67,8 +67,8 @@ suites remain separate.
 
 Two original CMYK corpus pages now proceed beyond their earlier group, mask and
 color-function failures. The subsequent [dense-path work](pdf-dense-paths.md) gets one page through
-rendering, with pixel differences remaining. The other passes clipping but still
-reaches a shading-work limit. The full manual corpus review remains deferred.
+rendering, with pixel differences remaining. The other now passes the earlier work limits but still
+reaches the clip-operation count limit. The full manual corpus review remains deferred.
 
 The owned nested-mask-surfaces.pdf has an exact full-page oracle, also matched
 by an independent 96-DPI raster. The clipped-shading-work.pdf asset remains

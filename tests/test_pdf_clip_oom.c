@@ -431,7 +431,8 @@ int main(int argc, char **argv) {
         checks++;
         if (cupidimage_pdf_draw_shading(&state, "Sh") || budget.shade_evaluations_left != 3)
             failures++;
-        budget.shade_evaluations_left = 4;
+        /* Four scan positions plus four scalar function evaluations. */
+        budget.shade_evaluations_left = 8;
         checks++;
         if (!cupidimage_pdf_draw_shading(&state, "Sh") || budget.shade_evaluations_left ||
             pixels[0] != 64 || pixels[4] != 191)

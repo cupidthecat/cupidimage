@@ -34,7 +34,7 @@ int main(void) {
             memset(clip->bits, 255, clip->bytes);
             size_t required = clip->bytes + (empty ? 0 : 4);
             budget.tests_left = required - insufficient;
-            int ok = cupidimage_pdf_clip_render_geometry(state, clip);
+            int ok = cupidimage_pdf_clip_render_geometry(state, clip, 1);
             assert(ok == !insufficient);
             if (ok) {
                 assert(!budget.tests_left && clip->coverage_bytes == 512 * 512);
@@ -56,6 +56,24 @@ int main(void) {
             free(clip);
             checks++;
         }
+        pdf_clip_mask *fresh = calloc(1, sizeof(*fresh) + (512 * 512) / 8);
+        assert(fresh);
+        fresh->geometry = geometry;
+        fresh->bytes = (512 * 512) / 8;
+        budget.tests_left = empty ? 0 : 4;
+        assert(cupidimage_pdf_clip_render_geometry(state, fresh, 0));
+        assert(!budget.tests_left && fresh->coverage_bytes == 512 * 512);
+        for (unsigned y = 0; y < 512; y++)
+            for (unsigned x = 0; x < 512; x++) {
+                unsigned pixel = y * 512 + x;
+                unsigned covered = !empty && x >= 1 && x < 3 && y >= 1 && y < 3;
+                assert(fresh->coverage[pixel] == (covered ? 255 : 0));
+                assert(((fresh->bits[pixel / 8] >> (pixel % 8)) & 1) == covered);
+                checks++;
+            }
+        budget.bytes_used -= fresh->coverage_bytes;
+        free(fresh->coverage);
+        free(fresh);
         cupidimage_pdf_clip_geometry_release(geometry, &budget.bytes_used);
         assert(!budget.bytes_used);
     }

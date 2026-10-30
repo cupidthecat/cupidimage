@@ -482,6 +482,10 @@
       "sha256": "69b90bb3096e6b0a860d3198c35152d02400d8d0cf069c2d2a1874ae26c02798"
     },
     {
+      "path": "assets/pdf/bounded-shading-work.pdf",
+      "sha256": "3327d0f6f6a794506727d678fe8262b17e09414c1f4cb7f76c4ae67e6dce5115"
+    },
+    {
       "path": "assets/pdf/cie-blending.pdf",
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },

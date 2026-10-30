@@ -79,6 +79,50 @@ static int pdf_radial_parameter(const double coords[6], const int extend[2], dou
     return found;
 }
 
+static int pdf_shading_visible_bounds(const pdf_render_state *st, int bounds[4], size_t *work) {
+    unsigned width = st->img->width, height = st->img->height;
+    bounds[0] = bounds[1] = 0;
+    bounds[2] = (int)width;
+    bounds[3] = (int)height;
+    const pdf_clip_mask *clip = st->gs.clip;
+    if (!clip || st->paint_coverage_clipped)
+        return 1;
+    if (clip->geometry && clip->coverage) {
+        const double *b = clip->geometry->bounds;
+        bounds[0] = (int)fmax(0, fmin(width, floor(b[0])));
+        bounds[1] = (int)fmax(0, fmin(height, floor(b[1])));
+        bounds[2] = (int)fmax(0, fmin(width, ceil(b[2])));
+        bounds[3] = (int)fmax(0, fmin(height, ceil(b[3])));
+        return 1;
+    }
+    size_t pixels = (size_t)width * height, bytes = (pixels + 7) / 8;
+    if (clip->bytes != bytes || bytes > *work)
+        return 0;
+    *work -= bytes;
+    bounds[0] = (int)width;
+    bounds[1] = (int)height;
+    bounds[2] = bounds[3] = 0;
+    for (size_t i = 0; i < bytes; i++) {
+        if (!clip->bits[i])
+            continue;
+        size_t first = i * 8, last = first + 7 < pixels ? first + 7 : pixels - 1;
+        unsigned top = (unsigned)(first / width), bottom = (unsigned)(last / width);
+        /* A byte may straddle rows. Keep all of its pixels in that case;
+         * the compositor still tests the individual bits. */
+        unsigned left = top == bottom ? (unsigned)(first % width) : 0;
+        unsigned right = top == bottom ? (unsigned)(last % width) + 1 : width;
+        if ((int)left < bounds[0])
+            bounds[0] = (int)left;
+        if ((int)top < bounds[1])
+            bounds[1] = (int)top;
+        if ((int)right > bounds[2])
+            bounds[2] = (int)right;
+        if ((int)bottom + 1 > bounds[3])
+            bounds[3] = (int)bottom + 1;
+    }
+    return 1;
+}
+
 static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view *view,
                                     pdf_function_tree *function, int background) {
     int type;
@@ -140,11 +184,20 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
     }
     if (empty && !background)
         return 1;
-    size_t pixels = (size_t)st->img->width * st->img->height;
-    if (!empty && pixels > st->form_budget->shade_evaluations_left)
+    int bounds[4];
+    size_t *work = &st->form_budget->shade_evaluations_left;
+    if (!pdf_shading_visible_bounds(st, bounds, work))
         return 0;
-    for (uint32_t y = 0; y < st->img->height; y++)
-        for (uint32_t x = 0; x < st->img->width; x++) {
+    if (bounds[2] <= bounds[0] || bounds[3] <= bounds[1])
+        return 1;
+    size_t pixels = (size_t)(bounds[2] - bounds[0]) * (bounds[3] - bounds[1]);
+    if (pixels > *work)
+        return 0;
+    *work -= pixels;
+    for (int y = bounds[1]; y < bounds[3]; y++)
+        for (int x = bounds[0]; x < bounds[2]; x++) {
+            if (!cupidimage_pdf_pixel_visible(st, x, y))
+                continue;
             double tx = st->page_x0_pts + (x + .5) * (72.0 / 96.0) - m[4];
             double ty = st->page_top_pts - (y + .5) * (72.0 / 96.0) - m[5];
             double ux = (m[3] * tx - m[2] * ty) / det, uy = (m[0] * ty - m[1] * tx) / det;
@@ -181,14 +234,6 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
                     continue;
                 t = fmin(1, fmax(0, t));
                 input[0] = domain[0] + t * (domain[1] - domain[0]);
-            }
-            if (!cupidimage_pdf_pixel_visible(st, (int)x, (int)y)) {
-                /* Keep a bounded scan cost, but do not evaluate color or tint
-                 * functions for a pixel the compositor will discard. */
-                if (!st->form_budget->shade_evaluations_left)
-                    return 0;
-                st->form_budget->shade_evaluations_left--;
-                continue;
             }
             if (!cupidimage_pdf_evaluate_function(function, input, values,
                                                   &st->form_budget->shade_evaluations_left))

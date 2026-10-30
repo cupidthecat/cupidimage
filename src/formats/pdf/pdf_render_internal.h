@@ -394,7 +394,8 @@ int cupidimage_pdf_clip_limit_mask(pdf_render_state *, const unsigned char *, in
 int cupidimage_pdf_clip_append_edge_to(pdf_render_state *, pdf_clip_mask *, double, double, double,
                                        double);
 void cupidimage_pdf_clip_pending_clear(pdf_render_state *, pdf_clip_mask *);
-int cupidimage_pdf_clip_render_geometry(pdf_render_state *, pdf_clip_mask *);
+/* clear_bits is required for text masks with provisional glyph-winding bits. */
+int cupidimage_pdf_clip_render_geometry(pdf_render_state *, pdf_clip_mask *, int clear_bits);
 int cupidimage_pdf_clip_contains_crop(pdf_render_state *, int, int, int, int);
 int cupidimage_pdf_clip_intersect(pdf_render_state *, const pdf_region_edge *, unsigned, unsigned,
                                   const pdf_region_ellipse *, unsigned, const double[4], int, int,
