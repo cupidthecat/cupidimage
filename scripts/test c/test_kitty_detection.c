@@ -1,6 +1,6 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 int cupidimage_is_kitty_terminal(void);
 

@@ -1,10 +1,10 @@
 #include "cupidimage.h"
 #include "cupidimage_internal.h"
 
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <limits.h>
 
 #ifdef CUPIDIMAGE_BMP_DEBUG
 #define BMP_DEBUG(...) fprintf(stderr, "BMP: " __VA_ARGS__)
@@ -80,33 +80,47 @@ static uint8_t bmp_mask_extract(uint32_t value, const bmp_mask_info *mi) {
 #ifdef CUPIDIMAGE_BMP_DEBUG
 static const char *bmp_header_name(uint32_t size) {
     switch (size) {
-        case 12: return "BITMAPCOREHEADER";
-        case 40: return "BITMAPINFOHEADER";
-        case 52: return "BITMAPV2INFOHEADER";
-        case 56: return "BITMAPV3INFOHEADER";
-        case 108: return "BITMAPV4HEADER";
-        case 124: return "BITMAPV5HEADER";
-        default: return "UNKNOWN";
+        case 12:
+            return "BITMAPCOREHEADER";
+        case 40:
+            return "BITMAPINFOHEADER";
+        case 52:
+            return "BITMAPV2INFOHEADER";
+        case 56:
+            return "BITMAPV3INFOHEADER";
+        case 108:
+            return "BITMAPV4HEADER";
+        case 124:
+            return "BITMAPV5HEADER";
+        default:
+            return "UNKNOWN";
     }
 }
 
 static const char *bmp_compression_name(uint32_t comp) {
     switch (comp) {
-        case BI_RGB: return "BI_RGB";
-        case BI_RLE8: return "BI_RLE8";
-        case BI_RLE4: return "BI_RLE4";
-        case BI_BITFIELDS: return "BI_BITFIELDS";
-        case BI_JPEG: return "BI_JPEG";
-        case BI_PNG: return "BI_PNG";
-        case BI_ALPHABITFIELDS: return "BI_ALPHABITFIELDS";
-        default: return "UNKNOWN";
+        case BI_RGB:
+            return "BI_RGB";
+        case BI_RLE8:
+            return "BI_RLE8";
+        case BI_RLE4:
+            return "BI_RLE4";
+        case BI_BITFIELDS:
+            return "BI_BITFIELDS";
+        case BI_JPEG:
+            return "BI_JPEG";
+        case BI_PNG:
+            return "BI_PNG";
+        case BI_ALPHABITFIELDS:
+            return "BI_ALPHABITFIELDS";
+        default:
+            return "UNKNOWN";
     }
 }
 #endif
 
-static int bmp_decode_rle8(const uint8_t *src, size_t size,
-                           uint32_t width, uint32_t height, int top_down,
-                           uint8_t *out, char *err, size_t errcap) {
+static int bmp_decode_rle8(const uint8_t *src, size_t size, uint32_t width, uint32_t height,
+                           int top_down, uint8_t *out, char *err, size_t errcap) {
     size_t pos = 0;
     uint32_t x = 0;
     uint32_t y = 0;
@@ -197,9 +211,8 @@ static int bmp_decode_rle8(const uint8_t *src, size_t size,
     return 1;
 }
 
-static int bmp_decode_rle4(const uint8_t *src, size_t size,
-                           uint32_t width, uint32_t height, int top_down,
-                           uint8_t *out, char *err, size_t errcap) {
+static int bmp_decode_rle4(const uint8_t *src, size_t size, uint32_t width, uint32_t height,
+                           int top_down, uint8_t *out, char *err, size_t errcap) {
     size_t pos = 0;
     uint32_t x = 0;
     uint32_t y = 0;
@@ -294,7 +307,8 @@ static int bmp_decode_rle4(const uint8_t *src, size_t size,
     return 1;
 }
 
-static int bmp_should_unpremultiply(const uint8_t *rgba, size_t pixels, int metadata_premultiplied) {
+static int bmp_should_unpremultiply(const uint8_t *rgba, size_t pixels,
+                                    int metadata_premultiplied) {
     if (metadata_premultiplied) {
         return 1;
     }
@@ -333,8 +347,8 @@ static void bmp_unpremultiply(uint8_t *rgba, size_t pixels) {
     }
 }
 
-int cupidimage_load_bmp(const unsigned char *data, size_t size,
-                        cupidimage_image *out, char *err, size_t errcap) {
+int cupidimage_load_bmp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                        size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -364,8 +378,8 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
     }
 
     uint32_t dib_size = read_le32(data + 14);
-    if (dib_size != 12 && dib_size != 40 && dib_size != 52 && dib_size != 56 &&
-        dib_size != 108 && dib_size != 124) {
+    if (dib_size != 12 && dib_size != 40 && dib_size != 52 && dib_size != 56 && dib_size != 108 &&
+        dib_size != 124) {
         set_err(err, errcap, "unknown header version");
         return 0;
     }
@@ -460,8 +474,8 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (bit_count != 1 && bit_count != 4 && bit_count != 8 && bit_count != 16 &&
-        bit_count != 24 && bit_count != 32) {
+    if (bit_count != 1 && bit_count != 4 && bit_count != 8 && bit_count != 16 && bit_count != 24 &&
+        bit_count != 32) {
         set_err(err, errcap, "unsupported bit depth");
         return 0;
     }
@@ -486,9 +500,8 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
         return 0;
     }
 
-    BMP_DEBUG("dimensions=%ux%u (%s), bit_depth=%u, compression=%s\n",
-              width, height, top_down ? "top-down" : "bottom-up",
-              bit_count, bmp_compression_name(compression));
+    BMP_DEBUG("dimensions=%ux%u (%s), bit_depth=%u, compression=%s\n", width, height,
+              top_down ? "top-down" : "bottom-up", bit_count, bmp_compression_name(compression));
 
     size_t palette_offset = 14u + dib_size;
     if ((compression == BI_BITFIELDS || compression == BI_ALPHABITFIELDS) && dib_size == 40) {
@@ -512,16 +525,16 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
     }
 
     if (has_masks && (mask_r || mask_g || mask_b)) {
-        BMP_DEBUG("bitfields masks r=0x%08x g=0x%08x b=0x%08x a=0x%08x\n",
-                  mask_r, mask_g, mask_b, mask_a);
+        BMP_DEBUG("bitfields masks r=0x%08x g=0x%08x b=0x%08x a=0x%08x\n", mask_r, mask_g, mask_b,
+                  mask_a);
     }
 
     if (dib_size >= 108) {
         BMP_DEBUG("color_space=0x%08x\n", cstype);
     }
     if (dib_size >= 124) {
-        BMP_DEBUG("icc_profile_offset=%u size=%u intent=0x%08x\n",
-                  profile_data, profile_size, intent);
+        BMP_DEBUG("icc_profile_offset=%u size=%u intent=0x%08x\n", profile_data, profile_size,
+                  intent);
     }
 
     if (compression == BI_JPEG) {
@@ -634,7 +647,8 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
     bmp_mask_init(&amask, mask_a);
 
     int metadata_premultiplied = 0;
-    if ((dib_size >= 108 && cstype == LCS_GM_IMAGES) || (dib_size >= 124 && intent == LCS_GM_IMAGES)) {
+    if ((dib_size >= 108 && cstype == LCS_GM_IMAGES) ||
+        (dib_size >= 124 && intent == LCS_GM_IMAGES)) {
         metadata_premultiplied = 1;
     }
 
@@ -660,11 +674,11 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
         }
         int ok = 0;
         if (compression == BI_RLE8) {
-            ok = bmp_decode_rle8(data + data_offset, size_bound - data_offset,
-                                 width, height, top_down, indices, err, errcap);
+            ok = bmp_decode_rle8(data + data_offset, size_bound - data_offset, width, height,
+                                 top_down, indices, err, errcap);
         } else {
-            ok = bmp_decode_rle4(data + data_offset, size_bound - data_offset,
-                                 width, height, top_down, indices, err, errcap);
+            ok = bmp_decode_rle4(data + data_offset, size_bound - data_offset, width, height,
+                                 top_down, indices, err, errcap);
         }
         if (!ok) {
             free(indices);
@@ -851,7 +865,6 @@ int cupidimage_load_bmp(const unsigned char *data, size_t size,
     return 0;
 }
 
-int cupidimage_load_bmp_file(const char *path, cupidimage_image *out,
-                             char *err, size_t errcap) {
+int cupidimage_load_bmp_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_bmp);
 }

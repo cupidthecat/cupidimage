@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 int cupidimage_kitty_delete_all(FILE *out, char *err, size_t errcap);
 int cupidimage_kitty_delete_image(FILE *out, uint32_t image_id, char *err, size_t errcap);

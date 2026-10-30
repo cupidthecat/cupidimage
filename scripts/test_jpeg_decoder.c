@@ -5,7 +5,8 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-    if (argc != 8) return 2;
+    if (argc != 8)
+        return 2;
     cupidimage_image image = {0};
     char error[256] = {0};
     int accepted = atoi(argv[2]);
@@ -16,8 +17,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (ok) {
-        if (image.width != (uint32_t)atoi(argv[3]) ||
-            image.height != (uint32_t)atoi(argv[4])) {
+        if (image.width != (uint32_t)atoi(argv[3]) || image.height != (uint32_t)atoi(argv[4])) {
             fprintf(stderr, "unexpected dimensions %u x %u\n", image.width, image.height);
             cupidimage_free(&image);
             return 1;
@@ -26,13 +26,14 @@ int main(int argc, char **argv) {
             for (int c = 0; c < 3; ++c) {
                 int expected = atoi(argv[5 + c]);
                 if (expected >= 0 && image.rgba[i * 4 + (size_t)c] != expected) {
-                    fprintf(stderr, "pixel %zu channel %d: expected %d, got %u\n",
-                            i, c, expected, image.rgba[i * 4 + (size_t)c]);
+                    fprintf(stderr, "pixel %zu channel %d: expected %d, got %u\n", i, c, expected,
+                            image.rgba[i * 4 + (size_t)c]);
                     cupidimage_free(&image);
                     return 1;
                 }
             }
-            if (image.rgba[i * 4 + 3] != 255) return 1;
+            if (image.rgba[i * 4 + 3] != 255)
+                return 1;
         }
     } else if (image.rgba || !error[0]) {
         fprintf(stderr, "failure must leave no pixels and explain the error\n");

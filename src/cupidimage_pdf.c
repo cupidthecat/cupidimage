@@ -2,9 +2,9 @@
 #include "cupidimage_internal.h"
 
 #include <ctype.h>
-#include <stdint.h>
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,10 +60,10 @@ typedef struct {
     int cap;
 } pdf_font_table;
 
-static int pdf_inflate_auto(const unsigned char *data, size_t size,
-                            unsigned char **out_data, size_t *out_len);
-static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
-                            const char *key, int *value);
+static int pdf_inflate_auto(const unsigned char *data, size_t size, unsigned char **out_data,
+                            size_t *out_len);
+static int extract_dict_int(const unsigned char *data, size_t start, size_t end, const char *key,
+                            int *value);
 static int buffer_contains(const unsigned char *data, size_t start, size_t end, const char *needle);
 static int extract_stream(const unsigned char *data, size_t obj_start, size_t obj_end,
                           const unsigned char **stream_data, size_t *stream_len,
@@ -71,13 +71,15 @@ static int extract_stream(const unsigned char *data, size_t obj_start, size_t ob
 static int pdf_is_delim(unsigned char c);
 static void pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos);
 
-static int pdf_parse_decimal(const unsigned char *data, size_t end, size_t *pos,
-                             size_t limit, size_t *out) {
+static int pdf_parse_decimal(const unsigned char *data, size_t end, size_t *pos, size_t limit,
+                             size_t *out) {
     size_t p = *pos, value = 0;
-    if (p >= end || data[p] < '0' || data[p] > '9') return 0;
+    if (p >= end || data[p] < '0' || data[p] > '9')
+        return 0;
     while (p < end && data[p] >= '0' && data[p] <= '9') {
         unsigned digit = data[p++] - '0';
-        if (value > limit / 10 || (value == limit / 10 && digit > limit % 10)) return 0;
+        if (value > limit / 10 || (value == limit / 10 && digit > limit % 10))
+            return 0;
         value = value * 10 + digit;
     }
     *out = value;
@@ -86,7 +88,8 @@ static int pdf_parse_decimal(const unsigned char *data, size_t end, size_t *pos,
 }
 
 static int find_eof_marker(const unsigned char *data, size_t size, size_t *eof_pos) {
-    if (size < 6) return 0;
+    if (size < 6)
+        return 0;
     for (size_t i = size - 6; i > 0; i--) {
         if (memcmp(&data[i], "%%EOF", 5) == 0) {
             *eof_pos = i;
@@ -97,15 +100,20 @@ static int find_eof_marker(const unsigned char *data, size_t size, size_t *eof_p
 }
 
 static int find_startxref(const unsigned char *data, size_t eof_pos, size_t *xref_offset) {
-    if (eof_pos < 9) return 0;
+    if (eof_pos < 9)
+        return 0;
     size_t i = eof_pos - 9;
     do {
         if (memcmp(&data[i], "startxref", 9) == 0) {
             size_t j = i + 9;
-            if (j == eof_pos || !isspace(data[j])) return 0;
-            while (j < eof_pos && isspace(data[j])) j++;
-            if (!pdf_parse_decimal(data, eof_pos, &j, SIZE_MAX, xref_offset)) return 0;
-            while (j < eof_pos && isspace(data[j])) j++;
+            if (j == eof_pos || !isspace(data[j]))
+                return 0;
+            while (j < eof_pos && isspace(data[j]))
+                j++;
+            if (!pdf_parse_decimal(data, eof_pos, &j, SIZE_MAX, xref_offset))
+                return 0;
+            while (j < eof_pos && isspace(data[j]))
+                j++;
             return j == eof_pos;
         }
     } while (i-- > 0);
@@ -113,13 +121,15 @@ static int find_startxref(const unsigned char *data, size_t eof_pos, size_t *xre
 }
 
 static int pdf_check_header(const unsigned char *data, size_t size) {
-    if (size < 8) return 0;
-    if (memcmp(data, "%PDF-", 5) != 0) return 0;
+    if (size < 8)
+        return 0;
+    if (memcmp(data, "%PDF-", 5) != 0)
+        return 0;
     return 1;
 }
 
-static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_pos,
-                            pdf_xref *xref, char *err, size_t errcap) {
+static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_pos, pdf_xref *xref,
+                            char *err, size_t errcap) {
     if (xref_pos > size || size - xref_pos < 4) {
         set_err(err, errcap, "pdf: xref offset out of bounds");
         return 0;
@@ -141,19 +151,22 @@ static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_
     }
 
     size_t pos = xref_pos + 4;
-    while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
+    while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r'))
+        pos++;
 
     size_t first_obj, count;
     if (!pdf_parse_decimal(data, size, &pos, INT_MAX, &first_obj)) {
         set_err(err, errcap, "pdf: invalid xref object number");
         return 0;
     }
-    while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
+    while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r'))
+        pos++;
     if (!pdf_parse_decimal(data, size, &pos, 100000, &count)) {
         set_err(err, errcap, "pdf: invalid xref count");
         return 0;
     }
-    while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
+    while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r'))
+        pos++;
 
     if (count == 0 || count - 1 > INT_MAX - first_obj) {
         set_err(err, errcap, "pdf: invalid xref count");
@@ -171,15 +184,21 @@ static int parse_xref_table(const unsigned char *data, size_t size, size_t xref_
         size_t offset, gen;
         char inuse = 'f';
 
-        if (!pdf_parse_decimal(data, size, &pos, SIZE_MAX, &offset)) goto invalid_entry;
-        while (pos < size && data[pos] == ' ') pos++;
+        if (!pdf_parse_decimal(data, size, &pos, SIZE_MAX, &offset))
+            goto invalid_entry;
+        while (pos < size && data[pos] == ' ')
+            pos++;
 
-        if (!pdf_parse_decimal(data, size, &pos, 65535, &gen)) goto invalid_entry;
-        while (pos < size && data[pos] == ' ') pos++;
+        if (!pdf_parse_decimal(data, size, &pos, 65535, &gen))
+            goto invalid_entry;
+        while (pos < size && data[pos] == ' ')
+            pos++;
 
-        if (pos == size || (data[pos] != 'f' && data[pos] != 'n')) goto invalid_entry;
+        if (pos == size || (data[pos] != 'f' && data[pos] != 'n'))
+            goto invalid_entry;
         inuse = (char)data[pos++];
-        while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
+        while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r'))
+            pos++;
 
         xref->entries[i].obj_num = (int)first_obj + i;
         xref->entries[i].gen_num = (int)gen;
@@ -195,8 +214,8 @@ invalid_entry:
     return 0;
 }
 
-static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos,
-                         pdf_xref *xref, char *err, size_t errcap) {
+static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos, pdf_xref *xref,
+                         char *err, size_t errcap) {
     size_t pos = xref_pos;
     size_t trailer_pos = 0;
     size_t search_limit = xref_pos + (size - xref_pos < 10000 ? size - xref_pos : 10000);
@@ -211,7 +230,8 @@ static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos
 
     if (trailer_pos == 0) {
         pos = xref_pos;
-        while (pos < search_limit && data[pos] != '<') pos++;
+        while (pos < search_limit && data[pos] != '<')
+            pos++;
         if (pos + 1 >= search_limit || data[pos + 1] != '<') {
             set_err(err, errcap, "pdf: trailer dictionary not found");
             return 0;
@@ -219,7 +239,8 @@ static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos
         pos += 2;
     } else {
         pos = trailer_pos + 7;
-        while (pos < size && data[pos] != '<') pos++;
+        while (pos < size && data[pos] != '<')
+            pos++;
         if (pos + 1 >= size || data[pos + 1] != '<') {
             set_err(err, errcap, "pdf: trailer dictionary not found");
             return 0;
@@ -229,11 +250,13 @@ static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos
 
     xref->root_obj = 1;
     while (pos + 1 < size) {
-        if (data[pos] == '>' && data[pos + 1] == '>') break;
+        if (data[pos] == '>' && data[pos + 1] == '>')
+            break;
 
         if (pos + 5 <= size && memcmp(&data[pos], "/Root", 5) == 0) {
             pos += 5;
-            while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r')) pos++;
+            while (pos < size && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r'))
+                pos++;
             size_t obj_num;
             if (!pdf_parse_decimal(data, size, &pos, INT_MAX, &obj_num) || obj_num == 0) {
                 set_err(err, errcap, "pdf: invalid catalog object number");
@@ -248,15 +271,16 @@ static int parse_trailer(const unsigned char *data, size_t size, size_t xref_pos
 }
 
 static void pdf_object_view_release(pdf_object_view *view) {
-    if (!view) return;
+    if (!view)
+        return;
     free(view->owned);
     view->owned = NULL;
     view->data = NULL;
     view->len = 0;
 }
 
-static int parse_obj_header_at(const unsigned char *data, size_t size, size_t pos,
-                               int *obj_num, size_t *header_end) {
+static int parse_obj_header_at(const unsigned char *data, size_t size, size_t pos, int *obj_num,
+                               size_t *header_end) {
     size_t p = pos;
     if (p >= size || data[p] < '0' || data[p] > '9') {
         return 0;
@@ -266,22 +290,26 @@ static int parse_obj_header_at(const unsigned char *data, size_t size, size_t po
     }
     int num = 0;
     while (p < size && data[p] >= '0' && data[p] <= '9') {
-        if (num > (INT_MAX - (data[p] - '0')) / 10) return 0;
+        if (num > (INT_MAX - (data[p] - '0')) / 10)
+            return 0;
         num = num * 10 + (data[p] - '0');
         p++;
     }
     if (p >= size || data[p] != ' ') {
         return 0;
     }
-    while (p < size && data[p] == ' ') p++;
+    while (p < size && data[p] == ' ')
+        p++;
     if (p >= size || data[p] < '0' || data[p] > '9') {
         return 0;
     }
-    while (p < size && data[p] >= '0' && data[p] <= '9') p++;
+    while (p < size && data[p] >= '0' && data[p] <= '9')
+        p++;
     if (p >= size || data[p] != ' ') {
         return 0;
     }
-    while (p < size && data[p] == ' ') p++;
+    while (p < size && data[p] == ' ')
+        p++;
     if (p + 3 > size || memcmp(&data[p], "obj", 3) != 0) {
         return 0;
     }
@@ -298,17 +326,22 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
     size_t p = from;
     while (p + 6 <= size) {
         if (memcmp(&data[p], "stream", 6) == 0) {
-            int preceded_ok = (p == from) || isspace((unsigned char)data[p - 1]) || data[p - 1] == '>';
+            int preceded_ok =
+                (p == from) || isspace((unsigned char)data[p - 1]) || data[p - 1] == '>';
             if (preceded_ok) {
                 size_t stream_start = p + 6;
-                if (stream_start < size && data[stream_start] == '\r') stream_start++;
-                if (stream_start < size && data[stream_start] == '\n') stream_start++;
+                if (stream_start < size && data[stream_start] == '\r')
+                    stream_start++;
+                if (stream_start < size && data[stream_start] == '\n')
+                    stream_start++;
 
                 int declared_len = 0;
-                if (extract_dict_int(data, from, p, "/Length", &declared_len) &&
-                    declared_len > 0 && stream_start + (size_t)declared_len <= size) {
+                if (extract_dict_int(data, from, p, "/Length", &declared_len) && declared_len > 0 &&
+                    stream_start + (size_t)declared_len <= size) {
                     p = stream_start + (size_t)declared_len;
-                    while (p < size && (data[p] == ' ' || data[p] == '\t' || data[p] == '\r' || data[p] == '\n')) p++;
+                    while (p < size && (data[p] == ' ' || data[p] == '\t' || data[p] == '\r' ||
+                                        data[p] == '\n'))
+                        p++;
                     if (p + 9 <= size && memcmp(&data[p], "endstream", 9) == 0) {
                         p += 9;
                     }
@@ -316,7 +349,8 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
                 }
 
                 size_t q = stream_start;
-                while (q + 9 <= size && memcmp(&data[q], "endstream", 9) != 0) q++;
+                while (q + 9 <= size && memcmp(&data[q], "endstream", 9) != 0)
+                    q++;
                 if (q + 9 <= size) {
                     p = q + 9;
                     continue;
@@ -333,8 +367,8 @@ static int find_endobj(const unsigned char *data, size_t size, size_t from, size
     return 0;
 }
 
-static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
-                            const char *key, int *value) {
+static int extract_dict_int(const unsigned char *data, size_t start, size_t end, const char *key,
+                            int *value) {
     size_t key_len = strlen(key);
     if (end <= start || end - start <= key_len) {
         return 0;
@@ -344,7 +378,9 @@ static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
             continue;
         }
         pos += key_len;
-        while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+        while (pos < end &&
+               (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t'))
+            pos++;
         int sign = 1;
         int v = 0;
         if (pos < end && data[pos] == '-') {
@@ -354,20 +390,23 @@ static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
         int got = 0;
         while (pos < end && data[pos] >= '0' && data[pos] <= '9') {
             got = 1;
-            if (v > (INT_MAX - (data[pos] - '0')) / 10) return 0;
+            if (v > (INT_MAX - (data[pos] - '0')) / 10)
+                return 0;
             v = v * 10 + (data[pos] - '0');
             pos++;
         }
         if (got) {
             size_t look = pos;
-            while (look < end && (data[look] == ' ' || data[look] == '\n' || data[look] == '\r' || data[look] == '\t')) {
+            while (look < end && (data[look] == ' ' || data[look] == '\n' || data[look] == '\r' ||
+                                  data[look] == '\t')) {
                 look++;
             }
             if (look < end && data[look] >= '0' && data[look] <= '9') {
                 while (look < end && data[look] >= '0' && data[look] <= '9') {
                     look++;
                 }
-                while (look < end && (data[look] == ' ' || data[look] == '\n' || data[look] == '\r' || data[look] == '\t')) {
+                while (look < end && (data[look] == ' ' || data[look] == '\n' ||
+                                      data[look] == '\r' || data[look] == '\t')) {
                     look++;
                 }
                 if (look < end && data[look] == 'R') {
@@ -382,7 +421,8 @@ static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
 }
 
 static int parse_int_token(const unsigned char *data, size_t size, size_t *pos, int *out) {
-    while (*pos < size && (data[*pos] == ' ' || data[*pos] == '\n' || data[*pos] == '\r' || data[*pos] == '\t')) {
+    while (*pos < size &&
+           (data[*pos] == ' ' || data[*pos] == '\n' || data[*pos] == '\r' || data[*pos] == '\t')) {
         (*pos)++;
     }
     if (*pos >= size || data[*pos] < '0' || data[*pos] > '9') {
@@ -390,7 +430,8 @@ static int parse_int_token(const unsigned char *data, size_t size, size_t *pos, 
     }
     int v = 0;
     while (*pos < size && data[*pos] >= '0' && data[*pos] <= '9') {
-        if (v > (INT_MAX - (data[*pos] - '0')) / 10) return 0;
+        if (v > (INT_MAX - (data[*pos] - '0')) / 10)
+            return 0;
         v = v * 10 + (data[*pos] - '0');
         (*pos)++;
     }
@@ -402,29 +443,35 @@ static int extract_stream_from_object(const unsigned char *obj_data, size_t obj_
                                       const unsigned char **stream_data, size_t *stream_len,
                                       size_t *stream_keyword_pos) {
     size_t pos = 0;
-    while (pos + 6 <= obj_len && memcmp(&obj_data[pos], "stream", 6) != 0) pos++;
-    if (pos + 6 > obj_len) return 0;
+    while (pos + 6 <= obj_len && memcmp(&obj_data[pos], "stream", 6) != 0)
+        pos++;
+    if (pos + 6 > obj_len)
+        return 0;
 
     if (stream_keyword_pos) {
         *stream_keyword_pos = pos;
     }
 
     pos += 6;
-    if (pos < obj_len && obj_data[pos] == '\r') pos++;
-    if (pos < obj_len && obj_data[pos] == '\n') pos++;
+    if (pos < obj_len && obj_data[pos] == '\r')
+        pos++;
+    if (pos < obj_len && obj_data[pos] == '\n')
+        pos++;
 
     *stream_data = &obj_data[pos];
 
     int declared_len = 0;
-    if (extract_dict_int(obj_data, 0, pos, "/Length", &declared_len) &&
-        declared_len > 0 && (size_t)declared_len <= obj_len - pos) {
+    if (extract_dict_int(obj_data, 0, pos, "/Length", &declared_len) && declared_len > 0 &&
+        (size_t)declared_len <= obj_len - pos) {
         *stream_len = (size_t)declared_len;
         return 1;
     }
 
     size_t end_pos = pos;
-    while (end_pos + 9 <= obj_len && memcmp(&obj_data[end_pos], "endstream", 9) != 0) end_pos++;
-    if (end_pos + 9 > obj_len) return 0;
+    while (end_pos + 9 <= obj_len && memcmp(&obj_data[end_pos], "endstream", 9) != 0)
+        end_pos++;
+    if (end_pos + 9 > obj_len)
+        return 0;
 
     *stream_len = end_pos - pos;
     return 1;
@@ -580,8 +627,8 @@ static int get_object_content(const unsigned char *data, size_t size, int obj_nu
     return extract_object_from_objstm(data, size, obj_num, view);
 }
 
-static int extract_dict_ref(const unsigned char *data, size_t start, size_t end,
-                            const char *key, int *obj_num) {
+static int extract_dict_ref(const unsigned char *data, size_t start, size_t end, const char *key,
+                            int *obj_num) {
     size_t key_len = strlen(key);
     if (end <= start || end - start <= key_len) {
         return 0;
@@ -589,13 +636,18 @@ static int extract_dict_ref(const unsigned char *data, size_t start, size_t end,
     for (size_t pos = start; pos < end - key_len; pos++) {
         if (memcmp(&data[pos], key, key_len) == 0) {
             pos += key_len;
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' ||
+                                 data[pos] == '\t'))
+                pos++;
             if (pos < end && data[pos] == '[') {
                 pos++;
-                while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+                while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' ||
+                                     data[pos] == '\t'))
+                    pos++;
             }
             size_t number;
-            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &number)) return 0;
+            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &number))
+                return 0;
             *obj_num = (int)number;
             return *obj_num > 0;
         }
@@ -603,8 +655,8 @@ static int extract_dict_ref(const unsigned char *data, size_t start, size_t end,
     return 0;
 }
 
-static int extract_dict_name(const unsigned char *data, size_t start, size_t end,
-                             const char *key, char *out, size_t out_cap) {
+static int extract_dict_name(const unsigned char *data, size_t start, size_t end, const char *key,
+                             char *out, size_t out_cap) {
     size_t key_len = strlen(key);
     if (!out || out_cap == 0 || end <= start || end - start <= key_len) {
         return 0;
@@ -614,16 +666,17 @@ static int extract_dict_name(const unsigned char *data, size_t start, size_t end
             continue;
         }
         pos += key_len;
-        while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+        while (pos < end &&
+               (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t'))
+            pos++;
         if (pos >= end || data[pos] != '/') {
             return 0;
         }
         pos++;
         size_t n = 0;
-        while (pos < end &&
-               !isspace((unsigned char)data[pos]) &&
-               data[pos] != '/' && data[pos] != '<' && data[pos] != '>' &&
-               data[pos] != '[' && data[pos] != ']' && data[pos] != '(' && data[pos] != ')') {
+        while (pos < end && !isspace((unsigned char)data[pos]) && data[pos] != '/' &&
+               data[pos] != '<' && data[pos] != '>' && data[pos] != '[' && data[pos] != ']' &&
+               data[pos] != '(' && data[pos] != ')') {
             if (n + 1 < out_cap) {
                 out[n++] = (char)data[pos];
             }
@@ -648,7 +701,9 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
             continue;
         }
         pos += key_len;
-        while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+        while (pos < end &&
+               (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t'))
+            pos++;
 
         int in_array = 0;
         if (pos < end && data[pos] == '[') {
@@ -657,7 +712,9 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
         }
 
         while (pos < end) {
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' ||
+                                 data[pos] == '\t'))
+                pos++;
             if (pos >= end) {
                 break;
             }
@@ -673,13 +730,19 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
             }
 
             size_t obj;
-            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &obj)) return 0;
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+            if (!pdf_parse_decimal(data, end, &pos, INT_MAX, &obj))
+                return 0;
+            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' ||
+                                 data[pos] == '\t'))
+                pos++;
 
             size_t gen;
             int have_gen = pdf_parse_decimal(data, end, &pos, 65535, &gen);
-            if (!have_gen) return 0;
-            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+            if (!have_gen)
+                return 0;
+            while (pos < end && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' ||
+                                 data[pos] == '\t'))
+                pos++;
             if (have_gen && pos < end && data[pos] == 'R') {
                 pos++;
             }
@@ -700,8 +763,8 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
     return 0;
 }
 
-static int get_pages_obj(const unsigned char *data, size_t size, pdf_xref *xref,
-                         int *pages_obj, char *err, size_t errcap) {
+static int get_pages_obj(const unsigned char *data, size_t size, pdf_xref *xref, int *pages_obj,
+                         char *err, size_t errcap) {
     (void)xref;
     pdf_object_view catalog = {0};
     if (!get_object_content(data, size, xref->root_obj, &catalog)) {
@@ -745,9 +808,8 @@ static int get_pages_count_from_obj(const unsigned char *data, size_t size, int 
     return 0;
 }
 
-static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num,
-                             int target_index, int *scan_index, int *page_obj,
-                             int depth, char *err, size_t errcap) {
+static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num, int target_index,
+                             int *scan_index, int *page_obj, int depth, char *err, size_t errcap) {
     if (depth > 64) {
         set_err(err, errcap, "pdf: pages tree too deep");
         return 0;
@@ -776,17 +838,17 @@ static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num
 
     int kids[256];
     int kid_count = 0;
-    if (!extract_dict_refs(node.data, 0, node.len, "/Kids",
-                           kids, (int)(sizeof(kids) / sizeof(kids[0])),
-                           &kid_count) || kid_count <= 0) {
+    if (!extract_dict_refs(node.data, 0, node.len, "/Kids", kids,
+                           (int)(sizeof(kids) / sizeof(kids[0])), &kid_count) ||
+        kid_count <= 0) {
         pdf_object_view_release(&node);
         set_err(err, errcap, "pdf: /Kids not found");
         return 0;
     }
 
     for (int i = 0; i < kid_count; i++) {
-        if (!find_page_in_tree(data, size, kids[i], target_index, scan_index, page_obj,
-                               depth + 1, err, errcap)) {
+        if (!find_page_in_tree(data, size, kids[i], target_index, scan_index, page_obj, depth + 1,
+                               err, errcap)) {
             pdf_object_view_release(&node);
             return 0;
         }
@@ -801,8 +863,8 @@ static int find_page_in_tree(const unsigned char *data, size_t size, int obj_num
 }
 
 static int get_page_obj_by_index(const unsigned char *data, size_t size, pdf_xref *xref,
-                                 int pages_obj, int page_index, int *page_obj,
-                                 char *err, size_t errcap) {
+                                 int pages_obj, int page_index, int *page_obj, char *err,
+                                 size_t errcap) {
     (void)xref;
     if (page_index < 0) {
         set_err(err, errcap, "pdf: invalid page index");
@@ -820,7 +882,8 @@ static int get_page_obj_by_index(const unsigned char *data, size_t size, pdf_xre
 
     int scan_index = 0;
     *page_obj = 0;
-    if (!find_page_in_tree(data, size, pages_obj, page_index, &scan_index, page_obj, 0, err, errcap)) {
+    if (!find_page_in_tree(data, size, pages_obj, page_index, &scan_index, page_obj, 0, err,
+                           errcap)) {
         return 0;
     }
 
@@ -859,7 +922,8 @@ static int parse_pdf_number(const unsigned char *data, size_t end, size_t *pos, 
 
     char tmp[64];
     size_t n = p - *pos;
-    if (n >= sizeof(tmp)) return 0;
+    if (n >= sizeof(tmp))
+        return 0;
     memcpy(tmp, &data[*pos], n);
     tmp[n] = '\0';
     *out = strtod(tmp, NULL);
@@ -873,42 +937,52 @@ static int pdf_page_value(const pdf_object_view *view, const char *key, size_t *
     int depth = 0, arrays = 0, expect_key = 1;
     while (pos < view->len) {
         pdf_skip_ws_and_comments(view->data, view->len, &pos);
-        if (pos >= view->len) break;
+        if (pos >= view->len)
+            break;
         unsigned char c = view->data[pos++];
         if (c == '(') {
             int strings = 1;
             while (pos < view->len && strings) {
                 c = view->data[pos++];
-                if (c == '\\' && pos < view->len) pos++;
-                else if (c == '(') strings++;
-                else if (c == ')') strings--;
+                if (c == '\\' && pos < view->len)
+                    pos++;
+                else if (c == '(')
+                    strings++;
+                else if (c == ')')
+                    strings--;
             }
-            if (depth == 1 && arrays == 0) expect_key = 1;
+            if (depth == 1 && arrays == 0)
+                expect_key = 1;
         } else if (c == '<') {
             if (pos < view->len && view->data[pos] == '<') {
                 pos++;
                 depth++;
             } else {
-                while (pos < view->len && view->data[pos++] != '>') { }
-                if (depth == 1 && arrays == 0) expect_key = 1;
+                while (pos < view->len && view->data[pos++] != '>') {
+                }
+                if (depth == 1 && arrays == 0)
+                    expect_key = 1;
             }
         } else if (c == '>' && pos < view->len && view->data[pos] == '>') {
             pos++;
-            if (--depth <= 0) break;
-            if (depth == 1 && arrays == 0) expect_key = 1;
-        } else if (c == '[') arrays++;
+            if (--depth <= 0)
+                break;
+            if (depth == 1 && arrays == 0)
+                expect_key = 1;
+        } else if (c == '[')
+            arrays++;
         else if (c == ']') {
             arrays--;
-            if (depth == 1 && arrays == 0) expect_key = 1;
-        }
-        else if (c == '/') {
+            if (depth == 1 && arrays == 0)
+                expect_key = 1;
+        } else if (c == '/') {
             size_t start = pos;
             while (pos < view->len && !pdf_is_delim(view->data[pos]) &&
-                   !isspace((unsigned char)view->data[pos])) pos++;
+                   !isspace((unsigned char)view->data[pos]))
+                pos++;
             size_t len = pos - start;
             if (depth == 1 && arrays == 0) {
-                if (expect_key && len == strlen(key) &&
-                    memcmp(view->data + start, key, len) == 0) {
+                if (expect_key && len == strlen(key) && memcmp(view->data + start, key, len) == 0) {
                     pdf_skip_ws_and_comments(view->data, view->len, &pos);
                     *value_pos = pos;
                     return 1;
@@ -917,7 +991,8 @@ static int pdf_page_value(const pdf_object_view *view, const char *key, size_t *
             }
         } else if (depth == 1 && arrays == 0 && !expect_key) {
             while (pos < view->len && !pdf_is_delim(view->data[pos]) &&
-                   !isspace((unsigned char)view->data[pos])) pos++;
+                   !isspace((unsigned char)view->data[pos]))
+                pos++;
             expect_key = 1;
         }
     }
@@ -927,24 +1002,28 @@ static int pdf_page_value(const pdf_object_view *view, const char *key, size_t *
 static int pdf_page_reference(const pdf_object_view *view, size_t pos, int *object) {
     double number, generation;
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (!parse_pdf_number(view->data, view->len, &pos, &number) ||
-        number < 1 || number > INT_MAX || floor(number) != number) return 0;
+    if (!parse_pdf_number(view->data, view->len, &pos, &number) || number < 1 || number > INT_MAX ||
+        floor(number) != number)
+        return 0;
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (!parse_pdf_number(view->data, view->len, &pos, &generation) ||
-        generation < 0 || generation > 65535 || floor(generation) != generation) return 0;
+    if (!parse_pdf_number(view->data, view->len, &pos, &generation) || generation < 0 ||
+        generation > 65535 || floor(generation) != generation)
+        return 0;
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (pos >= view->len || view->data[pos] != 'R') return 0;
+    if (pos >= view->len || view->data[pos] != 'R')
+        return 0;
     *object = (int)number;
     return 1;
 }
 
-static int pdf_page_rectangle(const unsigned char *data, size_t size,
-                               const pdf_object_view *view, size_t pos, double box[4]) {
+static int pdf_page_rectangle(const unsigned char *data, size_t size, const pdf_object_view *view,
+                              size_t pos, double box[4]) {
     pdf_object_view indirect = {0};
     int object = 0;
     if (pos < view->len && view->data[pos] != '[') {
         if (!pdf_page_reference(view, pos, &object) ||
-            !get_object_content(data, size, object, &indirect)) return 0;
+            !get_object_content(data, size, object, &indirect))
+            return 0;
         view = &indirect;
         pos = 0;
         pdf_skip_ws_and_comments(view->data, view->len, &pos);
@@ -957,7 +1036,8 @@ static int pdf_page_rectangle(const unsigned char *data, size_t size,
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
     ok = ok && pos < view->len && view->data[pos] == ']';
     pdf_object_view_release(&indirect);
-    if (!ok) return 0;
+    if (!ok)
+        return 0;
     double x0 = fmin(box[0], box[2]), y0 = fmin(box[1], box[3]);
     box[2] = fmax(box[0], box[2]);
     box[3] = fmax(box[1], box[3]);
@@ -967,17 +1047,21 @@ static int pdf_page_rectangle(const unsigned char *data, size_t size,
 }
 
 static int get_page_geometry(const unsigned char *data, size_t size, int page_obj,
-                              pdf_page_geometry *geometry, char *err, size_t errcap) {
+                             pdf_page_geometry *geometry, char *err, size_t errcap) {
     double media[4] = {0, 0, 612, 792}, crop[4] = {0};
     int have_media = 0, have_crop = 0, have_rotation = 0;
     int visited[64], depth = 0;
     geometry->rotation = 0;
     while (page_obj > 0) {
-        if (depth == 64) goto invalid;
-        for (int i = 0; i < depth; i++) if (visited[i] == page_obj) goto invalid;
+        if (depth == 64)
+            goto invalid;
+        for (int i = 0; i < depth; i++)
+            if (visited[i] == page_obj)
+                goto invalid;
         visited[depth++] = page_obj;
         pdf_object_view node = {0};
-        if (!get_object_content(data, size, page_obj, &node)) goto invalid;
+        if (!get_object_content(data, size, page_obj, &node))
+            goto invalid;
         size_t pos = 0;
         int ok = 1;
         if (!have_media && pdf_page_value(&node, "MediaBox", &pos)) {
@@ -1001,7 +1085,8 @@ static int get_page_geometry(const unsigned char *data, size_t size, int page_ob
             pdf_skip_ws_and_comments(value->data, value->len, &pos);
             ok = ok && parse_pdf_number(value->data, value->len, &pos, &angle) &&
                  angle >= INT_MIN && angle <= INT_MAX && fmod(angle, 90.0) == 0;
-            if (ok) geometry->rotation = (((int)angle % 360) + 360) % 360;
+            if (ok)
+                geometry->rotation = (((int)angle % 360) + 360) % 360;
             pdf_object_view_release(&indirect);
             have_rotation = 1;
         }
@@ -1011,10 +1096,12 @@ static int get_page_geometry(const unsigned char *data, size_t size, int page_ob
             ok = pdf_page_reference(&node, pos, &parent);
         }
         pdf_object_view_release(&node);
-        if (!ok) goto invalid;
+        if (!ok)
+            goto invalid;
         page_obj = parent;
     }
-    if (!have_crop) memcpy(crop, media, sizeof(crop));
+    if (!have_crop)
+        memcpy(crop, media, sizeof(crop));
     geometry->x0 = fmax(media[0], crop[0]);
     geometry->y0 = fmax(media[1], crop[1]);
     geometry->x1 = fmin(media[2], crop[2]);
@@ -1022,8 +1109,9 @@ static int get_page_geometry(const unsigned char *data, size_t size, int page_ob
     double width = floor((geometry->x1 - geometry->x0) * (96.0 / 72.0));
     double height = floor((geometry->y1 - geometry->y0) * (96.0 / 72.0));
     /* Bound preview memory and validate before converting to integer dimensions. */
-    if (!isfinite(width) || !isfinite(height) || width < 1 || height < 1 ||
-        width > INT_MAX || height > INT_MAX || width * height > 64.0 * 1024 * 1024) goto invalid;
+    if (!isfinite(width) || !isfinite(height) || width < 1 || height < 1 || width > INT_MAX ||
+        height > INT_MAX || width * height > 64.0 * 1024 * 1024)
+        goto invalid;
     geometry->width = (int)width;
     geometry->height = (int)height;
     return 1;
@@ -1036,35 +1124,42 @@ static int extract_stream(const unsigned char *data, size_t obj_start, size_t ob
                           const unsigned char **stream_data, size_t *stream_len,
                           size_t *stream_keyword_pos) {
     size_t pos = obj_start;
-    while (pos + 6 <= obj_end && memcmp(&data[pos], "stream", 6) != 0) pos++;
-    if (pos + 6 > obj_end) return 0;
+    while (pos + 6 <= obj_end && memcmp(&data[pos], "stream", 6) != 0)
+        pos++;
+    if (pos + 6 > obj_end)
+        return 0;
 
     if (stream_keyword_pos) {
         *stream_keyword_pos = pos;
     }
 
     pos += 6;
-    if (pos < obj_end && data[pos] == '\r') pos++;
-    if (pos < obj_end && data[pos] == '\n') pos++;
+    if (pos < obj_end && data[pos] == '\r')
+        pos++;
+    if (pos < obj_end && data[pos] == '\n')
+        pos++;
 
     *stream_data = &data[pos];
 
     int declared_len = 0;
-    if (extract_dict_int(data, obj_start, pos, "/Length", &declared_len) &&
-        declared_len > 0 && (size_t)declared_len <= obj_end - pos) {
+    if (extract_dict_int(data, obj_start, pos, "/Length", &declared_len) && declared_len > 0 &&
+        (size_t)declared_len <= obj_end - pos) {
         *stream_len = (size_t)declared_len;
         return 1;
     }
 
     size_t end_pos = pos;
-    while (end_pos + 9 <= obj_end && memcmp(&data[end_pos], "endstream", 9) != 0) end_pos++;
-    if (end_pos + 9 > obj_end) return 0;
+    while (end_pos + 9 <= obj_end && memcmp(&data[end_pos], "endstream", 9) != 0)
+        end_pos++;
+    if (end_pos + 9 > obj_end)
+        return 0;
 
     *stream_len = end_pos - pos;
     return 1;
 }
 
-static int buffer_contains(const unsigned char *data, size_t start, size_t end, const char *needle) {
+static int buffer_contains(const unsigned char *data, size_t start, size_t end,
+                           const char *needle) {
     size_t needle_len = strlen(needle);
     if (end <= start || end - start < needle_len) {
         return 0;
@@ -1078,9 +1173,8 @@ static int buffer_contains(const unsigned char *data, size_t start, size_t end, 
 }
 
 static int get_page_content_stream(const unsigned char *data, size_t size, pdf_xref *xref,
-                                   int page_obj, unsigned char **stream_data,
-                                   size_t *stream_len, int *is_flate,
-                                   char *err, size_t errcap) {
+                                   int page_obj, unsigned char **stream_data, size_t *stream_len,
+                                   int *is_flate, char *err, size_t errcap) {
     (void)xref;
     pdf_object_view page = {0};
     if (!get_object_content(data, size, page_obj, &page)) {
@@ -1090,9 +1184,8 @@ static int get_page_content_stream(const unsigned char *data, size_t size, pdf_x
 
     int content_objs[128];
     int content_count = 0;
-    if (!extract_dict_refs(page.data, 0, page.len, "/Contents",
-                           content_objs, (int)(sizeof(content_objs) / sizeof(content_objs[0])),
-                           &content_count)) {
+    if (!extract_dict_refs(page.data, 0, page.len, "/Contents", content_objs,
+                           (int)(sizeof(content_objs) / sizeof(content_objs[0])), &content_count)) {
         size_t pos;
         if (pdf_page_value(&page, "Contents", &pos)) {
             int empty = page.len - pos >= 4 && memcmp(page.data + pos, "null", 4) == 0;
@@ -1129,7 +1222,8 @@ static int get_page_content_stream(const unsigned char *data, size_t size, pdf_x
         size_t stream_kw_pos = 0;
         const unsigned char *stream_ptr = NULL;
         size_t raw_len = 0;
-        if (!extract_stream_from_object(contents.data, contents.len, &stream_ptr, &raw_len, &stream_kw_pos)) {
+        if (!extract_stream_from_object(contents.data, contents.len, &stream_ptr, &raw_len,
+                                        &stream_kw_pos)) {
             pdf_object_view_release(&contents);
             continue;
         }
@@ -1308,11 +1402,16 @@ static int pdf_build_fixed_tables(pdf_huff_table *litlen, pdf_huff_table *dist) 
     uint8_t litlen_lengths[288];
     uint8_t dist_lengths[32];
 
-    for (int i = 0; i <= 143; i++) litlen_lengths[i] = 8;
-    for (int i = 144; i <= 255; i++) litlen_lengths[i] = 9;
-    for (int i = 256; i <= 279; i++) litlen_lengths[i] = 7;
-    for (int i = 280; i <= 287; i++) litlen_lengths[i] = 8;
-    for (int i = 0; i < 32; i++) dist_lengths[i] = 5;
+    for (int i = 0; i <= 143; i++)
+        litlen_lengths[i] = 8;
+    for (int i = 144; i <= 255; i++)
+        litlen_lengths[i] = 9;
+    for (int i = 256; i <= 279; i++)
+        litlen_lengths[i] = 7;
+    for (int i = 280; i <= 287; i++)
+        litlen_lengths[i] = 8;
+    for (int i = 0; i < 32; i++)
+        dist_lengths[i] = 5;
 
     if (!pdf_huff_build(litlen, litlen_lengths, 288, 15)) {
         return 0;
@@ -1324,7 +1423,8 @@ static int pdf_build_fixed_tables(pdf_huff_table *litlen, pdf_huff_table *dist) 
     return 1;
 }
 
-static int pdf_build_dynamic_tables(pdf_bitstream *bs, pdf_huff_table *litlen, pdf_huff_table *dist) {
+static int pdf_build_dynamic_tables(pdf_bitstream *bs, pdf_huff_table *litlen,
+                                    pdf_huff_table *dist) {
     int hlit = (int)pdf_bs_read(bs, 5) + 257;
     int hdist = (int)pdf_bs_read(bs, 5) + 1;
     int hclen = (int)pdf_bs_read(bs, 4) + 4;
@@ -1332,9 +1432,7 @@ static int pdf_build_dynamic_tables(pdf_bitstream *bs, pdf_huff_table *litlen, p
         return 0;
     }
 
-    static const int order[19] = {
-        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-    };
+    static const int order[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
     uint8_t clen_lengths[19];
     for (int i = 0; i < 19; i++) {
@@ -1399,30 +1497,16 @@ static int pdf_build_dynamic_tables(pdf_bitstream *bs, pdf_huff_table *litlen, p
 }
 
 static int pdf_deflate_decode(pdf_bitstream *bs, uint8_t *out, size_t outcap, size_t *outlen) {
-    static const int length_base[29] = {
-        3, 4, 5, 6, 7, 8, 9, 10,
-        11, 13, 15, 17, 19, 23, 27, 31,
-        35, 43, 51, 59, 67, 83, 99, 115,
-        131, 163, 195, 227, 258
-    };
-    static const int length_extra[29] = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 2, 2, 2, 2,
-        3, 3, 3, 3, 4, 4, 4, 4,
-        5, 5, 5, 5, 0
-    };
+    static const int length_base[29] = {3,  4,  5,  6,   7,   8,   9,   10,  11, 13,
+                                        15, 17, 19, 23,  27,  31,  35,  43,  51, 59,
+                                        67, 83, 99, 115, 131, 163, 195, 227, 258};
+    static const int length_extra[29] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                         2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0};
     static const int dist_base[30] = {
-        1, 2, 3, 4, 5, 7, 9, 13,
-        17, 25, 33, 49, 65, 97, 129, 193,
-        257, 385, 513, 769, 1025, 1537, 2049, 3073,
-        4097, 6145, 8193, 12289, 16385, 24577
-    };
-    static const int dist_extra[30] = {
-        0, 0, 0, 0, 1, 1, 2, 2,
-        3, 3, 4, 4, 5, 5, 6, 6,
-        7, 7, 8, 8, 9, 9, 10, 10,
-        11, 11, 12, 12, 13, 13
-    };
+        1,   2,   3,   4,   5,   7,    9,    13,   17,   25,   33,   49,   65,    97,    129,
+        193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577};
+    static const int dist_extra[30] = {0, 0, 0, 0, 1, 1, 2, 2,  3,  3,  4,  4,  5,  5,  6,
+                                       6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
 
     size_t outpos = 0;
     int final_block = 0;
@@ -1541,7 +1625,8 @@ static int pdf_deflate_decode(pdf_bitstream *bs, uint8_t *out, size_t outcap, si
     return 1;
 }
 
-static int pdf_zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap, size_t *outlen) {
+static int pdf_zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
+                               size_t *outlen) {
     if (size < 2) {
         return 0;
     }
@@ -1567,7 +1652,8 @@ static int pdf_zlib_decompress(const uint8_t *data, size_t size, uint8_t *out, s
     return pdf_deflate_decode(&bs, out, outcap, outlen);
 }
 
-static int pdf_inflate(const uint8_t *data, size_t size, uint8_t *out, size_t outcap, size_t *outlen) {
+static int pdf_inflate(const uint8_t *data, size_t size, uint8_t *out, size_t outcap,
+                       size_t *outlen) {
     if (pdf_zlib_decompress(data, size, out, outcap, outlen)) {
         return 1;
     }
@@ -1581,8 +1667,8 @@ static int pdf_inflate(const uint8_t *data, size_t size, uint8_t *out, size_t ou
     return pdf_deflate_decode(&bs, out, outcap, outlen);
 }
 
-static int pdf_inflate_auto(const unsigned char *data, size_t size,
-                            unsigned char **out_data, size_t *out_len) {
+static int pdf_inflate_auto(const unsigned char *data, size_t size, unsigned char **out_data,
+                            size_t *out_len) {
     const size_t max_cap = 64u * 1024u * 1024u;
     size_t cap = size * 4u + 1024u;
     if (cap < 4096u) {
@@ -1613,14 +1699,16 @@ static int pdf_inflate_auto(const unsigned char *data, size_t size,
 }
 
 static void pdf_font_table_init(pdf_font_table *table) {
-    if (!table) return;
+    if (!table)
+        return;
     table->fonts = NULL;
     table->count = 0;
     table->cap = 0;
 }
 
 static void pdf_font_table_free(pdf_font_table *table) {
-    if (!table) return;
+    if (!table)
+        return;
     for (int i = 0; i < table->count; i++) {
         free(table->fonts[i].entries);
         table->fonts[i].entries = NULL;
@@ -1646,7 +1734,8 @@ static pdf_font_map *pdf_font_table_add(pdf_font_table *table, const char *name)
 
     if (table->count >= table->cap) {
         int new_cap = (table->cap > 0) ? table->cap * 2 : 8;
-        pdf_font_map *new_fonts = (pdf_font_map *)realloc(table->fonts, (size_t)new_cap * sizeof(pdf_font_map));
+        pdf_font_map *new_fonts =
+            (pdf_font_map *)realloc(table->fonts, (size_t)new_cap * sizeof(pdf_font_map));
         if (!new_fonts) {
             return NULL;
         }
@@ -1780,13 +1869,17 @@ static pdf_cmap_tok_type pdf_cmap_next_token(const unsigned char *data, size_t l
 }
 
 static int pdf_hex_value(char c) {
-    if (c >= '0' && c <= '9') return c - '0';
-    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
     return -1;
 }
 
-static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_len, uint32_t *first_u16) {
+static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_len,
+                                uint32_t *first_u16) {
     if (!hex || !*hex || !code || !code_len || !first_u16) {
         return 0;
     }
@@ -1826,7 +1919,8 @@ static int pdf_cmap_hex_to_code(const char *hex, uint32_t *code, uint8_t *code_l
     return 1;
 }
 
-static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream_len, pdf_font_map *font) {
+static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream_len,
+                                      pdf_font_map *font) {
     if (!stream || !font) {
         return 0;
     }
@@ -1841,7 +1935,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
 
         if (t == PDF_CMAP_TOK_WORD && strcmp(tok, "beginbfchar") == 0) {
             while (1) {
-                pdf_cmap_tok_type a = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type a =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (a == PDF_CMAP_TOK_EOF) {
                     return 1;
                 }
@@ -1854,7 +1949,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                 char src_hex[256];
                 snprintf(src_hex, sizeof(src_hex), "%s", tok);
 
-                pdf_cmap_tok_type b = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type b =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (b != PDF_CMAP_TOK_HEX) {
                     continue;
                 }
@@ -1874,7 +1970,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
 
         if (t == PDF_CMAP_TOK_WORD && strcmp(tok, "beginbfrange") == 0) {
             while (1) {
-                pdf_cmap_tok_type a = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type a =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (a == PDF_CMAP_TOK_EOF) {
                     return 1;
                 }
@@ -1887,7 +1984,8 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                 char start_hex[256];
                 snprintf(start_hex, sizeof(start_hex), "%s", tok);
 
-                pdf_cmap_tok_type b = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type b =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (b != PDF_CMAP_TOK_HEX) {
                     continue;
                 }
@@ -1902,19 +2000,22 @@ static int pdf_parse_tounicode_stream(const unsigned char *stream, size_t stream
                     continue;
                 }
 
-                pdf_cmap_tok_type c = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                pdf_cmap_tok_type c =
+                    pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                 if (c == PDF_CMAP_TOK_HEX) {
                     if (!pdf_cmap_hex_to_code(tok, &dummy, &dst_len, &dst_first)) {
                         continue;
                     }
                     uint32_t count = end_code - start_code + 1u;
                     for (uint32_t i = 0; i < count; i++) {
-                        (void)pdf_font_add_tounicode(font, start_code + i, start_len, dst_first + i);
+                        (void)pdf_font_add_tounicode(font, start_code + i, start_len,
+                                                     dst_first + i);
                     }
                 } else if (c == PDF_CMAP_TOK_LBRACK) {
                     uint32_t current = start_code;
                     while (current <= end_code) {
-                        pdf_cmap_tok_type d = pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
+                        pdf_cmap_tok_type d =
+                            pdf_cmap_next_token(stream, stream_len, &pos, tok, sizeof(tok));
                         if (d == PDF_CMAP_TOK_EOF || d == PDF_CMAP_TOK_RBRACK) {
                             break;
                         }
@@ -1960,7 +2061,8 @@ static int pdf_parse_font_tounicode(const unsigned char *data, size_t size, int 
     size_t stream_kw_pos = 0;
     const unsigned char *stream_ptr = NULL;
     size_t stream_len = 0;
-    if (!extract_stream_from_object(cmap_obj.data, cmap_obj.len, &stream_ptr, &stream_len, &stream_kw_pos)) {
+    if (!extract_stream_from_object(cmap_obj.data, cmap_obj.len, &stream_ptr, &stream_len,
+                                    &stream_kw_pos)) {
         pdf_object_view_release(&cmap_obj);
         return 1;
     }
@@ -1999,7 +2101,8 @@ static int pdf_find_inline_dict(const unsigned char *data, size_t start, size_t 
             continue;
         }
         size_t p = pos + key_len;
-        while (p < end && (data[p] == ' ' || data[p] == '\n' || data[p] == '\r' || data[p] == '\t')) p++;
+        while (p < end && (data[p] == ' ' || data[p] == '\n' || data[p] == '\r' || data[p] == '\t'))
+            p++;
         if (p + 1 >= end || data[p] != '<' || data[p + 1] != '<') {
             continue;
         }
@@ -2028,8 +2131,9 @@ static int pdf_find_inline_dict(const unsigned char *data, size_t start, size_t 
 }
 
 static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
-                                       const unsigned char *dict_data, size_t dict_start, size_t dict_end,
-                                       pdf_font_table *table, char *err, size_t errcap) {
+                                       const unsigned char *dict_data, size_t dict_start,
+                                       size_t dict_end, pdf_font_table *table, char *err,
+                                       size_t errcap) {
     size_t pos = dict_start;
     while (pos < dict_end) {
         if (dict_data[pos] != '/') {
@@ -2039,10 +2143,9 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
         pos++;
         char name[32];
         size_t n = 0;
-        while (pos < dict_end &&
-               !isspace((unsigned char)dict_data[pos]) &&
-               dict_data[pos] != '/' && dict_data[pos] != '<' && dict_data[pos] != '>' &&
-               dict_data[pos] != '[' && dict_data[pos] != ']' && dict_data[pos] != '(' && dict_data[pos] != ')') {
+        while (pos < dict_end && !isspace((unsigned char)dict_data[pos]) && dict_data[pos] != '/' &&
+               dict_data[pos] != '<' && dict_data[pos] != '>' && dict_data[pos] != '[' &&
+               dict_data[pos] != ']' && dict_data[pos] != '(' && dict_data[pos] != ')') {
             if (n + 1 < sizeof(name)) {
                 name[n++] = (char)dict_data[pos];
             }
@@ -2054,7 +2157,8 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
         }
 
         while (pos < dict_end && (dict_data[pos] == ' ' || dict_data[pos] == '\n' ||
-                                  dict_data[pos] == '\r' || dict_data[pos] == '\t')) pos++;
+                                  dict_data[pos] == '\r' || dict_data[pos] == '\t'))
+            pos++;
         if (pos >= dict_end || dict_data[pos] < '0' || dict_data[pos] > '9') {
             continue;
         }
@@ -2065,7 +2169,8 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             return 0;
         }
         while (pos < dict_end && (dict_data[pos] == ' ' || dict_data[pos] == '\n' ||
-                                  dict_data[pos] == '\r' || dict_data[pos] == '\t')) pos++;
+                                  dict_data[pos] == '\r' || dict_data[pos] == '\t'))
+            pos++;
         if (pos >= dict_end || dict_data[pos] < '0' || dict_data[pos] > '9') {
             continue;
         }
@@ -2073,7 +2178,8 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
             pos++;
         }
         while (pos < dict_end && (dict_data[pos] == ' ' || dict_data[pos] == '\n' ||
-                                  dict_data[pos] == '\r' || dict_data[pos] == '\t')) pos++;
+                                  dict_data[pos] == '\r' || dict_data[pos] == '\t'))
+            pos++;
         if (pos >= dict_end || dict_data[pos] != 'R' || obj_num <= 0) {
             continue;
         }
@@ -2108,7 +2214,8 @@ static int pdf_collect_page_fonts(const unsigned char *data, size_t size, int pa
     const unsigned char *res_data = page.data;
     size_t res_len = page.len;
     int resources_obj = 0;
-    if (extract_dict_ref(page.data, 0, page.len, "/Resources", &resources_obj) && resources_obj > 0) {
+    if (extract_dict_ref(page.data, 0, page.len, "/Resources", &resources_obj) &&
+        resources_obj > 0) {
         if (!get_object_content(data, size, resources_obj, &resources)) {
             pdf_object_view_release(&page);
             set_err(err, errcap, "pdf: resources object not found");
@@ -2127,7 +2234,8 @@ static int pdf_collect_page_fonts(const unsigned char *data, size_t size, int pa
             set_err(err, errcap, "pdf: font dictionary object not found");
             return 0;
         }
-        int ok = pdf_collect_fonts_from_dict(data, size, font_dict.data, 0, font_dict.len, table, err, errcap);
+        int ok = pdf_collect_fonts_from_dict(data, size, font_dict.data, 0, font_dict.len, table,
+                                             err, errcap);
         pdf_object_view_release(&font_dict);
         pdf_object_view_release(&resources);
         pdf_object_view_release(&page);
@@ -2139,7 +2247,8 @@ static int pdf_collect_page_fonts(const unsigned char *data, size_t size, int pa
     int found = pdf_find_inline_dict(res_data, 0, res_len, "/Font", &dict_start, &dict_end);
     int ok = 1;
     if (found) {
-        ok = pdf_collect_fonts_from_dict(data, size, res_data, dict_start, dict_end, table, err, errcap);
+        ok = pdf_collect_fonts_from_dict(data, size, res_data, dict_start, dict_end, table, err,
+                                         errcap);
     }
 
     pdf_object_view_release(&resources);
@@ -2147,136 +2256,134 @@ static int pdf_collect_page_fonts(const unsigned char *data, size_t size, int pa
     return ok;
 }
 
-static const uint8_t pdf_font8x8_basic[128][8] = {
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-    {0x7E,0x81,0xA5,0x81,0xBD,0x99,0x81,0x7E},
-    {0x7E,0xFF,0xDB,0xFF,0xC3,0xE7,0xFF,0x7E},
-    {0x6C,0xFE,0xFE,0xFE,0x7C,0x38,0x10,0x00},
-    {0x10,0x38,0x7C,0xFE,0x7C,0x38,0x10,0x00},
-    {0x38,0x7C,0x38,0xFE,0xFE,0xD6,0x10,0x38},
-    {0x10,0x38,0x7C,0xFE,0xFE,0x7C,0x10,0x38},
-    {0x00,0x00,0x18,0x3C,0x3C,0x18,0x00,0x00},
-    {0xFF,0xFF,0xE7,0xC3,0xC3,0xE7,0xFF,0xFF},
-    {0x00,0x3C,0x66,0x42,0x42,0x66,0x3C,0x00},
-    {0xFF,0xC3,0x99,0xBD,0xBD,0x99,0xC3,0xFF},
-    {0x0F,0x07,0x0F,0x7D,0xCC,0xCC,0xCC,0x78},
-    {0x3C,0x66,0x66,0x66,0x3C,0x18,0x7E,0x18},
-    {0x3F,0x33,0x3F,0x30,0x30,0x70,0xF0,0xE0},
-    {0x7F,0x63,0x7F,0x63,0x63,0x67,0xE6,0xC0},
-    {0x99,0x5A,0x3C,0xE7,0xE7,0x3C,0x5A,0x99},
-    {0x80,0xE0,0xF8,0xFE,0xF8,0xE0,0x80,0x00},
-    {0x02,0x0E,0x3E,0xFE,0x3E,0x0E,0x02,0x00},
-    {0x18,0x3C,0x7E,0x18,0x18,0x7E,0x3C,0x18},
-    {0x66,0x66,0x66,0x66,0x66,0x00,0x66,0x00},
-    {0x7F,0xDB,0xDB,0x7B,0x1B,0x1B,0x1B,0x00},
-    {0x3E,0x63,0x38,0x6C,0x6C,0x38,0xCC,0x7F},
-    {0x00,0x00,0x00,0x00,0x7E,0x7E,0x7E,0x00},
-    {0x18,0x3C,0x7E,0x18,0x7E,0x3C,0x18,0xFF},
-    {0x18,0x3C,0x7E,0x18,0x18,0x18,0x18,0x00},
-    {0x18,0x18,0x18,0x18,0x7E,0x3C,0x18,0x00},
-    {0x00,0x18,0x0C,0xFE,0x0C,0x18,0x00,0x00},
-    {0x00,0x30,0x60,0xFE,0x60,0x30,0x00,0x00},
-    {0x00,0x00,0xC0,0xC0,0xC0,0xFE,0x00,0x00},
-    {0x00,0x24,0x66,0xFF,0x66,0x24,0x00,0x00},
-    {0x00,0x18,0x3C,0x7E,0xFF,0xFF,0x00,0x00},
-    {0x00,0xFF,0xFF,0x7E,0x3C,0x18,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-    {0x18,0x3C,0x3C,0x18,0x18,0x00,0x18,0x00},
-    {0x36,0x36,0x12,0x00,0x00,0x00,0x00,0x00},
-    {0x36,0x36,0x7F,0x36,0x7F,0x36,0x36,0x00},
-    {0x0C,0x3E,0x03,0x1E,0x30,0x1F,0x0C,0x00},
-    {0x00,0x63,0x33,0x18,0x0C,0x66,0x63,0x00},
-    {0x1C,0x36,0x1C,0x6E,0x3B,0x33,0x6E,0x00},
-    {0x06,0x06,0x03,0x00,0x00,0x00,0x00,0x00},
-    {0x18,0x0C,0x06,0x06,0x06,0x0C,0x18,0x00},
-    {0x06,0x0C,0x18,0x18,0x18,0x0C,0x06,0x00},
-    {0x00,0x66,0x3C,0xFF,0x3C,0x66,0x00,0x00},
-    {0x00,0x0C,0x0C,0x3F,0x0C,0x0C,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x0C,0x0C,0x06},
-    {0x00,0x00,0x00,0x3F,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x0C,0x0C,0x00},
-    {0x60,0x30,0x18,0x0C,0x06,0x03,0x01,0x00},
-    {0x3E,0x63,0x73,0x7B,0x6F,0x67,0x3E,0x00},
-    {0x0C,0x0E,0x0C,0x0C,0x0C,0x0C,0x3F,0x00},
-    {0x1E,0x33,0x30,0x1C,0x06,0x33,0x3F,0x00},
-    {0x1E,0x33,0x30,0x1C,0x30,0x33,0x1E,0x00},
-    {0x38,0x3C,0x36,0x33,0x7F,0x30,0x78,0x00},
-    {0x3F,0x03,0x1F,0x30,0x30,0x33,0x1E,0x00},
-    {0x1C,0x06,0x03,0x1F,0x33,0x33,0x1E,0x00},
-    {0x3F,0x33,0x30,0x18,0x0C,0x0C,0x0C,0x00},
-    {0x1E,0x33,0x33,0x1E,0x33,0x33,0x1E,0x00},
-    {0x1E,0x33,0x33,0x3E,0x30,0x18,0x0E,0x00},
-    {0x00,0x0C,0x0C,0x00,0x00,0x0C,0x0C,0x00},
-    {0x00,0x0C,0x0C,0x00,0x00,0x0C,0x0C,0x06},
-    {0x18,0x0C,0x06,0x03,0x06,0x0C,0x18,0x00},
-    {0x00,0x00,0x3F,0x00,0x00,0x3F,0x00,0x00},
-    {0x06,0x0C,0x18,0x30,0x18,0x0C,0x06,0x00},
-    {0x1E,0x33,0x30,0x18,0x0C,0x00,0x0C,0x00},
-    {0x3E,0x63,0x7B,0x7B,0x7B,0x03,0x1E,0x00},
-    {0x0C,0x1E,0x33,0x33,0x3F,0x33,0x33,0x00},
-    {0x3F,0x66,0x66,0x3E,0x66,0x66,0x3F,0x00},
-    {0x3C,0x66,0x03,0x03,0x03,0x66,0x3C,0x00},
-    {0x1F,0x36,0x66,0x66,0x66,0x36,0x1F,0x00},
-    {0x7F,0x46,0x16,0x1E,0x16,0x46,0x7F,0x00},
-    {0x7F,0x46,0x16,0x1E,0x16,0x06,0x0F,0x00},
-    {0x3C,0x66,0x03,0x03,0x73,0x66,0x7C,0x00},
-    {0x33,0x33,0x33,0x3F,0x33,0x33,0x33,0x00},
-    {0x1E,0x0C,0x0C,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x78,0x30,0x30,0x30,0x33,0x33,0x1E,0x00},
-    {0x67,0x66,0x36,0x1E,0x36,0x66,0x67,0x00},
-    {0x0F,0x06,0x06,0x06,0x46,0x66,0x7F,0x00},
-    {0x63,0x77,0x7F,0x7F,0x6B,0x63,0x63,0x00},
-    {0x63,0x67,0x6F,0x7B,0x73,0x63,0x63,0x00},
-    {0x1C,0x36,0x63,0x63,0x63,0x36,0x1C,0x00},
-    {0x3F,0x66,0x66,0x3E,0x06,0x06,0x0F,0x00},
-    {0x1E,0x33,0x33,0x33,0x3B,0x1E,0x38,0x00},
-    {0x3F,0x66,0x66,0x3E,0x36,0x66,0x67,0x00},
-    {0x1E,0x33,0x07,0x0E,0x38,0x33,0x1E,0x00},
-    {0x3F,0x2D,0x0C,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x33,0x33,0x33,0x33,0x33,0x33,0x3F,0x00},
-    {0x33,0x33,0x33,0x33,0x33,0x1E,0x0C,0x00},
-    {0x63,0x63,0x63,0x6B,0x7F,0x77,0x63,0x00},
-    {0x63,0x63,0x36,0x1C,0x1C,0x36,0x63,0x00},
-    {0x33,0x33,0x33,0x1E,0x0C,0x0C,0x1E,0x00},
-    {0x7F,0x63,0x31,0x18,0x4C,0x66,0x7F,0x00},
-    {0x1E,0x06,0x06,0x06,0x06,0x06,0x1E,0x00},
-    {0x03,0x06,0x0C,0x18,0x30,0x60,0x40,0x00},
-    {0x1E,0x18,0x18,0x18,0x18,0x18,0x1E,0x00},
-    {0x08,0x1C,0x36,0x63,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF},
-    {0x0C,0x0C,0x18,0x00,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x1E,0x30,0x3E,0x33,0x6E,0x00},
-    {0x07,0x06,0x06,0x3E,0x66,0x66,0x3B,0x00},
-    {0x00,0x00,0x1E,0x33,0x03,0x33,0x1E,0x00},
-    {0x38,0x30,0x30,0x3E,0x33,0x33,0x6E,0x00},
-    {0x00,0x00,0x1E,0x33,0x3F,0x03,0x1E,0x00},
-    {0x1C,0x36,0x06,0x0F,0x06,0x06,0x0F,0x00},
-    {0x00,0x00,0x6E,0x33,0x33,0x3E,0x30,0x1F},
-    {0x07,0x06,0x36,0x6E,0x66,0x66,0x67,0x00},
-    {0x0C,0x00,0x0E,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x18,0x00,0x1C,0x18,0x18,0x18,0x1B,0x0E},
-    {0x07,0x06,0x66,0x36,0x1E,0x36,0x67,0x00},
-    {0x0E,0x0C,0x0C,0x0C,0x0C,0x0C,0x1E,0x00},
-    {0x00,0x00,0x33,0x7F,0x7F,0x6B,0x63,0x00},
-    {0x00,0x00,0x1F,0x33,0x33,0x33,0x33,0x00},
-    {0x00,0x00,0x1E,0x33,0x33,0x33,0x1E,0x00},
-    {0x00,0x00,0x3B,0x66,0x66,0x3E,0x06,0x0F},
-    {0x00,0x00,0x6E,0x33,0x33,0x3E,0x30,0x78},
-    {0x00,0x00,0x3B,0x6E,0x66,0x06,0x0F,0x00},
-    {0x00,0x00,0x3E,0x03,0x1E,0x30,0x1F,0x00},
-    {0x08,0x0C,0x3E,0x0C,0x0C,0x2C,0x18,0x00},
-    {0x00,0x00,0x33,0x33,0x33,0x33,0x6E,0x00},
-    {0x00,0x00,0x33,0x33,0x33,0x1E,0x0C,0x00},
-    {0x00,0x00,0x63,0x63,0x6B,0x7F,0x36,0x00},
-    {0x00,0x00,0x63,0x36,0x1C,0x36,0x63,0x00},
-    {0x00,0x00,0x33,0x33,0x33,0x3E,0x30,0x1F},
-    {0x00,0x00,0x3F,0x19,0x0C,0x26,0x3F,0x00},
-    {0x38,0x0C,0x0C,0x07,0x0C,0x0C,0x38,0x00},
-    {0x18,0x18,0x18,0x00,0x18,0x18,0x18,0x00},
-    {0x07,0x0C,0x0C,0x38,0x0C,0x0C,0x07,0x00},
-    {0x6E,0x3B,0x00,0x00,0x00,0x00,0x00,0x00},
-    {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
-};
+static const uint8_t pdf_font8x8_basic[128][8] = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x7E, 0x81, 0xA5, 0x81, 0xBD, 0x99, 0x81, 0x7E},
+                                                  {0x7E, 0xFF, 0xDB, 0xFF, 0xC3, 0xE7, 0xFF, 0x7E},
+                                                  {0x6C, 0xFE, 0xFE, 0xFE, 0x7C, 0x38, 0x10, 0x00},
+                                                  {0x10, 0x38, 0x7C, 0xFE, 0x7C, 0x38, 0x10, 0x00},
+                                                  {0x38, 0x7C, 0x38, 0xFE, 0xFE, 0xD6, 0x10, 0x38},
+                                                  {0x10, 0x38, 0x7C, 0xFE, 0xFE, 0x7C, 0x10, 0x38},
+                                                  {0x00, 0x00, 0x18, 0x3C, 0x3C, 0x18, 0x00, 0x00},
+                                                  {0xFF, 0xFF, 0xE7, 0xC3, 0xC3, 0xE7, 0xFF, 0xFF},
+                                                  {0x00, 0x3C, 0x66, 0x42, 0x42, 0x66, 0x3C, 0x00},
+                                                  {0xFF, 0xC3, 0x99, 0xBD, 0xBD, 0x99, 0xC3, 0xFF},
+                                                  {0x0F, 0x07, 0x0F, 0x7D, 0xCC, 0xCC, 0xCC, 0x78},
+                                                  {0x3C, 0x66, 0x66, 0x66, 0x3C, 0x18, 0x7E, 0x18},
+                                                  {0x3F, 0x33, 0x3F, 0x30, 0x30, 0x70, 0xF0, 0xE0},
+                                                  {0x7F, 0x63, 0x7F, 0x63, 0x63, 0x67, 0xE6, 0xC0},
+                                                  {0x99, 0x5A, 0x3C, 0xE7, 0xE7, 0x3C, 0x5A, 0x99},
+                                                  {0x80, 0xE0, 0xF8, 0xFE, 0xF8, 0xE0, 0x80, 0x00},
+                                                  {0x02, 0x0E, 0x3E, 0xFE, 0x3E, 0x0E, 0x02, 0x00},
+                                                  {0x18, 0x3C, 0x7E, 0x18, 0x18, 0x7E, 0x3C, 0x18},
+                                                  {0x66, 0x66, 0x66, 0x66, 0x66, 0x00, 0x66, 0x00},
+                                                  {0x7F, 0xDB, 0xDB, 0x7B, 0x1B, 0x1B, 0x1B, 0x00},
+                                                  {0x3E, 0x63, 0x38, 0x6C, 0x6C, 0x38, 0xCC, 0x7F},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x7E, 0x7E, 0x7E, 0x00},
+                                                  {0x18, 0x3C, 0x7E, 0x18, 0x7E, 0x3C, 0x18, 0xFF},
+                                                  {0x18, 0x3C, 0x7E, 0x18, 0x18, 0x18, 0x18, 0x00},
+                                                  {0x18, 0x18, 0x18, 0x18, 0x7E, 0x3C, 0x18, 0x00},
+                                                  {0x00, 0x18, 0x0C, 0xFE, 0x0C, 0x18, 0x00, 0x00},
+                                                  {0x00, 0x30, 0x60, 0xFE, 0x60, 0x30, 0x00, 0x00},
+                                                  {0x00, 0x00, 0xC0, 0xC0, 0xC0, 0xFE, 0x00, 0x00},
+                                                  {0x00, 0x24, 0x66, 0xFF, 0x66, 0x24, 0x00, 0x00},
+                                                  {0x00, 0x18, 0x3C, 0x7E, 0xFF, 0xFF, 0x00, 0x00},
+                                                  {0x00, 0xFF, 0xFF, 0x7E, 0x3C, 0x18, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x18, 0x3C, 0x3C, 0x18, 0x18, 0x00, 0x18, 0x00},
+                                                  {0x36, 0x36, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x36, 0x36, 0x7F, 0x36, 0x7F, 0x36, 0x36, 0x00},
+                                                  {0x0C, 0x3E, 0x03, 0x1E, 0x30, 0x1F, 0x0C, 0x00},
+                                                  {0x00, 0x63, 0x33, 0x18, 0x0C, 0x66, 0x63, 0x00},
+                                                  {0x1C, 0x36, 0x1C, 0x6E, 0x3B, 0x33, 0x6E, 0x00},
+                                                  {0x06, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x18, 0x0C, 0x06, 0x06, 0x06, 0x0C, 0x18, 0x00},
+                                                  {0x06, 0x0C, 0x18, 0x18, 0x18, 0x0C, 0x06, 0x00},
+                                                  {0x00, 0x66, 0x3C, 0xFF, 0x3C, 0x66, 0x00, 0x00},
+                                                  {0x00, 0x0C, 0x0C, 0x3F, 0x0C, 0x0C, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x06},
+                                                  {0x00, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x00},
+                                                  {0x60, 0x30, 0x18, 0x0C, 0x06, 0x03, 0x01, 0x00},
+                                                  {0x3E, 0x63, 0x73, 0x7B, 0x6F, 0x67, 0x3E, 0x00},
+                                                  {0x0C, 0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x3F, 0x00},
+                                                  {0x1E, 0x33, 0x30, 0x1C, 0x06, 0x33, 0x3F, 0x00},
+                                                  {0x1E, 0x33, 0x30, 0x1C, 0x30, 0x33, 0x1E, 0x00},
+                                                  {0x38, 0x3C, 0x36, 0x33, 0x7F, 0x30, 0x78, 0x00},
+                                                  {0x3F, 0x03, 0x1F, 0x30, 0x30, 0x33, 0x1E, 0x00},
+                                                  {0x1C, 0x06, 0x03, 0x1F, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x3F, 0x33, 0x30, 0x18, 0x0C, 0x0C, 0x0C, 0x00},
+                                                  {0x1E, 0x33, 0x33, 0x1E, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x1E, 0x33, 0x33, 0x3E, 0x30, 0x18, 0x0E, 0x00},
+                                                  {0x00, 0x0C, 0x0C, 0x00, 0x00, 0x0C, 0x0C, 0x00},
+                                                  {0x00, 0x0C, 0x0C, 0x00, 0x00, 0x0C, 0x0C, 0x06},
+                                                  {0x18, 0x0C, 0x06, 0x03, 0x06, 0x0C, 0x18, 0x00},
+                                                  {0x00, 0x00, 0x3F, 0x00, 0x00, 0x3F, 0x00, 0x00},
+                                                  {0x06, 0x0C, 0x18, 0x30, 0x18, 0x0C, 0x06, 0x00},
+                                                  {0x1E, 0x33, 0x30, 0x18, 0x0C, 0x00, 0x0C, 0x00},
+                                                  {0x3E, 0x63, 0x7B, 0x7B, 0x7B, 0x03, 0x1E, 0x00},
+                                                  {0x0C, 0x1E, 0x33, 0x33, 0x3F, 0x33, 0x33, 0x00},
+                                                  {0x3F, 0x66, 0x66, 0x3E, 0x66, 0x66, 0x3F, 0x00},
+                                                  {0x3C, 0x66, 0x03, 0x03, 0x03, 0x66, 0x3C, 0x00},
+                                                  {0x1F, 0x36, 0x66, 0x66, 0x66, 0x36, 0x1F, 0x00},
+                                                  {0x7F, 0x46, 0x16, 0x1E, 0x16, 0x46, 0x7F, 0x00},
+                                                  {0x7F, 0x46, 0x16, 0x1E, 0x16, 0x06, 0x0F, 0x00},
+                                                  {0x3C, 0x66, 0x03, 0x03, 0x73, 0x66, 0x7C, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x3F, 0x33, 0x33, 0x33, 0x00},
+                                                  {0x1E, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x78, 0x30, 0x30, 0x30, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x67, 0x66, 0x36, 0x1E, 0x36, 0x66, 0x67, 0x00},
+                                                  {0x0F, 0x06, 0x06, 0x06, 0x46, 0x66, 0x7F, 0x00},
+                                                  {0x63, 0x77, 0x7F, 0x7F, 0x6B, 0x63, 0x63, 0x00},
+                                                  {0x63, 0x67, 0x6F, 0x7B, 0x73, 0x63, 0x63, 0x00},
+                                                  {0x1C, 0x36, 0x63, 0x63, 0x63, 0x36, 0x1C, 0x00},
+                                                  {0x3F, 0x66, 0x66, 0x3E, 0x06, 0x06, 0x0F, 0x00},
+                                                  {0x1E, 0x33, 0x33, 0x33, 0x3B, 0x1E, 0x38, 0x00},
+                                                  {0x3F, 0x66, 0x66, 0x3E, 0x36, 0x66, 0x67, 0x00},
+                                                  {0x1E, 0x33, 0x07, 0x0E, 0x38, 0x33, 0x1E, 0x00},
+                                                  {0x3F, 0x2D, 0x0C, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x3F, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x33, 0x33, 0x1E, 0x0C, 0x00},
+                                                  {0x63, 0x63, 0x63, 0x6B, 0x7F, 0x77, 0x63, 0x00},
+                                                  {0x63, 0x63, 0x36, 0x1C, 0x1C, 0x36, 0x63, 0x00},
+                                                  {0x33, 0x33, 0x33, 0x1E, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x7F, 0x63, 0x31, 0x18, 0x4C, 0x66, 0x7F, 0x00},
+                                                  {0x1E, 0x06, 0x06, 0x06, 0x06, 0x06, 0x1E, 0x00},
+                                                  {0x03, 0x06, 0x0C, 0x18, 0x30, 0x60, 0x40, 0x00},
+                                                  {0x1E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x1E, 0x00},
+                                                  {0x08, 0x1C, 0x36, 0x63, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF},
+                                                  {0x0C, 0x0C, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x30, 0x3E, 0x33, 0x6E, 0x00},
+                                                  {0x07, 0x06, 0x06, 0x3E, 0x66, 0x66, 0x3B, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x33, 0x03, 0x33, 0x1E, 0x00},
+                                                  {0x38, 0x30, 0x30, 0x3E, 0x33, 0x33, 0x6E, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x33, 0x3F, 0x03, 0x1E, 0x00},
+                                                  {0x1C, 0x36, 0x06, 0x0F, 0x06, 0x06, 0x0F, 0x00},
+                                                  {0x00, 0x00, 0x6E, 0x33, 0x33, 0x3E, 0x30, 0x1F},
+                                                  {0x07, 0x06, 0x36, 0x6E, 0x66, 0x66, 0x67, 0x00},
+                                                  {0x0C, 0x00, 0x0E, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x18, 0x00, 0x1C, 0x18, 0x18, 0x18, 0x1B, 0x0E},
+                                                  {0x07, 0x06, 0x66, 0x36, 0x1E, 0x36, 0x67, 0x00},
+                                                  {0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x1E, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x7F, 0x7F, 0x6B, 0x63, 0x00},
+                                                  {0x00, 0x00, 0x1F, 0x33, 0x33, 0x33, 0x33, 0x00},
+                                                  {0x00, 0x00, 0x1E, 0x33, 0x33, 0x33, 0x1E, 0x00},
+                                                  {0x00, 0x00, 0x3B, 0x66, 0x66, 0x3E, 0x06, 0x0F},
+                                                  {0x00, 0x00, 0x6E, 0x33, 0x33, 0x3E, 0x30, 0x78},
+                                                  {0x00, 0x00, 0x3B, 0x6E, 0x66, 0x06, 0x0F, 0x00},
+                                                  {0x00, 0x00, 0x3E, 0x03, 0x1E, 0x30, 0x1F, 0x00},
+                                                  {0x08, 0x0C, 0x3E, 0x0C, 0x0C, 0x2C, 0x18, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x33, 0x33, 0x33, 0x6E, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x33, 0x33, 0x1E, 0x0C, 0x00},
+                                                  {0x00, 0x00, 0x63, 0x63, 0x6B, 0x7F, 0x36, 0x00},
+                                                  {0x00, 0x00, 0x63, 0x36, 0x1C, 0x36, 0x63, 0x00},
+                                                  {0x00, 0x00, 0x33, 0x33, 0x33, 0x3E, 0x30, 0x1F},
+                                                  {0x00, 0x00, 0x3F, 0x19, 0x0C, 0x26, 0x3F, 0x00},
+                                                  {0x38, 0x0C, 0x0C, 0x07, 0x0C, 0x0C, 0x38, 0x00},
+                                                  {0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x18, 0x00},
+                                                  {0x07, 0x0C, 0x0C, 0x38, 0x0C, 0x0C, 0x07, 0x00},
+                                                  {0x6E, 0x3B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                                                  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 typedef struct {
     float x0;
@@ -2369,7 +2476,8 @@ typedef struct {
 static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view *form);
 
 static void pdf_clip_retain(pdf_clip_mask *clip) {
-    if (clip) clip->references++;
+    if (clip)
+        clip->references++;
 }
 
 static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
@@ -2381,7 +2489,8 @@ static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
 
 static void pdf_render_state_release(pdf_render_state *st) {
     pdf_clip_release(st, st->gs.clip);
-    for (int i = 0; i < st->gs_stack_len; i++) pdf_clip_release(st, st->gs_stack[i].clip);
+    for (int i = 0; i < st->gs_stack_len; i++)
+        pdf_clip_release(st, st->gs_stack[i].clip);
 }
 
 static int pdf_is_ws(unsigned char c) {
@@ -2389,8 +2498,8 @@ static int pdf_is_ws(unsigned char c) {
 }
 
 static int pdf_is_delim(unsigned char c) {
-    return c == '(' || c == ')' || c == '<' || c == '>' || c == '[' || c == ']' ||
-           c == '{' || c == '}' || c == '/' || c == '%';
+    return c == '(' || c == ')' || c == '<' || c == '>' || c == '[' || c == ']' || c == '{' ||
+           c == '}' || c == '/' || c == '%';
 }
 
 static void pdf_skip_ws_and_comments(const unsigned char *data, size_t size, size_t *pos) {
@@ -2410,12 +2519,15 @@ static void pdf_skip_ws_and_comments(const unsigned char *data, size_t size, siz
 }
 
 static unsigned char pdf_clamp_u8(double v) {
-    if (v < 0.0) v = 0.0;
-    if (v > 1.0) v = 1.0;
+    if (v < 0.0)
+        v = 0.0;
+    if (v > 1.0)
+        v = 1.0;
     return (unsigned char)(v * 255.0 + 0.5);
 }
 
-static int pdf_parse_number_token(const unsigned char *data, size_t size, size_t *pos, double *out) {
+static int pdf_parse_number_token(const unsigned char *data, size_t size, size_t *pos,
+                                  double *out) {
     size_t p = *pos;
     int saw_digit = 0;
     int saw_dot = 0;
@@ -2453,8 +2565,8 @@ static int pdf_parse_number_token(const unsigned char *data, size_t size, size_t
     return 1;
 }
 
-static int pdf_parse_name_token(const unsigned char *data, size_t size, size_t *pos,
-                                char **out_str, size_t *out_len) {
+static int pdf_parse_name_token(const unsigned char *data, size_t size, size_t *pos, char **out_str,
+                                size_t *out_len) {
     if (*pos >= size || data[*pos] != '/') {
         return 0;
     }
@@ -2497,17 +2609,25 @@ static int pdf_parse_literal_string(const unsigned char *data, size_t size, size
         unsigned char c = data[p++];
 
         if (c == '\\') {
-            if (p >= size) break;
+            if (p >= size)
+                break;
             unsigned char e = data[p++];
             unsigned char outc = e;
-            if (e == 'n') outc = '\n';
-            else if (e == 'r') outc = '\r';
-            else if (e == 't') outc = '\t';
-            else if (e == 'b') outc = '\b';
-            else if (e == 'f') outc = '\f';
-            else if (e == '\\' || e == '(' || e == ')') outc = e;
+            if (e == 'n')
+                outc = '\n';
+            else if (e == 'r')
+                outc = '\r';
+            else if (e == 't')
+                outc = '\t';
+            else if (e == 'b')
+                outc = '\b';
+            else if (e == 'f')
+                outc = '\f';
+            else if (e == '\\' || e == '(' || e == ')')
+                outc = e;
             else if (e == '\n' || e == '\r') {
-                if (e == '\r' && p < size && data[p] == '\n') p++;
+                if (e == '\r' && p < size && data[p] == '\n')
+                    p++;
                 continue;
             } else if (e >= '0' && e <= '7') {
                 int v = e - '0';
@@ -2588,8 +2708,8 @@ static int pdf_parse_literal_string(const unsigned char *data, size_t size, size
     return 0;
 }
 
-static int pdf_parse_hex_string(const unsigned char *data, size_t size, size_t *pos,
-                                char **out_str, size_t *out_len) {
+static int pdf_parse_hex_string(const unsigned char *data, size_t size, size_t *pos, char **out_str,
+                                size_t *out_len) {
     if (*pos >= size || data[*pos] != '<') {
         return 0;
     }
@@ -2617,9 +2737,12 @@ static int pdf_parse_hex_string(const unsigned char *data, size_t size, size_t *
         }
 
         int v = -1;
-        if (c >= '0' && c <= '9') v = c - '0';
-        else if (c >= 'a' && c <= 'f') v = c - 'a' + 10;
-        else if (c >= 'A' && c <= 'F') v = c - 'A' + 10;
+        if (c >= '0' && c <= '9')
+            v = c - '0';
+        else if (c >= 'a' && c <= 'f')
+            v = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F')
+            v = c - 'A' + 10;
         if (v < 0) {
             free(buf);
             return 0;
@@ -2680,7 +2803,8 @@ static int pdf_parse_array_token(const unsigned char *data, size_t size, size_t 
     while (p < size) {
         unsigned char c = data[p];
         if (c == '%') {
-            while (p < size && data[p] != '\n' && data[p] != '\r') p++;
+            while (p < size && data[p] != '\n' && data[p] != '\r')
+                p++;
             continue;
         }
         if (c == '(') {
@@ -2732,7 +2856,8 @@ static void pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t
         return;
     }
     size_t pixel = (size_t)y * img->width + (size_t)x;
-    if (st->gs.clip && !(st->gs.clip->bits[pixel / 8] & (1u << (pixel % 8)))) return;
+    if (st->gs.clip && !(st->gs.clip->bits[pixel / 8] & (1u << (pixel % 8))))
+        return;
     double px = st->page_x0_pts + (x + 0.5) * (72.0 / 96.0);
     double py = st->page_top_pts - (y + 0.5) * (72.0 / 96.0);
     for (int i = 0; i < st->form_depth; i++) {
@@ -2740,7 +2865,8 @@ static void pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t
         const double *m = clip->inverse;
         double u = m[0] * px + m[2] * py + m[4];
         double v = m[1] * px + m[3] * py + m[5];
-        if (u < clip->box[0] || u >= clip->box[2] || v < clip->box[1] || v >= clip->box[3]) return;
+        if (u < clip->box[0] || u >= clip->box[2] || v < clip->box[1] || v >= clip->box[3])
+            return;
     }
     size_t idx = pixel * 4u;
     img->rgba[idx + 0] = r;
@@ -2750,8 +2876,12 @@ static void pdf_set_pixel(pdf_render_state *st, int x, int y, uint8_t r, uint8_t
 }
 
 static void pdf_matrix_identity(float m[6]) {
-    m[0] = 1.0f; m[1] = 0.0f; m[2] = 0.0f;
-    m[3] = 1.0f; m[4] = 0.0f; m[5] = 0.0f;
+    m[0] = 1.0f;
+    m[1] = 0.0f;
+    m[2] = 0.0f;
+    m[3] = 1.0f;
+    m[4] = 0.0f;
+    m[5] = 0.0f;
 }
 
 static void pdf_matrix_concat(float dst[6], const float left[6]) {
@@ -2769,7 +2899,8 @@ static void pdf_matrix_concat(float dst[6], const float left[6]) {
     dst[5] = f;
 }
 
-static void pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px, float *py) {
+static void pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
+                              float *py) {
     float tx = st->gs.ctm[0] * ux + st->gs.ctm[2] * uy + st->gs.ctm[4];
     float ty = st->gs.ctm[1] * ux + st->gs.ctm[3] * uy + st->gs.ctm[5];
     float s = 96.0f / 72.0f;
@@ -2780,12 +2911,14 @@ static void pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, fl
 /* Borrow an inline dictionary or own a resolved indirect dictionary. The parent
  * view must stay alive until a borrowed result has been consumed. */
 static int pdf_image_dictionary(const pdf_render_state *st, const pdf_object_view *parent,
-                                 const char *key, pdf_object_view *result) {
+                                const char *key, pdf_object_view *result) {
     size_t pos;
     int object;
-    if (!pdf_page_value(parent, key, &pos)) return 0;
+    if (!pdf_page_value(parent, key, &pos))
+        return 0;
     if (pdf_page_reference(parent, pos, &object)) {
-        if (!get_object_content(st->document, st->document_size, object, result)) return 0;
+        if (!get_object_content(st->document, st->document_size, object, result))
+            return 0;
         pos = 0;
         pdf_skip_ws_and_comments(result->data, result->len, &pos);
         if (result->len - pos < 2 || result->data[pos] != '<' || result->data[pos + 1] != '<') {
@@ -2794,7 +2927,8 @@ static int pdf_image_dictionary(const pdf_render_state *st, const pdf_object_vie
         }
         return 1;
     }
-    if (pos + 1 >= parent->len || parent->data[pos] != '<' || parent->data[pos + 1] != '<') return 0;
+    if (pos + 1 >= parent->len || parent->data[pos] != '<' || parent->data[pos + 1] != '<')
+        return 0;
     result->data = parent->data + pos;
     result->len = parent->len - pos;
     return 1;
@@ -2804,7 +2938,8 @@ static int pdf_image_object(const pdf_render_state *st, const char *name, int *o
     int page = st->page_object;
     for (int depth = 0; page > 0 && depth < 64; depth++) {
         pdf_object_view node = {0}, resources = {0}, xobjects = {0};
-        if (!get_object_content(st->document, st->document_size, page, &node)) return 0;
+        if (!get_object_content(st->document, st->document_size, page, &node))
+            return 0;
         size_t pos;
         int parent = 0, found = 0;
         if (pdf_page_value(&node, "Resources", &pos)) {
@@ -2818,7 +2953,8 @@ static int pdf_image_object(const pdf_render_state *st, const char *name, int *o
             pdf_object_view_release(&node);
             return found;
         }
-        if (pdf_page_value(&node, "Parent", &pos)) pdf_page_reference(&node, pos, &parent);
+        if (pdf_page_value(&node, "Parent", &pos))
+            pdf_page_reference(&node, pos, &parent);
         pdf_object_view_release(&node);
         page = parent;
     }
@@ -2826,29 +2962,33 @@ static int pdf_image_object(const pdf_render_state *st, const char *name, int *o
 }
 
 static int pdf_image_integer(const pdf_render_state *st, const pdf_object_view *view,
-                              const char *key, int *value) {
+                             const char *key, int *value) {
     size_t pos;
-    if (!pdf_page_value(view, key, &pos)) return 0;
+    if (!pdf_page_value(view, key, &pos))
+        return 0;
     pdf_object_view indirect = {0};
     int object;
     if (pdf_page_reference(view, pos, &object)) {
-        if (!get_object_content(st->document, st->document_size, object, &indirect)) return 0;
+        if (!get_object_content(st->document, st->document_size, object, &indirect))
+            return 0;
         view = &indirect;
         pos = 0;
         pdf_skip_ws_and_comments(view->data, view->len, &pos);
     }
     double number;
-    int ok = parse_pdf_number(view->data, view->len, &pos, &number) &&
-             number >= 0 && number <= INT_MAX && floor(number) == number &&
+    int ok = parse_pdf_number(view->data, view->len, &pos, &number) && number >= 0 &&
+             number <= INT_MAX && floor(number) == number &&
              (pos == view->len || pdf_is_ws(view->data[pos]) || pdf_is_delim(view->data[pos]));
-    if (ok) *value = (int)number;
+    if (ok)
+        *value = (int)number;
     pdf_object_view_release(&indirect);
     return ok;
 }
 
 static int pdf_image_name_is(const pdf_object_view *view, const char *key, const char *name) {
     size_t pos, length = strlen(name);
-    if (!pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '/') return 0;
+    if (!pdf_page_value(view, key, &pos) || pos >= view->len || view->data[pos++] != '/')
+        return 0;
     return length <= view->len - pos && memcmp(view->data + pos, name, length) == 0 &&
            (pos + length == view->len || pdf_is_ws(view->data[pos + length]) ||
             pdf_is_delim(view->data[pos + length]));
@@ -2856,39 +2996,54 @@ static int pdf_image_name_is(const pdf_object_view *view, const char *key, const
 
 /* Find the end of the outer dictionary without matching text inside a string. */
 static int pdf_image_stream(const pdf_render_state *st, const pdf_object_view *view,
-                             const unsigned char **stream, size_t *length) {
+                            const unsigned char **stream, size_t *length) {
     size_t pos = 0;
     int depth = 0, declared;
-    if (!pdf_image_integer(st, view, "Length", &declared)) return 0;
+    if (!pdf_image_integer(st, view, "Length", &declared))
+        return 0;
     while (pos < view->len) {
         pdf_skip_ws_and_comments(view->data, view->len, &pos);
-        if (pos >= view->len) return 0;
+        if (pos >= view->len)
+            return 0;
         unsigned char c = view->data[pos++];
         if (c == '(') {
             int strings = 1;
             while (pos < view->len && strings) {
                 c = view->data[pos++];
-                if (c == '\\' && pos < view->len) pos++;
-                else if (c == '(') strings++;
-                else if (c == ')') strings--;
+                if (c == '\\' && pos < view->len)
+                    pos++;
+                else if (c == '(')
+                    strings++;
+                else if (c == ')')
+                    strings--;
             }
         } else if (c == '<') {
-            if (pos < view->len && view->data[pos] == '<') { depth++; pos++; }
-            else while (pos < view->len && view->data[pos++] != '>') { }
+            if (pos < view->len && view->data[pos] == '<') {
+                depth++;
+                pos++;
+            } else
+                while (pos < view->len && view->data[pos++] != '>') {
+                }
         } else if (c == '>' && pos < view->len && view->data[pos] == '>') {
             pos++;
-            if (--depth == 0) break;
+            if (--depth == 0)
+                break;
         }
     }
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
-    if (depth != 0 || view->len - pos < 7 || memcmp(view->data + pos, "stream", 6) != 0) return 0;
+    if (depth != 0 || view->len - pos < 7 || memcmp(view->data + pos, "stream", 6) != 0)
+        return 0;
     pos += 6;
     if (view->data[pos] == '\r') {
         pos++;
-        if (pos < view->len && view->data[pos] == '\n') pos++;
-    } else if (view->data[pos] == '\n') pos++;
-    else return 0;
-    if ((size_t)declared > view->len - pos) return 0;
+        if (pos < view->len && view->data[pos] == '\n')
+            pos++;
+    } else if (view->data[pos] == '\n')
+        pos++;
+    else
+        return 0;
+    if ((size_t)declared > view->len - pos)
+        return 0;
     *stream = view->data + pos;
     *length = (size_t)declared;
     pos += *length;
@@ -2902,12 +3057,15 @@ static unsigned char pdf_image_paeth(int a, int b, int c) {
 }
 
 static int pdf_image_filter_is(const pdf_object_view *view, const char *name) {
-    if (pdf_image_name_is(view, "Filter", name)) return 1;
+    if (pdf_image_name_is(view, "Filter", name))
+        return 1;
     size_t pos, length = strlen(name);
-    if (!pdf_page_value(view, "Filter", &pos) || pos >= view->len || view->data[pos++] != '[') return 0;
+    if (!pdf_page_value(view, "Filter", &pos) || pos >= view->len || view->data[pos++] != '[')
+        return 0;
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
     if (pos >= view->len || view->data[pos++] != '/' || length > view->len - pos ||
-        memcmp(view->data + pos, name, length) != 0) return 0;
+        memcmp(view->data + pos, name, length) != 0)
+        return 0;
     pos += length;
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
     return pos < view->len && view->data[pos] == ']';
@@ -2915,30 +3073,40 @@ static int pdf_image_filter_is(const pdf_object_view *view, const char *name) {
 
 /* Check the frame before invoking the decoder so a small image dictionary cannot
  * hide a JPEG frame with enormous dimensions or a different component count. */
-static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length,
-                                   int width, int height, int components, int transform) {
-    if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8) return 0;
+static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length, int width, int height,
+                                  int components, int transform) {
+    if (length < 2 || stream[0] != 0xff || stream[1] != 0xd8)
+        return 0;
     size_t pos = 2;
     int have_frame = 0;
     while (pos < length) {
-        if (stream[pos++] != 0xff) return 0;
-        while (pos < length && stream[pos] == 0xff) pos++;
-        if (pos >= length) return 0;
+        if (stream[pos++] != 0xff)
+            return 0;
+        while (pos < length && stream[pos] == 0xff)
+            pos++;
+        if (pos >= length)
+            return 0;
         unsigned marker = stream[pos++];
-        if (marker == 0xda) return have_frame;
-        if (marker == 0xd9 || marker == 0) return 0;
-        if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
-        if (length - pos < 2) return 0;
+        if (marker == 0xda)
+            return have_frame;
+        if (marker == 0xd9 || marker == 0)
+            return 0;
+        if (marker == 0x01 || (marker >= 0xd0 && marker <= 0xd7))
+            continue;
+        if (length - pos < 2)
+            return 0;
         size_t segment = (size_t)stream[pos] * 256u + stream[pos + 1];
-        if (segment < 2 || segment > length - pos) return 0;
+        if (segment < 2 || segment > length - pos)
+            return 0;
         if (components == 3 && marker == 0xee && segment >= 14 &&
-            memcmp(stream + pos + 2, "Adobe", 5) == 0 &&
-            stream[pos + 13] == 0 && transform != 1) return 0;
+            memcmp(stream + pos + 2, "Adobe", 5) == 0 && stream[pos + 13] == 0 && transform != 1)
+            return 0;
         if (marker == 0xc0 || marker == 0xc2) {
             if (have_frame || !(segment >= 8 && stream[pos + 2] == 8 &&
-                   (int)stream[pos + 3] * 256 + stream[pos + 4] == height &&
-                   (int)stream[pos + 5] * 256 + stream[pos + 6] == width &&
-                   stream[pos + 7] == components)) return 0;
+                                (int)stream[pos + 3] * 256 + stream[pos + 4] == height &&
+                                (int)stream[pos + 5] * 256 + stream[pos + 6] == width &&
+                                stream[pos + 7] == components))
+                return 0;
             have_frame = 1;
         }
         pos += segment;
@@ -2947,7 +3115,7 @@ static int pdf_image_jpeg_matches(const unsigned char *stream, size_t length,
 }
 
 static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_view *view,
-                                   int width, int height, int components, unsigned char **samples) {
+                                  int width, int height, int components, unsigned char **samples) {
     pdf_object_view params = {0};
     size_t pos;
     int transform = -1;
@@ -2956,14 +3124,17 @@ static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_v
                  (!pdf_page_value(&params, "ColorTransform", &pos) ||
                   pdf_image_integer(st, &params, "ColorTransform", &transform));
         pdf_object_view_release(&params);
-        if (!ok || (transform != -1 && transform != 1)) return 0;
+        if (!ok || (transform != -1 && transform != 1))
+            return 0;
     }
     const unsigned char *stream;
     size_t length;
     if (!pdf_image_stream(st, view, &stream, &length) ||
-        !pdf_image_jpeg_matches(stream, length, width, height, components, transform)) return 0;
+        !pdf_image_jpeg_matches(stream, length, width, height, components, transform))
+        return 0;
     cupidimage_image image = {0};
-    if (!cupidimage_load_jpeg(stream, length, &image, NULL, 0)) return 0;
+    if (!cupidimage_load_jpeg(stream, length, &image, NULL, 0))
+        return 0;
     size_t count = (size_t)width * height;
     unsigned char *decoded = (unsigned char *)malloc(count * components);
     if (!decoded || image.width != (uint32_t)width || image.height != (uint32_t)height) {
@@ -2972,57 +3143,76 @@ static int pdf_image_jpeg_samples(const pdf_render_state *st, const pdf_object_v
         return 0;
     }
     for (size_t i = 0; i < count; i++) {
-        for (int c = 0; c < components; c++) decoded[i * components + c] = image.rgba[i * 4 + c];
+        for (int c = 0; c < components; c++)
+            decoded[i * components + c] = image.rgba[i * 4 + c];
     }
     cupidimage_free(&image);
     *samples = decoded;
     return 1;
 }
 
-static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view,
-                              int width, int height, int components, unsigned char **samples) {
+static int pdf_image_samples(const pdf_render_state *st, const pdf_object_view *view, int width,
+                             int height, int components, unsigned char **samples) {
     const unsigned char *stream;
     size_t length, row = (size_t)width * components, bytes = row * height, pos;
     if (pdf_image_filter_is(view, "DCTDecode"))
         return pdf_image_jpeg_samples(st, view, width, height, components, samples);
     int predictor = 1, flate = pdf_image_filter_is(view, "FlateDecode");
-    if (pdf_page_value(view, "Filter", &pos) && !flate) return 0;
+    if (pdf_page_value(view, "Filter", &pos) && !flate)
+        return 0;
     pdf_object_view params = {0};
     if (pdf_page_value(view, "DecodeParms", &pos)) {
-        if (!flate || !pdf_image_dictionary(st, view, "DecodeParms", &params)) return 0;
+        if (!flate || !pdf_image_dictionary(st, view, "DecodeParms", &params))
+            return 0;
         int columns = 1, colors = 1, bits = 8;
-        int ok = (!pdf_page_value(&params, "Predictor", &pos) || pdf_image_integer(st, &params, "Predictor", &predictor)) &&
-                 (!pdf_page_value(&params, "Columns", &pos) || pdf_image_integer(st, &params, "Columns", &columns)) &&
-                 (!pdf_page_value(&params, "Colors", &pos) || pdf_image_integer(st, &params, "Colors", &colors)) &&
-                 (!pdf_page_value(&params, "BitsPerComponent", &pos) || pdf_image_integer(st, &params, "BitsPerComponent", &bits));
+        int ok = (!pdf_page_value(&params, "Predictor", &pos) ||
+                  pdf_image_integer(st, &params, "Predictor", &predictor)) &&
+                 (!pdf_page_value(&params, "Columns", &pos) ||
+                  pdf_image_integer(st, &params, "Columns", &columns)) &&
+                 (!pdf_page_value(&params, "Colors", &pos) ||
+                  pdf_image_integer(st, &params, "Colors", &colors)) &&
+                 (!pdf_page_value(&params, "BitsPerComponent", &pos) ||
+                  pdf_image_integer(st, &params, "BitsPerComponent", &bits));
         pdf_object_view_release(&params);
-        if (!ok || (predictor != 1 && (columns != width || colors != components || bits != 8))) return 0;
+        if (!ok || (predictor != 1 && (columns != width || colors != components || bits != 8)))
+            return 0;
     }
-    if (predictor != 1 && predictor != 2 && (predictor < 10 || predictor > 15)) return 0;
-    if (!pdf_image_stream(st, view, &stream, &length)) return 0;
+    if (predictor != 1 && predictor != 2 && (predictor < 10 || predictor > 15))
+        return 0;
+    if (!pdf_image_stream(st, view, &stream, &length))
+        return 0;
     size_t encoded_row = row + (predictor >= 10 ? 1u : 0u);
     size_t expected = encoded_row * height;
     unsigned char *decoded = (unsigned char *)malloc(expected);
-    if (!decoded) return 0;
+    if (!decoded)
+        return 0;
     size_t actual = 0;
     if (flate) {
-        if (!pdf_zlib_decompress(stream, length, decoded, expected, &actual) || actual != expected) goto fail;
+        if (!pdf_zlib_decompress(stream, length, decoded, expected, &actual) || actual != expected)
+            goto fail;
     } else {
-        if (length != bytes) goto fail;
+        if (length != bytes)
+            goto fail;
         memcpy(decoded, stream, bytes);
     }
     for (int y = 0; y < height; y++) {
         unsigned char *scan = decoded + (size_t)y * encoded_row;
         int filter = predictor >= 10 ? *scan++ : predictor == 2 ? 1 : 0;
-        if (filter > 4) goto fail;
+        if (filter > 4)
+            goto fail;
         for (size_t x = 0; x < row; x++) {
             int left = x >= (size_t)components ? scan[x - components] : 0;
             int up = y ? decoded[(size_t)(y - 1) * row + x] : 0;
-            int upper_left = y && x >= (size_t)components ? decoded[(size_t)(y - 1) * row + x - components] : 0;
-            if (filter == 1) scan[x] = (unsigned char)(scan[x] + left);
-            else if (filter == 2) scan[x] = (unsigned char)(scan[x] + up);
-            else if (filter == 3) scan[x] = (unsigned char)(scan[x] + (left + up) / 2);
-            else if (filter == 4) scan[x] = (unsigned char)(scan[x] + pdf_image_paeth(left, up, upper_left));
+            int upper_left =
+                y && x >= (size_t)components ? decoded[(size_t)(y - 1) * row + x - components] : 0;
+            if (filter == 1)
+                scan[x] = (unsigned char)(scan[x] + left);
+            else if (filter == 2)
+                scan[x] = (unsigned char)(scan[x] + up);
+            else if (filter == 3)
+                scan[x] = (unsigned char)(scan[x] + (left + up) / 2);
+            else if (filter == 4)
+                scan[x] = (unsigned char)(scan[x] + pdf_image_paeth(left, up, upper_left));
         }
         memmove(decoded + (size_t)y * row, scan, row);
     }
@@ -3039,44 +3229,60 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
     int object, width, height, bits, components, ok = 0;
     size_t pos;
     if (!pdf_image_object(st, name, &object) ||
-        !get_object_content(st->document, st->document_size, object, &image)) goto done;
+        !get_object_content(st->document, st->document_size, object, &image))
+        goto done;
     if (pdf_image_name_is(&image, "Subtype", "Form")) {
         ok = pdf_draw_form(st, object, &image);
         pdf_object_view_release(&image);
         return ok;
     }
-    if (!pdf_image_name_is(&image, "Subtype", "Image")) goto done;
-    components = pdf_image_name_is(&image, "ColorSpace", "DeviceRGB") ? 3 :
-                 pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1 : 0;
+    if (!pdf_image_name_is(&image, "Subtype", "Image"))
+        goto done;
+    components = pdf_image_name_is(&image, "ColorSpace", "DeviceRGB")    ? 3
+                 : pdf_image_name_is(&image, "ColorSpace", "DeviceGray") ? 1
+                                                                         : 0;
     if (!components || !pdf_image_integer(st, &image, "Width", &width) ||
         !pdf_image_integer(st, &image, "Height", &height) ||
-        !pdf_image_integer(st, &image, "BitsPerComponent", &bits) || bits != 8 ||
-        width < 1 || height < 1 || (double)width * height * components > 64.0 * 1024 * 1024 ||
-        pdf_page_value(&image, "SMask", &pos) || pdf_page_value(&image, "Mask", &pos)) goto done;
+        !pdf_image_integer(st, &image, "BitsPerComponent", &bits) || bits != 8 || width < 1 ||
+        height < 1 || (double)width * height * components > 64.0 * 1024 * 1024 ||
+        pdf_page_value(&image, "SMask", &pos) || pdf_page_value(&image, "Mask", &pos))
+        goto done;
     if (pdf_page_value(&image, "ImageMask", &pos) &&
-        (image.len - pos < 5 || memcmp(image.data + pos, "false", 5) != 0)) goto done;
+        (image.len - pos < 5 || memcmp(image.data + pos, "false", 5) != 0))
+        goto done;
     double decode[6] = {0, 1, 0, 1, 0, 1};
     if (pdf_page_value(&image, "Decode", &pos)) {
-        if (pos >= image.len || image.data[pos++] != '[') goto done;
+        if (pos >= image.len || image.data[pos++] != '[')
+            goto done;
         for (int i = 0; i < 2 * components; i++) {
             pdf_skip_ws_and_comments(image.data, image.len, &pos);
-            if (!parse_pdf_number(image.data, image.len, &pos, &decode[i])) goto done;
+            if (!parse_pdf_number(image.data, image.len, &pos, &decode[i]))
+                goto done;
         }
         pdf_skip_ws_and_comments(image.data, image.len, &pos);
-        if (pos >= image.len || image.data[pos] != ']') goto done;
+        if (pos >= image.len || image.data[pos] != ']')
+            goto done;
     }
-    if (!pdf_image_samples(st, &image, width, height, components, &samples)) goto done;
+    if (!pdf_image_samples(st, &image, width, height, components, &samples))
+        goto done;
     const float *m = st->gs.ctm;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
-    if (!isfinite(det)) goto done;
-    if (det == 0) { ok = 1; goto done; }
+    if (!isfinite(det))
+        goto done;
+    if (det == 0) {
+        ok = 1;
+        goto done;
+    }
     double min_x = st->img->width, max_x = 0, min_y = st->img->height, max_y = 0;
     for (int corner = 0; corner < 4; corner++) {
         float x, y;
         pdf_user_to_pixel(st, (float)(corner & 1), (float)(corner >> 1), &x, &y);
-        if (!isfinite(x) || !isfinite(y)) goto done;
-        min_x = fmin(min_x, x); max_x = fmax(max_x, x);
-        min_y = fmin(min_y, y); max_y = fmax(max_y, y);
+        if (!isfinite(x) || !isfinite(y))
+            goto done;
+        min_x = fmin(min_x, x);
+        max_x = fmax(max_x, x);
+        min_y = fmin(min_y, y);
+        max_y = fmax(max_y, y);
     }
     /* Clamp before integer conversion, including for enormous off-page transforms. */
     int x0 = (int)fmax(0, fmin(st->img->width, floor(min_x)));
@@ -3089,14 +3295,17 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
             double ty = st->page_top_pts - (y + 0.5) * (72.0 / 96.0) - m[5];
             double u = (m[3] * tx - m[2] * ty) / det;
             double v = (m[0] * ty - m[1] * tx) / det;
-            if (u < 0 || u >= 1 || v <= 0 || v > 1) continue;
+            if (u < 0 || u >= 1 || v <= 0 || v > 1)
+                continue;
             int sx = (int)(u * width), sy = (int)((1 - v) * height);
-            if (sx >= width || sy >= height) continue;
+            if (sx >= width || sy >= height)
+                continue;
             const unsigned char *sample = samples + ((size_t)sy * width + sx) * components;
             uint8_t rgb[3];
             for (int c = 0; c < 3; c++) {
                 int k = components == 1 ? 0 : c;
-                double value = decode[2 * k] + (sample[k] / 255.0) * (decode[2 * k + 1] - decode[2 * k]);
+                double value =
+                    decode[2 * k] + (sample[k] / 255.0) * (decode[2 * k + 1] - decode[2 * k]);
                 rgb[c] = pdf_clamp_u8(value);
             }
             pdf_set_pixel(st, x, y, rgb[0], rgb[1], rgb[2]);
@@ -3106,12 +3315,14 @@ static int pdf_draw_image(pdf_render_state *st, const char *name) {
 done:
     free(samples);
     pdf_object_view_release(&image);
-    if (!ok) set_err(st->error, st->error_capacity, "pdf: invalid or unsupported image XObject");
+    if (!ok)
+        set_err(st->error, st->error_capacity, "pdf: invalid or unsupported image XObject");
     return ok;
 }
 
 static void pdf_path_clear(pdf_path *p) {
-    if (!p) return;
+    if (!p)
+        return;
     p->seg_count = 0;
     p->subpath_first_seg = 0;
     p->has_current = 0;
@@ -3124,7 +3335,8 @@ static void pdf_path_clear(pdf_path *p) {
 }
 
 static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1) {
-    if (!p) return;
+    if (!p)
+        return;
     if (p->seg_count >= (int)(sizeof(p->segs) / sizeof(p->segs[0]))) {
         p->overflow = 1;
         return;
@@ -3138,7 +3350,8 @@ static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1
 }
 
 static void pdf_path_move_to(pdf_path *p, float x, float y) {
-    if (!p) return;
+    if (!p)
+        return;
     p->subpath_first_seg = p->seg_count;
     p->current_x = x;
     p->current_y = y;
@@ -3149,7 +3362,8 @@ static void pdf_path_move_to(pdf_path *p, float x, float y) {
 }
 
 static void pdf_path_line_to(pdf_path *p, float x, float y) {
-    if (!p) return;
+    if (!p)
+        return;
     if (!p->has_current) {
         pdf_path_move_to(p, x, y);
         return;
@@ -3160,7 +3374,8 @@ static void pdf_path_line_to(pdf_path *p, float x, float y) {
 }
 
 static void pdf_path_close(pdf_path *p) {
-    if (!p || !p->has_current || !p->has_subpath) return;
+    if (!p || !p->has_current || !p->has_subpath)
+        return;
     if (fabsf(p->current_x - p->subpath_start_x) > 1e-4f ||
         fabsf(p->current_y - p->subpath_start_y) > 1e-4f) {
         pdf_path_add_seg(p, p->current_x, p->current_y, p->subpath_start_x, p->subpath_start_y);
@@ -3182,7 +3397,8 @@ static void pdf_path_line_user(pdf_render_state *st, float x, float y) {
     pdf_path_line_to(&st->path, px, py);
 }
 
-static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0, float x1, float y1) {
+static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0, float x1,
+                                          float y1) {
     float vx = x1 - x0;
     float vy = y1 - y0;
     float wx = px - x0;
@@ -3212,14 +3428,15 @@ static float pdf_point_to_segment_dist_sq(float px, float py, float x0, float y0
     return dx * dx + dy * dy;
 }
 
-static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0,
-                               float x1, float y1, float x2, float y2,
-                               float x3, float y3, unsigned depth) {
-    if (st->path.seg_count >= 4096) { st->path.overflow = 1; return; }
+static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1, float y1,
+                              float x2, float y2, float x3, float y3, unsigned depth) {
+    if (st->path.seg_count >= 4096) {
+        st->path.overflow = 1;
+        return;
+    }
     /* Subdivide until both control points are within a quarter pixel of the chord. */
-    if (depth >= 12 ||
-        (pdf_point_to_segment_dist_sq(x1, y1, x0, y0, x3, y3) <= 0.0625f &&
-         pdf_point_to_segment_dist_sq(x2, y2, x0, y0, x3, y3) <= 0.0625f)) {
+    if (depth >= 12 || (pdf_point_to_segment_dist_sq(x1, y1, x0, y0, x3, y3) <= 0.0625f &&
+                        pdf_point_to_segment_dist_sq(x2, y2, x0, y0, x3, y3) <= 0.0625f)) {
         pdf_path_line_to(&st->path, x3, y3);
         return;
     }
@@ -3233,35 +3450,42 @@ static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0,
     pdf_flatten_curve(st, mx, my, ex, ey, cx, cy, x3, y3, depth + 1);
 }
 
-static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1,
-                               float x2, float y2, float x3, float y3, int first_is_current) {
-    if (!st->path.has_current) return;
+static void pdf_path_curve_to(pdf_render_state *st, float x1, float y1, float x2, float y2,
+                              float x3, float y3, int first_is_current) {
+    if (!st->path.has_current)
+        return;
     if (first_is_current) {
-        x1 = st->path.current_x; y1 = st->path.current_y;
+        x1 = st->path.current_x;
+        y1 = st->path.current_y;
     } else {
         pdf_user_to_pixel(st, x1, y1, &x1, &y1);
     }
     pdf_user_to_pixel(st, x2, y2, &x2, &y2);
     pdf_user_to_pixel(st, x3, y3, &x3, &y3);
-    if (!isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2) ||
-        !isfinite(x3) || !isfinite(y3)) { st->path.overflow = 1; return; }
-    pdf_flatten_curve(st, st->path.current_x, st->path.current_y,
-                       x1, y1, x2, y2, x3, y3, 0);
+    if (!isfinite(x1) || !isfinite(y1) || !isfinite(x2) || !isfinite(y2) || !isfinite(x3) ||
+        !isfinite(y3)) {
+        st->path.overflow = 1;
+        return;
+    }
+    pdf_flatten_curve(st, st->path.current_x, st->path.current_y, x1, y1, x2, y2, x3, y3, 0);
 }
 
 static void pdf_stroke_path(pdf_render_state *st) {
-    if (!st || !st->img || st->path.seg_count <= 0) return;
+    if (!st || !st->img || st->path.seg_count <= 0)
+        return;
 
     float px_per_pt = 96.0f / 72.0f;
     float half_w = st->gs.line_width_pts * px_per_pt * 0.5f;
-    if (half_w < 0.5f) half_w = 0.5f;
+    if (half_w < 0.5f)
+        half_w = 0.5f;
     float half_w_sq = half_w * half_w;
 
     for (int i = 0; i < st->path.seg_count; i++) {
         float x0 = st->path.segs[i].x0, y0 = st->path.segs[i].y0;
         float x1 = st->path.segs[i].x1, y1 = st->path.segs[i].y1;
 
-        if (!isfinite(x0) || !isfinite(y0) || !isfinite(x1) || !isfinite(y1)) continue;
+        if (!isfinite(x0) || !isfinite(y0) || !isfinite(x1) || !isfinite(y1))
+            continue;
         float w = (float)st->img->width - 1, h = (float)st->img->height - 1;
         int min_x = (int)fminf(w, fmaxf(0, floorf(fminf(x0, x1) - half_w - 1)));
         int min_y = (int)fminf(h, fmaxf(0, floorf(fminf(y0, y1) - half_w - 1)));
@@ -3297,7 +3521,8 @@ static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
 }
 
 static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char *mask) {
-    if (st->path.seg_count <= 0) return 1;
+    if (st->path.seg_count <= 0)
+        return 1;
 
     float min_x = 1e9f, min_y = 1e9f, max_x = -1e9f, max_y = -1e9f;
     pdf_seg xformed[8192];
@@ -3306,8 +3531,12 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
 
     for (int i = 0; i < st->path.seg_count; i++) {
         pdf_seg edge = st->path.segs[i];
-        if (!isfinite(edge.x0) || !isfinite(edge.y0) || !isfinite(edge.x1) || !isfinite(edge.y1)) return 0;
-        if (st->path.segs[i].starts_subpath) { start_x = edge.x0; start_y = edge.y0; }
+        if (!isfinite(edge.x0) || !isfinite(edge.y0) || !isfinite(edge.x1) || !isfinite(edge.y1))
+            return 0;
+        if (st->path.segs[i].starts_subpath) {
+            start_x = edge.x0;
+            start_y = edge.y0;
+        }
         xformed[n++] = edge;
         min_x = fminf(min_x, fminf(edge.x0, edge.x1));
         max_x = fmaxf(max_x, fmaxf(edge.x0, edge.x1));
@@ -3327,7 +3556,8 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
 
     if (mask) {
         size_t area = (size_t)(x1 - x0) * (size_t)(y1 - y0);
-        if (area > st->clip_budget->tests_left / (size_t)n) return 0;
+        if (area > st->clip_budget->tests_left / (size_t)n)
+            return 0;
         st->clip_budget->tests_left -= area * (size_t)n;
     }
 
@@ -3359,10 +3589,12 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
 static int pdf_apply_clip(pdf_render_state *st) {
     size_t bytes = ((size_t)st->img->width * st->img->height + 7) / 8;
     if (st->path.overflow || !st->clip_budget->calls_left ||
-        bytes > 64u * 1024u * 1024u - st->clip_budget->bytes_used) return 0;
+        bytes > 64u * 1024u * 1024u - st->clip_budget->bytes_used)
+        return 0;
     st->clip_budget->calls_left--;
     pdf_clip_mask *clip = (pdf_clip_mask *)calloc(1, sizeof(*clip) + bytes);
-    if (!clip) return 0;
+    if (!clip)
+        return 0;
     clip->references = 1;
     clip->bytes = bytes;
     if (!pdf_rasterize_path(st, st->pending_clip == 2, clip->bits)) {
@@ -3370,7 +3602,8 @@ static int pdf_apply_clip(pdf_render_state *st) {
         return 0;
     }
     if (st->gs.clip) {
-        for (size_t i = 0; i < bytes; i++) clip->bits[i] &= st->gs.clip->bits[i];
+        for (size_t i = 0; i < bytes; i++)
+            clip->bits[i] &= st->gs.clip->bits[i];
     }
     st->clip_budget->bytes_used += bytes;
     pdf_clip_release(st, st->gs.clip);
@@ -3425,7 +3658,7 @@ static void pdf_trim_whitespace(cupidimage_image *img) {
         return;
     }
 
-    size_t cut_mass_y = total_mass / 300u;  /* Trim only sparse edge noise. */
+    size_t cut_mass_y = total_mass / 300u; /* Trim only sparse edge noise. */
     size_t cut_mass_x = total_mass / 300u;
 
     uint32_t top = 0;
@@ -3482,10 +3715,22 @@ static void pdf_trim_whitespace(cupidimage_image *img) {
     }
 
     uint32_t pad = 16u;
-    if (left > pad) left -= pad; else left = 0;
-    if (top > pad) top -= pad; else top = 0;
-    if (right + pad < w) right += pad; else right = w - 1u;
-    if (bottom + pad < h) bottom += pad; else bottom = h - 1u;
+    if (left > pad)
+        left -= pad;
+    else
+        left = 0;
+    if (top > pad)
+        top -= pad;
+    else
+        top = 0;
+    if (right + pad < w)
+        right += pad;
+    else
+        right = w - 1u;
+    if (bottom + pad < h)
+        bottom += pad;
+    else
+        bottom = h - 1u;
 
     uint32_t new_w = right - left + 1u;
     uint32_t new_h = bottom - top + 1u;
@@ -3526,24 +3771,31 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     int font_px = (int)(font_px_f + 0.5f);
     int scale_x = (int)((font_px_f * 0.6f) / 8.0f + 0.5f);
     int scale_y = (int)(font_px_f / 8.0f + 0.5f);
-    if (scale_x < 1) scale_x = 1;
-    if (scale_y < 1) scale_y = 1;
+    if (scale_x < 1)
+        scale_x = 1;
+    if (scale_y < 1)
+        scale_y = 1;
 
     double base_x = trunc(((double)st->text_x_pts - st->page_x0_pts) * px_per_pt + 0.5);
     double top_y = trunc(((double)st->page_top_pts - st->text_y_pts) * px_per_pt + 0.5) - font_px;
-    if (!isfinite(base_x) || !isfinite(top_y)) return;
+    if (!isfinite(base_x) || !isfinite(top_y))
+        return;
     const float *m = st->gs.ctm;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
-    if (!isfinite(det) || det == 0) return;
+    if (!isfinite(det) || det == 0)
+        return;
     double min_x = st->img->width, min_y = st->img->height, max_x = 0, max_y = 0;
     for (int corner = 0; corner < 4; corner++) {
         double ux = st->page_x0_pts + (base_x + ((corner & 1) ? scale_x * 8 : 0)) / px_per_pt;
         double uy = st->page_top_pts - (top_y + ((corner & 2) ? scale_y * 8 : 0)) / px_per_pt;
         double x = (m[0] * ux + m[2] * uy + m[4] - st->page_x0_pts) * px_per_pt;
         double y = (st->page_top_pts - (m[1] * ux + m[3] * uy + m[5])) * px_per_pt;
-        if (!isfinite(x) || !isfinite(y)) return;
-        min_x = fmin(min_x, x); max_x = fmax(max_x, x);
-        min_y = fmin(min_y, y); max_y = fmax(max_y, y);
+        if (!isfinite(x) || !isfinite(y))
+            return;
+        min_x = fmin(min_x, x);
+        max_x = fmax(max_x, x);
+        min_y = fmin(min_y, y);
+        max_y = fmax(max_y, y);
     }
     int x0 = (int)fmax(0, fmin(st->img->width, floor(min_x)));
     int x1 = (int)fmax(0, fmin(st->img->width, ceil(max_x)));
@@ -3564,24 +3816,36 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
 }
 
 static float pdf_char_advance_em(unsigned char c) {
-    if (c == ' ') return 0.278f;
-    if (c >= '0' && c <= '9') return 0.556f;
+    if (c == ' ')
+        return 0.278f;
+    if (c >= '0' && c <= '9')
+        return 0.556f;
     if (c >= 'A' && c <= 'Z') {
-        if (c == 'M' || c == 'W') return 0.889f;
-        if (c == 'I') return 0.333f;
+        if (c == 'M' || c == 'W')
+            return 0.889f;
+        if (c == 'I')
+            return 0.333f;
         return 0.667f;
     }
     if (c >= 'a' && c <= 'z') {
-        if (c == 'm') return 0.833f;
-        if (c == 'w') return 0.722f;
-        if (c == 'i' || c == 'l') return 0.278f;
+        if (c == 'm')
+            return 0.833f;
+        if (c == 'w')
+            return 0.722f;
+        if (c == 'i' || c == 'l')
+            return 0.278f;
         return 0.5f;
     }
-    if (c == '.' || c == ',' || c == ':' || c == ';' || c == '!' || c == '\'') return 0.278f;
-    if (c == '(' || c == ')' || c == '[' || c == ']') return 0.333f;
-    if (c == '-') return 0.333f;
-    if (c == '/') return 0.278f;
-    if (c == '?') return 0.556f;
+    if (c == '.' || c == ',' || c == ':' || c == ';' || c == '!' || c == '\'')
+        return 0.278f;
+    if (c == '(' || c == ')' || c == '[' || c == ']')
+        return 0.333f;
+    if (c == '-')
+        return 0.333f;
+    if (c == '/')
+        return 0.278f;
+    if (c == '?')
+        return 0.556f;
     return 0.5f;
 }
 
@@ -3599,8 +3863,8 @@ static int pdf_font_lookup_codepoint(const pdf_font_map *font, uint32_t src_code
     return 0;
 }
 
-static uint32_t pdf_decode_next_codepoint(const pdf_render_state *st,
-                                          const unsigned char *bytes, size_t len, size_t *pos) {
+static uint32_t pdf_decode_next_codepoint(const pdf_render_state *st, const unsigned char *bytes,
+                                          size_t len, size_t *pos) {
     if (!bytes || !pos || *pos >= len) {
         return 0;
     }
@@ -3608,7 +3872,8 @@ static uint32_t pdf_decode_next_codepoint(const pdf_render_state *st,
     const pdf_font_map *font = st ? st->current_font : NULL;
     if (font && font->count > 0) {
         int max_len = font->max_src_len;
-        if (max_len > 4) max_len = 4;
+        if (max_len > 4)
+            max_len = 4;
         for (int take = max_len; take >= 1; take--) {
             if (*pos + (size_t)take > len) {
                 continue;
@@ -3634,11 +3899,16 @@ static unsigned char pdf_codepoint_to_ascii(uint32_t cp) {
     if (cp < 128u) {
         return (unsigned char)cp;
     }
-    if (cp == 0x2018u || cp == 0x2019u || cp == 0x2032u) return '\'';
-    if (cp == 0x201Cu || cp == 0x201Du || cp == 0x2033u) return '"';
-    if (cp == 0x2013u || cp == 0x2014u || cp == 0x2212u) return '-';
-    if (cp == 0x00A0u) return ' ';
-    if (cp == 0x2022u) return '*';
+    if (cp == 0x2018u || cp == 0x2019u || cp == 0x2032u)
+        return '\'';
+    if (cp == 0x201Cu || cp == 0x201Du || cp == 0x2033u)
+        return '"';
+    if (cp == 0x2013u || cp == 0x2014u || cp == 0x2212u)
+        return '-';
+    if (cp == 0x00A0u)
+        return ' ';
+    if (cp == 0x2022u)
+        return '*';
     return '?';
 }
 
@@ -3753,28 +4023,33 @@ static int pdf_expect_num(const pdf_operand *op) {
 }
 
 static int pdf_expect_str(const pdf_operand *op) {
-    return op && (op->type == PDF_OPERAND_STRING || op->type == PDF_OPERAND_ARRAY || op->type == PDF_OPERAND_NAME);
+    return op && (op->type == PDF_OPERAND_STRING || op->type == PDF_OPERAND_ARRAY ||
+                  op->type == PDF_OPERAND_NAME);
 }
 
 static int pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth);
 
 static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_view *view,
                                  size_t pos, unsigned depth) {
-    if (depth >= 16) return 0;
+    if (depth >= 16)
+        return 0;
     pdf_skip_ws_and_comments(view->data, view->len, &pos);
     int object;
     if (pdf_page_reference(view, pos, &object)) {
         pdf_object_view indirect = {0};
-        if (!get_object_content(st->document, st->document_size, object, &indirect)) return 0;
+        if (!get_object_content(st->document, st->document_size, object, &indirect))
+            return 0;
         int space = pdf_color_space_value(st, &indirect, 0, depth + 1);
         pdf_object_view_release(&indirect);
         return space;
     }
-    if (pos >= view->len || view->data[pos++] != '/') return 0;
+    if (pos >= view->len || view->data[pos++] != '/')
+        return 0;
     char name[128];
     size_t length = 0;
     while (pos < view->len && !pdf_is_ws(view->data[pos]) && !pdf_is_delim(view->data[pos])) {
-        if (length + 1 == sizeof(name)) return 0;
+        if (length + 1 == sizeof(name))
+            return 0;
         name[length++] = (char)view->data[pos++];
     }
     name[length] = '\0';
@@ -3782,14 +4057,19 @@ static int pdf_color_space_value(const pdf_render_state *st, const pdf_object_vi
 }
 
 static int pdf_color_space(const pdf_render_state *st, const char *name, unsigned depth) {
-    if (strcmp(name, "DeviceGray") == 0) return 1;
-    if (strcmp(name, "DeviceRGB") == 0) return 3;
-    if (strcmp(name, "DeviceCMYK") == 0) return 4;
-    if (depth >= 16) return 0;
+    if (strcmp(name, "DeviceGray") == 0)
+        return 1;
+    if (strcmp(name, "DeviceRGB") == 0)
+        return 3;
+    if (strcmp(name, "DeviceCMYK") == 0)
+        return 4;
+    if (depth >= 16)
+        return 0;
     int object = st->page_object;
     for (unsigned i = 0; object > 0 && i < 64; i++) {
         pdf_object_view node = {0}, resources = {0}, spaces = {0};
-        if (!get_object_content(st->document, st->document_size, object, &node)) return 0;
+        if (!get_object_content(st->document, st->document_size, object, &node))
+            return 0;
         size_t pos;
         int parent = 0, space = 0;
         if (pdf_page_value(&node, "Resources", &pos)) {
@@ -3803,17 +4083,21 @@ static int pdf_color_space(const pdf_render_state *st, const char *name, unsigne
             pdf_object_view_release(&node);
             return space;
         }
-        if (pdf_page_value(&node, "Parent", &pos)) pdf_page_reference(&node, pos, &parent);
+        if (pdf_page_value(&node, "Parent", &pos))
+            pdf_page_reference(&node, pos, &parent);
         pdf_object_view_release(&node);
         object = parent;
     }
     return 0;
 }
 
-static int pdf_set_device_color(pdf_render_state *st, int stroke, int space,
-                                 const pdf_operand *ops, int count) {
-    if ((space != 1 && space != 3 && space != 4) || count != space) return 0;
-    for (int i = 0; i < count; i++) if (!pdf_expect_num(&ops[i])) return 0;
+static int pdf_set_device_color(pdf_render_state *st, int stroke, int space, const pdf_operand *ops,
+                                int count) {
+    if ((space != 1 && space != 3 && space != 4) || count != space)
+        return 0;
+    for (int i = 0; i < count; i++)
+        if (!pdf_expect_num(&ops[i]))
+            return 0;
     uint8_t r, g, b;
     if (space == 1) {
         r = g = b = pdf_clamp_u8(ops[0].num);
@@ -3831,17 +4115,21 @@ static int pdf_set_device_color(pdf_render_state *st, int stroke, int space,
         b = pdf_clamp_u8(1 - fmin(1, y + k));
     }
     if (stroke) {
-        st->gs.stroke_r = r; st->gs.stroke_g = g; st->gs.stroke_b = b;
+        st->gs.stroke_r = r;
+        st->gs.stroke_g = g;
+        st->gs.stroke_b = b;
         st->gs.stroke_space = space;
     } else {
-        st->gs.fill_r = r; st->gs.fill_g = g; st->gs.fill_b = b;
+        st->gs.fill_r = r;
+        st->gs.fill_g = g;
+        st->gs.fill_b = b;
         st->gs.fill_space = space;
     }
     return 1;
 }
 
-static void pdf_execute_operator(pdf_render_state *st, const char *op,
-                                 pdf_operand *ops, int *count) {
+static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_operand *ops,
+                                 int *count) {
     int n = *count;
 
     if (strcmp(op, "Do") == 0) {
@@ -3902,8 +4190,8 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             st->leading_pts = (float)ops[n - 1].num;
         }
     } else if (strcmp(op, "cs") == 0 || strcmp(op, "CS") == 0) {
-        int space = n == 1 && ops[0].type == PDF_OPERAND_NAME ?
-                    pdf_color_space(st, ops[0].str, 0) : 0;
+        int space =
+            n == 1 && ops[0].type == PDF_OPERAND_NAME ? pdf_color_space(st, ops[0].str, 0) : 0;
         if (!space) {
             set_err(st->error, st->error_capacity, "pdf: invalid or unsupported color space");
             st->image_failed = 1;
@@ -3914,16 +4202,16 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             st->gs.fill_space = space;
             st->gs.fill_r = st->gs.fill_g = st->gs.fill_b = 0;
         }
-    } else if (strcmp(op, "g") == 0 || strcmp(op, "G") == 0 ||
-               strcmp(op, "rg") == 0 || strcmp(op, "RG") == 0 ||
-               strcmp(op, "k") == 0 || strcmp(op, "K") == 0 ||
-               strcmp(op, "sc") == 0 || strcmp(op, "SC") == 0 ||
-               strcmp(op, "scn") == 0 || strcmp(op, "SCN") == 0) {
+    } else if (strcmp(op, "g") == 0 || strcmp(op, "G") == 0 || strcmp(op, "rg") == 0 ||
+               strcmp(op, "RG") == 0 || strcmp(op, "k") == 0 || strcmp(op, "K") == 0 ||
+               strcmp(op, "sc") == 0 || strcmp(op, "SC") == 0 || strcmp(op, "scn") == 0 ||
+               strcmp(op, "SCN") == 0) {
         int stroke = op[0] >= 'A' && op[0] <= 'Z';
-        int space = op[0] == 'g' || op[0] == 'G' ? 1 :
-                    op[0] == 'r' || op[0] == 'R' ? 3 :
-                    op[0] == 'k' || op[0] == 'K' ? 4 :
-                    stroke ? st->gs.stroke_space : st->gs.fill_space;
+        int space = op[0] == 'g' || op[0] == 'G'   ? 1
+                    : op[0] == 'r' || op[0] == 'R' ? 3
+                    : op[0] == 'k' || op[0] == 'K' ? 4
+                    : stroke                       ? st->gs.stroke_space
+                                                   : st->gs.fill_space;
         if (!pdf_set_device_color(st, stroke, space, ops, n)) {
             set_err(st->error, st->error_capacity, "pdf: invalid color operands");
             st->image_failed = 1;
@@ -3936,8 +4224,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             }
         }
     } else if (strcmp(op, "cm") == 0) {
-        if (n >= 6 &&
-            pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
+        if (n >= 6 && pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
             pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
             float m[6];
@@ -3975,8 +4262,8 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
             pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
             pdf_path_curve_to(st, (float)ops[n - 6].num, (float)ops[n - 5].num,
-                              (float)ops[n - 4].num, (float)ops[n - 3].num,
-                              (float)ops[n - 2].num, (float)ops[n - 1].num, 0);
+                              (float)ops[n - 4].num, (float)ops[n - 3].num, (float)ops[n - 2].num,
+                              (float)ops[n - 1].num, 0);
         }
     } else if (strcmp(op, "v") == 0 || strcmp(op, "y") == 0) {
         if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
@@ -3992,8 +4279,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op,
     } else if (strcmp(op, "h") == 0) {
         pdf_path_close(&st->path);
     } else if (strcmp(op, "re") == 0) {
-        if (n >= 4 &&
-            pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
+        if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
             float x = (float)ops[n - 4].num;
             float y = (float)ops[n - 3].num;
@@ -4176,7 +4462,8 @@ static int pdf_render_stream(pdf_render_state *st, const unsigned char *stream, 
             memcpy(opbuf, &stream[start], tok_len);
             opbuf[tok_len] = '\0';
             pdf_execute_operator(st, opbuf, ops, &op_count);
-            if (st->image_failed) return 0;
+            if (st->image_failed)
+                return 0;
             continue;
         }
 
@@ -4195,16 +4482,20 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
     pdf_render_state *child = NULL;
     pdf_font_table fonts;
     pdf_font_table_init(&fonts);
-    if (st->form_depth >= 16 || !st->form_budget->calls_left) goto done;
+    if (st->form_depth >= 16 || !st->form_budget->calls_left)
+        goto done;
     st->form_budget->calls_left--;
     for (int i = 0; i < st->form_depth; i++) {
-        if (st->form_objects[i] == object) goto done;
+        if (st->form_objects[i] == object)
+            goto done;
     }
     if ((pdf_page_value(form, "FormType", &pos) &&
          (!pdf_image_integer(st, form, "FormType", &type) || type != 1)) ||
-        pdf_page_value(form, "Group", &pos) || pdf_page_value(form, "Ref", &pos)) goto done;
+        pdf_page_value(form, "Group", &pos) || pdf_page_value(form, "Ref", &pos))
+        goto done;
     child = (pdf_render_state *)malloc(sizeof(*child));
-    if (!child) goto done;
+    if (!child)
+        goto done;
     *child = *st;
     pdf_clip_retain(child->gs.clip);
     child->gs_stack_len = 0;
@@ -4213,14 +4504,16 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
     pdf_path_clear(&child->path);
     pdf_form_clip *clip = &child->form_clips[st->form_depth];
     if (!pdf_page_value(form, "BBox", &pos) ||
-        !pdf_page_rectangle(st->document, st->document_size, form, pos, clip->box)) goto done;
+        !pdf_page_rectangle(st->document, st->document_size, form, pos, clip->box))
+        goto done;
     if (pdf_page_value(form, "Matrix", &pos)) {
         pdf_object_view indirect = {0};
         const pdf_object_view *matrix = form;
         int matrix_obj;
         if (pos < form->len && form->data[pos] != '[') {
             if (!pdf_page_reference(form, pos, &matrix_obj) ||
-                !get_object_content(st->document, st->document_size, matrix_obj, &indirect)) goto done;
+                !get_object_content(st->document, st->document_size, matrix_obj, &indirect))
+                goto done;
             matrix = &indirect;
             pos = 0;
             pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
@@ -4230,22 +4523,32 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
         for (int i = 0; valid && i < 6; i++) {
             double number;
             pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
-            valid = parse_pdf_number(matrix->data, matrix->len, &pos, &number) && fabs(number) <= 1e30;
-            if (valid) m[i] = (float)number;
+            valid =
+                parse_pdf_number(matrix->data, matrix->len, &pos, &number) && fabs(number) <= 1e30;
+            if (valid)
+                m[i] = (float)number;
         }
         pdf_skip_ws_and_comments(matrix->data, matrix->len, &pos);
         valid = valid && pos < matrix->len && matrix->data[pos] == ']';
         pdf_object_view_release(&indirect);
-        if (!valid) goto done;
+        if (!valid)
+            goto done;
         pdf_matrix_concat(child->gs.ctm, m);
     }
     const float *m = child->gs.ctm;
-    for (int i = 0; i < 6; i++) if (!isfinite(m[i])) goto done;
+    for (int i = 0; i < 6; i++)
+        if (!isfinite(m[i]))
+            goto done;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
-    if (det == 0) { ok = 1; goto done; }
+    if (det == 0) {
+        ok = 1;
+        goto done;
+    }
     double *inv = clip->inverse;
-    inv[0] = m[3] / det; inv[1] = -m[1] / det;
-    inv[2] = -m[2] / det; inv[3] = m[0] / det;
+    inv[0] = m[3] / det;
+    inv[1] = -m[1] / det;
+    inv[2] = -m[2] / det;
+    inv[3] = m[0] / det;
     inv[4] = -(inv[0] * m[4] + inv[2] * m[5]);
     inv[5] = -(inv[1] * m[4] + inv[3] * m[5]);
     child->form_objects[child->form_depth++] = object;
@@ -4253,9 +4556,11 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
         pdf_object_view resources = {0};
         int valid = pdf_image_dictionary(st, form, "Resources", &resources);
         pdf_object_view_release(&resources);
-        if (!valid) goto done;
+        if (!valid)
+            goto done;
         child->page_object = object;
-        if (!pdf_collect_page_fonts(st->document, st->document_size, object, &fonts, st->error, st->error_capacity)) {
+        if (!pdf_collect_page_fonts(st->document, st->document_size, object, &fonts, st->error,
+                                    st->error_capacity)) {
             pdf_font_table_free(&fonts);
             pdf_font_table_init(&fonts);
         }
@@ -4263,26 +4568,32 @@ static int pdf_draw_form(pdf_render_state *st, int object, const pdf_object_view
     }
     int flate = pdf_image_filter_is(form, "FlateDecode");
     if ((pdf_page_value(form, "Filter", &pos) && !flate) ||
-        pdf_page_value(form, "DecodeParms", &pos) || !pdf_image_stream(st, form, &stream, &length)) goto done;
+        pdf_page_value(form, "DecodeParms", &pos) || !pdf_image_stream(st, form, &stream, &length))
+        goto done;
     if (flate) {
-        if (!pdf_inflate_auto(stream, length, &inflated, &length)) goto done;
+        if (!pdf_inflate_auto(stream, length, &inflated, &length))
+            goto done;
         stream = inflated;
     }
-    if (length > st->form_budget->bytes_left) goto done;
+    if (length > st->form_budget->bytes_left)
+        goto done;
     st->form_budget->bytes_left -= length;
     ok = pdf_render_stream(child, stream, length);
 done:
     pdf_font_table_free(&fonts);
     free(inflated);
-    if (child) pdf_render_state_release(child);
+    if (child)
+        pdf_render_state_release(child);
     free(child);
-    if (!ok) set_err(st->error, st->error_capacity, "pdf: invalid, recursive, or unsupported Form XObject");
+    if (!ok)
+        set_err(st->error, st->error_capacity,
+                "pdf: invalid, recursive, or unsupported Form XObject");
     return ok;
 }
 
 static int pdf_render_content_stream(const unsigned char *stream, size_t stream_len,
-                                     const unsigned char *document, size_t document_size, int page_object,
-                                     const pdf_font_table *font_table,
+                                     const unsigned char *document, size_t document_size,
+                                     int page_object, const pdf_font_table *font_table,
                                      cupidimage_image *img, const pdf_page_geometry *geometry,
                                      char *err, size_t errcap) {
     pdf_render_state st = {0};
@@ -4326,18 +4637,27 @@ static int pdf_render_content_stream(const unsigned char *stream, size_t stream_
 }
 
 static int pdf_rotate_page(cupidimage_image *img, int rotation) {
-    if (!rotation) return 1;
+    if (!rotation)
+        return 1;
     uint32_t width = img->width, height = img->height;
     uint32_t new_width = rotation == 180 ? width : height;
     uint32_t new_height = rotation == 180 ? height : width;
     uint8_t *pixels = (uint8_t *)malloc((size_t)width * height * 4);
-    if (!pixels) return 0;
+    if (!pixels)
+        return 0;
     for (uint32_t y = 0; y < height; y++) {
         for (uint32_t x = 0; x < width; x++) {
             uint32_t dx, dy;
-            if (rotation == 90) { dx = height - 1 - y; dy = x; }
-            else if (rotation == 180) { dx = width - 1 - x; dy = height - 1 - y; }
-            else { dx = y; dy = width - 1 - x; }
+            if (rotation == 90) {
+                dx = height - 1 - y;
+                dy = x;
+            } else if (rotation == 180) {
+                dx = width - 1 - x;
+                dy = height - 1 - y;
+            } else {
+                dx = y;
+                dy = width - 1 - x;
+            }
             memcpy(pixels + ((size_t)dy * new_width + dx) * 4,
                    img->rgba + ((size_t)y * width + x) * 4, 4);
         }
@@ -4350,9 +4670,8 @@ static int pdf_rotate_page(cupidimage_image *img, int rotation) {
 }
 
 static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
-                                        cupidimage_image *img,
-                                        int page_index,
-                                        char *err, size_t errcap) {
+                                        cupidimage_image *img, int page_index, char *err,
+                                        size_t errcap) {
     if (!data || !img) {
         set_err(err, errcap, "pdf: null pointer");
         return 0;
@@ -4450,7 +4769,8 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     unsigned char *stream_data = NULL;
     size_t stream_len = 0;
     int is_flate = 0;
-    if (!get_page_content_stream(data, size, &xref, page_obj, &stream_data, &stream_len, &is_flate, err, errcap)) {
+    if (!get_page_content_stream(data, size, &xref, page_obj, &stream_data, &stream_len, &is_flate,
+                                 err, errcap)) {
         pdf_font_table_free(&fonts);
         free(xref.entries);
         free(img->rgba);
@@ -4478,8 +4798,8 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
             render_len = inflated_len;
         }
 
-        if (!pdf_render_content_stream(render_data, render_len, data, size, page_obj,
-                                       &fonts, img, &geometry, err, errcap)) {
+        if (!pdf_render_content_stream(render_data, render_len, data, size, page_obj, &fonts, img,
+                                       &geometry, err, errcap)) {
             free(inflated);
             free(stream_data);
             pdf_font_table_free(&fonts);
@@ -4510,19 +4830,18 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_pdf(const unsigned char *data, size_t size,
-                        cupidimage_image *img, char *err, size_t errcap) {
+int cupidimage_load_pdf(const unsigned char *data, size_t size, cupidimage_image *img, char *err,
+                        size_t errcap) {
     return cupidimage_load_pdf_internal(data, size, img, 0, err, errcap);
 }
 
-int cupidimage_load_pdf_page(const unsigned char *data, size_t size,
-                             cupidimage_image *img, int page_index,
-                             char *err, size_t errcap) {
+int cupidimage_load_pdf_page(const unsigned char *data, size_t size, cupidimage_image *img,
+                             int page_index, char *err, size_t errcap) {
     return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap);
 }
 
-int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size,
-                                  int *count, char *err, size_t errcap) {
+int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
+                                  size_t errcap) {
     if (!data || !count) {
         set_err(err, errcap, "pdf: null pointer");
         return 0;
@@ -4571,8 +4890,7 @@ int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *img,
-                                  int page_index,
+int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *img, int page_index,
                                   char *err, size_t errcap) {
     unsigned char *buf = NULL;
     size_t size = 0;
@@ -4584,9 +4902,7 @@ int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *img,
     return ok;
 }
 
-int cupidimage_get_pdf_page_count_file(const char *path,
-                                       int *count,
-                                       char *err, size_t errcap) {
+int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, size_t errcap) {
     unsigned char *buf = NULL;
     size_t size = 0;
     if (!cupidimage_read_file_bytes(path, &buf, &size, err, errcap)) {
@@ -4597,7 +4913,6 @@ int cupidimage_get_pdf_page_count_file(const char *path,
     return ok;
 }
 
-int cupidimage_load_pdf_file(const char *path, cupidimage_image *img,
-                             char *err, size_t errcap) {
+int cupidimage_load_pdf_file(const char *path, cupidimage_image *img, char *err, size_t errcap) {
     return cupidimage_load_pdf_page_file(path, img, 0, err, errcap);
 }

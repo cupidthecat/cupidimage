@@ -1,11 +1,11 @@
 #include "cupidimage.h"
 #include "cupidimage_internal.h"
-#include "cupidimage_webp_tables.h"
 #include "cupidimage_webp_lossless.h"
+#include "cupidimage_webp_tables.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 static void set_err(char *err, size_t errcap, const char *msg) {
     if (err && errcap) {
@@ -22,14 +22,15 @@ static uint32_t read_le24(const unsigned char *p) {
 }
 
 static uint8_t clamp_u8(int v) {
-    if (v < 0) return 0;
-    if (v > 255) return 255;
+    if (v < 0)
+        return 0;
+    if (v > 255)
+        return 255;
     return (uint8_t)v;
 }
 
-static int parse_vp8_keyframe(const unsigned char *data, size_t size,
-                              uint16_t *out_w, uint16_t *out_h,
-                              size_t *out_payload_off,
+static int parse_vp8_keyframe(const unsigned char *data, size_t size, uint16_t *out_w,
+                              uint16_t *out_h, size_t *out_payload_off,
                               uint32_t *out_first_part_size) {
     if (size < 10) {
         return 0;
@@ -136,13 +137,7 @@ enum {
     DCT_EOB = 11
 };
 
-enum {
-    DC_PRED = 0,
-    V_PRED = 1,
-    H_PRED = 2,
-    TM_PRED = 3,
-    B_PRED = 4
-};
+enum { DC_PRED = 0, V_PRED = 1, H_PRED = 2, TM_PRED = 3, B_PRED = 4 };
 
 enum {
     B_DC_PRED = 0,
@@ -158,93 +153,38 @@ enum {
 };
 
 static const int16_t coeff_tree[22] = {
-    -DCT_EOB,  2,
-    -DCT_0,    4,
-    -DCT_1,    6,
-     8,       12,
-    -DCT_2,   10,
-    -DCT_3,   -DCT_4,
-    14,       16,
-    -DCT_CAT1, -DCT_CAT2,
-    18,       20,
-    -DCT_CAT3, -DCT_CAT4,
-    -DCT_CAT5, -DCT_CAT6
-};
+    -DCT_EOB, 2,  -DCT_0, 4,         -DCT_1,    6,  8,  12,        -DCT_2,    10,        -DCT_3,
+    -DCT_4,   14, 16,     -DCT_CAT1, -DCT_CAT2, 18, 20, -DCT_CAT3, -DCT_CAT4, -DCT_CAT5, -DCT_CAT6};
 
-static const int16_t ymode_tree[8] = {
-    -DC_PRED, 2,
-    -V_PRED, 4,
-    -H_PRED, 6,
-    -TM_PRED, -B_PRED
-};
+static const int16_t ymode_tree[8] = {-DC_PRED, 2, -V_PRED, 4, -H_PRED, 6, -TM_PRED, -B_PRED};
 
-static const int16_t uv_mode_tree[6] = {
-    -DC_PRED, 2,
-    -V_PRED, 4,
-    -H_PRED, -TM_PRED
-};
+static const int16_t uv_mode_tree[6] = {-DC_PRED, 2, -V_PRED, 4, -H_PRED, -TM_PRED};
 
 static const int16_t bmode_tree[18] = {
-    -B_DC_PRED, 2,
-    4, 6,
-    -B_TM_PRED, -B_VE_PRED,
-    8, 12,
-    -B_HE_PRED, 10,
-    -B_RD_PRED, -B_VR_PRED,
-    14, 16,
-    -B_LD_PRED, -B_VL_PRED,
-    -B_HD_PRED, -B_HU_PRED
-};
+    -B_DC_PRED, 2,          4,  6,  -B_TM_PRED, -B_VE_PRED, 8,          12,        -B_HE_PRED, 10,
+    -B_RD_PRED, -B_VR_PRED, 14, 16, -B_LD_PRED, -B_VL_PRED, -B_HD_PRED, -B_HU_PRED};
 
-static const int16_t segment_tree[6] = {
-    -0, 2,
-    -1, 4,
-    -2, -3
-};
+static const int16_t segment_tree[6] = {-0, 2, -1, 4, -2, -3};
 
-static const uint8_t pcat1[2]  = {159, 0};
-static const uint8_t pcat2[3]  = {165, 145, 0};
-static const uint8_t pcat3[4]  = {173, 148, 140, 0};
-static const uint8_t pcat4[5]  = {176, 155, 140, 135, 0};
-static const uint8_t pcat5[6]  = {180, 157, 141, 134, 130, 0};
+static const uint8_t pcat1[2] = {159, 0};
+static const uint8_t pcat2[3] = {165, 145, 0};
+static const uint8_t pcat3[4] = {173, 148, 140, 0};
+static const uint8_t pcat4[5] = {176, 155, 140, 135, 0};
+static const uint8_t pcat5[6] = {180, 157, 141, 134, 130, 0};
 static const uint8_t pcat6[12] = {254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0};
 
 static const uint8_t kf_ymode_prob[4] = {145, 156, 163, 128};
 static const uint8_t kf_uv_mode_prob[3] = {142, 114, 183};
 
-static const uint8_t zigzag[16] = {
-    0, 1, 4, 8,
-    5, 2, 3, 6,
-    9, 12, 13, 10,
-    7, 11, 14, 15
-};
+static const uint8_t zigzag[16] = {0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15};
 
-static const uint8_t coeff_bands[16] = {
-    0, 1, 2, 3,
-    6, 4, 5, 6,
-    6, 6, 6, 6,
-    6, 6, 6, 7
-};
+static const uint8_t coeff_bands[16] = {0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7};
 
-static const uint8_t left_context_index[25] = {
-    0, 0, 0, 0,
-    1, 1, 1, 1,
-    2, 2, 2, 2,
-    3, 3, 3, 3,
-    4, 4, 5, 5,
-    6, 6, 7, 7,
-    8
-};
+static const uint8_t left_context_index[25] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3,
+                                               3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8};
 
-static const uint8_t above_context_index[25] = {
-    0, 1, 2, 3,
-    0, 1, 2, 3,
-    0, 1, 2, 3,
-    0, 1, 2, 3,
-    4, 5, 4, 5,
-    6, 7, 6, 7,
-    8
-};
+static const uint8_t above_context_index[25] = {0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0,
+                                                1, 2, 3, 4, 5, 4, 5, 6, 7, 6, 7, 8};
 
 static int vp8_read_tree(vp8_bool_decoder *br, const int16_t *tree, const uint8_t *probs) {
     int i = 0;
@@ -268,9 +208,8 @@ static uint8_t avg3p(int x, int y, int z) {
     return (uint8_t)((x + 2 * y + z + 2) >> 2);
 }
 
-static void subblock_intra_predict(uint8_t *dst, int stride,
-                                   const uint8_t *A, const uint8_t *L, uint8_t P,
-                                   int mode) {
+static void subblock_intra_predict(uint8_t *dst, int stride, const uint8_t *A, const uint8_t *L,
+                                   uint8_t P, int mode) {
     int i, r;
     int E[13];
     E[0] = L[3];
@@ -288,158 +227,166 @@ static void subblock_intra_predict(uint8_t *dst, int stride,
     E[12] = A[7];
 
     switch (mode) {
-    case B_DC_PRED:
-        r = (E[0] + E[1] + E[2] + E[3] + E[5] + E[6] + E[7] + E[8] + 4) >> 3;
-        for (i = 0; i < 4; i++) {
-            memset(dst + i * stride, r, 4);
+        case B_DC_PRED:
+            r = (E[0] + E[1] + E[2] + E[3] + E[5] + E[6] + E[7] + E[8] + 4) >> 3;
+            for (i = 0; i < 4; i++) {
+                memset(dst + i * stride, r, 4);
+            }
+            break;
+        case B_TM_PRED:
+            for (i = 0; i < 4; i++) {
+                dst[i * stride + 0] = clamp_u8(L[i] + A[0] - P);
+                dst[i * stride + 1] = clamp_u8(L[i] + A[1] - P);
+                dst[i * stride + 2] = clamp_u8(L[i] + A[2] - P);
+                dst[i * stride + 3] = clamp_u8(L[i] + A[3] - P);
+            }
+            break;
+        case B_VE_PRED:
+            dst[0] = dst[1] = dst[2] = dst[3] = avg3p(E[4], E[5], E[6]);
+            dst[stride + 0] = dst[stride + 1] = dst[stride + 2] = dst[stride + 3] =
+                avg3p(E[5], E[6], E[7]);
+            dst[stride * 2 + 0] = dst[stride * 2 + 1] = dst[stride * 2 + 2] = dst[stride * 2 + 3] =
+                avg3p(E[6], E[7], E[8]);
+            dst[stride * 3 + 0] = dst[stride * 3 + 1] = dst[stride * 3 + 2] = dst[stride * 3 + 3] =
+                avg3p(E[7], E[8], E[9]);
+            break;
+        case B_HE_PRED:
+            dst[0] = dst[stride] = dst[stride * 2] = dst[stride * 3] = avg3p(E[4], E[3], E[2]);
+            dst[1] = dst[stride + 1] = dst[stride * 2 + 1] = dst[stride * 3 + 1] =
+                avg3p(E[3], E[2], E[1]);
+            dst[2] = dst[stride + 2] = dst[stride * 2 + 2] = dst[stride * 3 + 2] =
+                avg3p(E[2], E[1], E[0]);
+            dst[3] = dst[stride + 3] = dst[stride * 2 + 3] = dst[stride * 3 + 3] =
+                avg3p(E[1], E[0], E[0]);
+            break;
+        case B_LD_PRED:
+            dst[0] = avg3p(E[5], E[6], E[7]);
+            dst[1] = dst[stride + 0] = avg3p(E[6], E[7], E[8]);
+            dst[2] = dst[stride + 1] = dst[stride * 2 + 0] = avg3p(E[7], E[8], E[9]);
+            dst[3] = dst[stride + 2] = dst[stride * 2 + 1] = dst[stride * 3 + 0] =
+                avg3p(E[8], E[9], E[10]);
+            dst[stride + 3] = dst[stride * 2 + 2] = dst[stride * 3 + 1] = avg3p(E[9], E[10], E[11]);
+            dst[stride * 2 + 3] = dst[stride * 3 + 2] = avg3p(E[10], E[11], E[12]);
+            dst[stride * 3 + 3] = avg3p(E[11], E[12], E[12]);
+            break;
+        case B_RD_PRED:
+            dst[3] = avg3p(E[2], E[1], E[0]);
+            dst[2] = dst[stride + 3] = avg3p(E[3], E[2], E[1]);
+            dst[1] = dst[stride + 2] = dst[stride * 2 + 3] = avg3p(E[4], E[3], E[2]);
+            dst[0] = dst[stride + 1] = dst[stride * 2 + 2] = dst[stride * 3 + 3] =
+                avg3p(E[5], E[4], E[3]);
+            dst[stride + 0] = dst[stride * 2 + 1] = dst[stride * 3 + 2] = avg3p(E[6], E[5], E[4]);
+            dst[stride * 2 + 0] = dst[stride * 3 + 1] = avg3p(E[7], E[6], E[5]);
+            dst[stride * 3 + 0] = avg3p(E[8], E[7], E[6]);
+            break;
+        case B_VR_PRED: {
+            uint8_t a = avg2p(E[4], E[5]);
+            uint8_t b = avg2p(E[5], E[6]);
+            uint8_t c = avg2p(E[6], E[7]);
+            uint8_t d = avg2p(E[7], E[8]);
+            uint8_t e = avg3p(E[3], E[4], E[5]);
+            uint8_t f = avg3p(E[4], E[5], E[6]);
+            uint8_t g = avg3p(E[5], E[6], E[7]);
+            uint8_t h = avg3p(E[6], E[7], E[8]);
+            dst[0] = b;
+            dst[1] = c;
+            dst[2] = d;
+            dst[3] = d;
+            dst[stride + 0] = a;
+            dst[stride + 1] = b;
+            dst[stride + 2] = c;
+            dst[stride + 3] = d;
+            dst[stride * 2 + 0] = e;
+            dst[stride * 2 + 1] = f;
+            dst[stride * 2 + 2] = g;
+            dst[stride * 2 + 3] = h;
+            dst[stride * 3 + 0] = avg3p(E[2], E[3], E[4]);
+            dst[stride * 3 + 1] = avg3p(E[3], E[4], E[5]);
+            dst[stride * 3 + 2] = avg3p(E[4], E[5], E[6]);
+            dst[stride * 3 + 3] = avg3p(E[5], E[6], E[7]);
+            break;
         }
-        break;
-    case B_TM_PRED:
-        for (i = 0; i < 4; i++) {
-            dst[i * stride + 0] = clamp_u8(L[i] + A[0] - P);
-            dst[i * stride + 1] = clamp_u8(L[i] + A[1] - P);
-            dst[i * stride + 2] = clamp_u8(L[i] + A[2] - P);
-            dst[i * stride + 3] = clamp_u8(L[i] + A[3] - P);
+        case B_VL_PRED: {
+            uint8_t a = avg2p(E[5], E[6]);
+            uint8_t b = avg2p(E[6], E[7]);
+            uint8_t c = avg2p(E[7], E[8]);
+            uint8_t d = avg2p(E[8], E[9]);
+            uint8_t e = avg3p(E[5], E[6], E[7]);
+            uint8_t f = avg3p(E[6], E[7], E[8]);
+            uint8_t g = avg3p(E[7], E[8], E[9]);
+            uint8_t h = avg3p(E[8], E[9], E[10]);
+            dst[0] = a;
+            dst[1] = b;
+            dst[2] = c;
+            dst[3] = d;
+            dst[stride + 0] = e;
+            dst[stride + 1] = f;
+            dst[stride + 2] = g;
+            dst[stride + 3] = h;
+            dst[stride * 2 + 0] = avg3p(E[6], E[7], E[8]);
+            dst[stride * 2 + 1] = avg3p(E[7], E[8], E[9]);
+            dst[stride * 2 + 2] = avg3p(E[8], E[9], E[10]);
+            dst[stride * 2 + 3] = avg3p(E[9], E[10], E[11]);
+            dst[stride * 3 + 0] = avg3p(E[7], E[8], E[9]);
+            dst[stride * 3 + 1] = avg3p(E[8], E[9], E[10]);
+            dst[stride * 3 + 2] = avg3p(E[9], E[10], E[11]);
+            dst[stride * 3 + 3] = avg3p(E[10], E[11], E[12]);
+            break;
         }
-        break;
-    case B_VE_PRED:
-        dst[0] = dst[1] = dst[2] = dst[3] = avg3p(E[4], E[5], E[6]);
-        dst[stride + 0] = dst[stride + 1] = dst[stride + 2] = dst[stride + 3] = avg3p(E[5], E[6], E[7]);
-        dst[stride * 2 + 0] = dst[stride * 2 + 1] = dst[stride * 2 + 2] = dst[stride * 2 + 3] = avg3p(E[6], E[7], E[8]);
-        dst[stride * 3 + 0] = dst[stride * 3 + 1] = dst[stride * 3 + 2] = dst[stride * 3 + 3] = avg3p(E[7], E[8], E[9]);
-        break;
-    case B_HE_PRED:
-        dst[0] = dst[stride] = dst[stride * 2] = dst[stride * 3] = avg3p(E[4], E[3], E[2]);
-        dst[1] = dst[stride + 1] = dst[stride * 2 + 1] = dst[stride * 3 + 1] = avg3p(E[3], E[2], E[1]);
-        dst[2] = dst[stride + 2] = dst[stride * 2 + 2] = dst[stride * 3 + 2] = avg3p(E[2], E[1], E[0]);
-        dst[3] = dst[stride + 3] = dst[stride * 2 + 3] = dst[stride * 3 + 3] = avg3p(E[1], E[0], E[0]);
-        break;
-    case B_LD_PRED:
-        dst[0] = avg3p(E[5], E[6], E[7]);
-        dst[1] = dst[stride + 0] = avg3p(E[6], E[7], E[8]);
-        dst[2] = dst[stride + 1] = dst[stride * 2 + 0] = avg3p(E[7], E[8], E[9]);
-        dst[3] = dst[stride + 2] = dst[stride * 2 + 1] = dst[stride * 3 + 0] = avg3p(E[8], E[9], E[10]);
-        dst[stride + 3] = dst[stride * 2 + 2] = dst[stride * 3 + 1] = avg3p(E[9], E[10], E[11]);
-        dst[stride * 2 + 3] = dst[stride * 3 + 2] = avg3p(E[10], E[11], E[12]);
-        dst[stride * 3 + 3] = avg3p(E[11], E[12], E[12]);
-        break;
-    case B_RD_PRED:
-        dst[3] = avg3p(E[2], E[1], E[0]);
-        dst[2] = dst[stride + 3] = avg3p(E[3], E[2], E[1]);
-        dst[1] = dst[stride + 2] = dst[stride * 2 + 3] = avg3p(E[4], E[3], E[2]);
-        dst[0] = dst[stride + 1] = dst[stride * 2 + 2] = dst[stride * 3 + 3] = avg3p(E[5], E[4], E[3]);
-        dst[stride + 0] = dst[stride * 2 + 1] = dst[stride * 3 + 2] = avg3p(E[6], E[5], E[4]);
-        dst[stride * 2 + 0] = dst[stride * 3 + 1] = avg3p(E[7], E[6], E[5]);
-        dst[stride * 3 + 0] = avg3p(E[8], E[7], E[6]);
-        break;
-    case B_VR_PRED: {
-        uint8_t a = avg2p(E[4], E[5]);
-        uint8_t b = avg2p(E[5], E[6]);
-        uint8_t c = avg2p(E[6], E[7]);
-        uint8_t d = avg2p(E[7], E[8]);
-        uint8_t e = avg3p(E[3], E[4], E[5]);
-        uint8_t f = avg3p(E[4], E[5], E[6]);
-        uint8_t g = avg3p(E[5], E[6], E[7]);
-        uint8_t h = avg3p(E[6], E[7], E[8]);
-        dst[0] = b;
-        dst[1] = c;
-        dst[2] = d;
-        dst[3] = d;
-        dst[stride + 0] = a;
-        dst[stride + 1] = b;
-        dst[stride + 2] = c;
-        dst[stride + 3] = d;
-        dst[stride * 2 + 0] = e;
-        dst[stride * 2 + 1] = f;
-        dst[stride * 2 + 2] = g;
-        dst[stride * 2 + 3] = h;
-        dst[stride * 3 + 0] = avg3p(E[2], E[3], E[4]);
-        dst[stride * 3 + 1] = avg3p(E[3], E[4], E[5]);
-        dst[stride * 3 + 2] = avg3p(E[4], E[5], E[6]);
-        dst[stride * 3 + 3] = avg3p(E[5], E[6], E[7]);
-        break;
-    }
-    case B_VL_PRED: {
-        uint8_t a = avg2p(E[5], E[6]);
-        uint8_t b = avg2p(E[6], E[7]);
-        uint8_t c = avg2p(E[7], E[8]);
-        uint8_t d = avg2p(E[8], E[9]);
-        uint8_t e = avg3p(E[5], E[6], E[7]);
-        uint8_t f = avg3p(E[6], E[7], E[8]);
-        uint8_t g = avg3p(E[7], E[8], E[9]);
-        uint8_t h = avg3p(E[8], E[9], E[10]);
-        dst[0] = a;
-        dst[1] = b;
-        dst[2] = c;
-        dst[3] = d;
-        dst[stride + 0] = e;
-        dst[stride + 1] = f;
-        dst[stride + 2] = g;
-        dst[stride + 3] = h;
-        dst[stride * 2 + 0] = avg3p(E[6], E[7], E[8]);
-        dst[stride * 2 + 1] = avg3p(E[7], E[8], E[9]);
-        dst[stride * 2 + 2] = avg3p(E[8], E[9], E[10]);
-        dst[stride * 2 + 3] = avg3p(E[9], E[10], E[11]);
-        dst[stride * 3 + 0] = avg3p(E[7], E[8], E[9]);
-        dst[stride * 3 + 1] = avg3p(E[8], E[9], E[10]);
-        dst[stride * 3 + 2] = avg3p(E[9], E[10], E[11]);
-        dst[stride * 3 + 3] = avg3p(E[10], E[11], E[12]);
-        break;
-    }
-    case B_HD_PRED: {
-        uint8_t a = avg2p(E[3], E[4]);
-        uint8_t b = avg2p(E[2], E[3]);
-        uint8_t c = avg2p(E[1], E[2]);
-        uint8_t d = avg2p(E[0], E[1]);
-        uint8_t e = avg3p(E[4], E[3], E[2]);
-        uint8_t f = avg3p(E[3], E[2], E[1]);
-        uint8_t g = avg3p(E[2], E[1], E[0]);
-        dst[0] = a;
-        dst[1] = e;
-        dst[2] = b;
-        dst[3] = f;
-        dst[stride + 0] = b;
-        dst[stride + 1] = f;
-        dst[stride + 2] = c;
-        dst[stride + 3] = g;
-        dst[stride * 2 + 0] = c;
-        dst[stride * 2 + 1] = g;
-        dst[stride * 2 + 2] = d;
-        dst[stride * 2 + 3] = d;
-        dst[stride * 3 + 0] = d;
-        dst[stride * 3 + 1] = d;
-        dst[stride * 3 + 2] = d;
-        dst[stride * 3 + 3] = d;
-        break;
-    }
-    case B_HU_PRED: {
-        uint8_t a = avg2p(E[3], E[2]);
-        uint8_t b = avg2p(E[2], E[1]);
-        uint8_t c = avg2p(E[1], E[0]);
-        uint8_t d = avg2p(E[0], E[0]);
-        uint8_t e = avg3p(E[3], E[2], E[1]);
-        uint8_t f = avg3p(E[2], E[1], E[0]);
-        uint8_t g = avg3p(E[1], E[0], E[0]);
-        dst[0] = e;
-        dst[1] = a;
-        dst[2] = b;
-        dst[3] = c;
-        dst[stride + 0] = f;
-        dst[stride + 1] = b;
-        dst[stride + 2] = c;
-        dst[stride + 3] = d;
-        dst[stride * 2 + 0] = g;
-        dst[stride * 2 + 1] = c;
-        dst[stride * 2 + 2] = d;
-        dst[stride * 2 + 3] = d;
-        dst[stride * 3 + 0] = d;
-        dst[stride * 3 + 1] = d;
-        dst[stride * 3 + 2] = d;
-        dst[stride * 3 + 3] = d;
-        break;
-    }
-    default:
-        break;
+        case B_HD_PRED: {
+            uint8_t a = avg2p(E[3], E[4]);
+            uint8_t b = avg2p(E[2], E[3]);
+            uint8_t c = avg2p(E[1], E[2]);
+            uint8_t d = avg2p(E[0], E[1]);
+            uint8_t e = avg3p(E[4], E[3], E[2]);
+            uint8_t f = avg3p(E[3], E[2], E[1]);
+            uint8_t g = avg3p(E[2], E[1], E[0]);
+            dst[0] = a;
+            dst[1] = e;
+            dst[2] = b;
+            dst[3] = f;
+            dst[stride + 0] = b;
+            dst[stride + 1] = f;
+            dst[stride + 2] = c;
+            dst[stride + 3] = g;
+            dst[stride * 2 + 0] = c;
+            dst[stride * 2 + 1] = g;
+            dst[stride * 2 + 2] = d;
+            dst[stride * 2 + 3] = d;
+            dst[stride * 3 + 0] = d;
+            dst[stride * 3 + 1] = d;
+            dst[stride * 3 + 2] = d;
+            dst[stride * 3 + 3] = d;
+            break;
+        }
+        case B_HU_PRED: {
+            uint8_t a = avg2p(E[3], E[2]);
+            uint8_t b = avg2p(E[2], E[1]);
+            uint8_t c = avg2p(E[1], E[0]);
+            uint8_t d = avg2p(E[0], E[0]);
+            uint8_t e = avg3p(E[3], E[2], E[1]);
+            uint8_t f = avg3p(E[2], E[1], E[0]);
+            uint8_t g = avg3p(E[1], E[0], E[0]);
+            dst[0] = e;
+            dst[1] = a;
+            dst[2] = b;
+            dst[3] = c;
+            dst[stride + 0] = f;
+            dst[stride + 1] = b;
+            dst[stride + 2] = c;
+            dst[stride + 3] = d;
+            dst[stride * 2 + 0] = g;
+            dst[stride * 2 + 1] = c;
+            dst[stride * 2 + 2] = d;
+            dst[stride * 2 + 3] = d;
+            dst[stride * 3 + 0] = d;
+            dst[stride * 3 + 1] = d;
+            dst[stride * 3 + 2] = d;
+            dst[stride * 3 + 3] = d;
+            break;
+        }
+        default:
+            break;
     }
 }
 
@@ -539,8 +486,7 @@ static void predict_8x8(uint8_t *dst, int stride, const uint8_t *above, const ui
     }
 }
 
-static uint8_t get_top_left(const uint8_t *plane, int stride, int x, int y,
-                             int width, int height) {
+static uint8_t get_top_left(const uint8_t *plane, int stride, int x, int y, int width, int height) {
     if (y < 0) {
         return 127;
     }
@@ -556,8 +502,8 @@ static uint8_t get_top_left(const uint8_t *plane, int stride, int x, int y,
     return plane[y * stride + x];
 }
 
-static void get_above_row(const uint8_t *plane, int stride, int x, int y,
-                          int width, int height, int count, uint8_t top_default, uint8_t *out) {
+static void get_above_row(const uint8_t *plane, int stride, int x, int y, int width, int height,
+                          int count, uint8_t top_default, uint8_t *out) {
     if (y < 0) {
         for (int i = 0; i < count; i++) {
             out[i] = top_default;
@@ -579,8 +525,8 @@ static void get_above_row(const uint8_t *plane, int stride, int x, int y,
     }
 }
 
-static void get_left_col(const uint8_t *plane, int stride, int x, int y,
-                         int width, int height, int count, uint8_t left_default, uint8_t *out) {
+static void get_left_col(const uint8_t *plane, int stride, int x, int y, int width, int height,
+                         int count, uint8_t left_default, uint8_t *out) {
     if (x < 0) {
         for (int i = 0; i < count; i++) {
             out[i] = left_default;
@@ -672,12 +618,15 @@ static void wht4x4(const int16_t *input, int16_t *output) {
 }
 
 static int clamp_level(int level) {
-    if (level < 0) return 0;
-    if (level > 63) return 63;
+    if (level < 0)
+        return 0;
+    if (level > 63)
+        return 63;
     return level;
 }
 
-static int filter_level_for_mb(int base_level, int seg_enabled, int seg_abs, const int seg_lf[4], int seg_id) {
+static int filter_level_for_mb(int base_level, int seg_enabled, int seg_abs, const int seg_lf[4],
+                               int seg_id) {
     int level = base_level;
     if (seg_enabled) {
         if (seg_abs) {
@@ -700,29 +649,32 @@ static void filter_params(int level, int sharpness, int *limit, int *interior, i
         lim >>= 1;
         ilim >>= 1;
     }
-    if (lim < 1) lim = 1;
-    if (ilim < 1) ilim = 1;
+    if (lim < 1)
+        lim = 1;
+    if (ilim < 1)
+        ilim = 1;
     *limit = lim;
     *interior = ilim;
     *hev = (level >= 40) ? 2 : (level >= 20 ? 1 : 0);
 }
 
-static void filter_sample(uint8_t *p1, uint8_t *p0, uint8_t *q0, uint8_t *q1,
-                          int limit, int interior, int hev_thr, int simple) {
+static void filter_sample(uint8_t *p1, uint8_t *p0, uint8_t *q0, uint8_t *q1, int limit,
+                          int interior, int hev_thr, int simple) {
     int P1 = *p1;
     int P0 = *p0;
     int Q0 = *q0;
     int Q1 = *q1;
-    int mask = (abs(P0 - Q0) * 2 + abs(P1 - Q1) / 2 <= limit) &&
-               (abs(P1 - P0) <= interior) &&
+    int mask = (abs(P0 - Q0) * 2 + abs(P1 - Q1) / 2 <= limit) && (abs(P1 - P0) <= interior) &&
                (abs(Q1 - Q0) <= interior);
     if (!mask) {
         return;
     }
     int hev = (abs(P1 - P0) > hev_thr) || (abs(Q1 - Q0) > hev_thr);
     int delta = ((Q0 - P0) * 3 + (P1 - Q1) + 4) >> 3;
-    if (delta > 127) delta = 127;
-    if (delta < -128) delta = -128;
+    if (delta > 127)
+        delta = 127;
+    if (delta < -128)
+        delta = -128;
     P0 = clamp_u8(P0 + delta);
     Q0 = clamp_u8(Q0 - delta);
     if (!simple && !hev) {
@@ -736,8 +688,8 @@ static void filter_sample(uint8_t *p1, uint8_t *p0, uint8_t *q0, uint8_t *q1,
     *q1 = (uint8_t)Q1;
 }
 
-static void filter_edge_vertical(uint8_t *plane, int stride, int x, int y, int len,
-                                 int limit, int interior, int hev, int simple, int width) {
+static void filter_edge_vertical(uint8_t *plane, int stride, int x, int y, int len, int limit,
+                                 int interior, int hev, int simple, int width) {
     if (x < 2 || x + 1 >= width) {
         return;
     }
@@ -747,21 +699,22 @@ static void filter_edge_vertical(uint8_t *plane, int stride, int x, int y, int l
     }
 }
 
-static void filter_edge_horizontal(uint8_t *plane, int stride, int x, int y, int len,
-                                   int limit, int interior, int hev, int simple, int height) {
+static void filter_edge_horizontal(uint8_t *plane, int stride, int x, int y, int len, int limit,
+                                   int interior, int hev, int simple, int height) {
     if (y < 2 || y + 1 >= height) {
         return;
     }
     for (int i = 0; i < len; i++) {
         uint8_t *col = plane + (y - 2) * stride + (x + i);
-        filter_sample(col, col + stride, col + 2 * stride, col + 3 * stride, limit, interior, hev, simple);
+        filter_sample(col, col + stride, col + 2 * stride, col + 3 * stride, limit, interior, hev,
+                      simple);
     }
 }
 
-static void loop_filter_plane(uint8_t *plane, int stride, int width, int height,
-                              int mb_cols, int mb_rows, const uint8_t *seg_ids,
-                              int base_level, int sharpness, int filter_type,
-                              int seg_enabled, int seg_abs, const int seg_lf[4], int is_uv) {
+static void loop_filter_plane(uint8_t *plane, int stride, int width, int height, int mb_cols,
+                              int mb_rows, const uint8_t *seg_ids, int base_level, int sharpness,
+                              int filter_type, int seg_enabled, int seg_abs, const int seg_lf[4],
+                              int is_uv) {
     int mb_size = is_uv ? 8 : 16;
     int edge_step = 4;
     int simple = (filter_type != 0);
@@ -769,7 +722,8 @@ static void loop_filter_plane(uint8_t *plane, int stride, int width, int height,
     for (int mb_y = 0; mb_y < mb_rows; mb_y++) {
         for (int mb_x = 0; mb_x < mb_cols; mb_x++) {
             size_t mb_index = (size_t)mb_y * (size_t)mb_cols + (size_t)mb_x;
-            int level = filter_level_for_mb(base_level, seg_enabled, seg_abs, seg_lf, seg_ids[mb_index]);
+            int level =
+                filter_level_for_mb(base_level, seg_enabled, seg_abs, seg_lf, seg_ids[mb_index]);
             if (level == 0) {
                 continue;
             }
@@ -780,8 +734,10 @@ static void loop_filter_plane(uint8_t *plane, int stride, int width, int height,
             int base_y = mb_y * mb_size;
             int max_x = base_x + mb_size;
             int max_y = base_y + mb_size;
-            if (max_x > width) max_x = width;
-            if (max_y > height) max_y = height;
+            if (max_x > width)
+                max_x = width;
+            if (max_y > height)
+                max_y = height;
             int len_v = max_y - base_y;
             int len_h = max_x - base_x;
 
@@ -791,10 +747,12 @@ static void loop_filter_plane(uint8_t *plane, int stride, int width, int height,
                 int use_level = left_level > level ? left_level : level;
                 int lim2 = 0, int2 = 0, hev2 = 0;
                 filter_params(use_level, sharpness, &lim2, &int2, &hev2);
-                filter_edge_vertical(plane, stride, base_x, base_y, len_v, lim2, int2, hev2, simple, width);
+                filter_edge_vertical(plane, stride, base_x, base_y, len_v, lim2, int2, hev2, simple,
+                                     width);
             }
             for (int x = base_x + edge_step; x < max_x; x += edge_step) {
-                filter_edge_vertical(plane, stride, x, base_y, len_v, limit, interior, hev, simple, width);
+                filter_edge_vertical(plane, stride, x, base_y, len_v, limit, interior, hev, simple,
+                                     width);
             }
 
             if (base_y > 0) {
@@ -803,10 +761,12 @@ static void loop_filter_plane(uint8_t *plane, int stride, int width, int height,
                 int use_level = top_level > level ? top_level : level;
                 int lim2 = 0, int2 = 0, hev2 = 0;
                 filter_params(use_level, sharpness, &lim2, &int2, &hev2);
-                filter_edge_horizontal(plane, stride, base_x, base_y, len_h, lim2, int2, hev2, simple, height);
+                filter_edge_horizontal(plane, stride, base_x, base_y, len_h, lim2, int2, hev2,
+                                       simple, height);
             }
             for (int y = base_y + edge_step; y < max_y; y += edge_step) {
-                filter_edge_horizontal(plane, stride, base_x, y, len_h, limit, interior, hev, simple, height);
+                filter_edge_horizontal(plane, stride, base_x, y, len_h, limit, interior, hev,
+                                       simple, height);
             }
         }
     }
@@ -822,14 +782,15 @@ typedef struct vp8_dequant {
 } vp8_dequant;
 
 static int clamp_q(int q) {
-    if (q < 0) return 0;
-    if (q > 127) return 127;
+    if (q < 0)
+        return 0;
+    if (q > 127)
+        return 127;
     return q;
 }
 
-static void dequant_init(vp8_dequant *dq, int qindex, int y1_dc_delta,
-                         int y2_dc_delta, int y2_ac_delta,
-                         int uv_dc_delta, int uv_ac_delta) {
+static void dequant_init(vp8_dequant *dq, int qindex, int y1_dc_delta, int y2_dc_delta,
+                         int y2_ac_delta, int uv_dc_delta, int uv_ac_delta) {
     dq->y1_dc = cupidimage_vp8_dc_qlookup[clamp_q(qindex + y1_dc_delta)];
     dq->y1_ac = cupidimage_vp8_ac_qlookup[clamp_q(qindex)];
     dq->y2_dc = cupidimage_vp8_dc_qlookup[clamp_q(qindex + y2_dc_delta)] * 2;
@@ -841,10 +802,8 @@ static void dequant_init(vp8_dequant *dq, int qindex, int y1_dc_delta,
     dq->uv_ac = cupidimage_vp8_ac_qlookup[clamp_q(qindex + uv_ac_delta)];
 }
 
-static void decode_entropy_header(vp8_bool_decoder *br,
-                                  uint8_t coeff_probs[4][8][3][11],
-                                  int *coeff_skip_enabled,
-                                  uint8_t *coeff_skip_prob) {
+static void decode_entropy_header(vp8_bool_decoder *br, uint8_t coeff_probs[4][8][3][11],
+                                  int *coeff_skip_enabled, uint8_t *coeff_skip_prob) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 8; j++) {
             for (int k = 0; k < 3; k++) {
@@ -862,10 +821,8 @@ static void decode_entropy_header(vp8_bool_decoder *br,
     }
 }
 
-static int decode_block_coeffs(vp8_bool_decoder *br,
-                               uint8_t coeff_probs[4][8][3][11],
-                               int block_type, int ctx, int start_coeff,
-                               int16_t *coeffs) {
+static int decode_block_coeffs(vp8_bool_decoder *br, uint8_t coeff_probs[4][8][3][11],
+                               int block_type, int ctx, int start_coeff, int16_t *coeffs) {
     int prev_zero = 0;
     int has_coeff = 0;
     int ctx3 = ctx;
@@ -890,22 +847,25 @@ static int decode_block_coeffs(vp8_bool_decoder *br,
         } else if (token == DCT_CAT2) {
             abs_val = 7 + ((vp8_br_read_bit(br, pcat2[0]) << 1) | vp8_br_read_bit(br, pcat2[1]));
         } else if (token == DCT_CAT3) {
-            abs_val = 11 + ((vp8_br_read_bit(br, pcat3[0]) << 2) | (vp8_br_read_bit(br, pcat3[1]) << 1) |
-                            vp8_br_read_bit(br, pcat3[2]));
+            abs_val = 11 + ((vp8_br_read_bit(br, pcat3[0]) << 2) |
+                            (vp8_br_read_bit(br, pcat3[1]) << 1) | vp8_br_read_bit(br, pcat3[2]));
         } else if (token == DCT_CAT4) {
-            abs_val = 19 + ((vp8_br_read_bit(br, pcat4[0]) << 3) | (vp8_br_read_bit(br, pcat4[1]) << 2) |
-                            (vp8_br_read_bit(br, pcat4[2]) << 1) | vp8_br_read_bit(br, pcat4[3]));
+            abs_val =
+                19 + ((vp8_br_read_bit(br, pcat4[0]) << 3) | (vp8_br_read_bit(br, pcat4[1]) << 2) |
+                      (vp8_br_read_bit(br, pcat4[2]) << 1) | vp8_br_read_bit(br, pcat4[3]));
         } else if (token == DCT_CAT5) {
-            abs_val = 35 + ((vp8_br_read_bit(br, pcat5[0]) << 4) | (vp8_br_read_bit(br, pcat5[1]) << 3) |
-                            (vp8_br_read_bit(br, pcat5[2]) << 2) | (vp8_br_read_bit(br, pcat5[3]) << 1) |
-                            vp8_br_read_bit(br, pcat5[4]));
+            abs_val =
+                35 + ((vp8_br_read_bit(br, pcat5[0]) << 4) | (vp8_br_read_bit(br, pcat5[1]) << 3) |
+                      (vp8_br_read_bit(br, pcat5[2]) << 2) | (vp8_br_read_bit(br, pcat5[3]) << 1) |
+                      vp8_br_read_bit(br, pcat5[4]));
         } else if (token == DCT_CAT6) {
-            abs_val = 67 + ((vp8_br_read_bit(br, pcat6[0]) << 10) | (vp8_br_read_bit(br, pcat6[1]) << 9) |
-                            (vp8_br_read_bit(br, pcat6[2]) << 8) | (vp8_br_read_bit(br, pcat6[3]) << 7) |
-                            (vp8_br_read_bit(br, pcat6[4]) << 6) | (vp8_br_read_bit(br, pcat6[5]) << 5) |
-                            (vp8_br_read_bit(br, pcat6[6]) << 4) | (vp8_br_read_bit(br, pcat6[7]) << 3) |
-                            (vp8_br_read_bit(br, pcat6[8]) << 2) | (vp8_br_read_bit(br, pcat6[9]) << 1) |
-                            vp8_br_read_bit(br, pcat6[10]));
+            abs_val =
+                67 + ((vp8_br_read_bit(br, pcat6[0]) << 10) | (vp8_br_read_bit(br, pcat6[1]) << 9) |
+                      (vp8_br_read_bit(br, pcat6[2]) << 8) | (vp8_br_read_bit(br, pcat6[3]) << 7) |
+                      (vp8_br_read_bit(br, pcat6[4]) << 6) | (vp8_br_read_bit(br, pcat6[5]) << 5) |
+                      (vp8_br_read_bit(br, pcat6[6]) << 4) | (vp8_br_read_bit(br, pcat6[7]) << 3) |
+                      (vp8_br_read_bit(br, pcat6[8]) << 2) | (vp8_br_read_bit(br, pcat6[9]) << 1) |
+                      vp8_br_read_bit(br, pcat6[10]));
         }
 
         if (abs_val) {
@@ -930,8 +890,7 @@ static int decode_block_coeffs(vp8_bool_decoder *br,
 }
 
 static void yuv_to_rgba(const uint8_t *y_plane, const uint8_t *u_plane, const uint8_t *v_plane,
-                        const uint8_t *alpha, int width, int height, int uv_stride,
-                        uint8_t *rgba) {
+                        const uint8_t *alpha, int width, int height, int uv_stride, uint8_t *rgba) {
     for (int y = 0; y < height; y++) {
         int uv_y = (y >> 1) * uv_stride;
         for (int x = 0; x < width; x++) {
@@ -951,10 +910,9 @@ static void yuv_to_rgba(const uint8_t *y_plane, const uint8_t *u_plane, const ui
     }
 }
 
-static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
-                                 const uint8_t *alpha, size_t alpha_size,
-                                 cupidimage_image *out,
-                                 char *err, size_t errcap) {
+static int cupidimage_decode_vp8(const unsigned char *data, size_t size, const uint8_t *alpha,
+                                 size_t alpha_size, cupidimage_image *out, char *err,
+                                 size_t errcap) {
     if (size < 10) {
         set_err(err, errcap, "invalid VP8 frame");
         return 0;
@@ -1121,17 +1079,22 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                 for (int by = 0; by < 4; by++) {
                     for (int bx = 0; bx < 4; bx++) {
                         int idx = by * 4 + bx;
-                        int above_mode = (by == 0) ? above_bmode[mb_x * 4 + bx] : bmode_ptr[idx - 4];
+                        int above_mode =
+                            (by == 0) ? above_bmode[mb_x * 4 + bx] : bmode_ptr[idx - 4];
                         int left_mode = (bx == 0) ? left_bmode[by] : bmode_ptr[idx - 1];
-                        int bmode = vp8_read_tree(&br, bmode_tree, cupidimage_vp8_kf_bmode_prob[above_mode][left_mode]);
+                        int bmode = vp8_read_tree(
+                            &br, bmode_tree, cupidimage_vp8_kf_bmode_prob[above_mode][left_mode]);
                         bmode_ptr[idx] = (uint8_t)bmode;
                     }
                 }
             } else {
                 int fill_mode = B_DC_PRED;
-                if (y_mode == V_PRED) fill_mode = B_VE_PRED;
-                else if (y_mode == H_PRED) fill_mode = B_HE_PRED;
-                else if (y_mode == TM_PRED) fill_mode = B_TM_PRED;
+                if (y_mode == V_PRED)
+                    fill_mode = B_VE_PRED;
+                else if (y_mode == H_PRED)
+                    fill_mode = B_HE_PRED;
+                else if (y_mode == TM_PRED)
+                    fill_mode = B_TM_PRED;
                 for (int i = 0; i < 16; i++) {
                     bmode_ptr[i] = (uint8_t)fill_mode;
                 }
@@ -1214,7 +1177,8 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
             int16_t y2_out[16];
             if (has_y2 && !skip) {
                 int block_idx = 24;
-                int ctx = left_ctx[left_context_index[block_idx]] + above_ctx[mb_x * 9 + above_context_index[block_idx]];
+                int ctx = left_ctx[left_context_index[block_idx]] +
+                          above_ctx[mb_x * 9 + above_context_index[block_idx]];
                 int nonzero = decode_block_coeffs(&br, coeff_probs, 1, ctx, 0, y2_coeffs);
                 left_ctx[left_context_index[block_idx]] = (uint8_t)nonzero;
                 above_ctx[mb_x * 9 + above_context_index[block_idx]] = (uint8_t)nonzero;
@@ -1233,13 +1197,17 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
             uint8_t above_row[16];
             uint8_t left_col[16];
-            uint8_t top_left = get_top_left(y_plane, width, mb_x * 16 - 1, mb_y * 16 - 1, width, height);
-            get_above_row(y_plane, width, mb_x * 16, mb_y * 16 - 1, width, height, 16, 127, above_row);
-            get_left_col(y_plane, width, mb_x * 16 - 1, mb_y * 16, width, height, 16, 129, left_col);
+            uint8_t top_left =
+                get_top_left(y_plane, width, mb_x * 16 - 1, mb_y * 16 - 1, width, height);
+            get_above_row(y_plane, width, mb_x * 16, mb_y * 16 - 1, width, height, 16, 127,
+                          above_row);
+            get_left_col(y_plane, width, mb_x * 16 - 1, mb_y * 16, width, height, 16, 129,
+                         left_col);
 
             uint8_t pred_y[16 * 16];
             if (y_modes[mb_index] != B_PRED) {
-                predict_16x16(pred_y, 16, above_row, left_col, mb_y > 0, mb_x > 0, top_left, y_modes[mb_index]);
+                predict_16x16(pred_y, 16, above_row, left_col, mb_y > 0, mb_x > 0, top_left,
+                              y_modes[mb_index]);
             }
 
             for (int by = 0; by < 4; by++) {
@@ -1248,10 +1216,12 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                     int16_t coeffs[16];
                     int nonzero = 0;
                     if (!skip) {
-                        int ctx = left_ctx[left_context_index[block]] + above_ctx[mb_x * 9 + above_context_index[block]];
+                        int ctx = left_ctx[left_context_index[block]] +
+                                  above_ctx[mb_x * 9 + above_context_index[block]];
                         int start_coeff = has_y2 ? 1 : 0;
                         int block_type = has_y2 ? 0 : 3;
-                        nonzero = decode_block_coeffs(&br, coeff_probs, block_type, ctx, start_coeff, coeffs);
+                        nonzero = decode_block_coeffs(&br, coeff_probs, block_type, ctx,
+                                                      start_coeff, coeffs);
                         if (has_y2) {
                             coeffs[0] = y2_out[block];
                             dequant_block(coeffs, 1, dq->y1_ac, 0);
@@ -1319,8 +1289,10 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
             uint8_t pred_u[64];
             uint8_t pred_v[64];
-            predict_8x8(pred_u, 8, above_u, left_u, mb_y > 0, mb_x > 0, uv_top_left_u, uv_modes[mb_index]);
-            predict_8x8(pred_v, 8, above_v, left_v, mb_y > 0, mb_x > 0, uv_top_left_v, uv_modes[mb_index]);
+            predict_8x8(pred_u, 8, above_u, left_u, mb_y > 0, mb_x > 0, uv_top_left_u,
+                        uv_modes[mb_index]);
+            predict_8x8(pred_v, 8, above_v, left_v, mb_y > 0, mb_x > 0, uv_top_left_v,
+                        uv_modes[mb_index]);
 
             for (int uvb = 0; uvb < 4; uvb++) {
                 int bx = uvb & 1;
@@ -1333,13 +1305,15 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
                 int nonzero_u = 0;
                 int nonzero_v = 0;
                 if (!skip) {
-                    int ctx_u = left_ctx[left_context_index[block_idx_u]] + above_ctx[mb_x * 9 + above_context_index[block_idx_u]];
+                    int ctx_u = left_ctx[left_context_index[block_idx_u]] +
+                                above_ctx[mb_x * 9 + above_context_index[block_idx_u]];
                     nonzero_u = decode_block_coeffs(&br, coeff_probs, 2, ctx_u, 0, coeffs_u);
                     dequant_block(coeffs_u, dq->uv_dc, dq->uv_ac, 1);
                     left_ctx[left_context_index[block_idx_u]] = (uint8_t)nonzero_u;
                     above_ctx[mb_x * 9 + above_context_index[block_idx_u]] = (uint8_t)nonzero_u;
 
-                    int ctx_v = left_ctx[left_context_index[block_idx_v]] + above_ctx[mb_x * 9 + above_context_index[block_idx_v]];
+                    int ctx_v = left_ctx[left_context_index[block_idx_v]] +
+                                above_ctx[mb_x * 9 + above_context_index[block_idx_v]];
                     nonzero_v = decode_block_coeffs(&br, coeff_probs, 2, ctx_v, 0, coeffs_v);
                     dequant_block(coeffs_v, dq->uv_dc, dq->uv_ac, 1);
                     left_ctx[left_context_index[block_idx_v]] = (uint8_t)nonzero_v;
@@ -1401,14 +1375,12 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
 
     if (loop_filter_level > 0) {
         loop_filter_plane(y_plane, width, width, height, mb_cols, mb_rows, seg_ids,
-                          loop_filter_level, sharpness, filter_type,
-                          seg_enabled, seg_abs, seg_lf, 0);
-        loop_filter_plane(u_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids,
-                          loop_filter_level, sharpness, filter_type,
-                          seg_enabled, seg_abs, seg_lf, 1);
-        loop_filter_plane(v_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids,
-                          loop_filter_level, sharpness, filter_type,
-                          seg_enabled, seg_abs, seg_lf, 1);
+                          loop_filter_level, sharpness, filter_type, seg_enabled, seg_abs, seg_lf,
+                          0);
+        loop_filter_plane(u_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids, loop_filter_level,
+                          sharpness, filter_type, seg_enabled, seg_abs, seg_lf, 1);
+        loop_filter_plane(v_plane, uv_w, uv_w, uv_h, mb_cols, mb_rows, seg_ids, loop_filter_level,
+                          sharpness, filter_type, seg_enabled, seg_abs, seg_lf, 1);
     }
 
     yuv_to_rgba(y_plane, u_plane, v_plane, alpha, width, height, uv_w, out->rgba);
@@ -1426,8 +1398,8 @@ static int cupidimage_decode_vp8(const unsigned char *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out,
-                         char *err, size_t errcap) {
+int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
@@ -1532,7 +1504,6 @@ int cupidimage_load_webp(const unsigned char *data, size_t size, cupidimage_imag
     return cupidimage_decode_vp8(vp8, vp8_size, alpha_plane, alpha_plane_size, out, err, errcap);
 }
 
-int cupidimage_load_webp_file(const char *path, cupidimage_image *out,
-                              char *err, size_t errcap) {
+int cupidimage_load_webp_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_webp);
 }

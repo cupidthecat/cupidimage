@@ -1,15 +1,17 @@
 #include "cupidimage.h"
 #include "cupidimage_internal.h"
 
+#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ctype.h>
 
 #ifdef CUPIDIMAGE_JPEG_DEBUG
 #define JPEG_DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
-#define JPEG_DEBUG(...) do { } while (0)
+#define JPEG_DEBUG(...)                                                                            \
+    do {                                                                                           \
+    } while (0)
 #endif
 
 static void set_err(char *err, size_t errcap, const char *msg) {
@@ -82,108 +84,66 @@ typedef struct jpeg_bitstream {
     int marker;
 } jpeg_bitstream;
 
-static const uint8_t zigzag[64] = {
-    0, 1, 8, 16, 9, 2, 3, 10,
-    17, 24, 32, 25, 18, 11, 4, 5,
-    12, 19, 26, 33, 40, 48, 41, 34,
-    27, 20, 13, 6, 7, 14, 21, 28,
-    35, 42, 49, 56, 57, 50, 43, 36,
-    29, 22, 15, 23, 30, 37, 44, 51,
-    58, 59, 52, 45, 38, 31, 39, 46,
-    53, 60, 61, 54, 47, 55, 62, 63
-};
+static const uint8_t zigzag[64] = {0,  1,  8,  16, 9,  2,  3,  10, 17, 24, 32, 25, 18, 11, 4,  5,
+                                   12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6,  7,  14, 21, 28,
+                                   35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
+                                   58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63};
 
-static const uint8_t std_dc_luminance_bits[16] = {
-    0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01,
-    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+static const uint8_t std_dc_luminance_bits[16] = {0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01,
+                                                  0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-static const uint8_t std_dc_luminance_val[12] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
-    0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B
-};
+static const uint8_t std_dc_luminance_val[12] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                                 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B};
 
-static const uint8_t std_ac_luminance_bits[16] = {
-    0x00, 0x02, 0x01, 0x03, 0x03, 0x02, 0x04, 0x03,
-    0x05, 0x05, 0x04, 0x04, 0x00, 0x00, 0x01, 0x7D
-};
+static const uint8_t std_ac_luminance_bits[16] = {0x00, 0x02, 0x01, 0x03, 0x03, 0x02, 0x04, 0x03,
+                                                  0x05, 0x05, 0x04, 0x04, 0x00, 0x00, 0x01, 0x7D};
 
 static const uint8_t std_ac_luminance_val[162] = {
-    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
-    0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
-    0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08,
-    0x23, 0x42, 0xB1, 0xC1, 0x15, 0x52, 0xD1, 0xF0,
-    0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0A, 0x16,
-    0x17, 0x18, 0x19, 0x1A, 0x25, 0x26, 0x27, 0x28,
-    0x29, 0x2A, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-    0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
-    0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59,
-    0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69,
-    0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
-    0x7A, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89,
-    0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
-    0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7,
-    0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6,
-    0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5,
-    0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3, 0xD4,
-    0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2,
-    0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA,
-    0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8,
-    0xF9, 0xFA
-};
+    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61,
+    0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08, 0x23, 0x42, 0xB1, 0xC1, 0x15, 0x52,
+    0xD1, 0xF0, 0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0A, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x25,
+    0x26, 0x27, 0x28, 0x29, 0x2A, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45,
+    0x46, 0x47, 0x48, 0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x63, 0x64,
+    0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x83,
+    0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99,
+    0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6,
+    0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3,
+    0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8,
+    0xE9, 0xEA, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA};
 
-static const uint8_t std_dc_chrominance_bits[16] = {
-    0x00, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+static const uint8_t std_dc_chrominance_bits[16] = {0x00, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                                                    0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-static const uint8_t std_dc_chrominance_val[12] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
-    0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B
-};
+static const uint8_t std_dc_chrominance_val[12] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                                   0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B};
 
-static const uint8_t std_ac_chrominance_bits[16] = {
-    0x00, 0x02, 0x01, 0x02, 0x04, 0x04, 0x03, 0x04,
-    0x07, 0x05, 0x04, 0x04, 0x00, 0x01, 0x02, 0x77
-};
+static const uint8_t std_ac_chrominance_bits[16] = {0x00, 0x02, 0x01, 0x02, 0x04, 0x04, 0x03, 0x04,
+                                                    0x07, 0x05, 0x04, 0x04, 0x00, 0x01, 0x02, 0x77};
 
 static const uint8_t std_ac_chrominance_val[162] = {
-    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
-    0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
-    0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
-    0xA1, 0xB1, 0xC1, 0x09, 0x23, 0x33, 0x52, 0xF0,
-    0x15, 0x62, 0x72, 0xD1, 0x0A, 0x16, 0x24, 0x34,
-    0xE1, 0x25, 0xF1, 0x17, 0x18, 0x19, 0x1A, 0x26,
-    0x27, 0x28, 0x29, 0x2A, 0x35, 0x36, 0x37, 0x38,
-    0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
-    0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
-    0x59, 0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68,
-    0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
-    0x79, 0x7A, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-    0x88, 0x89, 0x8A, 0x92, 0x93, 0x94, 0x95, 0x96,
-    0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5,
-    0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4,
-    0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3,
-    0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2,
-    0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA,
-    0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9,
-    0xEA, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8,
-    0xF9, 0xFA
-};
+    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61,
+    0x71, 0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91, 0xA1, 0xB1, 0xC1, 0x09, 0x23, 0x33,
+    0x52, 0xF0, 0x15, 0x62, 0x72, 0xD1, 0x0A, 0x16, 0x24, 0x34, 0xE1, 0x25, 0xF1, 0x17, 0x18,
+    0x19, 0x1A, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44,
+    0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x63,
+    0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A,
+    0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+    0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4,
+    0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA,
+    0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7,
+    0xE8, 0xE9, 0xEA, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA};
 
 #define IDCT_BITS 14
 #define IDCT_SHIFT (IDCT_BITS * 2 + 2)
 
-static const int16_t idct_tab[8][8] = {
-    { 11585,  11585,  11585,  11585,  11585,  11585,  11585,  11585},
-    { 16069,  13623,   9102,   3196,  -3196,  -9102, -13623, -16069},
-    { 15137,   6270,  -6270, -15137, -15137,  -6270,   6270,  15137},
-    { 13623,  -3196, -16069,  -9102,   9102,  16069,   3196, -13623},
-    { 11585, -11585, -11585,  11585,  11585, -11585, -11585,  11585},
-    {  9102, -16069,   3196,  13623, -13623,  -3196,  16069,  -9102},
-    {  6270, -15137,  15137,  -6270,  -6270,  15137, -15137,   6270},
-    {  3196,  -9102,  13623, -16069,  16069, -13623,   9102,  -3196}
-};
+static const int16_t idct_tab[8][8] = {{11585, 11585, 11585, 11585, 11585, 11585, 11585, 11585},
+                                       {16069, 13623, 9102, 3196, -3196, -9102, -13623, -16069},
+                                       {15137, 6270, -6270, -15137, -15137, -6270, 6270, 15137},
+                                       {13623, -3196, -16069, -9102, 9102, 16069, 3196, -13623},
+                                       {11585, -11585, -11585, 11585, 11585, -11585, -11585, 11585},
+                                       {9102, -16069, 3196, 13623, -13623, -3196, 16069, -9102},
+                                       {6270, -15137, 15137, -6270, -6270, 15137, -15137, 6270},
+                                       {3196, -9102, 13623, -16069, 16069, -13623, 9102, -3196}};
 
 static void idct_8x8(const int32_t *block, uint8_t *out, int stride) {
     for (int y = 0; y < 8; y++) {
@@ -197,24 +157,29 @@ static void idct_8x8(const int32_t *block, uint8_t *out, int stride) {
             }
             int val = (int)((sum + ((int64_t)1 << (IDCT_SHIFT - 1))) >> IDCT_SHIFT);
             val += 128;
-            if (val < 0) val = 0;
-            if (val > 255) val = 255;
+            if (val < 0)
+                val = 0;
+            if (val > 255)
+                val = 255;
             out[y * stride + x] = (uint8_t)val;
         }
     }
 }
 
 static int huff_build(jpeg_huff *h, const uint8_t *bits, const uint8_t *vals, int num) {
-    if (num < 1 || num > 256) return 0;
+    if (num < 1 || num > 256)
+        return 0;
     int slots = 1;
     int total = 0;
     for (int i = 0; i < 16; i++) {
         slots = slots * 2 - bits[i];
         total += bits[i];
         /* JPEG reserves the all-ones code for entropy padding. */
-        if (slots <= 0) return 0;
+        if (slots <= 0)
+            return 0;
     }
-    if (total != num) return 0;
+    if (total != num)
+        return 0;
     memcpy(h->bits, bits, 16);
     memcpy(h->huffval, vals, (size_t)num);
     h->num = num;
@@ -367,8 +332,8 @@ static int receive_extend(jpeg_bitstream *bs, int s, int *ok) {
     return v;
 }
 
-static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff *ac,
-                        const int *qt, int *dc_pred, int32_t *block) {
+static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff *ac, const int *qt,
+                        int *dc_pred, int32_t *block) {
     for (int i = 0; i < 64; i++) {
         block[i] = 0;
     }
@@ -399,7 +364,8 @@ static int decode_block(jpeg_bitstream *bs, const jpeg_huff *dc, const jpeg_huff
         }
         int run = sym >> 4;
         int size = sym & 0x0F;
-        if (size == 0 || size > 10) return 0;
+        if (size == 0 || size > 10)
+            return 0;
         k += run;
         if (k >= 64) {
             return 0;
@@ -443,8 +409,8 @@ static int consume_restart(jpeg_bitstream *bs, int expected) {
     return 1;
 }
 
-static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc,
-                           int al, int32_t *block) {
+static int decode_dc_first(jpeg_bitstream *bs, jpeg_comp *c, const jpeg_huff *dc, int al,
+                           int32_t *block) {
     int sym = 0;
     if (!huff_decode(bs, dc, &sym) || sym > 11) {
         return 0;
@@ -472,9 +438,8 @@ static int decode_dc_refine(jpeg_bitstream *bs, int al, int32_t *block) {
     return 1;
 }
 
-static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac,
-                           int ss, int se, int al, int32_t *block,
-                           int *eobrun) {
+static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac, int ss, int se, int al,
+                           int32_t *block, int *eobrun) {
     int k = ss;
     if (*eobrun > 0) {
         (*eobrun)--;
@@ -487,7 +452,8 @@ static int decode_ac_first(jpeg_bitstream *bs, const jpeg_huff *ac,
         }
         int run = sym >> 4;
         int size = sym & 0x0F;
-        if (size > 10) return 0;
+        if (size > 10)
+            return 0;
         if (size == 0) {
             if (run == 15) {
                 k += 16;
@@ -529,9 +495,8 @@ static int refine_coeff(jpeg_bitstream *bs, int32_t *coef, int p1) {
     return 1;
 }
 
-static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac,
-                            int ss, int se, int al, int32_t *block,
-                            int *eobrun) {
+static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac, int ss, int se, int al,
+                            int32_t *block, int *eobrun) {
     int p1 = 1 << al;
     int p2 = -p1;
 
@@ -613,18 +578,13 @@ static int decode_ac_refine(jpeg_bitstream *bs, const jpeg_huff *ac,
     return 1;
 }
 
-static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
-                                        jpeg_comp *comps, int num_comp,
-                                        const int *scan_comp, int scan_count,
-                                        int ss, int se, int ah, int al,
-                                        int width, int height,
-                                        int mcu_cols, int mcu_rows,
-                                        int hmax, int vmax,
-                                        const jpeg_huff dc_tables[4],
-                                        const jpeg_huff ac_tables[4],
-                                        int restart_interval,
-                                        size_t *consumed,
-                                        char *err, size_t errcap) {
+static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size, jpeg_comp *comps,
+                                        int num_comp, const int *scan_comp, int scan_count, int ss,
+                                        int se, int ah, int al, int width, int height, int mcu_cols,
+                                        int mcu_rows, int hmax, int vmax,
+                                        const jpeg_huff dc_tables[4], const jpeg_huff ac_tables[4],
+                                        int restart_interval, size_t *consumed, char *err,
+                                        size_t errcap) {
     jpeg_bitstream bs;
     bs.data = data;
     bs.size = size;
@@ -639,8 +599,8 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
             set_err(err, errcap, "invalid scan component");
             return 0;
         }
-        if (comps[ci].dc_table < 0 || comps[ci].dc_table > 3 ||
-            comps[ci].ac_table < 0 || comps[ci].ac_table > 3) {
+        if (comps[ci].dc_table < 0 || comps[ci].dc_table > 3 || comps[ci].ac_table < 0 ||
+            comps[ci].ac_table > 3) {
             set_err(err, errcap, "invalid huffman table");
             return 0;
         }
@@ -687,14 +647,14 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                     }
                 } else {
                     if (ah == 0) {
-                        if (!decode_ac_first(&bs, &ac_tables[c->ac_table],
-                                             ss, se, al, block, &eobrun)) {
+                        if (!decode_ac_first(&bs, &ac_tables[c->ac_table], ss, se, al, block,
+                                             &eobrun)) {
                             set_err(err, errcap, "jpeg decode failed");
                             return 0;
                         }
                     } else {
-                        if (!decode_ac_refine(&bs, &ac_tables[c->ac_table],
-                                              ss, se, al, block, &eobrun)) {
+                        if (!decode_ac_refine(&bs, &ac_tables[c->ac_table], ss, se, al, block,
+                                              &eobrun)) {
                             set_err(err, errcap, "jpeg decode failed");
                             return 0;
                         }
@@ -726,11 +686,11 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                         for (int bx = 0; bx < c->h; bx++) {
                             int block_x = mx * c->h + bx;
                             int block_y = my * c->v + by;
-                            int32_t *block = c->coeffs +
-                                ((block_y * c->blocks_w + block_x) * 64);
+                            int32_t *block = c->coeffs + ((block_y * c->blocks_w + block_x) * 64);
                             if (ss == 0 && se == 0) {
                                 if (ah == 0) {
-                                    if (!decode_dc_first(&bs, c, &dc_tables[c->dc_table], al, block)) {
+                                    if (!decode_dc_first(&bs, c, &dc_tables[c->dc_table], al,
+                                                         block)) {
                                         set_err(err, errcap, "jpeg decode failed");
                                         return 0;
                                     }
@@ -742,14 +702,14 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
                                 }
                             } else {
                                 if (ah == 0) {
-                                    if (!decode_ac_first(&bs, &ac_tables[c->ac_table],
-                                                         ss, se, al, block, &eobrun)) {
+                                    if (!decode_ac_first(&bs, &ac_tables[c->ac_table], ss, se, al,
+                                                         block, &eobrun)) {
                                         set_err(err, errcap, "jpeg decode failed");
                                         return 0;
                                     }
                                 } else {
-                                    if (!decode_ac_refine(&bs, &ac_tables[c->ac_table],
-                                                          ss, se, al, block, &eobrun)) {
+                                    if (!decode_ac_refine(&bs, &ac_tables[c->ac_table], ss, se, al,
+                                                          block, &eobrun)) {
                                         set_err(err, errcap, "jpeg decode failed");
                                         return 0;
                                     }
@@ -785,13 +745,9 @@ static int jpeg_decode_progressive_scan(const uint8_t *data, size_t size,
     return 1;
 }
 
-static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
-                                   int width, int height,
-                                   int mcu_cols, int mcu_rows,
-                                   int hmax, int vmax,
-                                   int qtables[4][64],
-                                   int adobe_transform,
-                                   cupidimage_image *out,
+static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp, int width, int height,
+                                   int mcu_cols, int mcu_rows, int hmax, int vmax,
+                                   int qtables[4][64], int adobe_transform, cupidimage_image *out,
                                    char *err, size_t errcap) {
     size_t rgba_size = (size_t)width * (size_t)height * 4u;
     if (rgba_size / 4u != (size_t)width * (size_t)height) {
@@ -821,10 +777,14 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
     int idx_cr = (num_comp > 2) ? 2 : 0;
     int idx_k = (num_comp > 3) ? 3 : 0;
     for (int i = 0; i < num_comp; i++) {
-        if (comps[i].id == 1) idx_y = i;
-        if (comps[i].id == 2) idx_cb = i;
-        if (comps[i].id == 3) idx_cr = i;
-        if (comps[i].id == 4) idx_k = i;
+        if (comps[i].id == 1)
+            idx_y = i;
+        if (comps[i].id == 2)
+            idx_cb = i;
+        if (comps[i].id == 3)
+            idx_cr = i;
+        if (comps[i].id == 4)
+            idx_k = i;
     }
 
     int32_t deq[64];
@@ -839,15 +799,13 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
                     for (int bx = 0; bx < c->h; bx++) {
                         int block_x = mx * c->h + bx;
                         int block_y = my * c->v + by;
-                        int32_t *block = c->coeffs +
-                            ((block_y * c->blocks_w + block_x) * 64);
+                        int32_t *block = c->coeffs + ((block_y * c->blocks_w + block_x) * 64);
                         for (int i = 0; i < 64; i++) {
                             deq[i] = block[i] * qtables[c->tq][i];
                         }
                         idct_8x8(deq, block_out, 8);
                         for (int y = 0; y < 8; y++) {
-                            memcpy(&comp_buf[ci][(by * 8 + y) * cw + bx * 8],
-                                   &block_out[y * 8], 8);
+                            memcpy(&comp_buf[ci][(by * 8 + y) * cw + bx * 8], &block_out[y * 8], 8);
                         }
                     }
                 }
@@ -897,12 +855,18 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
                         int gtmp = Y - ((22554 * Cb + 46802 * Cr) >> 16);
                         int btmp = Y + ((116130 * Cb) >> 16);
 
-                        if (rtmp < 0) rtmp = 0;
-                        if (rtmp > 255) rtmp = 255;
-                        if (gtmp < 0) gtmp = 0;
-                        if (gtmp > 255) gtmp = 255;
-                        if (btmp < 0) btmp = 0;
-                        if (btmp > 255) btmp = 255;
+                        if (rtmp < 0)
+                            rtmp = 0;
+                        if (rtmp > 255)
+                            rtmp = 255;
+                        if (gtmp < 0)
+                            gtmp = 0;
+                        if (gtmp > 255)
+                            gtmp = 255;
+                        if (btmp < 0)
+                            btmp = 0;
+                        if (btmp > 255)
+                            btmp = 255;
 
                         r = (uint8_t)rtmp;
                         g = (uint8_t)gtmp;
@@ -936,19 +900,28 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
                             int gtmp = Y - ((22554 * Cb + 46802 * Cr) >> 16);
                             int btmp = Y + ((116130 * Cb) >> 16);
 
-                            if (rtmp < 0) rtmp = 0;
-                            if (rtmp > 255) rtmp = 255;
-                            if (gtmp < 0) gtmp = 0;
-                            if (gtmp > 255) gtmp = 255;
-                            if (btmp < 0) btmp = 0;
-                            if (btmp > 255) btmp = 255;
+                            if (rtmp < 0)
+                                rtmp = 0;
+                            if (rtmp > 255)
+                                rtmp = 255;
+                            if (gtmp < 0)
+                                gtmp = 0;
+                            if (gtmp > 255)
+                                gtmp = 255;
+                            if (btmp < 0)
+                                btmp = 0;
+                            if (btmp > 255)
+                                btmp = 255;
 
                             int r2 = rtmp - k;
                             int g2 = gtmp - k;
                             int b2 = btmp - k;
-                            if (r2 < 0) r2 = 0;
-                            if (g2 < 0) g2 = 0;
-                            if (b2 < 0) b2 = 0;
+                            if (r2 < 0)
+                                r2 = 0;
+                            if (g2 < 0)
+                                g2 = 0;
+                            if (b2 < 0)
+                                b2 = 0;
                             r = (uint8_t)r2;
                             g = (uint8_t)g2;
                             b = (uint8_t)b2;
@@ -960,12 +933,18 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
                             int r2 = 255 - (c + k);
                             int g2 = 255 - (m + k);
                             int b2 = 255 - (yv + k);
-                            if (r2 < 0) r2 = 0;
-                            if (g2 < 0) g2 = 0;
-                            if (b2 < 0) b2 = 0;
-                            if (r2 > 255) r2 = 255;
-                            if (g2 > 255) g2 = 255;
-                            if (b2 > 255) b2 = 255;
+                            if (r2 < 0)
+                                r2 = 0;
+                            if (g2 < 0)
+                                g2 = 0;
+                            if (b2 < 0)
+                                b2 = 0;
+                            if (r2 > 255)
+                                r2 = 255;
+                            if (g2 > 255)
+                                g2 = 255;
+                            if (b2 > 255)
+                                b2 = 255;
                             r = (uint8_t)r2;
                             g = (uint8_t)g2;
                             b = (uint8_t)b2;
@@ -988,19 +967,11 @@ static int jpeg_progressive_finish(jpeg_comp *comps, int num_comp,
     return 1;
 }
 
-static int jpeg_decode_scan(const uint8_t *data, size_t size,
-                            jpeg_comp *comps, int num_comp,
-                            const int *scan_comp,
-                            int width, int height,
-                            int hmax, int vmax,
-                            int qtables[4][64],
-                            const jpeg_huff dc_tables[4],
-                            const jpeg_huff ac_tables[4],
-                            int restart_interval,
-                            int adobe_transform,
-                            size_t *consumed,
-                            cupidimage_image *out,
-                            char *err, size_t errcap) {
+static int jpeg_decode_scan(const uint8_t *data, size_t size, jpeg_comp *comps, int num_comp,
+                            const int *scan_comp, int width, int height, int hmax, int vmax,
+                            int qtables[4][64], const jpeg_huff dc_tables[4],
+                            const jpeg_huff ac_tables[4], int restart_interval, int adobe_transform,
+                            size_t *consumed, cupidimage_image *out, char *err, size_t errcap) {
     jpeg_bitstream bs;
     bs.data = data;
     bs.size = size;
@@ -1047,10 +1018,14 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
     int idx_cr = (num_comp > 2) ? 2 : 0;
     int idx_k = (num_comp > 3) ? 3 : 0;
     for (int i = 0; i < num_comp; i++) {
-        if (comps[i].id == 1) idx_y = i;
-        if (comps[i].id == 2) idx_cb = i;
-        if (comps[i].id == 3) idx_cr = i;
-        if (comps[i].id == 4) idx_k = i;
+        if (comps[i].id == 1)
+            idx_y = i;
+        if (comps[i].id == 2)
+            idx_cb = i;
+        if (comps[i].id == 3)
+            idx_cr = i;
+        if (comps[i].id == 4)
+            idx_k = i;
     }
 
     int32_t block[64];
@@ -1068,20 +1043,15 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
 
                 for (int by = 0; by < c->v; by++) {
                     for (int bx = 0; bx < c->h; bx++) {
-                        if (!decode_block(&bs,
-                                          &dc_tables[c->dc_table],
-                                          &ac_tables[c->ac_table],
-                                          qtables[c->tq],
-                                          &c->dc_pred,
-                                          block)) {
+                        if (!decode_block(&bs, &dc_tables[c->dc_table], &ac_tables[c->ac_table],
+                                          qtables[c->tq], &c->dc_pred, block)) {
                             free(rgba);
                             set_err(err, errcap, "jpeg decode failed");
                             return 0;
                         }
                         idct_8x8(block, block_out, 8);
                         for (int y = 0; y < 8; y++) {
-                            memcpy(&comp_buf[ci][(by * 8 + y) * cw + bx * 8],
-                                   &block_out[y * 8], 8);
+                            memcpy(&comp_buf[ci][(by * 8 + y) * cw + bx * 8], &block_out[y * 8], 8);
                         }
                     }
                 }
@@ -1131,12 +1101,18 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
                         int gtmp = Y - ((22554 * Cb + 46802 * Cr) >> 16);
                         int btmp = Y + ((116130 * Cb) >> 16);
 
-                        if (rtmp < 0) rtmp = 0;
-                        if (rtmp > 255) rtmp = 255;
-                        if (gtmp < 0) gtmp = 0;
-                        if (gtmp > 255) gtmp = 255;
-                        if (btmp < 0) btmp = 0;
-                        if (btmp > 255) btmp = 255;
+                        if (rtmp < 0)
+                            rtmp = 0;
+                        if (rtmp > 255)
+                            rtmp = 255;
+                        if (gtmp < 0)
+                            gtmp = 0;
+                        if (gtmp > 255)
+                            gtmp = 255;
+                        if (btmp < 0)
+                            btmp = 0;
+                        if (btmp > 255)
+                            btmp = 255;
 
                         r = (uint8_t)rtmp;
                         g = (uint8_t)gtmp;
@@ -1170,19 +1146,28 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
                             int gtmp = Y - ((22554 * Cb + 46802 * Cr) >> 16);
                             int btmp = Y + ((116130 * Cb) >> 16);
 
-                            if (rtmp < 0) rtmp = 0;
-                            if (rtmp > 255) rtmp = 255;
-                            if (gtmp < 0) gtmp = 0;
-                            if (gtmp > 255) gtmp = 255;
-                            if (btmp < 0) btmp = 0;
-                            if (btmp > 255) btmp = 255;
+                            if (rtmp < 0)
+                                rtmp = 0;
+                            if (rtmp > 255)
+                                rtmp = 255;
+                            if (gtmp < 0)
+                                gtmp = 0;
+                            if (gtmp > 255)
+                                gtmp = 255;
+                            if (btmp < 0)
+                                btmp = 0;
+                            if (btmp > 255)
+                                btmp = 255;
 
                             int r2 = rtmp - k;
                             int g2 = gtmp - k;
                             int b2 = btmp - k;
-                            if (r2 < 0) r2 = 0;
-                            if (g2 < 0) g2 = 0;
-                            if (b2 < 0) b2 = 0;
+                            if (r2 < 0)
+                                r2 = 0;
+                            if (g2 < 0)
+                                g2 = 0;
+                            if (b2 < 0)
+                                b2 = 0;
                             r = (uint8_t)r2;
                             g = (uint8_t)g2;
                             b = (uint8_t)b2;
@@ -1194,12 +1179,18 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
                             int r2 = 255 - (c + k);
                             int g2 = 255 - (m + k);
                             int b2 = 255 - (yv + k);
-                            if (r2 < 0) r2 = 0;
-                            if (g2 < 0) g2 = 0;
-                            if (b2 < 0) b2 = 0;
-                            if (r2 > 255) r2 = 255;
-                            if (g2 > 255) g2 = 255;
-                            if (b2 > 255) b2 = 255;
+                            if (r2 < 0)
+                                r2 = 0;
+                            if (g2 < 0)
+                                g2 = 0;
+                            if (b2 < 0)
+                                b2 = 0;
+                            if (r2 > 255)
+                                r2 = 255;
+                            if (g2 > 255)
+                                g2 = 255;
+                            if (b2 > 255)
+                                b2 = 255;
                             r = (uint8_t)r2;
                             g = (uint8_t)g2;
                             b = (uint8_t)b2;
@@ -1242,8 +1233,8 @@ static int jpeg_decode_scan(const uint8_t *data, size_t size,
     return 1;
 }
 
-int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out,
-                         char *err, size_t errcap) {
+int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                         size_t errcap) {
     jpeg_huff dc_tables[4] = {0};
     jpeg_huff ac_tables[4] = {0};
     int qtables[4][64];
@@ -1354,8 +1345,8 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             int ah_al = data[pos++];
             int ah = (ah_al >> 4) & 0x0F;
             int al = ah_al & 0x0F;
-            JPEG_DEBUG("jpeg: SOS ns=%d ss=%d se=%d ah=%d al=%d progressive=%d\n",
-                       ns, ss, se, ah, al, progressive);
+            JPEG_DEBUG("jpeg: SOS ns=%d ss=%d se=%d ah=%d al=%d progressive=%d\n", ns, ss, se, ah,
+                       al, progressive);
             if (pos != hdr_end) {
                 set_err(err, errcap, "invalid SOS length");
                 goto fail;
@@ -1377,18 +1368,10 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                     set_err(err, errcap, "unsupported JPEG scan");
                     goto fail;
                 }
-                if (!jpeg_decode_scan(data + pos, size - pos,
-                                      comps, num_comp,
-                                      scan_comp,
-                                      width, height,
-                                      hmax, vmax,
-                                      qtables,
-                                      dc_tables, ac_tables,
-                                      restart_interval,
-                                      adobe_transform,
-                                      &consumed,
-                                      out,
-                                      err, errcap)) {
+                if (!jpeg_decode_scan(data + pos, size - pos, comps, num_comp, scan_comp, width,
+                                      height, hmax, vmax, qtables, dc_tables, ac_tables,
+                                      restart_interval, adobe_transform, &consumed, out, err,
+                                      errcap)) {
                     goto fail;
                 }
                 JPEG_DEBUG("jpeg: baseline scan consumed %zu bytes\n", consumed);
@@ -1406,17 +1389,10 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                 }
             }
 
-            if (!jpeg_decode_progressive_scan(data + pos, size - pos,
-                                              comps, num_comp,
-                                              scan_comp, ns,
-                                              ss, se, ah, al,
-                                              width, height,
-                                              mcu_cols, mcu_rows,
-                                              hmax, vmax,
-                                              dc_tables, ac_tables,
-                                              restart_interval,
-                                              &consumed,
-                                              err, errcap)) {
+            if (!jpeg_decode_progressive_scan(data + pos, size - pos, comps, num_comp, scan_comp,
+                                              ns, ss, se, ah, al, width, height, mcu_cols, mcu_rows,
+                                              hmax, vmax, dc_tables, ac_tables, restart_interval,
+                                              &consumed, err, errcap)) {
                 goto fail;
             }
             JPEG_DEBUG("jpeg: progressive scan consumed %zu bytes\n", consumed);
@@ -1514,7 +1490,8 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
             }
         } else if (marker == 0xEE) {
             if (length >= 14) {
-                if (seg[0] == 'A' && seg[1] == 'd' && seg[2] == 'o' && seg[3] == 'b' && seg[4] == 'e') {
+                if (seg[0] == 'A' && seg[1] == 'd' && seg[2] == 'o' && seg[3] == 'b' &&
+                    seg[4] == 'e') {
                     adobe_transform = seg[11];
                     JPEG_DEBUG("jpeg: Adobe APP14 transform=%d\n", adobe_transform);
                 }
@@ -1569,8 +1546,10 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
                     set_err(err, errcap, "invalid sampling factors");
                     goto fail;
                 }
-                if (comps[i].h > hmax) hmax = comps[i].h;
-                if (comps[i].v > vmax) vmax = comps[i].v;
+                if (comps[i].h > hmax)
+                    hmax = comps[i].h;
+                if (comps[i].v > vmax)
+                    vmax = comps[i].v;
             }
             if (hmax > 2 || vmax > 2) {
                 set_err(err, errcap, "unsupported sampling factors");
@@ -1610,14 +1589,8 @@ int cupidimage_load_jpeg(const unsigned char *data, size_t size, cupidimage_imag
     }
 
     if (progressive && saw_sos) {
-        if (!jpeg_progressive_finish(comps, num_comp,
-                                     width, height,
-                                     mcu_cols, mcu_rows,
-                                     hmax, vmax,
-                                     qtables,
-                                     adobe_transform,
-                                     out,
-                                     err, errcap)) {
+        if (!jpeg_progressive_finish(comps, num_comp, width, height, mcu_cols, mcu_rows, hmax, vmax,
+                                     qtables, adobe_transform, out, err, errcap)) {
             goto fail;
         }
         if (coeffs_allocated) {
@@ -1637,19 +1610,18 @@ fail:
     return 0;
 }
 
-int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out,
-                              char *err, size_t errcap) {
+int cupidimage_load_jpeg_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_jpeg);
 }
 
-int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out,
-                          char *err, size_t errcap) {
+int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
+                          size_t errcap) {
     if (!data || !out) {
         set_err(err, errcap, "invalid arguments");
         return 0;
     }
-    if (size >= 6 && data[0] == 0 && data[1] == 0 &&
-        (data[2] == 1 || data[2] == 2) && data[3] == 0) {
+    if (size >= 6 && data[0] == 0 && data[1] == 0 && (data[2] == 1 || data[2] == 2) &&
+        data[3] == 0) {
         uint16_t count = (uint16_t)(data[4] | (data[5] << 8));
         if (count > 0 && 6u + (size_t)count * 16u <= size) {
             return cupidimage_load_ico(data, size, out, err, errcap);
@@ -1685,7 +1657,8 @@ int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_ima
         uint16_t width = (uint16_t)(data[12] | (data[13] << 8));
         uint16_t height = (uint16_t)(data[14] | (data[15] << 8));
         uint8_t depth = data[16];
-        int depth_ok = (depth == 0 || depth == 8 || depth == 15 || depth == 16 || depth == 24 || depth == 32);
+        int depth_ok =
+            (depth == 0 || depth == 8 || depth == 15 || depth == 16 || depth == 24 || depth == 32);
         if (color_map_type <= 1 && type <= 11 && depth_ok) {
             if (type == 0 || (width > 0 && height > 0)) {
                 return cupidimage_load_tga(data, size, out, err, errcap);
@@ -1706,7 +1679,6 @@ int cupidimage_load_image(const unsigned char *data, size_t size, cupidimage_ima
     return 0;
 }
 
-int cupidimage_load_image_file(const char *path, cupidimage_image *out,
-                               char *err, size_t errcap) {
+int cupidimage_load_image_file(const char *path, cupidimage_image *out, char *err, size_t errcap) {
     return cupidimage_load_image_file_via_memory(path, out, err, errcap, cupidimage_load_image);
 }

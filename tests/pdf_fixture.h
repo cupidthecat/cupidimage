@@ -14,15 +14,16 @@ typedef struct {
 
 static void test_pdf_append(test_pdf_buffer *pdf, const void *data, size_t size) {
     assert(size <= sizeof(pdf->data) - pdf->size);
-    if (size) memcpy(pdf->data + pdf->size, data, size);
+    if (size)
+        memcpy(pdf->data + pdf->size, data, size);
     pdf->size += size;
 }
 
 static void test_pdf_format(test_pdf_buffer *pdf, const char *format, ...) {
     va_list args;
     va_start(args, format);
-    int size = vsnprintf((char *)pdf->data + pdf->size, sizeof(pdf->data) - pdf->size,
-                         format, args);
+    int size =
+        vsnprintf((char *)pdf->data + pdf->size, sizeof(pdf->data) - pdf->size, format, args);
     va_end(args);
     assert(size >= 0 && (size_t)size < sizeof(pdf->data) - pdf->size);
     pdf->size += (size_t)size;
@@ -46,7 +47,8 @@ static test_pdf_buffer test_make_pdf(const void *content, size_t size, int flate
     test_pdf_format(&pdf, "\nendstream\nendobj\n");
     size_t xref = pdf.size;
     test_pdf_format(&pdf, "xref\n0 5\n0000000000 65535 f \n");
-    for (unsigned i = 1; i < 5; i++) test_pdf_format(&pdf, "%010zu 00000 n \n", offsets[i]);
+    for (unsigned i = 1; i < 5; i++)
+        test_pdf_format(&pdf, "%010zu 00000 n \n", offsets[i]);
     test_pdf_format(&pdf, "trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n%zu\n%%%%EOF\n", xref);
     return pdf;
 }
