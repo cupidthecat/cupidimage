@@ -105,7 +105,9 @@ typedef struct {
     pdf_icc_profile *icc;
     pdf_tint *tint;
     const unsigned char *palette;
-    int calibrated; /* 0: device; 1: CalGray; 2: CalRGB; 3: Lab. */
+    int calibrated;       /* 0: device; 1: CalGray; 2: CalRGB; 3: Lab. */
+    int encoded_transfer; /* Source-only: 1 sRGB, 2 ROMM RGB, 3 extended Lab ranges, 4 sYCC. */
+    double source_range[6], source_matrix[9];
     double white[3], gamma[3], matrix[9], adaptation[9], lab_range[4];
 } pdf_image_colors;
 
@@ -342,6 +344,9 @@ int cupidimage_pdf_empty_color(const pdf_image_colors *, const pdf_pattern *);
 void cupidimage_pdf_device_color(const double values[4], int components, int gray, double out[3]);
 int cupidimage_pdf_calibrated_output(pdf_image_colors *);
 int cupidimage_pdf_icc_space(const pdf_render_state *, pdf_object_id, pdf_image_colors *);
+/* Raw embedded profiles: 1 supported, 0 unsupported, -1 resource failure. */
+int cupidimage_pdf_icc_bytes(const pdf_render_state *, const unsigned char *, size_t, unsigned,
+                             pdf_image_colors *);
 void cupidimage_pdf_calibrated_xyz(const pdf_image_colors *, const double[4], double[3]);
 void cupidimage_pdf_xyz_color(const pdf_image_colors *, const double[3], int, double[3]);
 int cupidimage_pdf_icc_color(const pdf_icc_profile *, const double[4], int, int, double[3]);

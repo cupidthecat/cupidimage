@@ -1,4 +1,4 @@
-# PDF images and DCT samples
+# PDF images and compressed samples
 
 Image XObjects and inline images pass decoded samples through PDF color and mask
 processing before compositing. A file loading successfully does not establish
@@ -13,7 +13,8 @@ big-endian 16-bit samples in the supported device, CalGray/CalRGB/Lab, supported
 See [PDF colors](pdf-colors.md) for conversion order and remaining limits.
 Flate, LZW, ASCIIHex, ASCII85, RunLength and CCITT byte filters share the stream
 pipeline. DCTDecode can follow those filters instead of requiring a standalone
-JPEG stream. Filter arrays may contain up to eight stages.
+JPEG stream. [JPXDecode](pdf-jpeg2000.md) retains JPEG 2000 component planes,
+palettes and encoded alpha until image painting. Filter arrays may contain up to eight stages.
 
 Filter names, DecodeParms arrays/dictionaries and their controls can be indirect.
 Null parameters retain their defaults. Each stage reads only its own controls;
@@ -100,10 +101,11 @@ interleaved and separate scans. Every component must be supplied exactly once in
 a sequential frame. Arithmetic scans use the conditioning tables, adaptive
 probability states, fixed-probability decisions and restart resets specified in
 ISO/IEC 10918-1, Annexes D, F and G. Higher sample precision, hierarchical frames
-and other coding modes still need an applicability audit. JPXDecode and JBIG2Decode remain unsupported. These limits are distinct from
+and other coding modes still need an applicability audit. JPXDecode has a separate [partial implementation](pdf-jpeg2000.md); JBIG2Decode remains unsupported. These limits are distinct from
 image placement, interpolation and color-management work.
 
-Images currently use nearest-neighbor sampling. Scaled-image edge coverage and
+Images default to nearest-neighbor sampling and honor Interpolate with the
+[bilinear profile](pdf-image-interpolation.md). Scaled-image edge coverage and
 rounding can differ from an independent rasterizer even when the decoded samples
 agree. A native-resolution codec comparison is not a claim of complete scaled
 image fidelity.

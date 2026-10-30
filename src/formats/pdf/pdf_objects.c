@@ -207,6 +207,39 @@ static int object_decode_parameters(const pdf_xref *xref, const pdf_object_view 
     return pos < view->len && view->data[pos] == ']' && object_parameter_append(out, "] ", 2);
 }
 
+static int object_filter_dictionary(const pdf_object_view *view, object_parameters *out,
+                                    unsigned depth, size_t *work, int uncompressed,
+                                    const pdf_image_stream_profile *profile, char filters[8][32],
+                                    int *count) {
+    int ok = object_parameter_append(out, "<< ", 3);
+    size_t pos;
+    if (ok && cupidimage_pdf_page_value(view, "Filter", &pos)) {
+        pdf_object_view value = {0};
+        size_t at = 0;
+        ok = object_parameter_resolve(view->xref, profile, view, pos, &value, depth, work,
+                                      uncompressed) &&
+             object_parameter_append(out, "/Filter ", 8) &&
+             object_parameter_value(view->xref, &value, &at, out, depth + 1, work, profile, NULL);
+        cupidimage_pdf_object_view_release(&value);
+    }
+    ok = ok && object_parameter_append(out, ">>", 2);
+    pdf_object_view filter_view = {out->data, out->length, NULL, NULL};
+    ok = ok && cupidimage_pdf_stream_filter_names(&filter_view, filters, count);
+    return ok;
+}
+
+int cupidimage_pdf_image_filters(const pdf_object_view *view,
+                                 const pdf_image_stream_profile *profile, char filters[8][32],
+                                 int *count) {
+    object_parameters out = {malloc(PDF_STREAM_PARAMETERS_LIMIT), 0};
+    size_t work = PDF_OBJECT_WORK;
+    *count = 0;
+    int ok = out.data && profile &&
+             object_filter_dictionary(view, &out, 0, &work, 0, profile, filters, count);
+    free(out.data);
+    return ok;
+}
+
 static int object_decode_stream(const pdf_object_view *view, const unsigned char *data,
                                 size_t length, unsigned char **decoded, size_t *decoded_length,
                                 unsigned depth, size_t *work, int uncompressed,
@@ -216,22 +249,11 @@ static int object_decode_stream(const pdf_object_view *view, const unsigned char
     *decoded_length = 0;
     if (!out.data)
         return 0;
-    int ok = object_parameter_append(&out, "<< ", 3);
-    size_t pos;
-    if (ok && cupidimage_pdf_page_value(view, "Filter", &pos)) {
-        pdf_object_view value = {0};
-        size_t at = 0;
-        ok = object_parameter_resolve(view->xref, profile, view, pos, &value, depth, work,
-                                      uncompressed) &&
-             object_parameter_append(&out, "/Filter ", 8) &&
-             object_parameter_value(view->xref, &value, &at, &out, depth + 1, work, profile, NULL);
-        cupidimage_pdf_object_view_release(&value);
-    }
     char filters[8][32];
     int count = 0;
-    ok = ok && object_parameter_append(&out, ">>", 2);
-    pdf_object_view filter_view = {out.data, out.length, NULL, NULL};
-    ok = ok && cupidimage_pdf_stream_filter_names(&filter_view, filters, &count);
+    size_t pos;
+    int ok =
+        object_filter_dictionary(view, &out, depth, work, uncompressed, profile, filters, &count);
     if (ok)
         out.length -= 2;
     if (ok && cupidimage_pdf_page_value(view, "DecodeParms", &pos)) {

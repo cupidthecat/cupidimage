@@ -462,7 +462,17 @@ static int pdf_decode_filters(const pdf_object_view *view, const unsigned char *
             ok = cupidimage_ccitt_decode(data, length, &params[i].fax, &out.data, &out.used);
         else if (!strcmp(name, "RunLengthDecode") || !strcmp(name, "RL"))
             ok = pdf_filter_runlength(data, length, &out);
-        else if (profile && (!strcmp(name, "DCTDecode") || !strcmp(name, "DCT"))) {
+        else if (profile && profile->preserve_jpx && !strcmp(name, "JPXDecode") && i + 1 == count) {
+            if (length <= PDF_FILTER_LIMIT) {
+                out.data = malloc(length ? length : 1);
+                if (out.data) {
+                    if (length)
+                        memcpy(out.data, data, length);
+                    out.used = length;
+                    ok = 1;
+                }
+            }
+        } else if (profile && (!strcmp(name, "DCTDecode") || !strcmp(name, "DCT"))) {
             ok = profile->bits == 8 &&
                  cupidimage_jpeg_decode_samples(data, length, profile->width, profile->height,
                                                 profile->components, params[i].color_transform,

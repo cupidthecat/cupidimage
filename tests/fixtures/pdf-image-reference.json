@@ -690,6 +690,22 @@
       "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
       "tolerance": 0,
       "provenance": "Literal blue rectangle selected by CID 2 as CharStrings index 2 in a name-keyed CFF descendant."
+    },
+    {
+      "asset": "assets/pdf/reference/jpx-native-rgb.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNpj0Az6z4AHexbNxosn7X6CFzOMmj9q/iA2f+q+53jxewlHvJiQ/aPmj5o/mM0HAFTHtS4=",
+      "tolerance": 0,
+      "provenance": "Authored lossless JPEG 2000 samples, expanded with literal RGB and opacity values."
+    },
+    {
+      "asset": "assets/pdf/reference/jpx-palette-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNpraGj434AHMzT8x4sbCOhvGDV/1PxBbD4h/aN4FA9nDACv172u",
+      "tolerance": 0,
+      "provenance": "Authored lossless JPEG 2000 samples, expanded with literal RGB and opacity values."
     }
   ]
 }

@@ -280,6 +280,72 @@ int cupidimage_pdf_icc_space(const pdf_render_state *st, pdf_object_id object,
     return 1;
 }
 
+/* Intern embedded image profiles independently of PDF object numbers. The
+ * source bytes may be released immediately after this call. */
+int cupidimage_pdf_icc_bytes(const pdf_render_state *st, const unsigned char *data, size_t length,
+                             unsigned components, pdf_image_colors *space) {
+    if (!data || length < 132 || length > ICC_PROFILE_LIMIT ||
+        (components != 1 && components != 3 && components != 4))
+        return 0;
+    int intent = st->gs.rendering_intent;
+    if (!st->icc_store || !st->clip_budget || intent < 0 || intent >= 4 ||
+        length > st->clip_budget->tests_left)
+        return -1;
+    st->clip_budget->tests_left -= length;
+    uint64_t fingerprint = UINT64_C(14695981039346656037);
+    for (size_t i = 0; i < length; i++) {
+        fingerprint ^= data[i];
+        fingerprint *= UINT64_C(1099511628211);
+    }
+    for (pdf_icc_profile *p = st->icc_store->head; p; p = p->next) {
+        if (p->components != (int)components || p->length != length ||
+            p->fingerprint != fingerprint)
+            continue;
+        if (length > st->clip_budget->tests_left)
+            return -1;
+        st->clip_budget->tests_left -= length;
+        if (!memcmp(p->data, data, length)) {
+            if (!p->transforms[intent].valid)
+                return 0;
+            memset(space, 0, sizeof(*space));
+            space->icc = p;
+            space->components = (int)components;
+            return 1;
+        }
+    }
+    size_t cost = sizeof(pdf_icc_profile) + length;
+    if (st->icc_store->count >= 256 || st->icc_store->bytes > ICC_STORE_LIMIT ||
+        cost > ICC_STORE_LIMIT - st->icc_store->bytes)
+        return -1;
+    pdf_icc_profile *profile = calloc(1, sizeof(*profile));
+    if (!profile)
+        return -1;
+    profile->data = malloc(length);
+    if (!profile->data) {
+        free(profile);
+        return -1;
+    }
+    memcpy(profile->data, data, length);
+    profile->length = length;
+    profile->components = (int)components;
+    if (!icc_parse(profile) || !profile->transforms[intent].valid) {
+        free(profile->data);
+        free(profile);
+        return 0;
+    }
+    profile->fingerprint = fingerprint;
+    profile->owner = st->icc_store;
+    profile->equivalence = st->icc_store->count + 1;
+    profile->next = st->icc_store->head;
+    st->icc_store->head = profile;
+    st->icc_store->bytes += cost;
+    st->icc_store->count++;
+    memset(space, 0, sizeof(*space));
+    space->icc = profile;
+    space->components = (int)components;
+    return 1;
+}
+
 static int icc_connection_xyz(const pdf_icc_profile *profile, const double values[4], int intent,
                               double xyz[3]) {
     if (!profile || !values || !xyz || intent < 0 || intent >= 4 ||

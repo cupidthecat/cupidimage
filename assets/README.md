@@ -115,3 +115,7 @@ The cff-direct-cid.pdf and opentype-cff-direct-cid.pdf reference assets select g
 index 2 from name-keyed CFF programs through Type 0 PDF fonts. Both have literal
 blue-rectangle pixel expectations. Generate them with
 scripts/generate_pdf_cff_binding_fixtures.py.
+
+`pdf/reference/jpx-native-rgb.pdf` and `jpx-palette-opacity.pdf` exercise native
+JPEG 2000 samples, palette expansion and embedded alpha. Both have literal pixel
+oracles. Regenerate them with `scripts/generate_pdf_jpx_fixtures.py`.

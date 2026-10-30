@@ -194,8 +194,11 @@ typedef struct {
     int width, height, components, bits;
     const unsigned char *document;
     size_t document_size;
+    int preserve_jpx;
 } pdf_image_stream_profile;
 
+int cupidimage_pdf_image_filters(const pdf_object_view *, const pdf_image_stream_profile *,
+                                 char[8][32], int *);
 int cupidimage_pdf_filter_parameter_applies(const char *filter, const char *key);
 int cupidimage_pdf_stream_filter_names(const pdf_object_view *view, char filters[8][32],
                                        int *total);

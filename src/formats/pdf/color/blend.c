@@ -20,12 +20,17 @@ static int blend_numbers_equal(const double *a, const double *b, unsigned count)
 }
 
 static int blend_colors_equal(const pdf_image_colors *a, const pdf_image_colors *b) {
-    if (a->components != b->components || a->calibrated != b->calibrated)
+    if (a->components != b->components || a->calibrated != b->calibrated ||
+        a->encoded_transfer != b->encoded_transfer)
         return 0;
     if (a->icc || b->icc)
         return cupidimage_pdf_icc_equal(a->icc, b->icc);
     if (a->calibrated)
-        return blend_numbers_equal(a->white, b->white, 3) &&
+        return ((a->encoded_transfer != 3 && a->encoded_transfer != 4) ||
+                blend_numbers_equal(a->source_range, b->source_range, 6)) &&
+               (a->encoded_transfer != 4 ||
+                blend_numbers_equal(a->source_matrix, b->source_matrix, 9)) &&
+               blend_numbers_equal(a->white, b->white, 3) &&
                blend_numbers_equal(a->gamma, b->gamma, 3) &&
                (a->calibrated != 2 || blend_numbers_equal(a->matrix, b->matrix, 9));
     return 1;
@@ -41,8 +46,8 @@ int cupidimage_pdf_blend_prepare(const pdf_render_state *st, const pdf_image_col
         return 0;
     memset(blend, 0, sizeof(*blend));
     if ((colors->components != 1 && colors->components != 3 && colors->components != 4) ||
-        colors->pattern || colors->indexed || colors->tint || colors->calibrated < 0 ||
-        colors->calibrated > 2)
+        colors->pattern || colors->indexed || colors->tint || colors->encoded_transfer ||
+        colors->calibrated < 0 || colors->calibrated > 2)
         return 0;
     blend->colors = *colors;
     if (colors->icc)

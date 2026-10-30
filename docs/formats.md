@@ -117,7 +117,7 @@ Run the generated PDF page regressions with Python 3:
     make test-pdf-pages
 
 PDF image XObjects use the page's Resources dictionary, including inherited and
-indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
+indirect resource dictionaries. Images default to nearest-neighbor sampling and honor Interpolate with bilinear sampling. Flate
 images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 1/2/4/8/16-bit samples.
 Prediction follows each filter stage's declared row layout and defaults.
 The decoded sample data is limited to 64 MiB per image.
@@ -130,7 +130,9 @@ packed/16-bit prediction; each filter reads only its own parameters. The current
 DCT path supports 8-bit Huffman baseline/extended sequential/progressive frames
 and arithmetic sequential/progressive frames. Sampling factors run from one
 through four, with separate or mixed sequential component scans. Remaining DCT
-applicability questions, JPX and JBIG2 remain open. See [PDF images](pdf-images.md) for the pipeline,
+applicability questions and JBIG2 remain open. [JPXDecode](pdf-jpeg2000.md) now
+paints native JPEG 2000 samples, palettes, embedded alpha and selected color spaces;
+its remaining baseline and extension gaps are documented separately. See [PDF images](pdf-images.md) for the pipeline,
 checks and limits.
 Drawing an invalid or unsupported XObject returns a load error.
 

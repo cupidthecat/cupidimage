@@ -1,0 +1,26 @@
+#include "../budget.h"
+#include "third_party/openjpeg/prefix.h"
+#define NDEBUG
+#define OPJ_STATIC
+#define OPJ_SKIP_POISON
+#include "third_party/openjpeg/bio.inc"
+#include "third_party/openjpeg/cio.inc"
+#include "third_party/openjpeg/dwt.inc"
+#include "third_party/openjpeg/event.inc"
+#include "third_party/openjpeg/thread.inc"
+#define opj_t1_allocate_buffers cupidimage_jpx_ht_allocate_buffers
+#include "third_party/openjpeg/ht_dec.inc"
+#undef opj_t1_allocate_buffers
+#include "third_party/openjpeg/function_list.inc"
+#include "third_party/openjpeg/image.inc"
+#include "third_party/openjpeg/invert.inc"
+#include "third_party/openjpeg/j2k.inc"
+#include "third_party/openjpeg/jp2.inc"
+#include "third_party/openjpeg/mct.inc"
+#include "third_party/openjpeg/mqc.inc"
+#include "third_party/openjpeg/openjpeg.inc"
+#include "third_party/openjpeg/sparse_array.inc"
+#include "third_party/openjpeg/t1.inc"
+#include "third_party/openjpeg/t2.inc"
+#include "third_party/openjpeg/tcd.inc"
+#include "third_party/openjpeg/tgt.inc"
