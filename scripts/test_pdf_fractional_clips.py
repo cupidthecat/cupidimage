@@ -51,6 +51,14 @@ def main():
         expected_large=render(document(page,stream=rectangle+paint))
         repeated='q '+rectangle+'Q '
         assert render(document(page,stream=repeated*40+rectangle+paint))==expected_large
+        for bbox, pixels in (
+            ('-1000000 -1000000 1000000 1000000',bytes((255,0,0,255))*16),
+            ('-1000000 -1000000 .1875 1000000',expected),
+            ('1000000 1000000 1000003 1000003',b'\xff'*64),
+        ):
+            data=tiny('/G Do',{10:form(fill,'/BBox ['+bbox+']')})
+            assert render(data)==(4,4,pixels),('large rectangular Form boundary',bbox)
+            fault(data)
         for group in ('','/Group << /S /Transparency /I true /CS /DeviceRGB >>',
                       '/Group << /S /Transparency /I false /CS /DeviceRGB >>'):
             objects={10:form(fill,'/BBox [0 0 3 3] '+group)}

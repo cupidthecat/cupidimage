@@ -80,12 +80,18 @@ typedef struct {
     double white[3], gamma[3], matrix[9], adaptation[9], lab_range[4];
 } pdf_image_colors;
 
+typedef struct {
+    pdf_image_colors colors;
+    double inverse_adaptation[9], inverse_matrix[9];
+} pdf_blend_space;
+
 typedef struct pdf_pattern {
     struct pdf_pattern *next;
     cupidimage_image tile;
     double *shape, *alpha, *color;
     double inverse[6], xstep, ystep;
     int shading, uncolored, deferred, gray;
+    pdf_blend_space blend;
     pdf_object_id resource_object;
     pdf_object_view definition;
     unsigned char *program;
@@ -200,6 +206,15 @@ static inline int cupidimage_pdf_clip_antialias(const pdf_render_state *st) {
     return st->text_antialias || st->graphics_antialias;
 }
 
+const pdf_blend_space *cupidimage_pdf_current_blend(const pdf_render_state *);
+int cupidimage_pdf_blend_prepare(const pdf_render_state *, const pdf_image_colors *,
+                                 pdf_blend_space *);
+int cupidimage_pdf_blend_equal(const pdf_blend_space *, const pdf_blend_space *);
+int cupidimage_pdf_blend_convert(const pdf_render_state *, const pdf_image_colors *,
+                                 const pdf_blend_space *, const double *, double[3]);
+int cupidimage_pdf_blend_luminosity(const pdf_render_state *, const pdf_blend_space *,
+                                    const double[3], double *);
+
 #define PDF_TRANSPARENCY_MEMORY_LIMIT (256u * 1024u * 1024u)
 
 struct pdf_transparency_group {
@@ -208,6 +223,7 @@ struct pdf_transparency_group {
     const pdf_transparency_group *parent;
     const cupidimage_image *backdrop;
     int isolated, gray, knockout, lazy_backdrop;
+    pdf_blend_space blend;
     unsigned left, top, right, bottom;
     size_t bytes;
 };
@@ -227,7 +243,7 @@ int cupidimage_pdf_read_intent(const pdf_render_state *, const pdf_object_view *
 int cupidimage_pdf_dictionary_boolean(const pdf_render_state *st, const pdf_object_view *view,
                                       const char *key, int *value);
 int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
-                               int required, int *gray);
+                               int required, pdf_blend_space *blend);
 int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
                                  int isolated, const double background[3]);
 void cupidimage_pdf_soft_mask_retain(pdf_soft_mask *mask);
@@ -280,6 +296,11 @@ int cupidimage_pdf_icc_space(const pdf_render_state *, pdf_object_id, pdf_image_
 void cupidimage_pdf_calibrated_xyz(const pdf_image_colors *, const double[4], double[3]);
 void cupidimage_pdf_xyz_color(const pdf_image_colors *, const double[3], int, double[3]);
 int cupidimage_pdf_icc_color(const pdf_icc_profile *, const double[4], int, int, double[3]);
+int cupidimage_pdf_icc_working_xyz(const pdf_icc_profile *, const double[4], int, double[3]);
+int cupidimage_pdf_icc_luminosity(const pdf_icc_profile *, const double[4], int, double *);
+int cupidimage_pdf_icc_equal(const pdf_icc_profile *, const pdf_icc_profile *);
+int cupidimage_pdf_icc_bidirectional(pdf_icc_profile *, int, size_t *);
+int cupidimage_pdf_icc_from_working(pdf_icc_profile *, const double[3], int, double[3], size_t *);
 void cupidimage_pdf_icc_free(pdf_icc_store *);
 int cupidimage_pdf_calibrated_space(const pdf_render_state *, const pdf_object_view *, size_t *,
                                     int, pdf_image_colors *);
@@ -380,7 +401,7 @@ int cupidimage_pdf_path_flatten(pdf_render_state *state);
 void cupidimage_pdf_render_state_release(pdf_render_state *st);
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t len);
 int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pattern);
-int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *pattern, int gray);
+int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *pattern);
 int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_object_view *pattern,
                                        const unsigned char *stream, size_t length,
                                        pdf_pattern *cache, double sx, double sy, double ox,

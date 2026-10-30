@@ -482,6 +482,10 @@
       "sha256": "69b90bb3096e6b0a860d3198c35152d02400d8d0cf069c2d2a1874ae26c02798"
     },
     {
+      "path": "assets/pdf/cie-blending.pdf",
+      "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
+    },
+    {
       "path": "assets/pdf/colors.pdf",
       "sha256": "5b61ef578bc5311739b87921fa7185007d1447759aed7fae8d9232714511d3c8"
     },

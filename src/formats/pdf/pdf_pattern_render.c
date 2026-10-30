@@ -15,6 +15,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     group.shape = cache->shape;
     group.color = cache->color;
     group.gray = cache->gray;
+    group.blend = cache->blend;
     group.isolated = 1;
     if (!parent->form_budget->calls_left || length > parent->form_budget->bytes_left)
         return 0;
@@ -273,6 +274,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     group.shape = cache->shape;
     group.color = cache->color;
     group.gray = cache->gray;
+    group.blend = cache->blend;
     group.isolated = group.knockout = 1;
     if (!parent->form_budget->calls_left)
         return 0;
@@ -331,7 +333,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     return ok;
 }
 
-int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *pattern, int gray) {
+int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *pattern) {
     if (!pattern->initial || !pattern->color)
         return 0;
     pdf_render_state *context = malloc(sizeof(*context));
@@ -342,7 +344,8 @@ int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *patt
     size_t pixels = (size_t)pattern->tile.width * pattern->tile.height;
     memset(pattern->tile.rgba, 0, pixels * 4);
     memset(pattern->shape, 0, pixels * 5 * sizeof(double));
-    pattern->gray = gray;
+    pattern->blend = *cupidimage_pdf_current_blend(st);
+    pattern->gray = pattern->blend.colors.components == 1;
     int ok = 1;
     if (pattern->shading) {
         ok = cupidimage_pdf_render_shading_pattern(context, &pattern->definition, pattern->matrix,

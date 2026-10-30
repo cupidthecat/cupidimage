@@ -237,6 +237,21 @@ int cupidimage_pdf_clip_capture_forms(pdf_render_state *st) {
             x[j] = ((m[3] * dx - m[2] * dy) / det - st->page_x0_pts) * (96.0 / 72.0);
             y[j] = (st->page_top_pts - (-m[1] * dx + m[0] * dy) / det) * (96.0 / 72.0);
         }
+        int axis_aligned = 1;
+        for (unsigned j = 0; j < 4; j++) {
+            if (!isfinite(x[j]) || !isfinite(y[j]))
+                return 0;
+            unsigned next = (j + 1) % 4;
+            if (x[j] != x[next] && y[j] != y[next])
+                axis_aligned = 0;
+        }
+        /* Cropping a rectangular Form boundary to the output canvas preserves
+         * its entire visible region, including fractional boundary pixels. */
+        if (axis_aligned)
+            for (unsigned j = 0; j < 4; j++) {
+                x[j] = fmax(0, fmin(st->img->width, x[j]));
+                y[j] = fmax(0, fmin(st->img->height, y[j]));
+            }
         pdf_region_edge edges[4];
         for (unsigned j = 0; j < 4; j++)
             edges[j] = (pdf_region_edge){x[j], y[j], x[(j + 1) % 4], y[(j + 1) % 4], 0};

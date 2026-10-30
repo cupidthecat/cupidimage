@@ -804,7 +804,7 @@
     },
     {
       "id": 5,
-      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 — TEXT]",
+      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 \u2014 TEXT]",
       "items": [
         {
           "id": "5.1",
@@ -1153,7 +1153,7 @@
     },
     {
       "id": 6,
-      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 — TEXT]",
+      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 \u2014 TEXT]",
       "items": [
         {
           "id": "6.1",
@@ -1329,7 +1329,7 @@
     },
     {
       "id": 7,
-      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 — TEXT]",
+      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 \u2014 TEXT]",
       "items": [
         {
           "id": "7.1",
@@ -1535,10 +1535,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Full raster fidelity, remaining group color models and all cross-feature interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -1546,7 +1550,7 @@
             "5",
             "6"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -1614,7 +1618,7 @@
       "items": [
         {
           "id": "8.1",
-          "requirement": "m, l, c, v, y, h, re path construction and cubic Bézier geometry.",
+          "requirement": "m, l, c, v, y, h, re path construction and cubic B\u00e9zier geometry.",
           "status": "partial",
           "evidence": [
             "docs/formats.md",
@@ -2043,10 +2047,12 @@
           "evidence": [
             "docs/pdf-images.md",
             "src/formats/pdf/pdf_images.c",
-            "scripts/test_pdf_image_values.py"
+            "scripts/test_pdf_image_values.py",
+            "docs/pdf-image-interpolation.md",
+            "scripts/test_pdf_image_interpolation.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Area resampling, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2261,17 +2267,21 @@
             "scripts/test_pdf_intents.py",
             "src/formats/pdf/pdf_icc_curve.c",
             "src/formats/pdf/pdf_icc_mab.c",
-            "scripts/test_pdf_icc_mab.py"
+            "scripts/test_pdf_icc_mab.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Reverse mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and ICC blending remain incomplete."
+            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Reverse mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and additional ICC blending models remain incomplete."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "Selected native source-profile parsing, curve equations and ownership paths tested; full ICC audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.5.5",
             "ICC.1:2022 10.6, 10.18 and Annex F",
@@ -2348,7 +2358,7 @@
             "scripts/test_pdf_icc_lut.py"
           ],
           "limitations": [
-            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. Unsupported ICC models, NChannel spot mixtures and calibrated/ICC blending spaces remain unfinished.",
+            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. Unsupported ICC models, NChannel spot mixtures and additional calibrated/ICC blending models remain unfinished.",
             "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
           ],
           "dependencies": [
@@ -2427,7 +2437,7 @@
             "scripts/test_pdf_icc_lut.py"
           ],
           "limitations": [
-            "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and calibrated/ICC blending spaces remain unfinished.",
+            "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and additional calibrated/ICC blending models remain unfinished.",
             "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
           ],
           "dependencies": [
@@ -2454,7 +2464,7 @@
     },
     {
       "id": 12,
-      "title": "PDF FUNCTION TYPES [P1 — PREREQUISITE FOR SHADING AND COLOR]",
+      "title": "PDF FUNCTION TYPES [P1 \u2014 PREREQUISITE FOR SHADING AND COLOR]",
       "items": [
         {
           "id": "12.1",
@@ -2873,10 +2883,14 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2884,7 +2898,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2894,10 +2908,14 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2905,7 +2923,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2917,10 +2935,14 @@
             "src/formats/pdf/pdf_transparency.c",
             "scripts/test_pdf_transparency.py",
             "src/formats/pdf/pdf_paint_groups.c",
-            "scripts/test_pdf_combined_paint.py"
+            "scripts/test_pdf_combined_paint.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2928,7 +2950,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4"
           ]
@@ -2943,10 +2965,14 @@
             "scripts/test_pdf_transparency.py",
             "src/formats/pdf/pdf_paint_groups.c",
             "scripts/test_pdf_combined_paint.py",
-            "scripts/test_pdf_empty_glyphs.py"
+            "scripts/test_pdf_empty_glyphs.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2954,7 +2980,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4",
             "ISO 32000-1/2 9.3.6"
@@ -2967,10 +2993,14 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2978,7 +3008,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2988,10 +3018,14 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2999,7 +3033,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -3009,10 +3043,14 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "CMYK groups, ICC LUT destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3020,7 +3058,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Calibrated and bidirectional ICC matrix/TRC groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
           "standard_clauses": []
         }
       ],

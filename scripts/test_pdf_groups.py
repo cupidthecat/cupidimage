@@ -117,7 +117,9 @@ def main():
         check('subnormal-nested-alpha',fixture('/Tiny gs /Next Do',group=nonisolated,attrs='/Resources << '+tiny_resources+' /XObject << /Next 6 0 R >> >>',extra=nested),lambda x,y:white)
         for group in ('<< /S /Other /I true >>','<< /I true >>','<< /S /Transparency /I 1 >>','<< /S /Transparency /I truex >>','<< /S /Transparency /I true /CS /DeviceCMYK >>','<< /S /Transparency /I false /CS /DeviceGray >>','<< /S /Transparency /I true /CS /Pattern >>','[]','12'):
             check('unsupported-or-invalid',fixture(group=group),reject=True)
-        check('default-colour-space',fixture(attrs='/Resources << /ColorSpace << /DefaultRGB [/CalRGB << /WhitePoint [1 1 1] >>] >> >>'),reject=True)
+        # Identity CalRGB maps this source to XYZ (1,0,0); E-to-D65 Bradford
+        # adaptation and the fixed sRGB output give (255,0,71).
+        check('default-colour-space',fixture(attrs='/Resources << /ColorSpace << /DefaultRGB [/CalRGB << /WhitePoint [1 1 1] >>] >> >>'),lambda x,y:(255,0,71),reference=False)
         check('group-cycle',fixture('/G Do'),reject=True)
     print(f'RGB transparency groups: {checks} checks passed; {refs} independent comparisons')
 

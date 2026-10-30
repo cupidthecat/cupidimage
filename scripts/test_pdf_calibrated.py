@@ -135,7 +135,7 @@ def main():
              '<< /WhitePoint [1 1 1] /BlackPoint [.1 .1 .1] >>','42','null']
         for params in bad:
             render(fixture('[/CalGray '+params+']','/C cs .5 sc 0 0 18 12 re f'),True)
-        render(fixture(GRAY,'',extra={3:'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 18 12] /Contents 4 0 R /Group << /S /Transparency /CS '+GRAY+' >> >>'}),True)
+        solid(fixture(GRAY,'',extra={3:'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 18 12] /Contents 4 0 R /Group << /S /Transparency /CS '+GRAY+' >> >>'}),(255,255,255))
         for entry in ('/Gamma [1 0 1]','/Gamma [1 1]','/Matrix [1 0 0]','/Gamma 2'):
             render(fixture('[/CalRGB << /WhitePoint ['+D65+'] '+entry+' >>]','/C cs'),True)
         for data in (baseline,compressed_inline,fixture(RGB,'/C cs .2 .4 .6 sc 0 0 18 12 re f'),

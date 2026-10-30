@@ -2,7 +2,7 @@
 
 Transparency support is incomplete. The renderer handles device-RGB compositing,
 the 16 standard blend modes, image masks, graphics-state soft masks and
-RGB/gray transparency Form XObjects. Unsupported group
+device, calibrated and selected ICC transparency Form XObjects. Unsupported group
 configurations are rejected rather than rendered as ordinary opaque forms.
 
 ## Group Form XObjects
@@ -29,7 +29,9 @@ only when composited into an eight-bit page or cached pattern surface. This avoi
 rounding errors being amplified by backdrop removal. Pattern and shading cache
 construction does not modify the containing group's alpha.
 
-Supported blending spaces are DeviceRGB and DeviceGray, explicit or inherited.
+Supported blending spaces are DeviceRGB, DeviceGray, CalGray, CalRGB and
+selected bidirectional ICC matrix/TRC spaces, explicit or inherited. See
+[blending colors](pdf-blending-colors.md) for conversion rules and limits.
 Explicit spaces are complete color-space objects, not ColorSpace resource aliases.
 Built-in names, single-element arrays and indirect objects are supported. A non-isolated
 group must use its parent's blending space. An isolated group may change it.
@@ -44,13 +46,13 @@ retain floating-point device values until compositing. Indexed colors expand to
 their base components first. Normal-blended uncolored tiling patterns cache
 coverage and alpha, then apply the caller's native color once. Backdrop-dependent
 patterns retain double-precision per-object results. Ordinary colored caches also retain double-precision color and rebuild from their
-definitions when the destination changes between RGB and grayscale.
+definitions when the destination blending encoding changes.
 
 Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
 remap painted source colors. A group without an explicit CS inherits its parent
 blending space; an explicit CS is remapped and must still resolve to a supported
-blending space. Calibrated and ICC blending spaces remain unsupported.
+blending space. CMYK groups and ICC LUT destination transforms remain unsupported.
 
 ## Knockout and shape
 
@@ -144,20 +146,21 @@ error. Mask evaluation uses the shared function-evaluation and pixel-work budget
 
 ## Limits
 
-- CMYK, CIE-based and ICC group blending spaces are not implemented.
+- CMYK groups and ICC LUT destination transforms are not implemented.
   An omitted I flag uses the supported non-isolated behavior.
 - Overprinting remains incomplete. Additional color spaces and device color
   management are still separate work.
-- Group buffers keep floating-point RGB, accumulated alpha and shape, plus an RGBA8
-  mirror for existing raster surfaces. They are not wide-gamut color-managed
-  surfaces.
+- Group buffers keep floating-point native gray/RGB components, accumulated alpha
+  and shape, plus an RGBA8 mirror for existing raster surfaces. Supported calibrated
+  and ICC encodings retain wide-gamut values until destination conversion. Output
+  profiles and complete color management remain unfinished.
 - Group buffers and retained double-precision soft masks share a 256 MiB limit.
   Buffers currently
   span the full output page, so even a small group can reach that bound on a large
   page. Groups also share the form nesting, invocation and pixel-work budgets.
-- A failed group is discarded before it is composited onto its parent. The
-  allocation-failure tests check that its parent pixels and allocations remain
-  unchanged on failure.
+- Allocation and member-rendering failures discard the group before composition.
+  A later color-conversion failure rejects the page; no partial page is returned.
+  Allocation-failure tests check ownership and recovery.
 
 ## Verification
 

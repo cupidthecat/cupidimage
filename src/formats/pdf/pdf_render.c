@@ -238,34 +238,27 @@ void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, 
 
 void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const double values[4],
                                     const pdf_image_colors *space, double alpha, double shape) {
+    if (st->image_failed)
+        return;
     if (space->tint) {
         cupidimage_pdf_tint_paint(st, x, y, values, space->tint, alpha, shape);
         return;
     }
-    if (space->icc) {
-        double converted[3];
-        if (!cupidimage_pdf_icc_color(space->icc, values, st->group && st->group->gray,
-                                      st->gs.rendering_intent, converted)) {
-            st->image_failed = 1;
-            return;
-        }
-        cupidimage_pdf_composite_color(st, x, y, converted, alpha, shape);
-        return;
-    }
-    if (!space->calibrated) {
-        cupidimage_pdf_composite_device(st, x, y, values, space->components, alpha, shape);
-        return;
-    }
     double converted[3];
-    cupidimage_pdf_calibrated_color(space, values, st->group && st->group->gray, converted);
+    if (!cupidimage_pdf_blend_convert(st, space, cupidimage_pdf_current_blend(st), values,
+                                      converted)) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity,
+                           "pdf: unsupported or exhausted blending color conversion");
+        return;
+    }
     cupidimage_pdf_composite_color(st, x, y, converted, alpha, shape);
 }
 
 void cupidimage_pdf_composite_device(pdf_render_state *st, int x, int y, const double values[4],
                                      int components, double alpha, double shape) {
-    double converted[3];
-    cupidimage_pdf_device_color(values, components, st->group && st->group->gray, converted);
-    cupidimage_pdf_composite_color(st, x, y, converted, alpha, shape);
+    const pdf_image_colors space = {.components = components};
+    cupidimage_pdf_composite_space(st, x, y, values, &space, alpha, shape);
 }
 
 static void pdf_matrix_identity(float m[6]) {

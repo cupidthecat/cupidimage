@@ -269,7 +269,9 @@ endpoint cases, state restoration, and mask/opacity combinations.
 Pages render as isolated transparency groups and composite onto white only
 after their content finishes. Their Group dictionary selects DeviceRGB or
 DeviceGray; RGB is the default. Form groups also support these spaces. Knockout and non-knockout groups and graphics-state Alpha/Luminosity masks are
-supported. CMYK/CIE/ICC group spaces and overprinting remain incomplete. Text objects
+supported. CalGray, CalRGB and bidirectional ICC matrix/TRC group spaces are supported;
+CMYK groups, ICC LUT destination transforms and overprinting remain incomplete.
+See [blending colors](pdf-blending-colors.md). Text objects
 honor TK, with true as the default. See [PDF transparency](pdf-transparency.md)
 for mask precedence and group limits. Stroke styling is described below.
 

@@ -54,8 +54,8 @@ objects. Palette lookup, image Decode and matte removal happen in source space
 before the color conversion. Shading interpolation likewise stays in source space.
 
 RGB and gray transparency groups accept these colors as painted sources.
-CalGray/CalRGB/Lab as a group's own blending space remain unsupported; they are
-rejected rather than being mistaken for DeviceRGB or DeviceGray.
+CalGray, CalRGB and selected bidirectional ICC matrix/TRC profiles also work as
+[blending spaces](pdf-blending-colors.md). Lab is not a permitted blending space.
 
 ## Tests and remaining work
 
@@ -77,7 +77,7 @@ Out-of-range CalRGB inputs with fractional gamma use the specification's clipped
 input values as their oracle. The comparison renderer returns a different result
 for that case, so it is not used as the expected result there.
 
-Complete ICC profile handling, output intents, nonzero black points, calibrated
+Complete ICC profile handling, output intents, nonzero black points, additional
 blending spaces, complete rendering-intent handling, full NChannel support and
 overprint remain unfinished. This source-color support does not establish complete color
 management or visual parity for arbitrary PDFs.
@@ -110,7 +110,8 @@ tables fall back to A2B0, then matrix/curve tags. Unsupported selected A2B types
 and profiles containing D2B transforms are rejected rather than silently replaced
 with matrix tags. A malformed transform for an unused intent does not prevent
 using another supported transform. Output profiles, black-point compensation and
-ICC blending spaces remain unfinished.
+ICC LUT destination transforms remain unfinished. Matrix/TRC blending spaces
+are covered in [blending colors](pdf-blending-colors.md).
 
 PDF N must match the supported profile's channel count. Range may be absent,
 null or an indirect array, but this implementation currently requires [0, 1]
@@ -345,7 +346,7 @@ profile produces gray 119 without compensation; the comparison renderer maps its
 nonzero source black point to black. A separate uncompensated color-engine check
 confirmed the native result. The compensated result is not used as an oracle for
 the current uncompensated relative-colorimetric path. Black-point compensation,
-output profiles, reverse tables, multiprocess tags and ICC blending spaces still require
+output profiles, reverse tables, multiprocess tags and additional ICC blending spaces still require
 work. The intent support below does not resolve those differences.
 
 

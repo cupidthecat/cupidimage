@@ -11,7 +11,7 @@ implemented, and color-managed output is incomplete. See the
 for the exact boundaries. HEIC/HEIF is deferred.
 
 PDF previews include packed, indexed, fax- and JPEG-compressed images, inline
-images, image masks, filter chains, opacity and RGB blending. Image dictionaries can
+images, image masks, filter chains, opacity and transparency blending. Image dictionaries can
 request [bilinear sampling](docs/pdf-image-interpolation.md). Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard and Latin vector font substitutes, and unhinted embedded
@@ -21,7 +21,8 @@ TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
 profiles have separate controls and limits.
 Tiling/shading patterns, styled dashed strokes, RGB/gray transparency
-groups and graphics-state soft masks are also supported. Full font fidelity,
+groups, selected [calibrated and ICC blending spaces](docs/pdf-blending-colors.md),
+and graphics-state soft masks are also supported. Full font fidelity,
 additional transparency spaces, color management and annotations still need work.
 See the [shading guide](docs/pdf-shading.md) and [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.

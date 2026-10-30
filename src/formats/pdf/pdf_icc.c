@@ -1,3 +1,5 @@
+#include "color/curve_inverse.h"
+#include "color/matrix.h"
 #include "pdf_functions.h"
 #include "pdf_icc_curve.h"
 #include "pdf_icc_lut.h"
@@ -14,7 +16,10 @@ typedef struct {
     pdf_icc_lut lut;
     pdf_icc_mab mab;
     pdf_image_colors output;
-    int valid, reference_black;
+    int valid, reference_black, matrix_model, inverse_state;
+    pdf_icc_inverse_curve inverse_curves[3];
+    double inverse_adaptation[9], inverse_matrix[9];
+    double luminosity_scale;
 } pdf_icc_transform;
 
 struct pdf_icc_profile {
@@ -23,6 +28,9 @@ struct pdf_icc_profile {
     unsigned char *data;
     size_t length;
     int components, lab_pcs;
+    uint64_t fingerprint;
+    unsigned equivalence;
+    const pdf_icc_store *owner;
     pdf_icc_transform transforms[4];
 };
 
@@ -106,6 +114,8 @@ static int icc_parse(pdf_icc_profile *profile) {
                 if (media <= 0)
                     absolute->valid = 0;
                 double scale = media / absolute->output.white[column];
+                if (column == 1)
+                    absolute->luminosity_scale *= scale;
                 for (unsigned row = 0; row < 3; row++)
                     absolute->output.adaptation[row * 3 + column] *= scale;
             }
@@ -117,6 +127,7 @@ static int icc_parse(pdf_icc_profile *profile) {
 static int icc_model(pdf_icc_profile *profile, pdf_icc_transform *transform,
                      const char tag_name[4]) {
     const unsigned char *p = profile->data;
+    transform->luminosity_scale = 1;
     int gray = profile->components == 1, rgb = profile->components == 3,
         cmyk = profile->components == 4;
     pdf_image_colors *out = &transform->output;
@@ -178,6 +189,7 @@ static int icc_model(pdf_icc_profile *profile, pdf_icc_transform *transform,
                 out->matrix[i * 3 + j] = icc_fixed(tag + 8 + j * 4);
         }
     }
+    transform->matrix_model = 1;
     return cupidimage_pdf_calibrated_output(out);
 }
 
@@ -226,6 +238,34 @@ int cupidimage_pdf_icc_space(const pdf_render_state *st, pdf_object_id object,
         free(profile);
         return 0;
     }
+    size_t *work = st->clip_budget ? &st->clip_budget->tests_left : NULL;
+    if (!work || profile->length > *work) {
+        free(profile->data);
+        free(profile);
+        return 0;
+    }
+    *work -= profile->length;
+    profile->fingerprint = UINT64_C(14695981039346656037);
+    for (size_t i = 0; i < profile->length; i++) {
+        profile->fingerprint ^= profile->data[i];
+        profile->fingerprint *= UINT64_C(1099511628211);
+    }
+    profile->owner = st->icc_store;
+    profile->equivalence = st->icc_store->count + 1;
+    for (pdf_icc_profile *p = st->icc_store->head; p; p = p->next)
+        if (p->components == profile->components && p->length == profile->length &&
+            p->fingerprint == profile->fingerprint) {
+            if (profile->length > *work) {
+                free(profile->data);
+                free(profile);
+                return 0;
+            }
+            *work -= profile->length;
+            if (!memcmp(p->data, profile->data, profile->length)) {
+                profile->equivalence = p->equivalence;
+                break;
+            }
+        }
     profile->object = object;
     profile->next = st->icc_store->head;
     st->icc_store->head = profile;
@@ -237,12 +277,12 @@ int cupidimage_pdf_icc_space(const pdf_render_state *st, pdf_object_id object,
     return 1;
 }
 
-int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values[4], int gray,
-                             int intent, double output[3]) {
-    if (intent < 0 || intent >= 4 || !profile->transforms[intent].valid)
+static int icc_connection_xyz(const pdf_icc_profile *profile, const double values[4], int intent,
+                              double xyz[3]) {
+    if (!profile || !values || !xyz || intent < 0 || intent >= 4 ||
+        !profile->transforms[intent].valid)
         return 0;
     const pdf_icc_transform *transform = &profile->transforms[intent];
-    double xyz[3];
     if (transform->lut.inputs || transform->mab.inputs) {
         double pcs[4] = {0};
         int ok = transform->mab.inputs ? cupidimage_pdf_icc_mab_value(&transform->mab, values, pcs)
@@ -275,7 +315,102 @@ int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values
         for (unsigned i = 0; i < 3; i++)
             xyz[i] = (xyz[i] - black[i]) / (1 - black[i] / transform->output.white[i]);
     }
-    cupidimage_pdf_xyz_color(&transform->output, xyz, gray, output);
+    return 1;
+}
+
+int cupidimage_pdf_icc_color(const pdf_icc_profile *profile, const double values[4], int gray,
+                             int intent, double output[3]) {
+    double xyz[3];
+    if (!icc_connection_xyz(profile, values, intent, xyz))
+        return 0;
+    cupidimage_pdf_xyz_color(&profile->transforms[intent].output, xyz, gray, output);
+    return 1;
+}
+
+int cupidimage_pdf_icc_working_xyz(const pdf_icc_profile *profile, const double values[4],
+                                   int intent, double output[3]) {
+    double xyz[3];
+    return icc_connection_xyz(profile, values, intent, xyz) &&
+           cupidimage_pdf_color_matrix_apply(profile->transforms[intent].output.adaptation, xyz,
+                                             output);
+}
+
+int cupidimage_pdf_icc_luminosity(const pdf_icc_profile *profile, const double values[4],
+                                  int intent, double *output) {
+    double xyz[3];
+    if (!output || !icc_connection_xyz(profile, values, intent, xyz) || !isfinite(xyz[1]))
+        return 0;
+    *output = fmax(0, fmin(1, xyz[1] * profile->transforms[intent].luminosity_scale));
+    return 1;
+}
+
+int cupidimage_pdf_icc_equal(const pdf_icc_profile *a, const pdf_icc_profile *b) {
+    return a == b || (a && b && a->owner && a->equivalence && a->owner == b->owner &&
+                      a->equivalence == b->equivalence);
+}
+
+int cupidimage_pdf_icc_bidirectional(pdf_icc_profile *profile, int intent, size_t *work) {
+    if (!profile || !work || intent < 0 || intent >= 4 ||
+        (profile->components != 1 && profile->components != 3))
+        return 0;
+    pdf_icc_transform *transform = profile->transforms + intent;
+    if (transform->inverse_state)
+        return transform->inverse_state == 1;
+    if (!transform->valid || !transform->matrix_model)
+        return 0;
+    if (*work < 64) {
+        *work = 0;
+        return 0;
+    }
+    *work -= 64;
+    if (!cupidimage_pdf_color_matrix_inverse(transform->output.adaptation,
+                                             transform->inverse_adaptation))
+        return 0;
+    if (profile->components == 3) {
+        double matrix[9];
+        for (unsigned i = 0; i < 3; i++)
+            for (unsigned j = 0; j < 3; j++)
+                matrix[i * 3 + j] = transform->output.matrix[j * 3 + i];
+        if (!cupidimage_pdf_color_matrix_inverse(matrix, transform->inverse_matrix))
+            return 0;
+    }
+    for (int i = 0; i < profile->components; i++)
+        if (!cupidimage_pdf_icc_inverse_prepare(transform->curves + i,
+                                                transform->inverse_curves + i, work))
+            return 0;
+    transform->inverse_state = 1;
+    return 1;
+}
+
+int cupidimage_pdf_icc_from_working(pdf_icc_profile *profile, const double input[3], int intent,
+                                    double output[3], size_t *work) {
+    if (!input || !output || !cupidimage_pdf_icc_bidirectional(profile, intent, work))
+        return 0;
+    size_t cost = 8 + (size_t)profile->components * 2;
+    if (*work < cost) {
+        *work = 0;
+        return 0;
+    }
+    *work -= cost;
+    pdf_icc_transform *transform = profile->transforms + intent;
+    double xyz[3], linear[3] = {0};
+    if (!cupidimage_pdf_color_matrix_apply(transform->inverse_adaptation, input, xyz))
+        return 0;
+    if (profile->components == 3) {
+        if (!cupidimage_pdf_color_matrix_apply(transform->inverse_matrix, xyz, linear))
+            return 0;
+    } else {
+        linear[0] = xyz[1];
+        if (profile->lab_pcs)
+            linear[0] = (linear[0] > 216.0 / 24389.0 ? 116 * cbrt(linear[0]) - 16
+                                                     : linear[0] * 24389.0 / 27.0) /
+                        100;
+    }
+    for (int i = 0; i < profile->components; i++)
+        if (!cupidimage_pdf_icc_inverse_value(transform->inverse_curves + i, linear[i], output + i))
+            return 0;
+    if (profile->components == 1)
+        output[1] = output[2] = output[0];
     return 1;
 }
 

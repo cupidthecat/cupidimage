@@ -127,7 +127,8 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
     group->color = group->alpha + pixels;
     group->shape = group->color + pixels * 3;
     group->isolated = isolated;
-    group->gray = parent->group ? parent->group->gray : 0;
+    group->blend = *cupidimage_pdf_current_blend(parent);
+    group->gray = group->blend.colors.components == 1;
     group->parent = parent->group;
     group->backdrop = parent->img;
     if (!isolated && !group->lazy_backdrop) {
@@ -165,7 +166,7 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
 }
 
 int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view *attributes,
-                               int required, int *gray) {
+                               int required, pdf_blend_space *blend) {
     size_t pos;
     if (cupidimage_pdf_page_value(attributes, "CS", &pos)) {
         pdf_object_view space = {0};
@@ -177,14 +178,14 @@ int cupidimage_pdf_group_space(const pdf_render_state *st, const pdf_object_view
             pdf_image_colors colors = {0};
             pos = 0;
             ok = cupidimage_pdf_image_color_space(st, &space, &pos, 0, &colors);
-            ok = ok && (colors.components == 1 || colors.components == 3) && !colors.pattern &&
-                 !colors.indexed && !colors.calibrated && !colors.icc && !colors.tint;
-            if (ok)
-                *gray = colors.components == 1;
+            ok = ok && cupidimage_pdf_blend_prepare(st, &colors, blend);
         }
         cupidimage_pdf_object_view_release(&space);
-        if (!ok)
+        if (!ok) {
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: invalid, unsupported or non-invertible blending color space");
             return 0;
+        }
     } else if (required)
         return 0;
     return 1;
@@ -212,13 +213,14 @@ int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *
         !cupidimage_pdf_dictionary_boolean(parent, &attributes, "I", &isolated) ||
         !cupidimage_pdf_dictionary_boolean(parent, &attributes, "K", &knockout))
         goto done;
-    int gray = parent->group ? parent->group->gray : 0;
-    if (!cupidimage_pdf_group_space(child, &attributes, 0, &gray) ||
-        (!isolated && gray != (parent->group ? parent->group->gray : 0)))
+    pdf_blend_space blend = *cupidimage_pdf_current_blend(parent);
+    if (!cupidimage_pdf_group_space(child, &attributes, 0, &blend) ||
+        (!isolated && !cupidimage_pdf_blend_equal(&blend, cupidimage_pdf_current_blend(parent))))
         goto done;
     if (!cupidimage_pdf_group_surface(parent, group, isolated, NULL))
         goto done;
-    group->gray = gray;
+    group->blend = isolated ? blend : *cupidimage_pdf_current_blend(parent);
+    group->gray = group->blend.colors.components == 1;
     group->knockout = knockout;
     child->img = &group->image;
     child->group = group;
@@ -236,7 +238,8 @@ done:
 int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group *group) {
     pdf_object_view page = {0}, attributes = {0};
     size_t pos;
-    int ok = 0, gray = 0, ignored_isolation = 0, knockout = 0;
+    int ok = 0, ignored_isolation = 0, knockout = 0;
+    pdf_blend_space blend = *cupidimage_pdf_current_blend(st);
     if (!cupidimage_pdf_state_object(st, st->page_object, &page))
         goto done;
     if (cupidimage_pdf_page_value(&page, "Group", &pos)) {
@@ -248,13 +251,14 @@ int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group
                                               "Transparency") ||
                 !cupidimage_pdf_dictionary_boolean(st, &attributes, "I", &ignored_isolation) ||
                 !cupidimage_pdf_dictionary_boolean(st, &attributes, "K", &knockout) ||
-                !cupidimage_pdf_group_space(st, &attributes, 0, &gray))
+                !cupidimage_pdf_group_space(st, &attributes, 0, &blend))
                 goto done;
         }
     }
     if (!cupidimage_pdf_group_surface(st, group, 1, NULL))
         goto done;
-    group->gray = gray;
+    group->blend = blend;
+    group->gray = blend.colors.components == 1;
     group->knockout = knockout;
     st->img = &group->image;
     st->group = group;
@@ -296,10 +300,22 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
             cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
             if (shape <= 0)
                 continue;
+            const pdf_image_colors fallback = {.components = group->gray ? 1 : 3};
+            const pdf_image_colors *source =
+                group->blend.colors.components ? &group->blend.colors : &fallback;
+            double converted[3];
+            if (!cupidimage_pdf_blend_convert(parent, source, cupidimage_pdf_current_blend(parent),
+                                              color, converted)) {
+                parent->image_failed = 1;
+                cupidimage_set_err(parent->error, parent->error_capacity,
+                                   "pdf: unsupported or exhausted group color conversion");
+                goto finished;
+            }
             cupidimage_pdf_composite_color(
-                parent, (int)x, (int)y, color, alpha * parent->gs.fill_alpha,
+                parent, (int)x, (int)y, converted, alpha * parent->gs.fill_alpha,
                 shape * (parent->gs.alpha_is_shape ? parent->gs.fill_alpha : 1));
         }
+finished:
     parent->paint_coverage_clipped = saved_clip;
     return !parent->image_failed;
 }

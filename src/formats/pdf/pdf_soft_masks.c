@@ -89,9 +89,10 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
         temporary->resource_override = &form;
         temporary->page_object = object;
     }
-    gray = st->group ? st->group->gray : 0;
-    if (!cupidimage_pdf_group_space(temporary, &attributes, luminosity, &gray))
+    pdf_blend_space blend = *cupidimage_pdf_current_blend(st);
+    if (!cupidimage_pdf_group_space(temporary, &attributes, luminosity, &blend))
         goto done;
+    gray = blend.colors.components == 1;
     double background[3] = {0, 0, 0};
     if (luminosity && cupidimage_pdf_page_value(&dictionary, "BC", &pos)) {
         pdf_object_view bc = {0};
@@ -124,6 +125,7 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     if (!cupidimage_pdf_group_surface(st, &surface, 1, luminosity ? background : NULL))
         goto done;
     surface.gray = gray;
+    surface.blend = blend;
     temporary->img = &surface.image;
     temporary->group = &surface;
     temporary->initial_gs = temporary->gs;
@@ -148,9 +150,9 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     st->clip_budget->tests_left -= pixels;
     for (size_t pixel = 0; pixel < pixels; pixel++) {
         const double *color = surface.color + pixel * 3;
-        double value = luminosity
-                           ? (gray ? color[0] : .3 * color[0] + .59 * color[1] + .11 * color[2])
-                           : surface.alpha[pixel];
+        double value = surface.alpha[pixel];
+        if (luminosity && !cupidimage_pdf_blend_luminosity(temporary, &blend, color, &value))
+            goto done;
         if (function) {
             double input[2] = {value, 0}, output[4];
             if (!cupidimage_pdf_evaluate_function(function, input, output,

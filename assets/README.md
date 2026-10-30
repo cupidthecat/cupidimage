@@ -59,3 +59,7 @@ Rebuild it with `scripts/generate_pdf_graphics_coverage_fixture.py`; use
 `pdf/image-interpolation.pdf` compares nearest and bilinear image samples, a
 Type 3 stencil glyph and an independent soft mask. It is decoded-unverified.
 Regenerate it with `scripts/generate_pdf_image_interpolation_fixture.py`.
+
+`pdf/cie-blending.pdf` compares device and ICC blending, wide-gamut color
+transport and CIE luminosity masks. Its full raster is decoded-unverified.
+Regenerate it with `scripts/generate_pdf_cie_blend_fixture.py`.

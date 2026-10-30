@@ -690,3 +690,18 @@ Decode, color-key and Matte arrays accept indirect numeric members. Shared
 dictionary lookup preserves both the document index and shading stream bodies.
 The former undefined-soft-mask rejection fixture now checks the required null
 semantics instead. The remaining optional-value audit is still tracked in #48.
+
+## Calibrated and ICC group conversion
+
+CalGray, CalRGB and invertible one-/three-component ICC matrix/TRC profiles now
+retain native components through transparency groups. Tests cover inverse curves,
+wide-gamut transport, pattern cache encodings, Type 3 glyphs, intent state and CIE
+luminosity masks. CMYK groups, ICC LUT destination pipelines, output profiles and
+black-point compensation remain unfinished. See [blending colors](pdf-blending-colors.md)
+for the exact limits and focused evidence. The owned fixture is decoded-unverified.
+
+Antialiased axis-aligned Form bounding boxes are cropped to the canvas before
+clip geometry admission. This preserves visible fractional edges without raising
+the geometry coordinate limit. Rotated or sheared oversized boundaries are not
+covered by that optimization. Three new cases bring the fractional clipping
+suite to 85 page checks and 664 allocation-failure checks.
