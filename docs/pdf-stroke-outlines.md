@@ -3,8 +3,9 @@
 `--pdf-text-aa` enables grayscale fills and strokes for supported TrueType, CFF
 and Type 1 outlines. The API equivalent is `text_antialias = 1` in the PDF options.
 The default remains binary coverage. [Clipping edges](pdf-clipping.md) follow the
-same option. Bitmap fallback painting and ordinary Type 3 graphics retain their
-existing geometry policies.
+same option. Bitmap fallback painting retains its existing geometry policy.
+`--pdf-graphics-aa` separately enables [ordinary vector and Type 3 path
+coverage](pdf-graphics-coverage.md).
 
 ## Stroke geometry
 
@@ -82,6 +83,6 @@ rotation, reflection, shear, nonuniform scale and hairline widths.
 
 The owned `assets/pdf/text-strokes.pdf` sample is decoded-unverified. It is a
 visual regression aid, not an exact full-page oracle. Broader clipping qualification,
-general vector antialiasing, broader curve/hinting qualification, automatic stroke
+broader vector and curve/hinting qualification, automatic stroke
 adjustment and a default smoothing policy remain unfinished. Passing these focused
 tests does not establish complete PDF rendering or stroke fidelity.

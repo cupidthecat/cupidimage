@@ -73,7 +73,7 @@ static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
         return 1;
     if (st->gs.clip && !(st->gs.clip->bits[pixel / 8] & (1u << (pixel % 8))))
         return 0;
-    if (st->text_antialias && st->gs.clip && st->gs.clip->coverage &&
+    if (cupidimage_pdf_clip_antialias(st) && st->gs.clip && st->gs.clip->coverage &&
         st->gs.clip->captured_form_depth == (unsigned)st->form_depth)
         return 1;
     double px = st->page_x0_pts + (x + 0.5) * (72.0 / 96.0);
@@ -326,29 +326,19 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
     if (st->path.seg_count <= 0)
         return 1;
 
-    float min_x = 1e9f, min_y = 1e9f, max_x = -1e9f, max_y = -1e9f;
-    pdf_seg xformed[8192];
-    int n = 0;
-    float start_x = 0, start_y = 0;
-
-    for (int i = 0; i < st->path.seg_count; i++) {
-        pdf_seg edge = st->path.segs[i];
-        if (!isfinite(edge.x0) || !isfinite(edge.y0) || !isfinite(edge.x1) || !isfinite(edge.y1))
-            return 0;
-        if (st->path.segs[i].starts_subpath) {
-            start_x = edge.x0;
-            start_y = edge.y0;
-        }
-        xformed[n++] = edge;
-        min_x = fminf(min_x, fminf(edge.x0, edge.x1));
-        max_x = fmaxf(max_x, fmaxf(edge.x0, edge.x1));
-        min_y = fminf(min_y, fminf(edge.y0, edge.y1));
-        max_y = fmaxf(max_y, fmaxf(edge.y0, edge.y1));
-        if (i + 1 == st->path.seg_count || st->path.segs[i + 1].starts_subpath) {
-            /* Fill closes each subpath without adding a closing stroke. */
-            pdf_seg closing = {.x0 = edge.x1, .y0 = edge.y1, .x1 = start_x, .y1 = start_y};
-            xformed[n++] = closing;
-        }
+    float min_x = INFINITY, min_y = INFINITY, max_x = -INFINITY, max_y = -INFINITY;
+    pdf_region_edge *edges = NULL;
+    unsigned n = 0;
+    if (!cupidimage_pdf_path_fill_edges(&st->path, &st->clip_budget->tests_left, &edges, &n)) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity, "pdf: unable to build filled path");
+        return 0;
+    }
+    for (unsigned i = 0; i < n; i++) {
+        min_x = fminf(min_x, fminf(edges[i].x0, edges[i].x1));
+        max_x = fmaxf(max_x, fmaxf(edges[i].x0, edges[i].x1));
+        min_y = fminf(min_y, fminf(edges[i].y0, edges[i].y1));
+        max_y = fmaxf(max_y, fmaxf(edges[i].y0, edges[i].y1));
     }
 
     int x0 = (int)fminf((float)st->img->width, fmaxf(0, floorf(min_x)));
@@ -358,8 +348,10 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
 
     if (mask) {
         size_t area = (size_t)(x1 - x0) * (size_t)(y1 - y0);
-        if (area > st->clip_budget->tests_left / (size_t)n)
+        if (area > st->clip_budget->tests_left / (size_t)n) {
+            free(edges);
             return 0;
+        }
         st->clip_budget->tests_left -= area * (size_t)n;
     }
 
@@ -368,8 +360,12 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
         for (int x = x0; x < x1; x++) {
             float px = (float)x + 0.5f;
             int crossings = 0;
-            for (int i = 0; i < n; i++) {
-                crossings += pdf_scanline_intersects(px, py, &xformed[i]);
+            for (unsigned i = 0; i < n; i++) {
+                pdf_seg edge = {.x0 = (float)edges[i].x0,
+                                .y0 = (float)edges[i].y0,
+                                .x1 = (float)edges[i].x1,
+                                .y1 = (float)edges[i].y1};
+                crossings += pdf_scanline_intersects(px, py, &edge);
             }
             if (even_odd ? crossings % 2 != 0 : crossings != 0) {
                 if (mask) {
@@ -381,16 +377,25 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
             }
         }
     }
+    free(edges);
     return 1;
 }
 
 static void pdf_fill_path(pdf_render_state *st, int even_odd) {
+    if (st->graphics_antialias) {
+        (void)cupidimage_pdf_paint_path_coverage(st, &st->path, 1, 0, even_odd);
+        return;
+    }
     pdf_rasterize_path(st, even_odd, NULL);
 }
 
 /* Fill-and-stroke is one PDF object. Stroke-covered pixels use the original
  * backdrop, not a fill that has already been composited onto it. */
 static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
+    if (st->graphics_antialias) {
+        (void)cupidimage_pdf_paint_path_coverage(st, &st->path, 1, 1, even_odd);
+        return;
+    }
     int empty_fill = cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern);
     int empty_stroke = cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern);
     if (empty_fill || empty_stroke) {
@@ -451,21 +456,23 @@ static int pdf_apply_clip(pdf_render_state *st) {
     clip->references = 1;
     clip->bytes = bytes;
     st->clip_budget->bytes_used += bytes;
-    if (!st->text_antialias && !pdf_rasterize_path(st, st->pending_clip == 2, clip->bits)) {
+    if (!cupidimage_pdf_clip_antialias(st) &&
+        !pdf_rasterize_path(st, st->pending_clip == 2, clip->bits)) {
         cupidimage_pdf_clip_release(st, clip);
         return 0;
     }
-    if (st->text_antialias &&
+    if (cupidimage_pdf_clip_antialias(st) &&
         !cupidimage_pdf_clip_path_geometry(st, clip, &st->path, st->pending_clip == 2)) {
         cupidimage_pdf_clip_release(st, clip);
         return 0;
     }
-    if (st->text_antialias && st->gs.clip && clip->geometry == st->gs.clip->geometry &&
+    if (cupidimage_pdf_clip_antialias(st) && st->gs.clip &&
+        clip->geometry == st->gs.clip->geometry &&
         clip->captured_form_depth == st->gs.clip->captured_form_depth) {
         cupidimage_pdf_clip_release(st, clip);
         return 1;
     }
-    if (st->gs.clip && !st->text_antialias) {
+    if (st->gs.clip && !cupidimage_pdf_clip_antialias(st)) {
         for (size_t i = 0; i < bytes; i++)
             clip->bits[i] &= st->gs.clip->bits[i];
     }
@@ -506,17 +513,18 @@ void cupidimage_pdf_text_end(pdf_render_state *st) {
     if (!cupidimage_pdf_text_group_end(st))
         st->image_failed = 1;
     if (st->text_clip) {
-        if (st->text_antialias && !cupidimage_pdf_clip_finish_geometry(st, st->text_clip)) {
+        if (cupidimage_pdf_clip_antialias(st) &&
+            !cupidimage_pdf_clip_finish_geometry(st, st->text_clip)) {
             st->image_failed = 1;
             cupidimage_set_err(st->error, st->error_capacity,
                                "pdf: text clip geometry exceeds limits");
         }
-        if (!st->image_failed && st->text_antialias && st->gs.clip &&
+        if (!st->image_failed && cupidimage_pdf_clip_antialias(st) && st->gs.clip &&
             st->text_clip->geometry == st->gs.clip->geometry &&
             st->text_clip->captured_form_depth == st->gs.clip->captured_form_depth) {
             cupidimage_pdf_clip_release(st, st->text_clip);
         } else {
-            if (st->gs.clip && !st->text_antialias)
+            if (st->gs.clip && !cupidimage_pdf_clip_antialias(st))
                 for (size_t i = 0; i < st->text_clip->bytes; i++)
                     st->text_clip->bits[i] &= st->gs.clip->bits[i];
             cupidimage_pdf_clip_release(st, st->gs.clip);
@@ -1543,6 +1551,7 @@ int cupidimage_pdf_render_content_stream_options(
     const pdf_xref *xref, const cupidimage_pdf_options *opts) {
     pdf_render_state st = {0};
     st.text_antialias = opts ? opts->text_antialias : 0;
+    st.graphics_antialias = opts ? opts->graphics_antialias : 0;
     st.truetype_hinting = opts ? opts->truetype_hinting : 0;
     st.cff_hinting = opts ? opts->cff_hinting : 0;
     st.type1_hinting = opts ? opts->type1_hinting : 0;

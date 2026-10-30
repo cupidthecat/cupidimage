@@ -73,6 +73,8 @@ typedef struct cupidimage_pdf_options {
     int cff_hinting;
     /* 1 enables bounded Type 1 blue-zone/stem hinting without stem darkening. */
     int type1_hinting;
+    /* 1 enables grayscale path fills/strokes, including Type 3 glyph graphics. */
+    int graphics_antialias;
 } cupidimage_pdf_options;
 
 typedef struct cupidimage_svg_options {

@@ -452,7 +452,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         ok = 1;
         goto done;
     }
-    if (clipping && st->text_antialias)
+    if (clipping && cupidimage_pdf_clip_antialias(st))
         for (unsigned i = 0; i < edge_count; i++)
             if (!outline_clip_edge(st, st->text_clip, edges + i, 0, flatness_squared))
                 goto done;
@@ -515,8 +515,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                 goto done;
         unsigned char *mask = NULL;
         if (!cupidimage_pdf_clip_intersect(st, paint_geometry.pending_edges,
-                                           paint_geometry.pending_count, NULL, 0, NULL, left, top,
-                                           right, bottom, &mask))
+                                           paint_geometry.pending_count, 0, NULL, 0, NULL, left,
+                                           top, right, bottom, &mask))
             goto done;
         if (!cupidimage_pdf_clip_limit_mask(st, fill, 1, mask, left, top, right, bottom)) {
             free(mask);

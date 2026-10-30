@@ -50,3 +50,8 @@ with `scripts/generate_pdf_type1_counter_fixture.py`.
 and repeated narrow clips. Use `--pdf-text-aa` to exercise fractional coverage.
 Its complete raster is decoded-unverified. Regenerate it with
 `scripts/generate_pdf_fractional_clip_fixture.py`.
+
+`pdf/graphics-coverage.pdf` shows fractional path fills, styled strokes, curves,
+combined painting and clipped Type 3 glyphs. Its full raster is decoded-unverified.
+Rebuild it with `scripts/generate_pdf_graphics_coverage_fixture.py`; use
+`--pdf-graphics-aa` to inspect the antialiased path profile.

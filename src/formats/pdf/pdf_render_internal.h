@@ -163,7 +163,7 @@ typedef struct {
     const pdf_object_view *resource_override;
     int image_failed;
     int paint_coverage_clipped;
-    int text_antialias, truetype_hinting, cff_hinting, type1_hinting;
+    int text_antialias, truetype_hinting, cff_hinting, type1_hinting, graphics_antialias;
     char *error;
     size_t error_capacity;
     float page_x0_pts;
@@ -195,6 +195,10 @@ typedef struct {
     double glyph_expected_width;
     pdf_form_budget *form_budget;
 } pdf_render_state;
+
+static inline int cupidimage_pdf_clip_antialias(const pdf_render_state *st) {
+    return st->text_antialias || st->graphics_antialias;
+}
 
 #define PDF_TRANSPARENCY_MEMORY_LIMIT (256u * 1024u * 1024u)
 
@@ -330,7 +334,7 @@ int cupidimage_pdf_clip_append_edge_to(pdf_render_state *, pdf_clip_mask *, doub
 void cupidimage_pdf_clip_pending_clear(pdf_render_state *, pdf_clip_mask *);
 int cupidimage_pdf_clip_render_geometry(pdf_render_state *, pdf_clip_mask *);
 int cupidimage_pdf_clip_contains_crop(pdf_render_state *, int, int, int, int);
-int cupidimage_pdf_clip_intersect(pdf_render_state *, const pdf_region_edge *, unsigned,
+int cupidimage_pdf_clip_intersect(pdf_render_state *, const pdf_region_edge *, unsigned, unsigned,
                                   const pdf_region_ellipse *, unsigned, const double[4], int, int,
                                   int, int, unsigned char **);
 int cupidimage_pdf_clip_append_edge(pdf_render_state *, double, double, double, double);
@@ -364,6 +368,8 @@ void cupidimage_pdf_patterns_end_paint(pdf_render_state *st);
 int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, double x, double y,
                                   double rgb[3], double *shape, double *alpha);
 void cupidimage_pdf_matrix_concat_double(double m[6], const double n[6]);
+int cupidimage_pdf_paint_path_coverage(pdf_render_state *, const pdf_path *, int, int, int);
+int cupidimage_pdf_path_fill_edges(const pdf_path *, size_t *, pdf_region_edge **, unsigned *);
 void cupidimage_pdf_path_clear(pdf_path *path);
 void cupidimage_pdf_path_close(pdf_path *path);
 void cupidimage_pdf_path_move_user(pdf_render_state *state, float x, float y);

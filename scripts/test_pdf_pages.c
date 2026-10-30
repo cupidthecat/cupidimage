@@ -16,12 +16,13 @@ int main(int argc, char **argv) {
         if (!pdf_probe_options(argc, argv, 3, &options))
             return 2;
     } else {
-        if (argc > 7)
+        if (argc > 8)
             return 2;
         options.text_antialias = argc >= 4 ? atoi(argv[3]) : 0;
         options.truetype_hinting = argc >= 5 ? atoi(argv[4]) : 0;
         options.cff_hinting = argc >= 6 ? atoi(argv[5]) : 0;
         options.type1_hinting = argc >= 7 ? atoi(argv[6]) : 0;
+        options.graphics_antialias = argc >= 8 ? atoi(argv[7]) : 0;
     }
     cupidimage_image image = {0};
     char error[256] = {0};

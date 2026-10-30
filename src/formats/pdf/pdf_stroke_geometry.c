@@ -401,6 +401,10 @@ static int stroke_geometry(pdf_render_state *st, const pdf_path *path, unsigned 
 
 void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path,
                                     unsigned char *target) {
+    if (st->graphics_antialias && !target) {
+        (void)cupidimage_pdf_paint_path_coverage(st, path, 0, 1, 0);
+        return;
+    }
     (void)stroke_geometry(st, path, target, NULL);
 }
 
@@ -443,7 +447,7 @@ static int stroke_clip_coverage(pdf_render_state *st, const stroke_aa_path *path
                                            shape->points[b].x, shape->points[b].y, 0};
         }
     }
-    if (!cupidimage_pdf_clip_intersect(st, edges, n, ellipses, k, path->axes, left, top, right,
+    if (!cupidimage_pdf_clip_intersect(st, edges, n, 0, ellipses, k, path->axes, left, top, right,
                                        bottom, &mask))
         goto done;
     if (!cupidimage_pdf_clip_limit_mask(st, *output, 0, mask, left, top, right, bottom))

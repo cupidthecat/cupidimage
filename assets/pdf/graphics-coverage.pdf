@@ -1,0 +1,59 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R]  >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Contents 4 0 R /MediaBox [0 0 240 180] /Resources << /Font << /Label 5 0 R /Glyph 6 0 R >> /ExtGState << /Opacity 8 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 663 >>
+stream
+
+BT /Label 12 Tf 12 166 Td (Vector coverage) Tj ET
+BT /Label 8 Tf 12 152 Td (Use --pdf-graphics-aa for paths and Type 3 glyphs.) Tj ET
+.15 .3 .8 rg 12.1875 104.1875 36.375 30.375 re f
+.8 .2 .1 RG .375 w 62 104 m 98 134 l S
+.15 .5 .3 rg 112 104 m 112 104 130 150 160 104 c h f
+q /Opacity gs .15 .5 .3 rg .15 .3 .8 RG 1.125 w
+12.1875 54.1875 36.375 30.375 re B Q
+.15 .3 .8 rg 62 54 36 30 re 71 60 18 18 re f*
+.8 .2 .1 RG 1 J 2 w [0 4] 0 d 112 70 m 164 82 l S [] 0 d
+q 178.1875 54.1875 30.375 80.375 re W n
+.5 .15 .7 rg BT /Glyph 42 Tf 168 65 Td (AA) Tj ET Q
+0 0 0 rg BT /Label 8 Tf 12 18 Td (Fractional fills, hairlines, curves, combined paint and clipping.) Tj ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type3 /FontBBox [0 0 500 700] /FontMatrix [.001 0 0 .001 0 0] /CharProcs << /A 7 0 R >> /Encoding << /Type /Encoding /Differences [65 /A] >> /FirstChar 65 /LastChar 65 /Widths [600] /Resources << >> >>
+endobj
+7 0 obj
+<<  /Length 36 >> stream
+600 0 d0 0 0 m 250 700 l 500 0 l h f
+endstream
+endobj
+8 0 obj
+<< /ca .6 /CA .4 >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000116 00000 n 
+0000000290 00000 n 
+0000001004 00000 n 
+0000001074 00000 n 
+0000001316 00000 n 
+0000001403 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+1438
+%%EOF

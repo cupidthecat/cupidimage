@@ -287,7 +287,7 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
         return 0;
     parent->clip_budget->tests_left -= pixels;
     int saved_clip = parent->paint_coverage_clipped;
-    if (parent->text_antialias)
+    if (cupidimage_pdf_clip_antialias(parent))
         parent->paint_coverage_clipped = 1;
     for (unsigned y = group->top; y < group->bottom; y++)
         for (unsigned x = group->left; x < group->right; x++) {

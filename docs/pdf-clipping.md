@@ -2,11 +2,11 @@
 
 `--pdf-text-aa` enables fractional coverage for text outlines, clipping paths and
 Form boundaries. The PDF options API uses `text_antialias = 1`. Omitted options
-and zero keep the existing binary rendering path.
+and zero keep the existing binary rendering path. `--pdf-graphics-aa` also enables
+fractional clipping, alongside [vector coverage](pdf-graphics-coverage.md).
 
-Ordinary vector fills, image sampling and bitmap fallback painting still use
-their existing geometry policies. A smoother clip edge does not make those
-renderers fully antialiased.
+Image sampling and bitmap fallback painting still use their existing geometry
+policies. A smoother clip edge does not make those renderers fully antialiased.
 
 ## Geometry before coverage
 
@@ -100,7 +100,6 @@ the full suite.
 `scripts/generate_pdf_fractional_clip_fixture.py`. Its complete page is
 decoded-unverified; the focused tests provide the area and ownership evidence.
 
-This is not complete PDF raster fidelity. Image resampling, general vector
-antialiasing, wider curve/profile comparisons, automatic stroke adjustment and
+This is not complete PDF raster fidelity. Image resampling, wider curve/profile comparisons, automatic stroke adjustment and
 other font/color/transparency requirements remain open. No full manual corpus
 rating pass is part of these checks.

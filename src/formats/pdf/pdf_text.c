@@ -92,7 +92,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     }
     if (det == 0)
         return;
-    if (clipping && st->text_antialias) {
+    if (clipping && cupidimage_pdf_clip_antialias(st)) {
         for (int row = 0; row < 8; row++)
             for (int first = 0; first < 8;) {
                 if (!(glyph[row] & (1u << first))) {

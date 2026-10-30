@@ -50,26 +50,10 @@ int cupidimage_pdf_clip_finish_geometry(pdf_render_state *st, pdf_clip_mask *cli
 
 int cupidimage_pdf_clip_path_geometry(pdf_render_state *st, pdf_clip_mask *clip,
                                       const pdf_path *path, int even_odd) {
-    if (path->overflow || path->seg_count < 0 || path->seg_count > 4096)
+    pdf_region_edge *edges = NULL;
+    unsigned count = 0;
+    if (!cupidimage_pdf_path_fill_edges(path, &st->clip_budget->tests_left, &edges, &count))
         return 0;
-    unsigned max = (unsigned)path->seg_count * 2, count = 0;
-    if (max > st->clip_budget->tests_left)
-        return 0;
-    st->clip_budget->tests_left -= max;
-    pdf_region_edge *edges = malloc((max ? max : 1) * sizeof(*edges));
-    if (!edges)
-        return 0;
-    double sx = 0, sy = 0;
-    for (int i = 0; i < path->seg_count; i++) {
-        const pdf_seg *s = path->segs + i;
-        if (!i || s->starts_subpath) {
-            sx = s->x0;
-            sy = s->y0;
-        }
-        edges[count++] = (pdf_region_edge){s->x0, s->y0, s->x1, s->y1, 0};
-        if (i + 1 == path->seg_count || path->segs[i + 1].starts_subpath)
-            edges[count++] = (pdf_region_edge){s->x1, s->y1, sx, sy, 0};
-    }
     pdf_clip_geometry *parent = st->gs.clip ? st->gs.clip->geometry : NULL;
     clip->geometry = cupidimage_pdf_clip_geometry_create(parent, edges, count, (unsigned)even_odd,
                                                          &st->clip_budget->bytes_used,
@@ -154,14 +138,17 @@ int cupidimage_pdf_clip_contains_crop(pdf_render_state *st, int left, int top, i
 }
 
 int cupidimage_pdf_clip_intersect(pdf_render_state *st, const pdf_region_edge *draw,
-                                  unsigned draw_count, const pdf_region_ellipse *ellipses,
-                                  unsigned ellipse_count, const double axes[4], int left, int top,
-                                  int right, int bottom, unsigned char **output) {
+                                  unsigned draw_count, unsigned even_odd,
+                                  const pdf_region_ellipse *ellipses, unsigned ellipse_count,
+                                  const double axes[4], int left, int top, int right, int bottom,
+                                  unsigned char **output) {
     *output = NULL;
     const pdf_clip_geometry *geometry = st->gs.clip ? st->gs.clip->geometry : NULL;
-    if (!geometry || draw_count > 65536 || geometry->total_edges > 65536 - draw_count)
+    if (!geometry || even_odd > 1 || draw_count > 65536 ||
+        geometry->total_edges > 65536 - draw_count)
         return 0;
     unsigned char rules[64] = {0};
+    rules[0] = (unsigned char)even_odd;
     pdf_region_edge *edges = NULL;
     unsigned count = 0;
     if (!cupidimage_pdf_clip_geometry_collect(geometry, 1, rules, &edges, &count,
@@ -213,7 +200,7 @@ int cupidimage_pdf_clip_limit_mask(pdf_render_state *st, const unsigned char *so
 }
 
 int cupidimage_pdf_clip_capture_forms(pdf_render_state *st) {
-    if (!st->text_antialias)
+    if (!cupidimage_pdf_clip_antialias(st))
         return 1;
     unsigned first = st->gs.clip ? st->gs.clip->captured_form_depth : 0;
     for (unsigned i = first; i < (unsigned)st->form_depth; i++) {

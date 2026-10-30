@@ -214,3 +214,57 @@ int cupidimage_pdf_path_flatten(pdf_render_state *st) {
     free(source);
     return !st->path.overflow;
 }
+
+/* Filling closes subpaths without changing their stroke caps or joins. */
+int cupidimage_pdf_path_fill_edges(const pdf_path *path, size_t *work, pdf_region_edge **output,
+                                   unsigned *count) {
+    if (!output || !count)
+        return 0;
+    *output = NULL;
+    *count = 0;
+    if (!path || !work || path->overflow || path->seg_count < 0 || path->seg_count > 4096)
+        return 0;
+    unsigned max = (unsigned)path->seg_count * 4, used = 0;
+    if (max > *work)
+        return 0;
+    *work -= max;
+    pdf_region_edge *edges = malloc((max ? max : 1) * sizeof(*edges));
+    if (!edges)
+        return 0;
+    double sx = 0, sy = 0;
+    unsigned first = 0;
+    int point = 0;
+    for (int i = 0; i < path->seg_count; i++) {
+        const pdf_seg *s = path->segs + i;
+        if (s->curve || !isfinite(s->x0) || !isfinite(s->y0) || !isfinite(s->x1) ||
+            !isfinite(s->y1)) {
+            free(edges);
+            return 0;
+        }
+        if (!i || s->starts_subpath) {
+            sx = s->x0;
+            sy = s->y0;
+            first = used;
+            point = 1;
+        }
+        point = point && s->x0 == sx && s->y0 == sy && s->x1 == sx && s->y1 == sy;
+        edges[used++] = (pdf_region_edge){s->x0, s->y0, s->x1, s->y1, 0};
+        if (i + 1 == path->seg_count || path->segs[i + 1].starts_subpath) {
+            if (point) {
+                /* ISO 32000-2 8.5.3.3.1: a degenerate filled subpath encloses
+                 * the device pixel under the point. A trailing move has no edge. */
+                double x = floor(sx), y = floor(sy);
+                used = first;
+                edges[used++] = (pdf_region_edge){x, y, x + 1, y, 0};
+                edges[used++] = (pdf_region_edge){x + 1, y, x + 1, y + 1, 0};
+                edges[used++] = (pdf_region_edge){x + 1, y + 1, x, y + 1, 0};
+                edges[used++] = (pdf_region_edge){x, y + 1, x, y, 0};
+            } else {
+                edges[used++] = (pdf_region_edge){s->x1, s->y1, sx, sy, 0};
+            }
+        }
+    }
+    *output = edges;
+    *count = used;
+    return 1;
+}

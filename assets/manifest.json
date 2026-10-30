@@ -506,6 +506,10 @@
       "sha256": "2dddfc60515f32ca718de3e706847b234ae633d7f76a89ceabe7000e006107c5"
     },
     {
+      "path": "assets/pdf/graphics-coverage.pdf",
+      "sha256": "a692033a57b80a1194d2b0abaaaf408effd044dbea4e93543724bb82bf2b00c1"
+    },
+    {
       "path": "assets/pdf/minimal_xref.pdf",
       "sha256": "4df8cc51695b7fddeeb98f8f5ae4cd9b059e92c4bd70959fab53bfb675b860e9"
     },

@@ -79,11 +79,11 @@ def combined(fill_mask, stroke_mask, fill, stroke, ais, mask=1):
     return bytes(result)
 
 
-def polygon_mask(points):
+def polygon_mask(points, width=WIDTH, height=HEIGHT):
     """Independent convex clipping and shoelace area for straight cap cases."""
-    result=bytearray(WIDTH*HEIGHT)
-    for y in range(max(0,math.floor(min(p[1] for p in points))),min(HEIGHT,math.ceil(max(p[1] for p in points)))):
-        for x in range(max(0,math.floor(min(p[0] for p in points))),min(WIDTH,math.ceil(max(p[0] for p in points)))):
+    result=bytearray(width*height)
+    for y in range(max(0,math.floor(min(p[1] for p in points))),min(height,math.ceil(max(p[1] for p in points)))):
+        for x in range(max(0,math.floor(min(p[0] for p in points))),min(width,math.ceil(max(p[0] for p in points)))):
             clipped=points[:]
             for axis,limit,sign in ((0,x,1),(0,x+1,-1),(1,y,1),(1,y+1,-1)):
                 output=[]
@@ -99,7 +99,7 @@ def polygon_mask(points):
                 ox,oy=clipped[0]
                 area=abs(sum((a[0]-ox)*(b[1]-oy)-(a[1]-oy)*(b[0]-ox)
                              for a,b in zip(clipped,clipped[1:]+clipped[:1])))/2
-                result[y*WIDTH+x]=min(255,math.floor(area*256))
+                result[y*width+x]=min(255,math.floor(area*256))
     return bytes(result)
 
 
