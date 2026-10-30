@@ -943,6 +943,14 @@
       "sha256": "1dfb12fcaf2e030f5107e5108a2fb48a4e7f52cea9eff268497baf75834d56ff"
     },
     {
+      "path": "assets/pdf/reference/subset-cid-cff.pdf",
+      "sha256": "2654a16500180eb13649b32d247ea798d65e1efe16047e46827d697abd2008fc"
+    },
+    {
+      "path": "assets/pdf/reference/subset-cid-truetype.pdf",
+      "sha256": "b84ad27b301397e98934f183b5ace514b7549165f8c0b9c2a607f5efffb7014f"
+    },
+    {
       "path": "assets/pdf/reference/substitute-font-widths.pdf",
       "sha256": "552c44482e93f168ef0eef9c3ca614e1fdd5b3cfe670046fe8c4a3de5e6eb921"
     },

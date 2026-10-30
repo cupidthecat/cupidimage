@@ -720,3 +720,13 @@ and selected page interactions have focused evidence; output transfer functions,
 overprint, physical device profiles and full-document parity remain unfinished.
 The feature inventory now records BG/UCR as partial support for its combined
 transfer-function requirement, rather than treating that entire row as missing.
+
+## Embedded CID subset compatibility
+
+The CID loader now has bounded recovery for unordered TrueType locations and a
+missing glyph-zero CFF selector in a single-dictionary font. Existing strict
+entry points still reject those nonconforming structures. Owned fixtures retain
+exact glyph geometry and pixel expectations, including cache ownership and
+allocation failures. The two original pages render but still differ from the
+independent rasters. This is compatibility work, not proof of complete font
+conformance. See [subset-font recovery](pdf-subset-fonts.md).

@@ -21,7 +21,7 @@ static size_t tt_location(const pdf_tt_font *f, unsigned glyph) {
     return f->location_size == 2 ? (size_t)tt_u16(p) * 2 : tt_u32(p);
 }
 
-int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t length) {
+static int tt_init_font(pdf_tt_font *f, const unsigned char *data, size_t length, int ordered) {
     memset(f, 0, sizeof(*f));
     if (length < 12 || (tt_u32(data) != 0x10000 && memcmp(data, "true", 4)))
         return 0;
@@ -62,11 +62,19 @@ int cupidimage_pdf_tt_init(pdf_tt_font *f, const unsigned char *data, size_t len
     size_t previous = 0;
     for (unsigned i = 0; i <= f->glyphs; i++) {
         size_t offset = tt_location(f, i);
-        if (offset < previous || offset > f->glyf.length)
+        if ((ordered && offset < previous) || offset > f->glyf.length)
             return 0;
         previous = offset;
     }
     return 1;
+}
+
+int cupidimage_pdf_tt_init(pdf_tt_font *font, const unsigned char *data, size_t length) {
+    return tt_init_font(font, data, length, 1);
+}
+
+int cupidimage_pdf_tt_init_tables(pdf_tt_font *font, const unsigned char *data, size_t length) {
+    return tt_init_font(font, data, length, 0);
 }
 
 unsigned cupidimage_pdf_tt_advance(const pdf_tt_font *f, unsigned glyph) {
@@ -184,7 +192,8 @@ int cupidimage_pdf_tt_glyph_data(const pdf_tt_font *font, unsigned glyph, pdf_tt
     *view = (pdf_tt_table){0};
     if (glyph >= font->glyphs)
         return 0;
-    size_t start = tt_location(font, glyph), end = tt_location(font, glyph + 1);
+    size_t start = tt_location(font, glyph),
+           end = font->glyph_ends ? font->glyph_ends[glyph] : tt_location(font, glyph + 1);
     if (start > end || end > font->glyf.length)
         return 0;
     *view = (pdf_tt_table){font->glyf.data + start, end - start};
@@ -225,21 +234,23 @@ static int tt_glyph(const pdf_tt_font *f, unsigned glyph, pdf_tt_outline *o, uns
         if (chain[i] == glyph)
             return 0;
     chain[depth] = glyph;
-    size_t start = tt_location(f, glyph), end = tt_location(f, glyph + 1), length = end - start;
+    pdf_tt_table view;
+    if (!cupidimage_pdf_tt_glyph_data(f, glyph, &view))
+        return 0;
+    size_t length = view.length;
     *origin = -cupidimage_pdf_tt_left_bearing(f, glyph);
     *advance = cupidimage_pdf_tt_advance(f, glyph);
     if (!length)
         return 1;
     if (length < 10)
         return 0;
-    const unsigned char *p = f->glyf.data + start;
+    const unsigned char *p = view.data;
     *origin = tt_i16(p + 2) - cupidimage_pdf_tt_left_bearing(f, glyph);
     int contours = tt_i16(p);
     if (contours >= 0)
         return tt_simple(p, length, contours, o, NULL, NULL);
     size_t at = 10;
     unsigned flags = 0, base = o->count, instructions = 0;
-    pdf_tt_table view = {p, length};
     do {
         pdf_tt_component record;
         if (!cupidimage_pdf_tt_component_read(&view, &at, &record))

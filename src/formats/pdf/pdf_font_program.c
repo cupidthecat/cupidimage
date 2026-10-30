@@ -47,6 +47,9 @@ static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slic
 size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
     return program
                ? sizeof(*program) + program->length + program->gid_length +
+                     (program->recovered_glyph_ends
+                          ? (size_t)program->font.glyphs * sizeof(uint32_t)
+                          : 0) +
                      cupidimage_pdf_font_program_bytes(program->extended) +
                      (program->is_cff ? 65536 * sizeof(uint16_t) +
                                             program->cff.private_count * sizeof(pdf_cff_private) +
@@ -81,6 +84,7 @@ void cupidimage_pdf_font_program_free(pdf_font_program *program) {
         cupidimage_pdf_type1_free(&program->type1);
         free(program->bytes);
         free(program->gid_map);
+        free(program->recovered_glyph_ends);
         free(program);
     }
 }
@@ -280,11 +284,16 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
             goto done;
     } else if (cff_stream || cff_sfnt_table(program->bytes, program->length, &cff)) {
         program->is_cff = 1;
-        if (!cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length) ||
+        if (!(program->cid ? cupidimage_pdf_cff_init_subset(&program->cff, cff.data, cff.length)
+                           : cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length)) ||
             program->cff.top.cid != (unsigned)program->cid ||
             (!program->cid && !ps_pdf_encoding(data, size, view, program)))
             goto done;
-    } else if (!cupidimage_pdf_tt_init(&program->font, program->bytes, program->length))
+    } else if (!(program->cid
+                     ? cupidimage_pdf_tt_init_subset(&program->font, program->bytes,
+                                                     program->length,
+                                                     &program->recovered_glyph_ends)
+                     : cupidimage_pdf_tt_init(&program->font, program->bytes, program->length)))
         goto done;
     if (program->cid && !program->is_cff && !program->is_type1) {
         present = cupidimage_pdf_optional_value(data, size, owner, "CIDToGIDMap", &map);

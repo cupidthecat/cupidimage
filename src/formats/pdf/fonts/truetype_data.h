@@ -3,6 +3,11 @@
 #include "truetype.h"
 
 /* Internal, borrowed table views and unnormalized simple-glyph coordinates. */
+/* Table bounds only; used by the subset constructor before building safe spans. */
+int cupidimage_pdf_tt_init_tables(pdf_tt_font *, const unsigned char *, size_t);
+/* The caller owns *glyph_ends and must retain it while the font is in use. */
+int cupidimage_pdf_tt_init_subset(pdf_tt_font *, const unsigned char *, size_t,
+                                  uint32_t **glyph_ends);
 int cupidimage_pdf_tt_glyph_data(const pdf_tt_font *, unsigned, pdf_tt_table *);
 /* Returns 1 on success, 0 for invalid data, -1 for allocation failure. */
 int cupidimage_pdf_tt_simple_points(const pdf_tt_table *, pdf_tt_outline *, pdf_tt_table *);

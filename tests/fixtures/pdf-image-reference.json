@@ -642,6 +642,22 @@
       "rgba_zlib": "eNpj+M+AHzL8x4sJKWAYNX/U/FHzR80fNX9Qmg8AjHn9Hw==",
       "tolerance": 0,
       "provenance": "Literal RGB bands selected by default OCG states, an OCMD policy and a visibility expression."
+    },
+    {
+      "asset": "assets/pdf/reference/subset-cid-truetype.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
+      "tolerance": 0,
+      "provenance": "Literal rectangle from an owned CID glyph, preserving its identity and outline through bounded subset recovery."
+    },
+    {
+      "asset": "assets/pdf/reference/subset-cid-cff.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/394AYYG/HjU/FHzR80fNZ9W5g81AABThmsM",
+      "tolerance": 0,
+      "provenance": "Literal rectangle from an owned CID glyph, preserving its identity and outline through bounded subset recovery."
     }
   ]
 }

@@ -122,3 +122,11 @@ Free it with `cupidimage_pdf_tt_hint_shape_free`. Empty glyphs produce empty sha
 work, allocation or coordinate overflow fails without returning a partial shape.
 This adapter does not choose PDF text advances, rasterize, or connect the loader
 to the page renderer. See the VM guide for comparison scope and differences.
+
+## Recovered CID program lifetime
+
+PDF CID programs may carry a separately owned glyph-end index for damaged
+location tables. Hinted and unhinted decoding share its bounded span accessor.
+Prepared loaders borrow the index through the retained font program; they do not
+free it independently. See [subset recovery](pdf-subset-fonts.md) for admission
+rules, ownership tests and the limits of this compatibility path.

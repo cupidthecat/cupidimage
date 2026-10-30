@@ -98,3 +98,10 @@ bands. Its literal pixel oracle also matches an independent 96-DPI raster.
 The optional-content-text.pdf sample shows preserved advances and glyph clipping
 inside hidden layers; its complete raster is decoded-unverified. Regenerate both
 with scripts/generate_pdf_optional_fixtures.py.
+
+The subset-cid-truetype.pdf and subset-cid-cff.pdf reference assets contain owned
+CID fonts with deliberately damaged subset tables. Their selected glyphs retain
+the same blue rectangle as valid controls. Both have exact literal pixel oracles
+and independent 96-DPI matches. Regenerate them with
+scripts/generate_pdf_subset_fixtures.py; see ../docs/pdf-subset-fonts.md for the
+bounded recovery policy.

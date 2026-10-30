@@ -844,3 +844,11 @@ The default remains center-point coverage. Page glyphs remain unhinted unless
 `--pdf-tt-hinting` is also enabled for TrueType programs. Text strokes use [analytic union coverage](pdf-stroke-outlines.md) with the
 same option; [text clip coverage](pdf-clipping.md) uses geometric intersections. Standalone bitmap tests and page tests have separate qualification
 scopes; neither establishes complete font fidelity.
+
+## Damaged embedded CID subsets
+
+The PDF CID loader has [bounded recovery](pdf-subset-fonts.md) for unordered
+TrueType locations and a missing CFF .notdef selector when exactly one font
+dictionary exists. It keeps the original glyph programs, identities and PDF
+metrics. Normal parser entry points remain unchanged, and the guide separates
+these compatibility cases from normative font requirements.

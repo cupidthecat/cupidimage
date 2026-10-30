@@ -28,6 +28,7 @@
 #include "../src/formats/pdf/fonts/truetype.c"
 #include "../src/formats/pdf/fonts/truetype_cmap.c"
 #include "../src/formats/pdf/fonts/truetype_names.c"
+#include "../src/formats/pdf/fonts/truetype_subset.c"
 #include "../src/formats/pdf/fonts/type1.c"
 #include "../src/formats/pdf/fonts/type1/counter.c"
 #include "../src/formats/pdf/fonts/type1/hints.c"
