@@ -45,7 +45,8 @@ must not be applied twice where the shading covers its background.
 ## Bounds and remaining work
 
 Pattern definitions, cached cells and per-object results share the 64 MiB pattern
-cache budget. Colored caches and per-object surfaces use 44 bytes per pixel plus
+cache budget. Colored caches and per-object surfaces use 44 bytes per pixel for gray/RGB or
+52 for CMYK, plus
 their descriptors; uncolored caches use 20 bytes per pixel. A per-object surface
 also consumes the shared transparency budget while it is being evaluated.
 The per-object surface is released when that paint operation ends.

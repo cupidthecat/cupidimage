@@ -165,6 +165,8 @@ static int pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *
             *st->pattern_needs_backdrop = 1;
         return 0;
     }
+    if (!cupidimage_pdf_color_function_state(st, view, &next))
+        return 0;
     if (!st->glyph_uncolored && cupidimage_pdf_page_value(view, "SMask", &pos)) {
         pdf_soft_mask *mask = NULL;
         int replace;
@@ -313,4 +315,36 @@ void cupidimage_pdf_blend_colors(int mode, const double source[3], const double 
         }
         result[i] = v;
     }
+}
+
+void cupidimage_pdf_blend_components(int mode, const double *source, const double *backdrop,
+                                     double result[4], unsigned components) {
+    if (components != 4) {
+        cupidimage_pdf_blend_colors(mode, source, backdrop, result);
+        result[3] = 0;
+        return;
+    }
+    if (!mode) {
+        if (result != source)
+            memcpy(result, source, 4 * sizeof(*result));
+        return;
+    }
+    double additive_source[3], additive_backdrop[3], mixed[3];
+    for (unsigned i = 0; i < 3; i++) {
+        additive_source[i] = 1 - source[i];
+        additive_backdrop[i] = 1 - backdrop[i];
+    }
+    cupidimage_pdf_blend_colors(mode, additive_source, additive_backdrop, mixed);
+    double black;
+    if (mode >= 12)
+        black = mode == 15 ? source[3] : backdrop[3];
+    else {
+        double s[3] = {1 - source[3], 1 - source[3], 1 - source[3]};
+        double b[3] = {1 - backdrop[3], 1 - backdrop[3], 1 - backdrop[3]}, out[3];
+        cupidimage_pdf_blend_colors(mode, s, b, out);
+        black = 1 - out[0];
+    }
+    for (unsigned i = 0; i < 3; i++)
+        result[i] = 1 - mixed[i];
+    result[3] = black;
 }

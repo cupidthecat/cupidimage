@@ -104,7 +104,8 @@ def main():
         check('mask-colours-independent-of-uncolored-pattern',fixture(content='/PC cs 1 0 0 /P scn 0 0 18 12 re f',extra={6:uncolored,7:mask_form},page_extra='/Pattern << /P 6 0 R >> /ColorSpace << /PC [/Pattern /DeviceRGB] >>'),lambda x,y:red if x%8<4 and y%8>=4 else white)
         mask_form=form('/Blend gs 1 g 0 0 6 6 re f','/BBox [0 0 6 6] /Group << /S /Transparency /I true /CS /DeviceGray >> /Resources << /ExtGState << /Blend << /BM /Screen >> >> >>')
         check('mask-blending-inside-pattern',fixture(content='/PC cs 1 0 0 /P scn 0 0 18 12 re f',extra={6:uncolored,7:mask_form},page_extra='/Pattern << /P 6 0 R >> /ColorSpace << /PC [/Pattern /DeviceRGB] >>'),lambda x,y:red if x%8<4 and y%8>=4 else white)
-        for kwargs in ({'subtype':'Other'},{'subtype':'Luminosity','space':''},{'subtype':'Luminosity','mask_extra':'/BC [1 1]'}, {'mask_extra':'/TR /Unknown'},{'mask_program':'/M gs 0 0 18 12 re f'},{'space':'/DeviceCMYK'},{'extra':{5:form('0 0 18 12 re f','/BBox [0 0 18 12]')}}):
+        check('cmyk-alpha-mask',fixture(space='/DeviceCMYK'),lambda x,y:red if x<12 else white,reference=False)
+        for kwargs in ({'subtype':'Other'},{'subtype':'Luminosity','space':''},{'subtype':'Luminosity','mask_extra':'/BC [1 1]'}, {'mask_extra':'/TR /Unknown'},{'mask_program':'/M gs 0 0 18 12 re f'},{'extra':{5:form('0 0 18 12 re f','/BBox [0 0 18 12]')}}):
             check('invalid',fixture(**kwargs),reject=True)
     print(f'Graphics-state soft masks: {checks} checks passed; {refs} independent comparisons')
 

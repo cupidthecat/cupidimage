@@ -16,6 +16,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     group.color = cache->color;
     group.gray = cache->gray;
     group.blend = cache->blend;
+    group.channels = cache->channels;
     group.isolated = 1;
     if (!parent->form_budget->calls_left || length > parent->form_budget->bytes_left)
         return 0;
@@ -102,9 +103,9 @@ static int pdf_pattern_capture_surface(pdf_render_state *parent, pdf_pattern *pa
         return 0;
     parent->clip_budget->tests_left -= pixels;
     for (size_t pixel = 0; pixel < pixels; pixel++) {
-        double color[3], alpha, shape;
+        double color[4] = {0}, alpha, shape;
         cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
-        memcpy(group->color + pixel * 3, color, sizeof(color));
+        memcpy(group->color + pixel * group->channels, color, group->channels * sizeof(*color));
     }
     parent->patterns->bytes_used += bytes;
     parent->form_budget->transparency_bytes_live -= group->bytes;
@@ -121,7 +122,7 @@ static int pdf_pattern_shading_surface(pdf_render_state *parent, pdf_pattern *pa
     pdf_render_state *context = malloc(sizeof(*context));
     int ok = group && context;
     if (ok)
-        ok = cupidimage_pdf_group_surface(parent, group, 0, NULL);
+        ok = cupidimage_pdf_group_surface(parent, group, 0, NULL, NULL);
     if (ok) {
         group->knockout = 1;
         *context = *parent;
@@ -149,8 +150,10 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
     size_t pixels = (size_t)parent->img->width * parent->img->height;
     if (parent->patterns->bytes_used > cache_limit ||
         cache_limit - parent->patterns->bytes_used < sizeof(pdf_transparency_group) ||
-        pixels > (cache_limit - parent->patterns->bytes_used - sizeof(pdf_transparency_group)) /
-                     (4 + 5 * sizeof(double)))
+        pixels >
+            (cache_limit - parent->patterns->bytes_used - sizeof(pdf_transparency_group)) /
+                (4 + (2 + (cupidimage_pdf_current_blend(parent)->colors.components == 4 ? 4 : 3)) *
+                         sizeof(double)))
         return 0;
     if (pattern->shading)
         return pdf_pattern_shading_surface(parent, pattern);
@@ -185,7 +188,7 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
     cupidimage_pdf_font_table_init(&fonts);
     int ok = group && child;
     if (ok)
-        ok = cupidimage_pdf_group_surface(parent, group, 0, NULL);
+        ok = cupidimage_pdf_group_surface(parent, group, 0, NULL, NULL);
     if (ok)
         ok = cupidimage_pdf_collect_resource_fonts(parent->document, parent->document_size,
                                                    &pattern->definition, &fonts, parent->error,
@@ -275,6 +278,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     group.color = cache->color;
     group.gray = cache->gray;
     group.blend = cache->blend;
+    group.channels = cache->channels;
     group.isolated = group.knockout = 1;
     if (!parent->form_budget->calls_left)
         return 0;
@@ -342,8 +346,27 @@ int cupidimage_pdf_refresh_pattern_cache(pdf_render_state *st, pdf_pattern *patt
     *context = *st;
     context->initial_gs = *pattern->initial;
     size_t pixels = (size_t)pattern->tile.width * pattern->tile.height;
+    unsigned channels = cupidimage_pdf_current_blend(st)->colors.components == 4 ? 4 : 3;
+    if (channels > pattern->channels) {
+        const size_t limit = 64u * 1024u * 1024u;
+        size_t extra = pixels * (channels - pattern->channels) * sizeof(double);
+        if (st->patterns->bytes_used > limit || extra > limit - st->patterns->bytes_used) {
+            free(context);
+            return 0;
+        }
+        double *planes = realloc(pattern->shape, pixels * (2 + channels) * sizeof(double));
+        if (!planes) {
+            free(context);
+            return 0;
+        }
+        pattern->shape = planes;
+        pattern->alpha = planes + pixels;
+        pattern->color = planes + pixels * 2;
+        pattern->channels = channels;
+        st->patterns->bytes_used += extra;
+    }
     memset(pattern->tile.rgba, 0, pixels * 4);
-    memset(pattern->shape, 0, pixels * 5 * sizeof(double));
+    memset(pattern->shape, 0, pixels * (2 + pattern->channels) * sizeof(double));
     pattern->blend = *cupidimage_pdf_current_blend(st);
     pattern->gray = pattern->blend.colors.components == 1;
     int ok = 1;

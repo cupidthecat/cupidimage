@@ -20,9 +20,10 @@ TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](
 [TrueType](docs/pdf-page-hinting.md), [CFF](docs/pdf-cff-page-hinting.md) and
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
 profiles have separate controls and limits.
-Tiling/shading patterns, styled dashed strokes, RGB/gray transparency
-groups, selected [calibrated and ICC blending spaces](docs/pdf-blending-colors.md),
-and graphics-state soft masks are also supported. Full font fidelity,
+Tiling/shading patterns, styled dashed strokes and graphics-state soft masks are
+also supported. Transparency groups can use device colors, including
+[CMYK](docs/pdf-cmyk-blending.md), and selected
+[calibrated and ICC spaces](docs/pdf-blending-colors.md). Full font fidelity,
 additional transparency spaces, color management and annotations still need work.
 See the [shading guide](docs/pdf-shading.md) and [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.

@@ -54,10 +54,11 @@ def main():
         check('not-inherited',fixture('1 0 0 rg 0 0 18 12 re f',parent='/Group '+gray),red)
         check('final-clip-does-not-reclip',fixture('1 0 0 rg 0 0 18 12 re f 0 0 9 12 re W n'),red)
         check('empty-gray',fixture('',gray),white)
-        check('contentless-invalid-group',fixture('', '<< /S /Transparency /CS /DeviceCMYK >>'),reject=True)
+        check('contentless-cmyk-group',fixture('', '<< /S /Transparency /CS /DeviceCMYK >>'),white,reference=False)
+        check('cmyk-native',fixture('0 1 1 0 k 0 0 18 12 re f', '<< /S /Transparency /CS /DeviceCMYK >>'),red,reference=False)
         nested=form('1 0 0 rg 0 0 18 12 re f','/BBox [0 0 18 12] /Group << /S /Transparency /I false >>')
         check('nested-inherits-gray',fixture('/F Do',gray,'/XObject << /F 5 0 R >>',{5:nested}),lambda x,y:(77,77,77),reference=False)
-        for group in ('<< /S /Other >>','<< /S /Transparency /I /Bad >>','<< /S /Transparency /CS /DeviceCMYK >>','<< /S /Transparency /CS [/Indexed /DeviceRGB 0 <000000>] >>'):
+        for group in ('<< /S /Other >>','<< /S /Transparency /I /Bad >>','<< /S /Transparency /CS [/Indexed /DeviceRGB 0 <000000>] >>'):
             check('unsupported-'+group,fixture('0 0 18 12 re f',group),reject=True)
     print(f'PDF page groups: {checks} checks passed; {refs} independent comparisons')
 

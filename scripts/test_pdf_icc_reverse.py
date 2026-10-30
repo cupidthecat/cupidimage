@@ -61,6 +61,13 @@ def main():
             assert (r.returncode!=0)==reject,(r.returncode,r.stderr,kind,outputs,values)
             checks+=1
             return list(map(float,r.stdout.split())) if not reject else None
+        def truncations(data,outputs,kind='lut',allowed=-1):
+            nonlocal checks
+            path.write_bytes(data)
+            r=subprocess.run([probe,str(path),kind,str(outputs),'1','.2','.5','.8','--truncations',str(allowed)],capture_output=True,text=True,timeout=30)
+            assert r.returncode==0,(r.returncode,r.stderr)
+            assert int(r.stdout)==len(data)
+            checks+=int(r.stdout)
         points=[(-1,2,.5),(0,0,0),(1,1,1),(.5,.5,.5),*itertools.permutations((.2,.5,.8))]
         points += [tuple(rng.random() for _ in range(3)) for _ in range(100)]
         for outputs,bits in itertools.product((1,3,4),(8,16)):
@@ -72,8 +79,7 @@ def main():
                 assert max(abs(a-b) for a,b in zip(actual,expected))<1e-12,(actual,expected)
             for point in ((float('nan'),0,0),(0,float('inf'),0),(0,0,-float('inf'))):
                 evaluate(data,outputs,point,reject=True)
-            for end in range(len(data)):
-                evaluate(data[:end],outputs,reject=True)
+            truncations(data,outputs)
             if bits==8:evaluate(data,outputs,lab=False,reject=True)
         matrix=(0,.5,0,1,0,0,0,0,1)
         for outputs in (1,3,4):
@@ -95,8 +101,7 @@ def main():
                 expected=[v*v for v in (x[0],min(x[1],x[2]),min(x),1-x[2])[:outputs]]
                 actual=evaluate(data,outputs,point,kind='mba')
                 assert max(abs(a-b) for a,b in zip(actual,expected))<1e-12,(actual,expected)
-            for end in range(len(data)):
-                evaluate(data[:end],outputs,kind='mba',reject=(end!=len(data)-2))
+            truncations(data,outputs,kind='mba',allowed=len(data)-2)
         for value in (curve(),gamma(2),parametric(3,[2,1,0,1,.25])):
             for point in points:
                 actual=evaluate(mba(b=[value]*3),3,point,kind='mba')

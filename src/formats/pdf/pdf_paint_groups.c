@@ -13,7 +13,7 @@ int cupidimage_pdf_fill_stroke_begin(pdf_render_state *st, pdf_paint_group *pain
         return 1;
     pdf_transparency_group *group = &paint->surface;
     group->lazy_backdrop = 1;
-    if (!cupidimage_pdf_group_surface(st, group, 0, NULL)) {
+    if (!cupidimage_pdf_group_surface(st, group, 0, NULL, NULL)) {
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: combined paint transparency group exceeds limits");

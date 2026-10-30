@@ -1542,7 +1542,11 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
             "Full raster fidelity, remaining group color models and all cross-feature interactions remain incomplete."
@@ -1553,7 +1557,7 @@
             "5",
             "6"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2277,7 +2281,11 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
             "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and additional ICC blending models remain incomplete."
@@ -2287,7 +2295,7 @@
             "4",
             "12"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.5.5",
             "ICC.1:2022 10.6, 10.18 and Annex F",
@@ -2897,10 +2905,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2908,7 +2920,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2925,10 +2937,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2936,7 +2952,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2955,10 +2971,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2966,7 +2986,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4"
           ]
@@ -2988,10 +3008,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2999,7 +3023,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4",
             "ISO 32000-1/2 9.3.6"
@@ -3019,10 +3043,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3030,7 +3058,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -3047,10 +3075,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3058,7 +3090,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -3075,10 +3107,14 @@
             "tests/test_pdf_icc_inverse.c",
             "scripts/test_pdf_icc_reverse.py",
             "scripts/test_pdf_icc_reverse_groups.py",
-            "tests/test_pdf_icc_reverse.c"
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK groups, ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -3086,7 +3122,7 @@
             "8",
             "11"
           ],
-          "audit": "Calibrated, ICC matrix/TRC and lookup-based groups, CIE luminosity, intent state, pattern encodings and inverse failures tested; full audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         }
       ],
@@ -3838,20 +3874,26 @@
         {
           "id": "19.2",
           "requirement": "Transfer functions, black generation, undercolor removal where applicable.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "BG/BG2 and UCR/UCR2 are implemented for DeviceRGB-to-DeviceCMYK conversion. Output transfer functions TR/TR2 and complete device-specific behavior remain unfinished."
           ],
           "dependencies": [
             "11",
             "12",
             "14"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Black-generation and undercolor-removal state, formulas, native function types and allocation failures tested; output transfer functions remain unimplemented",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Table 58; 10.3.4; 11.7.5.3"
+          ]
         },
         {
           "id": "19.3",
@@ -4800,7 +4842,11 @@
             "tests/test_pdf_flatness.c",
             "scripts/test_pdf_flatness.py",
             "docs/pdf-content.md",
-            "src/formats/pdf/pdf_path.c"
+            "src/formats/pdf/pdf_path.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
             "The remaining operator and ExtGState inventory needs a complete version-specific audit."

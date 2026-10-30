@@ -39,22 +39,24 @@ static double group_initial_alpha(const pdf_transparency_group *group, size_t pi
     return group->backdrop->rgba[pixel * 4 + 3] / 255.0;
 }
 
-static void group_initial_color(const pdf_transparency_group *group, size_t pixel, double out[3]) {
+static void group_initial_color(const pdf_transparency_group *group, size_t pixel, double *out) {
     if (!group->isolated && group->parent &&
         (group->parent->knockout ||
          (group->parent->lazy_backdrop && group->parent->shape[pixel] == 0))) {
-        group_initial_color(group->parent, pixel, out);
+        double inherited[4] = {0};
+        group_initial_color(group->parent, pixel, inherited);
+        memcpy(out, inherited, group->channels * sizeof(*out));
         return;
     }
-    for (unsigned i = 0; i < 3; i++)
+    for (unsigned i = 0; i < group->channels; i++)
         out[i] = group->isolated ? 0
-                 : group->parent ? group->parent->color[pixel * 3 + i]
-                                 : group->backdrop->rgba[pixel * 4 + i] / 255.0;
+                 : group->parent ? group->parent->color[pixel * group->parent->channels + i]
+                                 : (i < 3 ? group->backdrop->rgba[pixel * 4 + i] / 255.0 : 0);
 }
 
 /* ISO 32000-1 11.4.8: shape controls replacement separately from opacity.
  * A knockout member uses the group's initial backdrop, not earlier members. */
-void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double source[3],
+void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double *source,
                                 double alpha, double shape, int blend_mode) {
     unsigned x = (unsigned)(pixel % group->image.width);
     unsigned y = (unsigned)(pixel / group->image.width);
@@ -72,13 +74,14 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
     double ab = base_group_alpha + a0 * (1 - base_group_alpha);
     double result_group_alpha = (1 - shape) * ag + (shape - alpha) * base_group_alpha + alpha;
     double ar = result_group_alpha + a0 * (1 - result_group_alpha);
-    double *color = group->color + pixel * 3, backdrop[3], blended[3], converted[3];
+    double *color = group->color + pixel * group->channels, backdrop[4] = {0}, blended[4] = {0},
+           converted[4] = {0};
     if (group->lazy_backdrop && group->shape[pixel] == 0)
         group_initial_color(group, pixel, color);
     if (group->knockout)
         group_initial_color(group, pixel, backdrop);
     else
-        memcpy(backdrop, color, sizeof(backdrop));
+        memcpy(backdrop, color, group->channels * sizeof(*color));
     if (group->gray) {
         double g = source[0] == source[1] && source[1] == source[2]
                        ? source[0]
@@ -86,15 +89,17 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
         converted[0] = converted[1] = converted[2] = g;
         source = converted;
     }
-    cupidimage_pdf_blend_colors(blend_mode, source, backdrop, blended);
-    for (unsigned i = 0; i < 3; i++) {
+    cupidimage_pdf_blend_components(blend_mode, source, backdrop, blended,
+                                    group->blend.colors.components);
+    for (unsigned i = 0; i < group->channels; i++) {
         double value =
             ar > 0 ? ((1 - shape) * previous_alpha * color[i] + (shape - alpha) * ab * backdrop[i] +
                       alpha * ((1 - ab) * source[i] + ab * blended[i])) /
                          ar
                    : 0;
         color[i] = fmax(0, fmin(1, value));
-        group->image.rgba[pixel * 4 + i] = cupidimage_pdf_clamp_u8(color[i]);
+        if (i < 3)
+            group->image.rgba[pixel * 4 + i] = cupidimage_pdf_clamp_u8(color[i]);
     }
     group->alpha[pixel] = fmax(0, fmin(1, result_group_alpha));
     group->shape[pixel] = shape + group->shape[pixel] * (1 - shape);
@@ -102,41 +107,43 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
 }
 
 int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
-                                 int isolated, const double background[3]) {
+                                 int isolated, const double *background,
+                                 const pdf_blend_space *blend) {
+    group->blend = blend ? *blend : *cupidimage_pdf_current_blend(parent);
+    group->channels = group->blend.colors.components == 4 ? 4 : 3;
     if (background)
-        for (unsigned i = 0; i < 3; i++)
+        for (unsigned i = 0; i < group->channels; i++)
             if (!isfinite(background[i]))
                 return 0;
     size_t pixels = (size_t)parent->img->width * parent->img->height;
     const size_t limit = PDF_TRANSPARENCY_MEMORY_LIMIT;
     if (parent->img->width && pixels / parent->img->width != parent->img->height)
         return 0;
-    size_t per_pixel = 4 + 5 * sizeof(double);
+    size_t per_pixel = 4 + (2 + group->channels) * sizeof(double);
     if (parent->form_budget->transparency_bytes_live > limit ||
         pixels > (limit - parent->form_budget->transparency_bytes_live) / per_pixel)
         return 0;
     group->image.rgba = calloc(pixels, 4);
     if (!group->image.rgba)
         return 0;
-    group->alpha = calloc(pixels, 5 * sizeof(*group->alpha));
+    group->alpha = calloc(pixels, (2 + group->channels) * sizeof(*group->alpha));
     if (!group->alpha) {
         free(group->image.rgba);
         group->image.rgba = NULL;
         return 0;
     }
     group->color = group->alpha + pixels;
-    group->shape = group->color + pixels * 3;
+    group->shape = group->color + pixels * group->channels;
     group->isolated = isolated;
-    group->blend = *cupidimage_pdf_current_blend(parent);
     group->gray = group->blend.colors.components == 1;
     group->parent = parent->group;
     group->backdrop = parent->img;
     if (!isolated && !group->lazy_backdrop) {
         for (size_t pixel = 0; pixel < pixels; pixel++) {
-            group_initial_color(group, pixel, group->color + pixel * 3);
+            group_initial_color(group, pixel, group->color + pixel * group->channels);
             for (unsigned i = 0; i < 3; i++)
                 group->image.rgba[pixel * 4 + i] =
-                    cupidimage_pdf_clamp_u8(group->color[pixel * 3 + i]);
+                    cupidimage_pdf_clamp_u8(group->color[pixel * group->channels + i]);
             group->image.rgba[pixel * 4 + 3] =
                 cupidimage_pdf_clamp_u8(group_initial_alpha(group, pixel));
         }
@@ -154,10 +161,11 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
         group->bottom = group->image.height;
         for (size_t pixel = 0; pixel < pixels; pixel++) {
             group->alpha[pixel] = group->shape[pixel] = 1;
-            for (unsigned i = 0; i < 3; i++) {
-                group->color[pixel * 3 + i] = fmax(0, fmin(1, background[i]));
-                group->image.rgba[pixel * 4 + i] =
-                    cupidimage_pdf_clamp_u8(group->color[pixel * 3 + i]);
+            for (unsigned i = 0; i < group->channels; i++) {
+                group->color[pixel * group->channels + i] = fmax(0, fmin(1, background[i]));
+                if (i < 3)
+                    group->image.rgba[pixel * 4 + i] =
+                        cupidimage_pdf_clamp_u8(group->color[pixel * group->channels + i]);
             }
             group->image.rgba[pixel * 4 + 3] = 255;
         }
@@ -217,7 +225,7 @@ int cupidimage_pdf_group_begin(pdf_render_state *child, const pdf_render_state *
     if (!cupidimage_pdf_group_space(child, &attributes, 0, &blend) ||
         (!isolated && !cupidimage_pdf_blend_equal(&blend, cupidimage_pdf_current_blend(parent))))
         goto done;
-    if (!cupidimage_pdf_group_surface(parent, group, isolated, NULL))
+    if (!cupidimage_pdf_group_surface(parent, group, isolated, NULL, &blend))
         goto done;
     group->blend = isolated ? blend : *cupidimage_pdf_current_blend(parent);
     group->gray = group->blend.colors.components == 1;
@@ -255,7 +263,7 @@ int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group
                 goto done;
         }
     }
-    if (!cupidimage_pdf_group_surface(st, group, 1, NULL))
+    if (!cupidimage_pdf_group_surface(st, group, 1, NULL, &blend))
         goto done;
     group->blend = blend;
     group->gray = blend.colors.components == 1;
@@ -269,14 +277,14 @@ done:
     return ok;
 }
 
-void cupidimage_pdf_group_source(const pdf_transparency_group *group, size_t pixel, double color[3],
+void cupidimage_pdf_group_source(const pdf_transparency_group *group, size_t pixel, double *color,
                                  double *alpha, double *shape) {
     *alpha = group->alpha[pixel];
     *shape = group->shape[pixel];
-    double backdrop[3], a0 = group_initial_alpha(group, pixel);
+    double backdrop[4] = {0}, a0 = group_initial_alpha(group, pixel);
     group_initial_color(group, pixel, backdrop);
-    for (unsigned i = 0; i < 3; i++) {
-        double cn = group->color[pixel * 3 + i];
+    for (unsigned i = 0; i < group->channels; i++) {
+        double cn = group->color[pixel * group->channels + i];
         /* Remove the initial backdrop once, retaining precision through recomposition. */
         color[i] =
             *alpha > 0 ? fmax(0, fmin(1, cn + (cn - backdrop[i]) * a0 * (1 - *alpha) / *alpha)) : 0;
@@ -296,14 +304,14 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
     for (unsigned y = group->top; y < group->bottom; y++)
         for (unsigned x = group->left; x < group->right; x++) {
             size_t pixel = (size_t)y * group->image.width + x;
-            double color[3], alpha, shape;
+            double color[4] = {0}, alpha, shape;
             cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
             if (shape <= 0)
                 continue;
             const pdf_image_colors fallback = {.components = group->gray ? 1 : 3};
             const pdf_image_colors *source =
                 group->blend.colors.components ? &group->blend.colors : &fallback;
-            double converted[3];
+            double converted[4] = {0};
             if (!cupidimage_pdf_blend_convert(parent, source, cupidimage_pdf_current_blend(parent),
                                               color, converted)) {
                 parent->image_failed = 1;

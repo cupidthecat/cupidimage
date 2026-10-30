@@ -5,12 +5,12 @@ blend. Converting each member to display RGB first would change the result for
 nonlinear or wide-gamut spaces. Conversion happens when a source enters a group
 and when the finished group enters its parent.
 
-The supported group spaces are DeviceGray, DeviceRGB, CalGray, CalRGB and
-one- or three-component ICC profiles with usable matrix/TRC inverses or selected
-B2A lookup transforms. Their PCS may be XYZ or Lab; blending still operates on
-the profile's gray or RGB device components.
-Lab itself is not a permitted PDF blending space. CMYK groups, multiprocess
-destination transforms, output profiles and black-point compensation remain
+The supported group spaces are DeviceGray, DeviceRGB, DeviceCMYK, CalGray, CalRGB
+and one-, three- or four-component ICC profiles with usable matrix/TRC inverses
+or selected B2A lookup transforms. Their PCS may be XYZ or Lab; blending still operates on
+the profile's gray, RGB or CMYK device components.
+Lab itself is not a permitted PDF blending space. Multiprocess destination
+transforms, output profiles and black-point compensation remain
 unfinished. An unsupported group fails; it does not silently become DeviceRGB.
 
 ## Conversion and state
@@ -68,8 +68,8 @@ spot-aware blending still need work.
 
 ## Tests
 
-`make test-pdf-cie-groups` runs 295,604 inverse-curve and matrix checks, 212 page
-checks and 1,736 allocation-failure checks. Page cases cover native-component
+`make test-pdf-cie-groups` runs 295,604 inverse-curve and matrix checks, 214 page
+checks and 1,757 allocation-failure checks. Page cases cover native-component
 blending, isolated/non-isolated forms, source images, Type 3 glyphs, text,
 pattern-cache changes, wide-gamut transport, soft-mask luminosity, intent state
 and rejected inverse transforms. Paired native compositions require exact
@@ -115,10 +115,10 @@ the reference-medium black encoding before the destination table; saturation
 uses that encoding when `rig2` selects the perceptual reference medium. Supported
 absolute conversion removes the media-white scaling before table evaluation.
 
-The table core supports one, three and four output channels, but the PDF group
-compositor still admits only gray and RGB profiles. Four-channel kernel tests are
-not evidence of CMYK group support. This also does not add a monitor-profile API,
-black-point compensation or arbitrary output intents.
+The table core supports one, three and four output channels. Gray, RGB and
+[CMYK groups](pdf-cmyk-blending.md) can use supported bidirectional profiles.
+This does not add a monitor-profile API, black-point compensation or arbitrary
+output intents.
 
 `make test-pdf-icc-reverse` adds 10,700 raw pipeline checks, 94 page checks and
 435 allocation-failure checks. Cases cover stage order, table priority, intent

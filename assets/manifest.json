@@ -486,6 +486,10 @@
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },
     {
+      "path": "assets/pdf/cmyk-blending.pdf",
+      "sha256": "880c52c64fd0569cf881e4a36469838f2578265340816489f6ec720415568d16"
+    },
+    {
       "path": "assets/pdf/colors.pdf",
       "sha256": "5b61ef578bc5311739b87921fa7185007d1447759aed7fae8d9232714511d3c8"
     },

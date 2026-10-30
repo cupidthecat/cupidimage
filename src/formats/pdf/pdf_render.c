@@ -112,8 +112,14 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
             return;
     }
     if (st->group) {
-        double source[3] = {r / 255.0, g / 255.0, b / 255.0};
-        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, shape, st->gs.blend_mode);
+        double source[4] = {r / 255.0, g / 255.0, b / 255.0, 0}, converted[4] = {0};
+        const pdf_image_colors space = {.components = 3};
+        if (!cupidimage_pdf_blend_convert(st, &space, cupidimage_pdf_current_blend(st), source,
+                                          converted)) {
+            st->image_failed = 1;
+            return;
+        }
+        cupidimage_pdf_group_paint(st->group, pixel, converted, alpha, shape, st->gs.blend_mode);
         return;
     }
     if (st->shape_plane)
@@ -211,7 +217,7 @@ void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const do
 void cupidimage_pdf_paint_pixel(pdf_render_state *st, int x, int y, int stroke, double coverage) {
     pdf_pattern *pattern = stroke ? st->gs.stroke_pattern : st->gs.fill_pattern;
     const pdf_image_colors *space = stroke ? &st->gs.stroke_space : &st->gs.fill_space;
-    double rgb[3] = {0};
+    double rgb[4] = {0};
     double shape = coverage, intrinsic_alpha = 1;
     if (space->pattern) {
         /* Selecting Pattern starts with an empty pattern until SCN/scn selects one. */
@@ -244,7 +250,7 @@ void cupidimage_pdf_composite_space(pdf_render_state *st, int x, int y, const do
         cupidimage_pdf_tint_paint(st, x, y, values, space->tint, alpha, shape);
         return;
     }
-    double converted[3];
+    double converted[4] = {0};
     if (!cupidimage_pdf_blend_convert(st, space, cupidimage_pdf_current_blend(st), values,
                                       converted)) {
         st->image_failed = 1;
@@ -1385,7 +1391,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     child->initial_gs = child->gs;
     child->initial_gs.soft_mask = NULL;
     child->initial_gs.clip = NULL;
-    if (!cupidimage_pdf_group_surface(st, &glyph_group, 0, NULL))
+    if (!cupidimage_pdf_group_surface(st, &glyph_group, 0, NULL, NULL))
         goto done;
     child->group = &glyph_group;
     child->img = &glyph_group.image;
@@ -1559,6 +1565,8 @@ int cupidimage_pdf_render_content_stream_options(
     st.patterns = &patterns;
     pdf_icc_store profiles = {0};
     st.icc_store = &profiles;
+    pdf_color_function_store color_functions = {0};
+    st.color_functions = &color_functions;
     pdf_tint_store tints = {0};
     st.tints = &tints;
     pdf_palette_store palettes = {0};
@@ -1608,6 +1616,7 @@ int cupidimage_pdf_render_content_stream_options(
     cupidimage_pdf_palettes_free(&palettes);
     cupidimage_pdf_tint_free(&tints);
     cupidimage_pdf_icc_free(&profiles);
+    cupidimage_pdf_color_functions_free(&color_functions);
     cupidimage_pdf_page_hint_free(&form_budget.hint_cache);
     if (!ok && err && errcap && !err[0])
         cupidimage_set_err(err, errcap,

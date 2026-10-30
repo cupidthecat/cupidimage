@@ -56,6 +56,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_font_program.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/clipping/geometry.c"
+#include "../src/formats/pdf/color/black_generation.c"
 #include "../src/formats/pdf/color/blend.c"
 #include "../src/formats/pdf/color/curve_inverse.c"
 #include "../src/formats/pdf/color/matrix.c"
@@ -97,10 +98,10 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 static int test_text_lazy_enabled = 1;
 
 static int test_text_surface(const pdf_render_state *parent, pdf_transparency_group *group,
-                             int isolated, const double background[3]) {
+                             int isolated, const double *background, const pdf_blend_space *blend) {
     if (!test_text_lazy_enabled)
         group->lazy_backdrop = 0;
-    return cupidimage_pdf_group_surface(parent, group, isolated, background);
+    return cupidimage_pdf_group_surface(parent, group, isolated, background, blend);
 }
 
 #define cupidimage_pdf_group_surface test_text_surface
@@ -698,8 +699,9 @@ int main(int argc, char **argv) {
             }
     }
     /* Page isolation preserves the caller's pixels until a complete render succeeds. */
-    for (unsigned variant = 0; variant < 4; variant++) {
-        const char *attribute = variant == 0 ? ""
+    for (unsigned variant = 0; variant < 5; variant++) {
+        const char *attribute = variant == 0   ? ""
+                                : variant == 4 ? "/Group << /S /Transparency /CS /Pattern >>"
                                 : variant == 3
                                     ? "/Group << /S /Transparency /CS /DeviceCMYK >>"
                                     : "/Group << /S /Transparency /CS /DeviceGray /I false >>";
@@ -726,8 +728,14 @@ int main(int argc, char **argv) {
             if (!failure)
                 total = allocation_count;
             checks++;
-            if ((!failure && ok != (variant < 2)) || live_count)
+            if ((!failure && ok != (variant < 2 || variant == 3)) || live_count)
                 failures++;
+            if (!failure && variant == 3 && ok)
+                for (size_t i = 0; i < sizeof(pixels); i++)
+                    if (pixels[i] != (i % 4 == 0 || i % 4 == 3 ? 255 : 0)) {
+                        failures++;
+                        break;
+                    }
             if (!ok)
                 for (size_t i = 0; i < sizeof(pixels); i++)
                     if (pixels[i] != 255) {
@@ -1446,7 +1454,8 @@ int main(int argc, char **argv) {
         for (int sample = 0; sample < 4; sample++) {
             pdf_transparency_group group = {0};
             group.lazy_backdrop = sample != 3;
-            int ok = cupidimage_pdf_group_surface(&state, &group, 0, sample == 3 ? red : NULL);
+            int ok =
+                cupidimage_pdf_group_surface(&state, &group, 0, sample == 3 ? red : NULL, NULL);
             if (ok && sample == 1)
                 cupidimage_pdf_group_paint(&group, 5 * 16 + 7, red, 0, 1, 0);
             if (ok && sample == 2) {

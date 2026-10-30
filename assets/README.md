@@ -68,3 +68,7 @@ Regenerate it with `scripts/generate_pdf_cie_blend_fixture.py`.
 multistage ICC destination transforms. The authored profiles test pipeline
 behavior, not physical devices. Its complete raster is decoded-unverified.
 Regenerate it with `scripts/generate_pdf_icc_destination_fixture.py`.
+
+The owned pdf/cmyk-blending.pdf fixture exercises native four-component opacity,
+nonseparable blending, black generation and ICC groups. Its full raster is
+decoded-unverified. Regenerate it with scripts/generate_pdf_cmyk_blend_fixture.py.

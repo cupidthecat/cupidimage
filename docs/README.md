@@ -16,6 +16,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [TrueType composites](pdf-truetype-composites.md): component transforms, attachments, shared state and bounds.
 - [PDF colors](pdf-colors.md): device and calibrated source conversion, tests and limits.
 - [PDF blending colors](pdf-blending-colors.md): native group encodings, inverse curves, lookup transforms and luminosity.
+- [PDF CMYK blending](pdf-cmyk-blending.md): ink components, black generation, state and cache growth.
 - [PDF images](pdf-images.md): native samples, DCT transforms, filter chains and image limits.
 - [PDF image interpolation](pdf-image-interpolation.md): decoded-component filtering, masks, Matte and profile limits.
 - [PDF patterns](pdf-patterns.md): tiling, backdrop-dependent evaluation and cache limits.

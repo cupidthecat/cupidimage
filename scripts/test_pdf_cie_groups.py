@@ -193,6 +193,14 @@ def main():
         child=form('0 g '+FULL,'/BBox [0 0 18 12] /Group << /S /Transparency /I false /CS '+target_space+' >>')
         data=page(source,'/G Do',objects={20:child},resources='/XObject << /G 20 0 R >>')
         render(data,True);fault(data,True)
+        # PDF numeric zero has one value, even when parsed from a signed spelling.
+        parent_space='[/CalRGB << /WhitePoint ['+D65+'] /Matrix [1 0 0 0 1 0 0 0 1] >>]'
+        child_space='[/CalRGB << /WhitePoint ['+D65+'] /Matrix [1 -0 0 0 1 -0 -0 0 1] >>]'
+        spec=('signed zero',3,parent_space,{},False)
+        child=form('0 0 0 rg '+FULL,'/BBox [0 0 18 12] /Group << /S /Transparency /I false /CS '+child_space+' >>')
+        actual=page(spec,'/G Do',objects={20:child},resources='/XObject << /G 20 0 R >>')
+        assert render(actual)==render(page(spec,'0 0 0 rg '+FULL))
+        fault(actual)
         # An inverse that underflows to the wrong color must fail, not silently
         # return black for a middle-gray source.
         tiny=('tiny gamma',1,'[/CalGray << /WhitePoint ['+D65+'] /Gamma .0001 >>]',{},False)

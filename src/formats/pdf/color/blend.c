@@ -12,15 +12,22 @@ const pdf_blend_space *cupidimage_pdf_current_blend(const pdf_render_state *st) 
     return st->group && st->group->gray ? &blend_gray : &blend_rgb;
 }
 
+static int blend_numbers_equal(const double *a, const double *b, unsigned count) {
+    for (unsigned i = 0; i < count; i++)
+        if (a[i] != b[i])
+            return 0;
+    return 1;
+}
+
 static int blend_colors_equal(const pdf_image_colors *a, const pdf_image_colors *b) {
     if (a->components != b->components || a->calibrated != b->calibrated)
         return 0;
     if (a->icc || b->icc)
         return cupidimage_pdf_icc_equal(a->icc, b->icc);
     if (a->calibrated)
-        return !memcmp(a->white, b->white, sizeof(a->white)) &&
-               !memcmp(a->gamma, b->gamma, sizeof(a->gamma)) &&
-               (a->calibrated != 2 || !memcmp(a->matrix, b->matrix, sizeof(a->matrix)));
+        return blend_numbers_equal(a->white, b->white, 3) &&
+               blend_numbers_equal(a->gamma, b->gamma, 3) &&
+               (a->calibrated != 2 || blend_numbers_equal(a->matrix, b->matrix, 9));
     return 1;
 }
 
@@ -33,8 +40,9 @@ int cupidimage_pdf_blend_prepare(const pdf_render_state *st, const pdf_image_col
     if (!st || !colors || !blend || !st->clip_budget)
         return 0;
     memset(blend, 0, sizeof(*blend));
-    if ((colors->components != 1 && colors->components != 3) || colors->pattern ||
-        colors->indexed || colors->tint || colors->calibrated < 0 || colors->calibrated > 2)
+    if ((colors->components != 1 && colors->components != 3 && colors->components != 4) ||
+        colors->pattern || colors->indexed || colors->tint || colors->calibrated < 0 ||
+        colors->calibrated > 2)
         return 0;
     blend->colors = *colors;
     if (colors->icc)
@@ -82,12 +90,32 @@ static int blend_working_xyz(const pdf_render_state *st, const pdf_image_colors 
 
 int cupidimage_pdf_blend_convert(const pdf_render_state *st, const pdf_image_colors *source,
                                  const pdf_blend_space *destination, const double *values,
-                                 double output[3]) {
+                                 double *output) {
     if (!st || !source || !values || !output)
         return 0;
     if (!destination)
         destination = &blend_rgb;
     const pdf_image_colors *target = &destination->colors;
+    if (!target->icc && !target->calibrated && target->components == 4) {
+        if (!source->icc && !source->calibrated) {
+            if (source->components == 4) {
+                for (unsigned i = 0; i < 4; i++)
+                    output[i] = fmax(0, fmin(1, values[i]));
+                return 1;
+            }
+            if (source->components == 1) {
+                double gray = fmax(0, fmin(1, values[0]));
+                output[0] = output[1] = output[2] = 0;
+                output[3] = 1 - gray;
+                return 1;
+            }
+            return source->components == 3 && cupidimage_pdf_rgb_to_cmyk(st, values, 1, output);
+        }
+        double rgb[3];
+        if (!cupidimage_pdf_blend_convert(st, source, &blend_rgb, values, rgb))
+            return 0;
+        return cupidimage_pdf_rgb_to_cmyk(st, rgb, 0, output);
+    }
     if (!target->icc && !target->calibrated) {
         int gray = target->components == 1;
         if (source->icc)
@@ -136,11 +164,11 @@ int cupidimage_pdf_blend_convert(const pdf_render_state *st, const pdf_image_col
 }
 
 int cupidimage_pdf_blend_luminosity(const pdf_render_state *st, const pdf_blend_space *blend,
-                                    const double color[3], double *output) {
+                                    const double *color, double *output) {
     if (!st || !blend || !color || !output)
         return 0;
     const pdf_image_colors *space = &blend->colors;
-    double values[4] = {color[0], color[1], color[2], 0};
+    double values[4] = {color[0], color[1], color[2], space->components == 4 ? color[3] : 0};
     if (space->icc)
         return cupidimage_pdf_icc_luminosity(space->icc, values, st->gs.rendering_intent, output);
     if (space->calibrated) {
@@ -149,8 +177,10 @@ int cupidimage_pdf_blend_luminosity(const pdf_render_state *st, const pdf_blend_
         if (!isfinite(xyz[1]))
             return 0;
         *output = fmax(0, fmin(1, xyz[1]));
-    } else
-        *output =
-            space->components == 1 ? color[0] : .3 * color[0] + .59 * color[1] + .11 * color[2];
+    } else {
+        double gray[3];
+        cupidimage_pdf_device_color(values, space->components, 1, gray);
+        *output = gray[0];
+    }
     return 1;
 }

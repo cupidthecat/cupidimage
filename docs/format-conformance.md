@@ -59,7 +59,7 @@ with per-item status and evidence. It is not a completed standards audit.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, tiling patterns, seven shading types, RGB/gray groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, annotations, optional content, JPX/JBIG2 and full-document qualification |
+| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, annotations, optional content, JPX/JBIG2 and full-document qualification |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -696,7 +696,7 @@ semantics instead. The remaining optional-value audit is still tracked in #48.
 CalGray, CalRGB and bidirectional one-/three-component ICC matrix/TRC and lookup profiles now
 retain native components through transparency groups. Tests cover inverse curves,
 wide-gamut transport, pattern cache encodings, Type 3 glyphs, intent state and CIE
-luminosity masks. CMYK groups, ICC multiprocess destination pipelines, output profiles and
+luminosity masks. ICC multiprocess destination pipelines, output profiles and
 black-point compensation remain unfinished. See [blending colors](pdf-blending-colors.md)
 for the exact limits and focused evidence. The owned fixture is decoded-unverified.
 
@@ -705,3 +705,18 @@ clip geometry admission. This preserves visible fractional edges without raising
 the geometry coordinate limit. Rotated or sheared oversized boundaries are not
 covered by that optimization. Three new cases bring the fractional clipping
 suite to 85 page checks and 664 allocation-failure checks.
+
+## Four-component groups and ink conversion
+
+DeviceCMYK and supported bidirectional ICC CMYK groups retain K through all 16
+blend modes, group opacity, text, images and patterns. BG/BG2 and UCR/UCR2 now
+use the native PDF function engine for DeviceRGB-to-DeviceCMYK conversion,
+including precedence, page-default reset and state restoration. Gray/RGB surfaces
+retain their previous memory cost; four-component groups and cache growth have
+separate allocation checks. See [CMYK blending](pdf-cmyk-blending.md).
+
+The owned CMYK fixture remains decoded-unverified. Native component equations
+and selected page interactions have focused evidence; output transfer functions,
+overprint, physical device profiles and full-document parity remain unfinished.
+The feature inventory now records BG/UCR as partial support for its combined
+transfer-function requirement, rather than treating that entire row as missing.

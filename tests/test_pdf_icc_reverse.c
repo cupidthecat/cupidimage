@@ -5,7 +5,7 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-    if (argc != 8)
+    if (argc != 8 && (argc != 10 || strcmp(argv[8], "--truncations")))
         return 1;
     unsigned outputs = (unsigned)atoi(argv[3]);
     if (outputs != 1 && outputs != 3 && outputs != 4)
@@ -34,6 +34,37 @@ int main(int argc, char **argv) {
     ok = ok && (reverse_stages ? cupidimage_pdf_icc_mba_parse(&mba, data, (size_t)length, outputs)
                                : cupidimage_pdf_icc_lut_parse_reverse(&lut, data, (size_t)length,
                                                                       outputs, atoi(argv[4])));
+    if (argc == 10) {
+        long allowed = strtol(argv[9], NULL, 10);
+        unsigned checked = 0;
+        /* Each extent gets its own allocation so sanitizer redzones still
+         * detect reads beyond a truncated input, without one process per cut. */
+        for (long end = 0; ok && end < length; end++) {
+            unsigned char *copy = malloc((size_t)end + 1);
+            if (!copy) {
+                ok = 0;
+                break;
+            }
+            memcpy(copy, data, (size_t)end);
+            int accepted = reverse_stages
+                               ? cupidimage_pdf_icc_mba_parse(&mba, copy, (size_t)end, outputs)
+                               : cupidimage_pdf_icc_lut_parse_reverse(&lut, copy, (size_t)end,
+                                                                      outputs, atoi(argv[4]));
+            if (accepted)
+                accepted = reverse_stages ? cupidimage_pdf_icc_mba_value(&mba, values, guarded + 1)
+                                          : cupidimage_pdf_icc_lut_value(&lut, values, guarded + 1);
+            if (accepted != (end == allowed)) {
+                fprintf(stderr, "Unexpected truncation result at %ld of %ld bytes\n", end, length);
+                ok = 0;
+            }
+            free(copy);
+            checked++;
+        }
+        if (ok)
+            printf("%u\n", checked);
+        free(data);
+        return ok ? 0 : 3;
+    }
     if (ok)
         ok = reverse_stages ? cupidimage_pdf_icc_mba_value(&mba, values, guarded + 1)
                             : cupidimage_pdf_icc_lut_value(&lut, values, guarded + 1);

@@ -115,7 +115,7 @@ void cupidimage_pdf_patterns_end_paint(pdf_render_state *st) {
 }
 
 int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, double x, double y,
-                                  double rgb[3], double *shape, double *alpha) {
+                                  double rgb[4], double *shape, double *alpha) {
     size_t pixel;
     if (pattern->deferred) {
         if (st->pattern_depth && !st->pattern_deferred) {
@@ -134,7 +134,10 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
             sy >= st->img->height)
             return 0;
         pixel = (size_t)sy * st->img->width + (size_t)sx;
-        memcpy(rgb, pattern->surface->color + pixel * 3, 3 * sizeof(double));
+        memcpy(rgb, pattern->surface->color + pixel * pattern->surface->channels,
+               pattern->surface->channels * sizeof(double));
+        if (pattern->surface->channels == 3)
+            rgb[3] = 0;
         *shape = pattern->surface->shape[pixel];
         *alpha = pattern->surface->alpha[pixel];
         return 1;
@@ -149,7 +152,7 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
         if (!isfinite(sx) || !isfinite(sy))
             return 0;
         if (sx < 0 || sy < 0 || sx >= pattern->tile.width || sy >= pattern->tile.height) {
-            memset(rgb, 0, 3 * sizeof(double));
+            memset(rgb, 0, 4 * sizeof(double));
             *shape = *alpha = 0;
             return 1;
         }
@@ -171,9 +174,10 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
                                      floor((1 - v / pattern->ystep) * pattern->tile.height));
         pixel = (size_t)sy * pattern->tile.width + sx;
     }
-    for (unsigned i = 0; i < 3; i++)
-        rgb[i] = pattern->color ? pattern->color[pixel * 3 + i]
-                                : pattern->tile.rgba[pixel * 4 + i] / 255.0;
+    for (unsigned i = 0; i < 4; i++)
+        rgb[i] = pattern->color
+                     ? (i < pattern->channels ? pattern->color[pixel * pattern->channels + i] : 0)
+                     : (i < 3 ? pattern->tile.rgba[pixel * 4 + i] / 255.0 : 0);
     *shape = pattern->shape[pixel];
     *alpha = pattern->alpha[pixel];
     return 1;
@@ -193,6 +197,8 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
             if (cached->shading && cached->initial &&
                 cached->initial->alpha_is_shape == st->initial_gs.alpha_is_shape &&
                 cached->initial->rendering_intent == st->initial_gs.rendering_intent &&
+                cached->initial->black_generation == st->initial_gs.black_generation &&
+                cached->initial->undercolor_removal == st->initial_gs.undercolor_removal &&
                 cached->resource_object == object && cached->tile.width == st->img->width &&
                 cached->tile.height == st->img->height && cached->page_x0 == st->page_x0_pts &&
                 cached->page_top == st->page_top_pts &&
@@ -208,22 +214,24 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
     double matrix[6] = {1, 0, 0, 1, 0, 0};
     if (!pattern_array(st, view, "Matrix", matrix, 6, 0))
         return 0;
+    unsigned channels = cupidimage_pdf_current_blend(st)->colors.components == 4 ? 4 : 3;
     size_t pixels = (size_t)st->img->width * st->img->height;
     size_t available = PATTERN_BYTES - st->patterns->bytes_used;
     if (available < sizeof(pdf_pattern) ||
-        pixels > (available - sizeof(pdf_pattern)) / (4 + 5 * sizeof(double)))
+        pixels > (available - sizeof(pdf_pattern)) / (4 + (2 + channels) * sizeof(double)))
         return 0;
-    size_t bytes = pixels * (4 + 5 * sizeof(double)) + sizeof(pdf_pattern);
+    size_t bytes = pixels * (4 + (2 + channels) * sizeof(double)) + sizeof(pdf_pattern);
     pdf_pattern *pattern = calloc(1, sizeof(*pattern));
     if (!pattern)
         return 0;
     pattern->tile.width = st->img->width;
     pattern->tile.height = st->img->height;
     pattern->tile.rgba = calloc(pixels, 4);
-    pattern->shape = calloc(pixels, 5 * sizeof(double));
+    pattern->shape = calloc(pixels, (2 + channels) * sizeof(double));
     pattern->alpha = pattern->shape ? pattern->shape + pixels : NULL;
     pattern->color = pattern->alpha ? pattern->alpha + pixels : NULL;
     pattern->blend = *cupidimage_pdf_current_blend(st);
+    pattern->channels = channels;
     pattern->gray = pattern->blend.colors.components == 1;
     if (!pattern->tile.rgba || !pattern->shape) {
         pattern_free(pattern);
@@ -240,7 +248,7 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
         ok = cupidimage_pdf_render_shading_pattern(st, view, matrix, pattern, NULL);
         st->pattern_needs_backdrop = previous;
         if (!ok && needs_backdrop) {
-            size_t cell_bytes = pixels * (4 + 5 * sizeof(double));
+            size_t cell_bytes = pixels * (4 + (2 + channels) * sizeof(double));
             free(pattern->tile.rgba);
             free(pattern->shape);
             pattern->tile.rgba = NULL;
@@ -348,7 +356,8 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
         width * height > 4u * 1024u * 1024u)
         goto done;
     size_t pixels = (size_t)width * (size_t)height;
-    size_t bytes = pixels * (4 + (paint == 1 ? 5 : 2) * sizeof(double));
+    unsigned channels = cupidimage_pdf_current_blend(st)->colors.components == 4 ? 4 : 3;
+    size_t bytes = pixels * (4 + (paint == 1 ? 2 + channels : 2) * sizeof(double));
     if (bytes + sizeof(pdf_pattern) > PATTERN_BYTES - st->patterns->bytes_used)
         goto done;
     pattern = calloc(1, sizeof(*pattern));
@@ -357,10 +366,11 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
     pattern->tile.width = (uint32_t)width;
     pattern->tile.height = (uint32_t)height;
     pattern->tile.rgba = calloc(pixels, 4);
-    pattern->shape = calloc(pixels, (paint == 1 ? 5 : 2) * sizeof(double));
+    pattern->shape = calloc(pixels, (paint == 1 ? 2 + channels : 2) * sizeof(double));
     pattern->alpha = pattern->shape ? pattern->shape + pixels : NULL;
     pattern->color = pattern->alpha && paint == 1 ? pattern->alpha + pixels : NULL;
     pattern->blend = *cupidimage_pdf_current_blend(st);
+    pattern->channels = channels;
     pattern->gray = pattern->blend.colors.components == 1;
     if (!pattern->tile.rgba || !pattern->shape)
         goto done;

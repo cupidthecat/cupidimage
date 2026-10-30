@@ -93,21 +93,21 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     if (!cupidimage_pdf_group_space(temporary, &attributes, luminosity, &blend))
         goto done;
     gray = blend.colors.components == 1;
-    double background[3] = {0, 0, 0};
+    double background[4] = {0, 0, 0, 0};
     if (luminosity && cupidimage_pdf_page_value(&dictionary, "BC", &pos)) {
         pdf_object_view bc = {0};
         int valid = cupidimage_pdf_dictionary_value(st->document, st->document_size, &dictionary,
                                                     "BC", &bc);
         if (valid && !mask_null(&bc))
             valid = cupidimage_pdf_function_array(temporary, &dictionary, "BC", background,
-                                                  gray ? 1 : 3);
+                                                  blend.colors.components);
         cupidimage_pdf_object_view_release(&bc);
         if (!valid)
             goto done;
     }
     if (gray)
         background[1] = background[2] = background[0];
-    for (unsigned i = 0; i < 3; i++)
+    for (unsigned i = 0; i < 4; i++)
         background[i] = fmax(0, fmin(1, background[i]));
     if (cupidimage_pdf_page_value(&dictionary, "TR", &pos)) {
         if (!cupidimage_pdf_dictionary_value(st->document, st->document_size, &dictionary, "TR",
@@ -122,7 +122,7 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
                 goto done;
         }
     }
-    if (!cupidimage_pdf_group_surface(st, &surface, 1, luminosity ? background : NULL))
+    if (!cupidimage_pdf_group_surface(st, &surface, 1, luminosity ? background : NULL, &blend))
         goto done;
     surface.gray = gray;
     surface.blend = blend;
@@ -149,7 +149,7 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     st->form_budget->transparency_bytes_live += bytes;
     st->clip_budget->tests_left -= pixels;
     for (size_t pixel = 0; pixel < pixels; pixel++) {
-        const double *color = surface.color + pixel * 3;
+        const double *color = surface.color + pixel * surface.channels;
         double value = surface.alpha[pixel];
         if (luminosity && !cupidimage_pdf_blend_luminosity(temporary, &blend, color, &value))
             goto done;

@@ -29,7 +29,7 @@ only when composited into an eight-bit page or cached pattern surface. This avoi
 rounding errors being amplified by backdrop removal. Pattern and shading cache
 construction does not modify the containing group's alpha.
 
-Supported blending spaces are DeviceRGB, DeviceGray, CalGray, CalRGB and
+Supported blending spaces are DeviceRGB, DeviceGray, DeviceCMYK, CalGray, CalRGB and
 selected bidirectional ICC matrix/TRC and lookup spaces, explicit or inherited. See
 [blending colors](pdf-blending-colors.md) for conversion rules and limits.
 Explicit spaces are complete color-space objects, not ColorSpace resource aliases.
@@ -52,7 +52,8 @@ Attributes may be indirect. A null optional entry is treated as absent; a null
 Group entry leaves an ordinary form. DefaultRGB, DefaultGray and DefaultCMYK
 remap painted source colors. A group without an explicit CS inherits its parent
 blending space; an explicit CS is remapped and must still resolve to a supported
-blending space. CMYK groups and ICC multiprocess destination transforms remain unsupported.
+blending space. ICC multiprocess destination transforms remain unsupported.
+See [CMYK blending](pdf-cmyk-blending.md) for four-component behavior.
 
 ## Knockout and shape
 
@@ -73,10 +74,10 @@ planes alongside a byte image mirror; colored caches also retain double-precisio
 color. Fully transparent painted areas no longer
 look like unpainted holes to a containing knockout group. Keeping cache alpha
 unrounded also corrects three analytic pattern expectations by one byte; the
-checked-in assets are unchanged. Group surfaces use 44 bytes per pixel, and
-uncolored pattern caches use 20 bytes per pixel plus their descriptors. Colored
-pattern caches use 44 bytes per pixel.
-Backdrop-dependent pattern results use 44 bytes per pixel and are released after
+checked-in assets are unchanged. Gray/RGB group surfaces use 44 bytes per pixel; CMYK surfaces use 52.
+Uncolored pattern caches use 20 bytes per pixel plus their descriptors. Colored
+pattern caches use 44 bytes per pixel, or 52 when retaining four components.
+Backdrop-dependent pattern results use 44 or 52 bytes per pixel and are released after
 the paint operation. See [PDF patterns](pdf-patterns.md).
 
 ## Text objects and Type 3 glyphs
@@ -146,11 +147,11 @@ error. Mask evaluation uses the shared function-evaluation and pixel-work budget
 
 ## Limits
 
-- CMYK groups and ICC multiprocess destination transforms are not implemented.
+- ICC multiprocess destination transforms are not implemented.
   An omitted I flag uses the supported non-isolated behavior.
 - Overprinting remains incomplete. Additional color spaces and device color
   management are still separate work.
-- Group buffers keep floating-point native gray/RGB components, accumulated alpha
+- Group buffers keep floating-point native gray/RGB/CMYK components, accumulated alpha
   and shape, plus an RGBA8 mirror for existing raster surfaces. Supported calibrated
   and ICC encodings retain wide-gamut values until destination conversion. Output
   profiles and complete color management remain unfinished.

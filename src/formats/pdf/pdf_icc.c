@@ -354,7 +354,7 @@ int cupidimage_pdf_icc_equal(const pdf_icc_profile *a, const pdf_icc_profile *b)
 
 int cupidimage_pdf_icc_bidirectional(pdf_icc_profile *profile, int intent, size_t *work) {
     if (!profile || !work || intent < 0 || intent >= 4 ||
-        (profile->components != 1 && profile->components != 3))
+        (profile->components != 1 && profile->components != 3 && profile->components != 4))
         return 0;
     pdf_icc_transform *transform = profile->transforms + intent;
     if (transform->inverse_state)
@@ -425,7 +425,7 @@ int cupidimage_pdf_icc_bidirectional(pdf_icc_profile *profile, int intent, size_
 }
 
 int cupidimage_pdf_icc_from_working(pdf_icc_profile *profile, const double input[3], int intent,
-                                    double output[3], size_t *work) {
+                                    double *output, size_t *work) {
     if (!input || !output || !cupidimage_pdf_icc_bidirectional(profile, intent, work))
         return 0;
     size_t cost = 8 + (size_t)profile->components * 2;
