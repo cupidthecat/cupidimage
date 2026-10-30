@@ -108,6 +108,8 @@ int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *cli
     st->clip_budget->bytes_used += pixels;
     memset(clip->bits, 0, clip->bytes);
     const double *b = clip->geometry->bounds;
+    if (b[2] <= b[0] || b[3] <= b[1])
+        return 1;
     int left = (int)fmax(0, fmin(st->img->width, floor(b[0]))),
         right = (int)fmax(0, fmin(st->img->width, ceil(b[2])));
     int top = (int)fmax(0, fmin(st->img->height, floor(b[1]))),

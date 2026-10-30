@@ -37,7 +37,8 @@ transparency rules remain separate from clipping geometry.
 ## Rasterization
 
 Boundary pixels are split at vertices, line intersections, ellipse intersections
-and crossings of pixel edges. A horizontal sweep tracks each region's winding
+and crossings of pixel edges. Vertices outside a pixel do not create local
+split positions; horizontal boundaries that span it still do. A horizontal sweep tracks each region's winding
 number. It integrates only intervals inside every required region. Straight
 boundaries use linear area integrals; round stroke caps and joins use affine
 ellipse integrals. The renderer does not use a supersampling grid for this step.
@@ -83,13 +84,15 @@ standalone rasterizers clear their output pointers on failure.
 
 `make test-pdf-clip-regions` runs:
 
-- 6,902 analytic, independent-geometry, boundary and allocation/cancellation checks;
+- 6,912 analytic, independent-geometry, boundary and allocation/cancellation checks;
 - 286 clip-node scope, depth, reuse and ownership checks;
-- 76 page checks and 647 document allocation-failure checks.
+- 80 page checks and 729 document allocation-failure checks.
 
 The page cases cover repeated and disjoint subpixel clips, nonzero/even-odd holes,
 all four text-clipping modes, empty and collapsed glyphs, saved graphics states,
-clipped glyph fills and round strokes, and isolated/nonisolated Form boundaries.
+clipped glyph fills and round strokes, and isolated/nonisolated Form boundaries. Dense 500- and 1,500-glyph clips
+are compared byte-for-byte with separately clipped rows under the unchanged
+page work budget.
 Separate font, stroke, pattern, soft-mask and transparency regressions remain in
 the full suite.
 

@@ -279,6 +279,67 @@ static void invalid_regions(void) {
     }
 }
 
+static void localized_events(void) {
+    unsigned char rule[1] = {0};
+    pdf_region_edge p[8];
+    rectangle(p, 0, -10, .25, 10, .75, 0);
+    assert(raster(p, 4, rule, 1) == 128); /* horizontal boundaries span the pixel */
+    rectangle(p, 0, 0, 0, 1, 1, 0);
+    rectangle(p + 4, 0, 0, 0, 1, 1, 1);
+    assert(raster(p, 8, rule, 1) == 0);
+    p[0] = (pdf_region_edge){0, 0, 1, 1, 0};
+    p[1] = (pdf_region_edge){1, 1, 0, 1, 0};
+    p[2] = (pdf_region_edge){0, 1, 1, 0, 0};
+    p[3] = (pdf_region_edge){1, 0, 0, 0, 0};
+    assert(raster(p, 4, rule, 1) == 128); /* self-intersection changes edge ordering */
+    pdf_region_edge split[5] = {{-10, 0, 10, 0, 0},
+                                {10, 0, 10, 1, 0},
+                                {10, 1, -10, 1, 0},
+                                {-10, 1, -10, .5, 0},
+                                {-10, .5, -10, 0, 0}};
+    assert(raster(split, 5, rule, 1) == 255); /* midpoint on a vertex outside the pixel */
+    for (unsigned i = 0; i < 5; i++) {
+        double x = split[i].x0, y = split[i].y0;
+        split[i].x0 = split[i].x1;
+        split[i].y0 = split[i].y1;
+        split[i].x1 = x;
+        split[i].y1 = y;
+    }
+    assert(raster(split, 5, rule, 1) == 255);
+    for (unsigned i = 0; i < 5; i++) {
+        if (split[i].x0 == -10)
+            split[i].x0 = 0;
+        if (split[i].x1 == -10)
+            split[i].x1 = 0;
+    }
+    assert(raster(split, 5, rule, 1) == 255); /* vertex on the left pixel boundary */
+    for (unsigned i = 0; i < 5; i++)
+        split[i].region = 1;
+    unsigned char two_rules[2] = {0};
+    double axes[4] = {.25, 0, 0, .25};
+    pdf_region_ellipse circle = {.5, .5, 0, 0};
+    assert(ellipse_raster(split, 5, &circle, 1, axes, two_rules, 2) == 50);
+    p[0] = (pdf_region_edge){0, 0, .484375, 0, 0};
+    p[1] = (pdf_region_edge){.484375, 0, .5, 1, 0};
+    p[2] = (pdf_region_edge){.5, 1, 0, 1, 0};
+    p[3] = (pdf_region_edge){0, 1, 0, 0, 0};
+    rectangle(p + 4, 0, 10, .3, 11, .8, 0);
+    /* The distant contour must not disturb the exact 63/128 area here. */
+    assert(raster(p, 8, rule, 1) == 126);
+    assert(raster(p, 4, two_rules, 2) == 0); /* an empty intersection operand */
+    pdf_region_edge many[800];
+    for (unsigned i = 0; i < 200; i++)
+        rectangle(many + i * 4, 0, i + .25, .25, i + .5, .75, 0);
+    size_t work = 1000000;
+    unsigned char *out = NULL;
+    assert(cupidimage_pdf_region_coverage(many, 800, rule, 1, 0, 0, 200, 1, &work, &out));
+    for (unsigned i = 0; i < 200; i++)
+        assert(out[i] == 32);
+    fault_free(out);
+    assert(!live_count);
+    checks++;
+}
+
 int main(void) {
     (void)fault_realloc;
     pdf_region_edge p[16];
@@ -336,6 +397,7 @@ int main(void) {
     ellipse_cases();
     sampled_ellipse_intersections();
     invalid_regions();
+    localized_events();
     printf("PDF region intersection: %u analytic and ownership checks passed\n", checks);
     return 0;
 }

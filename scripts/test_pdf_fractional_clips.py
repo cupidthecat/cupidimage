@@ -82,6 +82,19 @@ def main():
         for kind in ('tt','cff','type1','bitmap','standard','substitute'):
             assert render(empty_fixture('BT /F 30 Tf 7 Tr ( ) Tj ET '+paint,kind=kind))[2]==render(empty_fixture(paint,kind=kind))[2],(kind,'empty glyph changed clip')
             assert render(empty_fixture('BT /F 0 Tf 7 Tr (A) Tj ET '+paint,kind=kind))[2]==b'\xff'*(160*120*4),(kind,'collapsed nonempty outline did not clip')
+        # A dense clip is equivalent to painting its disjoint rows separately.
+        # Keep the normal page budget: increasing it would hide event duplication.
+        from test_pdf_embedded_fonts import fixture as tt_fixture
+        page={3:b'<< /Type /Page /Parent 2 0 R /Contents 4 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F 5 0 R >> >> >>'}
+        blue='0 0 1 rg 0 0 612 792 re f'
+        for rows in (10,30):
+            lines=[f'1 0 0 1 6 {750-row*20} Tm ('+'C'*50+') Tj' for row in range(rows)]
+            together='BT /F 12 Tf 7 Tr '+' '.join(lines)+' ET '+blue
+            separate=' '.join('q BT /F 12 Tf 7 Tr '+line+' ET '+blue+' Q' for line in lines)
+            whole=render(tt_fixture(together,extra=page))
+            assert any(v!=255 for v in whole[2]),'dense clip produced a blank page'
+            assert whole==render(tt_fixture(separate,extra=page)),(rows,'dense clip partition')
+        fault(tt_fixture('BT /F 12 Tf 7 Tr '+lines[0]+' ET '+blue,extra=page))
     print(f'PDF fractional clips: {checks} page checks; {allocations} allocation checks')
 
 

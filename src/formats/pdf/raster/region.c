@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define REGION_EVENTS 65536
 #define REGION_CROSSINGS 1024
@@ -108,12 +109,21 @@ static int region_pixel(region_sweep *s, const region_edge *active, unsigned cou
         return 0;
     for (unsigned i = 0; i < count; i++) {
         const region_edge *e = active + i;
-        if (!region_event(s, e->low) || !region_event(s, e->high))
-            return 0;
+        /* For closed contours, vertices entirely outside the pixel cannot
+         * change its winding. Horizontal boundaries still need their Y event
+         * even when both endpoints lie outside the pixel. */
+        if (!e->dy) {
+            if (fmaxl(e->x, e->x + e->dx) > s->x && fminl(e->x, e->x + e->dx) < s->x + 1 &&
+                !region_event(s, e->y))
+                return 0;
+            continue;
+        }
         region_real lo = fmaxl(e->low, s->y), hi = fminl(e->high, s->y + 1);
         region_real a = region_x(e, lo), b = region_x(e, hi);
         if (fmaxl(a, b) <= s->x || fminl(a, b) >= s->x + 1)
             continue;
+        if (!region_event(s, e->low) || !region_event(s, e->high))
+            return 0;
         if (candidates == REGION_CROSSINGS)
             return 0;
         if (e->dx)
@@ -175,7 +185,9 @@ static int region_pixel(region_sweep *s, const region_edge *active, unsigned cou
         int32_t winding[64] = {0};
         for (unsigned i = 0; i < count; i++) {
             const region_edge *e = active + i;
-            if (y <= e->low || y >= e->high)
+            /* A skipped outside vertex may coincide with this midpoint. Keep
+             * one adjacent edge in the ray crossing through that vertex. */
+            if (y < e->low || y >= e->high)
                 continue;
             region_real x = region_x(e, y);
             if (x <= s->x)
@@ -272,8 +284,6 @@ int cupidimage_pdf_region_coverage_ellipses(const pdf_region_edge *input, unsign
             !isfinite(p->y1) || fabs(p->x0) > 32768 || fabs(p->y0) > 32768 || fabs(p->x1) > 32768 ||
             fabs(p->y1) > 32768)
             goto done;
-        if (p->y0 == p->y1)
-            continue;
         edges[n++] = (region_edge){p->x0,
                                    p->y0,
                                    (region_real)p->x1 - p->x0,
@@ -287,15 +297,28 @@ int cupidimage_pdf_region_coverage_ellipses(const pdf_region_edge *input, unsign
         s.y = top + (region_real)y;
         unsigned used = 0;
         unsigned row_count = 0;
+        uint64_t row_regions = 0;
         if (!region_charge(&s, n + ellipse_count))
             goto done;
         for (unsigned i = 0; i < n; i++)
-            if (edges[i].low < s.y + 1 && edges[i].high > s.y)
+            if (edges[i].low < s.y + 1 && edges[i].high > s.y) {
                 active[used++] = edges[i];
+                if (edges[i].dy)
+                    row_regions |= UINT64_C(1) << edges[i].region;
+            }
         for (unsigned i = 0; i < ellipse_count; i++)
             if (ellipses[i].y - s.ellipse_frame.height < s.y + 1 &&
-                ellipses[i].y + s.ellipse_frame.height > s.y)
+                ellipses[i].y + s.ellipse_frame.height > s.y) {
                 row_ellipses[row_count++] = ellipses[i];
+                row_regions |= UINT64_C(1) << ellipses[i].region;
+            }
+        uint64_t needed = regions == 64 ? UINT64_MAX : (UINT64_C(1) << regions) - 1;
+        if (row_regions != needed)
+            continue;
+        if (!regions) {
+            memset(pixels + y * width, 255, width);
+            continue;
+        }
         for (size_t x = 0; x < width; x++) {
             region_real area;
             s.x = left + (region_real)x;
