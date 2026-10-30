@@ -13,6 +13,19 @@ def main():
     probe = str(pathlib.Path(sys.argv[1]).resolve())
     base = document('/MediaBox [0 0 18 12]')
     cases = [('valid', base, False)]
+    cases.append(('eof-without-final-newline', base.rstrip(b'\r\n'), False))
+    cases.append(('eof-final-cr', base.rstrip(b'\r\n') + b'\r', False))
+    cases.append(('repair-unused-free-sentinel', base.replace(b'0000000000 65535 f', b'0000000000 65536 f'), False))
+    cases.append(('reject-live-generation-overflow', base.replace(b'0000000000 65535 f', b'0000000000 65536 n'), True))
+    cases.append(('reject-other-free-generation-overflow', base.replace(b'0000000000 65535 f', b'0000000001 65536 f'), True))
+    cases.append(('reject-larger-generation-overflow', base.replace(b'65535 f', b'65537 f'), True))
+    for prefix in ('/Nested << /Root 999 0 R >> ', '/Text (/Root 999 0 R) ',
+                   '/Nested [ << /Root 999 0 R >> ] ', '/RootExtra 999 0 R '):
+        cases.append(('trailer-root-scope-' + prefix, base.replace(
+            b'/Root 1 0 R', prefix.encode() + b'/Root 1 0 R'), False))
+    cases.append(('missing-real-trailer-root', base.replace(
+        b'/Root 1 0 R', b'/Nested << /Root 1 0 R >>'), True))
+
     for value in ('2147483648', '999999999999', '18446744073709551615',
                   '18446744073709551616', '9' * 200):
         number = value.encode()
@@ -29,9 +42,9 @@ def main():
                 extra={3: f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 18 12] /Contents {value} 0 R >>'})),
         ):
             cases.append((name + '-' + value[:20], pdf, True))
-        # Font metadata is optional; malformed maps must fall back safely.
+        # Invalid resource references must not silently discard the font table.
         cases.append(('font-' + value[:20], document(
-            f'/MediaBox [0 0 18 12] /Resources << /Font << /F1 {value} 0 R >> >>'), False))
+            f'/MediaBox [0 0 18 12] /Resources << /Font << /F1 {value} 0 R >> >>'), True))
     cases += [
         ('xref-range-overflow', base.replace(b'xref\n0 5\n', b'xref\n2147483647 5\n'), True),
         ('xref-zero-count', base.replace(b'xref\n0 5\n', b'xref\n0 0\n'), True),

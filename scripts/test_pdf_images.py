@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check image XObjects using generated PDF files and exact RGBA output."""
+import base64
 import pathlib
 import struct
 import subprocess
@@ -96,6 +97,13 @@ def main():
             return ((RED, GREEN), (BLUE, YELLOW))[y >= 8][x >= 12]
 
         attrs = "/Width 2 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceRGB"
+        for label, payload, filters in (
+            ('hex', RGB.hex().encode() + b'>', '/ASCIIHexDecode'),
+            ('ascii85', base64.a85encode(RGB) + b'~>', '/ASCII85Decode'),
+            ('runlength', bytes([len(RGB)-1]) + RGB + b'\x80', '/RunLengthDecode'),
+            ('ascii85-flate', base64.a85encode(zlib.compress(RGB)) + b'~>', '[/ASCII85Decode /FlateDecode]'),
+        ):
+            check('filtered-' + label, fixture(payload, attrs + ' /Filter ' + filters), quadrants)
         for resource in ("inline", "inherited", "indirect"):
             check(resource, fixture(resource=resource), quadrants)
         check("flate", fixture(zlib.compress(RGB), attrs + " /Filter /FlateDecode"), quadrants)
@@ -124,18 +132,19 @@ def main():
         after_sof = sof + 2 + int.from_bytes(color_jpeg[sof + 2:sof + 4], "big")
         adobe_after_sof = color_jpeg[:after_sof] + segment(0xee, b"Adobe\0d\0\0\0\0\0") + color_jpeg[after_sof:]
         check("jpeg-adobe-override", fixture(adobe_jpeg,
-              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (129, 127, 129))
         check("jpeg-adobe-after-sof-override", fixture(adobe_after_sof,
-              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (130, 129, 127))
+              attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 1 >>"), lambda x, y: (129, 127, 129))
+        check("jpeg-adobe-raw-rgb", fixture(adobe_jpeg, attrs + " /Filter /DCTDecode"), lambda x, y: (129, 127, 129))
+        check("jpeg-adobe-raw-rgb-after-sof", fixture(adobe_after_sof, attrs + " /Filter /DCTDecode"), lambda x, y: (129, 127, 129))
+        check("jpeg-color-transform-0", fixture(color_jpeg, attrs + " /Filter /DCTDecode /DecodeParms << /ColorTransform 0 >>"), lambda x, y: (129, 127, 129))
+        check("predictor-default-row", fixture(zlib.compress(RGB), attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 2 >>"), quadrants)
         for name, payload, image_attrs in (
                 ("wrong-jpeg-dimensions", jpeg(3, False, 16384, 16384) + scan((1, 2, 3)) + b"\x03" + EOI, attrs),
                 ("wrong-jpeg-components", color_jpeg, attrs.replace("DeviceRGB", "DeviceGray")),
                 ("truncated-jpeg", color_jpeg[:-4], attrs),
                 ("invalid-jpeg", b"not a JPEG", attrs),
-                ("unsupported-raw-rgb-jpeg", adobe_jpeg, attrs),
-                ("unsupported-raw-rgb-after-sof", adobe_after_sof, attrs),
-                ("unsupported-color-transform", color_jpeg, attrs + " /DecodeParms << /ColorTransform 0 >>"),
-                ("unsupported-filter-chain", zlib.compress(RGB), attrs + " /Filter [/FlateDecode /DCTDecode]")):
+                ("invalid-filter-chain-payload", zlib.compress(RGB), attrs + " /Filter [/FlateDecode /DCTDecode]")):
             if "Filter" not in image_attrs:
                 image_attrs += " /Filter /DCTDecode"
             check(name, fixture(payload, image_attrs), reject=True)
@@ -160,6 +169,7 @@ def main():
               "/Width 2 /Height 2 /BitsPerComponent 8 /ColorSpace /DeviceGray /Decode [1 0]"),
               lambda x, y: (255 - ((0, 85), (170, 255))[y >= 8][x >= 12],) * 3)
         check("image-mask-false", fixture(attrs=attrs + " /ImageMask false"), quadrants)
+        check("color-key-no-match", fixture(attrs=attrs + " /Mask [0 0 0 0 0 0]"), quadrants)
         check("nested-decoys", fixture(attrs="/Other << /Width 999 /Filter /Unsupported >> " + attrs), quadrants)
         check("indirect-dimensions", fixture(attrs=attrs.replace("/Width 2", "/Width 8 0 R"), extra={8: "2"}), quadrants)
         check("indirect-length", fixture(length="8 0 R", extra={8: "12"}), quadrants)
@@ -182,17 +192,16 @@ def main():
                              ("off-page", "18 0 0 12 1000000000000000000000000000 0"),
                              ("tiny-transform", ".000000000000000001 0 0 .000000000000000001 0 0")):
             check(name, fixture(content=matrix + " cm /Im0 Do"), lambda x, y: GRAY)
+        check("undefined-soft-mask-is-null", fixture(attrs=attrs + " /SMask 8 0 R"), quadrants)
         for name, change in (("zero-width", {"attrs": attrs.replace("/Width 2", "/Width 0")}),
                              ("negative-height", {"attrs": attrs.replace("/Height 2", "/Height -1")}),
                              ("fractional-width", {"attrs": attrs.replace("/Width 2", "/Width 2.5")}),
                              ("huge-width", {"attrs": attrs.replace("/Width 2", "/Width 999999999999999999999999")}),
                              ("oversized-image", {"attrs": attrs.replace("/Width 2", "/Width 100000000")}),
-                             ("unsupported-bits", {"attrs": attrs.replace("/BitsPerComponent 8", "/BitsPerComponent 1")}),
+                             ("packed-bits-with-invalid-byte-count", {"attrs": attrs.replace("/BitsPerComponent 8", "/BitsPerComponent 1")}),
                              ("unsupported-space", {"attrs": attrs.replace("/DeviceRGB", "/Indexed")}),
                              ("unsupported-filter", {"attrs": attrs + " /Filter /JPXDecode"}),
-                             ("unsupported-mask", {"attrs": attrs + " /ImageMask true"}),
-                             ("soft-mask", {"attrs": attrs + " /SMask 8 0 R"}),
-                             ("color-mask", {"attrs": attrs + " /Mask [0 0 0 0 0 0]"}),
+                             ("invalid-stencil-color-space-and-depth", {"attrs": attrs + " /ImageMask true"}),
                              ("bad-decode", {"attrs": attrs + " /Decode [1 0]"}),
                              ("short-data", {"payload": RGB[:-1]}),
                              ("extra-data", {"payload": RGB + b"X"}),
@@ -200,7 +209,6 @@ def main():
                              ("huge-length", {"length": 999999999999999999999999999}),
                              ("bad-flate", {"payload": b"bad", "attrs": attrs + " /Filter /FlateDecode"}),
                              ("wrong-predictor", {"payload": zlib.compress(RGB), "attrs": attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 9 >>"}),
-                             ("wrong-columns", {"payload": zlib.compress(RGB), "attrs": attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 2 >>"}),
                              ("bad-row-filter", {"payload": zlib.compress(bytes((5,)) + RGB[:6] + bytes((0,)) + RGB[6:]), "attrs": attrs + " /Filter /FlateDecode /DecodeParms << /Predictor 15 /Columns 2 /Colors 3 >>"}),
                              ("missing-resource", {"resource": "missing"}),
                              ("shadowed-resource", {"resource": "shadowed"}),

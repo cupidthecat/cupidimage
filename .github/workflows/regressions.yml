@@ -16,3 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make -j2 all test
+      - run: make test-pdf-corpus
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asset-results-${{ matrix.compiler }}
+          path: .cache/asset-tests/results.jsonl
+          if-no-files-found: warn

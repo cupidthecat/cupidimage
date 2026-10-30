@@ -1,7 +1,7 @@
+at3_1m4_01.tif
+autumn.tif
 bilevel-1bit-minisblack-ii.tif
-bilevel-1bit-minisblack-ii.tif.SKIPPED.txt
 bilevel-1bit-miniswhite-ii.tif
-bilevel-1bit-miniswhite-ii.tif.SKIPPED.txt
 deflate-gray8-predictor2-ii.tif
 deflate-rgb8-predictor2-ii.tif
 edge-1x1-gray8-ii.tif
@@ -19,11 +19,8 @@ packbits-gray8-ii.tif
 packbits-rgb8-ii.tif
 packbits-rgba8-ii.tif
 palette-1bit-ii.tif
-palette-1bit-ii.tif.SKIPPED.txt
 palette-2bit-ii.tif
-palette-2bit-ii.tif.SKIPPED.txt
 palette-4bit-ii.tif
-palette-4bit-ii.tif.SKIPPED.txt
 palette-8bit-ii.tif
 strips-rowsperstrip-1-ii.tif
 strips-rowsperstrip-32-ii.tif

@@ -1,0 +1,79 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R]  >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Contents 4 0 R /MediaBox [0 0 300 225] /Resources << /Font << /F0 5 0 R /F1 6 0 R /F2 7 0 R /F3 8 0 R /F4 9 0 R /F5 10 0 R /F6 11 0 R /F7 12 0 R /Label 13 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 799 >>
+stream
+BT /Label 12 Tf 1 0 0 1 15 206 Tm (Courier) Tj ET
+BT /F0 24 Tf 1 0 0 1 15 180 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 15 161 Tm (Courier-Bold) Tj ET
+BT /F1 24 Tf 1 0 0 1 15 135 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 15 116 Tm (Courier-Oblique) Tj ET
+BT /F2 24 Tf 1 0 0 1 15 90 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 15 71 Tm (Courier-BoldOblique) Tj ET
+BT /F3 24 Tf 1 0 0 1 15 45 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 165 206 Tm (Times-Roman) Tj ET
+BT /F4 24 Tf 1 0 0 1 165 180 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 165 161 Tm (Times-Bold) Tj ET
+BT /F5 24 Tf 1 0 0 1 165 135 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 165 116 Tm (Times-Italic) Tj ET
+BT /F6 24 Tf 1 0 0 1 165 90 Tm (ABCD) Tj ET
+BT /Label 12 Tf 1 0 0 1 165 71 Tm (Times-BoldItalic) Tj ET
+BT /F7 24 Tf 1 0 0 1 165 45 Tm (ABCD) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+8 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+10 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+11 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+12 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-BoldItalic /Encoding << /Differences [65 /A /abreve /commaaccent /B] >> >>
+endobj
+13 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000116 00000 n 
+0000000329 00000 n 
+0000001179 00000 n 
+0000001308 00000 n 
+0000001442 00000 n 
+0000001579 00000 n 
+0000001720 00000 n 
+0000001853 00000 n 
+0000001986 00000 n 
+0000002121 00000 n 
+0000002260 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+2331
+%%EOF

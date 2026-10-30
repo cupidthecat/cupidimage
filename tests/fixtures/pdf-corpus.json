@@ -1,0 +1,41 @@
+{
+  "description": "Pinned real-document smoke corpus; successful loading is not full visual conformance.",
+  "files": [
+    {
+      "name": "pypdf-minimal.pdf",
+      "url": "https://raw.githubusercontent.com/py-pdf/sample-files/02b8203bf416db3dbdb03438bc8278dfcb0555f3/001-trivial/minimal-document.pdf",
+      "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92",
+      "pages": 1,
+      "license": "CC-BY-SA-4.0. Unchanged file from py-pdf/sample-files; see docs/test-assets.md and the adjacent license.",
+      "asset": "assets/pdf/pypdf/minimal-document.pdf"
+    },
+    {
+      "name": "pdfjs-empty.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/empty.pdf",
+      "sha256": "fcee6184c0d776126782cd2799797b106373278c8ea0a4354ee4e33cd8663d51",
+      "pages": 1,
+      "blank_dimensions": [
+        816,
+        1056
+      ],
+      "license": "PDF.js project test fixture; upstream Apache-2.0 license retained. basicapi.pdf embeds DejaVu font subsets; their Bitstream/Arev notices are retained separately.",
+      "asset": "assets/pdf/pdfjs/empty.pdf"
+    },
+    {
+      "name": "pdfjs-basicapi.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/basicapi.pdf",
+      "sha256": "925853d98d67d5dae7473c635f932958e1695ce1029d23b2ecd2531cb65f1f14",
+      "pages": 3,
+      "license": "PDF.js project test fixture; upstream Apache-2.0 license retained. basicapi.pdf embeds DejaVu font subsets; their Bitstream/Arev notices are retained separately.",
+      "asset": "assets/pdf/pdfjs/basicapi.pdf"
+    },
+    {
+      "name": "pdfjs-asciihexdecode.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/asciihexdecode.pdf",
+      "sha256": "17cc92aa58ec48f75b01c6b6e7f8c8bade0a36f7295d0f833a16bafae854dc79",
+      "pages": 1,
+      "asset": "assets/pdf/pdfjs/asciihexdecode.pdf",
+      "license": "PDF.js project test fixture; upstream Apache-2.0 license retained."
+    }
+  ]
+}

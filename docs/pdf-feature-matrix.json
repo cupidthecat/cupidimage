@@ -1,0 +1,5265 @@
+{
+  "schema_version": 1,
+  "scope": "PDF static imaging first; navigation and interactive/editing features are separate acceptance targets. This inventory is not exhaustive.",
+  "source": "User-supplied PDF feature checklist v2, 2026-10-28",
+  "status_values": [
+    "missing",
+    "partial",
+    "implemented-unverified",
+    "verified"
+  ],
+  "unassessed_status": null,
+  "sections": [
+    {
+      "id": 1,
+      "title": "PDF SYNTAX, OBJECTS, AND DOCUMENT STRUCTURE [P0]",
+      "items": [
+        {
+          "id": "1.1",
+          "requirement": "All direct object types: booleans, integers, reals, names, literal and hex strings, arrays, dictionaries, null, and streams.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py",
+            "scripts/test_pdf_font_resources.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.3.5",
+            "ISO 32000-1:2008 Annex C"
+          ]
+        },
+        {
+          "id": "1.2",
+          "requirement": "Indirect objects/references, object identifiers and generations, and correct reference resolution.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.3",
+          "requirement": "Binary-safe lexing: comments, whitespace, line-ending variations, escaped names/strings, nested parentheses, and stream boundaries.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py",
+            "scripts/test_pdf_font_resources.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.3.5",
+            "ISO 32000-1:2008 Annex C"
+          ]
+        },
+        {
+          "id": "1.4",
+          "requirement": "File header, trailer dictionaries, startxref, EOF markers, and revisions.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.5",
+          "requirement": "Traditional cross-reference tables and free/in-use entries.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.6",
+          "requirement": "Cross-reference streams, compressed object streams, and hybrid-reference files; correct interaction with encryption and incremental revisions.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.7",
+          "requirement": "Incremental updates, multiple revisions, object replacement/deletion, and current-revision selection.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.8",
+          "requirement": "Linearized files, valid non-linearized fallback, and progressive loading where applicable (progressive loading may be optimized later).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.9",
+          "requirement": "Catalog, pages/page trees, inherited page properties, resources, names and number trees, document information, and relevant root objects.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.10",
+          "requirement": "PDF version signaling, document version overrides, and extension IDs.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "1.11",
+          "requirement": "Well-defined treatment of malformed but recoverable files, with diagnostic reporting and safe recovery rather than silent object misinterpretation.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-objects.md",
+            "src/formats/pdf/pdf_xref.c",
+            "scripts/test_pdf_xref.py"
+          ],
+          "limitations": [
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+          ],
+          "dependencies": [],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [],
+      "review_pointers": [
+        "docs/pdf-objects.md",
+        "src/formats/pdf/pdf_xref.c",
+        "scripts/test_pdf_xref.py"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "STREAM DECODING AND COMPRESSION [P0]",
+      "items": [
+        {
+          "id": "2.1",
+          "requirement": "ASCIIHexDecode and ASCII85Decode, including whitespace and terminators.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.2",
+          "requirement": "FlateDecode (zlib/deflate) and appropriate error detection.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.3",
+          "requirement": "LZWDecode with EarlyChange semantics and end-of-data handling.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.4",
+          "requirement": "RunLengthDecode.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.5",
+          "requirement": "CCITTFaxDecode (Groups 3/4 and supported parameter combinations).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.6",
+          "requirement": "JBIG2Decode, including JBIG2Globals and safe decoding limits.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.7",
+          "requirement": "DCTDecode (JPEG data in PDF and PDF-specific color/Decode handling).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c",
+            "scripts/test_pdf_dct.py",
+            "scripts/test_pdf_dct_arithmetic.py",
+            "scripts/test_pdf_jpeg_sampling.py"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.4.8",
+            "ITU-T T.81 Annexes D, F, G, K.4.1"
+          ]
+        },
+        {
+          "id": "2.8",
+          "requirement": "JPXDecode (JPEG 2000 codestreams/containers permitted in PDF).",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.9",
+          "requirement": "Crypt filters, including identity and document-selected filters.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.10",
+          "requirement": "Multiple filters in correct order and aligned DecodeParms arrays.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.11",
+          "requirement": "TIFF and PNG predictor decoding with Colors, BitsPerComponent, Columns, byte/bit packing, and row boundary rules.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.12",
+          "requirement": "Correct stream Length handling and inline-image filter abbreviations.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "2.13",
+          "requirement": "Published extension filters separately, e.g. BrotliDecode where in scope.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_filters.c",
+            "tests/test_pdf_filters.c"
+          ],
+          "limitations": [
+            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1
+      ],
+      "review_pointers": [
+        "docs/pdf-images.md",
+        "src/formats/pdf/pdf_filters.c",
+        "tests/test_pdf_filters.c"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "PAGE GEOMETRY, TRANSFORMS, AND COORDINATE SYSTEMS [P0]",
+      "items": [
+        {
+          "id": "3.1",
+          "requirement": "MediaBox, CropBox, BleedBox, TrimBox, ArtBox and their default/inheritance behavior; malformed/negative/mixed page dimensions.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py"
+          ],
+          "limitations": [
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "3.2",
+          "requirement": "Page Rotate, UserUnit, non-zero and negative page origins.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py",
+            "scripts/test_pdf_user_unit.py"
+          ],
+          "limitations": [
+            "UserUnit is page-local, positive and limited to 75000; output remains bounded to 64 megapixels. Full multi-version geometry qualification remains open."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Table 30, 8.3.2.3"
+          ]
+        },
+        {
+          "id": "3.3",
+          "requirement": "Current transformation matrix (CTM), matrix multiplication order, and matrix inversion when needed.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py"
+          ],
+          "limitations": [
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "3.4",
+          "requirement": "Scale, translate, rotate, skew, mirror, and arbitrary nested transforms.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py"
+          ],
+          "limitations": [
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "3.5",
+          "requirement": "Transform among PDF user, text, font, pattern, form, image, and device coordinate systems without misplaced/flipped geometry.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py"
+          ],
+          "limitations": [
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "3.6",
+          "requirement": "Correct page boundaries, crop/clip selection, and aspect-ratio handling.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py"
+          ],
+          "limitations": [
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "3.7",
+          "requirement": "Mixed page sizes and rotations within one document.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_document.c",
+            "scripts/test_pdf_pages.py"
+          ],
+          "limitations": [
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+          ],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1
+      ],
+      "review_pointers": [
+        "docs/formats.md",
+        "src/formats/pdf/pdf_document.c",
+        "scripts/test_pdf_pages.py"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "CONTENT-STREAM OPERATORS AND GRAPHICS STATE [P0]",
+      "items": [
+        {
+          "id": "4.1",
+          "requirement": "Operands, content operators, and Contents arrays of multiple streams.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "4.2",
+          "requirement": "Correct resource lookup and inheritance, scope, and nested execution.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py",
+            "scripts/test_pdf_font_resources.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.3.5",
+            "ISO 32000-1:2008 Annex C"
+          ]
+        },
+        {
+          "id": "4.3",
+          "requirement": "q/Q save and restore; cm concatenation; gs ExtGState application.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "4.4",
+          "requirement": "Complete relevant graphics-state parameters, including line state, rendering intent, overprint, transparency, text-related settings, and CTM.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py",
+            "scripts/test_pdf_intents.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "4.5",
+          "requirement": "Separate stroking versus nonstroking color/alpha state.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "4.6",
+          "requirement": "Marked content: MP, DP, BMC, BDC, EMC.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_scopes.py",
+            "docs/pdf-content.md"
+          ],
+          "limitations": [
+            "Marked-content metadata does not yet implement optional-content visibility, tagged extraction or accessibility."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "Selected scope, boundary and error behavior covered by complete-document and allocation-failure tests",
+          "standard_clauses": [
+            "ISO 32000-1:2008 14.6"
+          ]
+        },
+        {
+          "id": "4.7",
+          "requirement": "Compatibility sections: BX and EX; defined unknown-operator behavior.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_scopes.py",
+            "docs/pdf-content.md"
+          ],
+          "limitations": [
+            "The broader version-specific content-operator and graphics-object ordering audit remains incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "Selected scope, boundary and error behavior covered by complete-document and allocation-failure tests",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.8.2, Table 32"
+          ]
+        },
+        {
+          "id": "4.8",
+          "requirement": "State isolation across pages, glyph programs, forms, appearances, and pattern cells; no accidental state leakage.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "4.9",
+          "requirement": "Proper recursion detection and bounded nested content execution.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_content_syntax.py"
+          ],
+          "limitations": [
+            "The full operator/ExtGState inventory and version-specific interaction audit are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2,
+        3
+      ],
+      "review_pointers": [
+        "docs/pdf-content.md",
+        "src/formats/pdf/pdf_render.c",
+        "scripts/test_pdf_content_syntax.py"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "ALL STANDARD PDF FONT CLASSES AND PROGRAMS [P0 \u2014 TEXT]",
+      "items": [
+        {
+          "id": "5.1",
+          "requirement": "Type 1, including embedded Type 1 programs and standard font metrics.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "src/formats/pdf/fonts/type1/lexer.c",
+            "tests/test_pdf_type1_lexer.c",
+            "scripts/test_pdf_type1.py",
+            "src/formats/pdf/fonts/type1/hints.c",
+            "scripts/test_pdf_type1_hints.py",
+            "scripts/compare_pdf_type1_hints.py",
+            "docs/pdf-postscript-hints.md",
+            "src/formats/pdf/fonts/type1/trace.c",
+            "scripts/test_pdf_type1_trace.py",
+            "tests/test_pdf_type1_trace.c",
+            "scripts/compare_pdf_type1_trace.py",
+            "src/formats/pdf/fonts/postscript/type1_gridfit.c",
+            "src/formats/pdf/fonts/postscript/type1_shape.c",
+            "tests/test_pdf_type1_gridfit.c",
+            "scripts/test_pdf_type1_gridfit_reference.py",
+            "scripts/test_pdf_type1_currentpoint.py",
+            "docs/pdf-postscript-gridfit.md",
+            "docs/pdf-type1-page-hinting.md",
+            "scripts/test_pdf_type1_page_hinting.py",
+            "assets/pdf/native-type1-hinting.pdf",
+            "docs/pdf-type1-counter-data.md",
+            "src/formats/pdf/fonts/type1/counter.c",
+            "tests/test_pdf_type1_counter.c",
+            "scripts/test_pdf_type1_counters.py",
+            "assets/pdf/type1-counter-hints.pdf"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution and computed font dictionaries remain unsupported.",
+            "Literal private hint fields and ordered charstring hint traces feed an optional bounded page fitter. Computed parameters carry unresolved diagnostics; broader hinting and font-program qualification remain unfinished.",
+            "Standard OtherSubrs 12/13 counter-data blocks are decoded and retained. Designer counter priorities are not applied by the current fitting profile."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.2",
+          "requirement": "Multiple Master Type 1 compatibility where valid for the PDF version.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.3",
+          "requirement": "TrueType and permitted embedded OpenType variants.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_truetype_bearings.py",
+            "assets/pdf/reference/embedded-truetype-bearing.pdf",
+            "assets/pdf/reference/embedded-truetype-short-bearing.pdf",
+            "docs/pdf-truetype-vm.md",
+            "src/formats/pdf/fonts/truetype_vm/vm.c",
+            "tests/test_pdf_tt_vm.c",
+            "docs/pdf-truetype-loader.md",
+            "src/formats/pdf/fonts/truetype_hint/simple.c",
+            "tests/test_pdf_tt_loader.c",
+            "docs/pdf-truetype-composites.md",
+            "src/formats/pdf/fonts/truetype_hint/composite.c",
+            "scripts/test_pdf_tt_instructions_reference.py",
+            "src/formats/pdf/fonts/truetype_vm/intersection.c",
+            "src/formats/pdf/fonts/truetype_vm/flags.c",
+            "src/formats/pdf/fonts/truetype_vm/cvt_access.c",
+            "src/formats/pdf/fonts/truetype_hint/transform.c",
+            "scripts/test_pdf_tt_nonuniform_reference.py",
+            "scripts/test_pdf_tt_fractional_reference.py",
+            "scripts/test_pdf_tt_transform_reference.py",
+            "docs/pdf-page-hinting.md",
+            "src/formats/pdf/fonts/page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.4",
+          "requirement": "Type 3 fonts (glyphs interpreted using PDF content-stream graphics).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.5",
+          "requirement": "Type 0 composite fonts, CIDFontType0 and CIDFontType2 descendants.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.6",
+          "requirement": "Embedded CFF/Type1C and CID-keyed CFF formats.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-postscript-hints.md",
+            "src/formats/pdf/fonts/postscript/private.c",
+            "scripts/test_pdf_cff_hints.py",
+            "scripts/test_pdf_type2_hints.py",
+            "scripts/compare_pdf_cff_hints.py",
+            "docs/pdf-postscript-gridfit.md",
+            "src/formats/pdf/fonts/postscript/gridfit.c",
+            "tests/test_pdf_ps_gridfit.c",
+            "scripts/test_pdf_ps_gridfit_reference.py",
+            "docs/pdf-cff-page-hinting.md",
+            "src/formats/pdf/fonts/postscript/page.c",
+            "src/formats/pdf/fonts/postscript/cff_shape.c",
+            "src/formats/pdf/fonts/postscript/transform.c",
+            "scripts/test_pdf_cff_page_hinting.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.7",
+          "requirement": "Embedded subsets and multiple independent subsets of the same font.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.8",
+          "requirement": "FontDescriptor, FontBBox, FontMatrix, widths/default widths, ascent, descent, missing widths, vertical metrics, and applicable font flags.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_font_advances.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.9",
+          "requirement": "Correct glyph outline evaluation, charstrings, subroutines, composite glyphs, and appropriate hinting/rasterization.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-truetype-vm.md",
+            "src/formats/pdf/fonts/truetype_vm/vm.c",
+            "tests/test_pdf_tt_vm.c",
+            "docs/pdf-truetype-loader.md",
+            "src/formats/pdf/fonts/truetype_hint/simple.c",
+            "tests/test_pdf_tt_loader.c",
+            "docs/pdf-truetype-composites.md",
+            "src/formats/pdf/fonts/truetype_hint/composite.c",
+            "scripts/test_pdf_tt_instructions_reference.py",
+            "src/formats/pdf/fonts/truetype_vm/intersection.c",
+            "src/formats/pdf/fonts/truetype_vm/flags.c",
+            "docs/pdf-page-hinting.md",
+            "src/formats/pdf/fonts/page_hint.c",
+            "scripts/test_pdf_page_hinting.py",
+            "docs/pdf-postscript-hints.md",
+            "src/formats/pdf/fonts/postscript/private.c",
+            "scripts/test_pdf_cff_hints.py",
+            "scripts/test_pdf_type2_hints.py",
+            "scripts/compare_pdf_cff_hints.py",
+            "docs/pdf-postscript-gridfit.md",
+            "src/formats/pdf/fonts/postscript/gridfit.c",
+            "tests/test_pdf_ps_gridfit.c",
+            "scripts/test_pdf_ps_gridfit_reference.py",
+            "docs/pdf-cff-page-hinting.md",
+            "src/formats/pdf/fonts/postscript/page.c",
+            "src/formats/pdf/fonts/postscript/cff_shape.c",
+            "src/formats/pdf/fonts/postscript/transform.c",
+            "scripts/test_pdf_cff_page_hinting.py"
+          ],
+          "limitations": [
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished.",
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "5.10",
+          "requirement": "Standard 14 fonts, unembedded font behavior, controlled font substitution, and missing-font reporting with metrics-aware placement.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_extended_fonts.py",
+            "scripts/compare_pdf_extended_outlines.py",
+            "third_party/extended-standard-fonts/manifest.json",
+            "src/formats/pdf/pdf_font_substitution.c",
+            "scripts/test_pdf_substitution.py",
+            "scripts/test_pdf_font_descriptors.py",
+            "src/formats/pdf/pdf_standard_font.c",
+            "scripts/test_pdf_standard_marks.py",
+            "scripts/compare_pdf_standard_marks.py",
+            "third_party/standard-spacing-marks/manifest.json",
+            "assets/pdf/reference/standard-spacing-advance.pdf"
+          ],
+          "limitations": [
+            "Standard substitutes include 1,016 extended TrueType and eight spacing-mark face/glyph combinations; named and eligible descriptor-selected Latin fonts use pinned vector programs with PDF widths preserved. Symbolic/script/CJK substitutes, stretch synthesis, complete missing-font matching/reporting, hinting and antialiasing remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 9.8.1",
+            "ISO 32000-1:2008 9.6.4 and 9.8.2"
+          ]
+        },
+        {
+          "id": "5.11",
+          "requirement": "Accurate font caching keyed by all properties affecting rendering.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_font_program.c",
+            "scripts/test_pdf_embedded_fonts.py",
+            "src/formats/pdf/pdf_font_outline.c",
+            "tests/test_pdf_font_cache.c",
+            "tests/test_pdf_clip_oom.c",
+            "src/formats/pdf/fonts/page_hint.c",
+            "tests/test_pdf_page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
+          ],
+          "limitations": [
+            "Unhinted TT/Type1/CFF outlines have per-program glyph caching. A single page-owned prepared TrueType instance is keyed by retained program, ppem, physical point size and grayscale profile. Hinted/rasterized glyph-result caches and Type 3 drawing need further state-sensitive treatment."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2
+      ],
+      "review_pointers": [
+        "docs/pdf-fonts.md",
+        "src/formats/pdf/pdf_font_program.c",
+        "scripts/test_pdf_embedded_fonts.py"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "ENCODINGS, CMAPS, GLYPH SELECTION, AND UNICODE [P0 \u2014 TEXT]",
+      "items": [
+        {
+          "id": "6.1",
+          "requirement": "StandardEncoding, WinAnsiEncoding, MacRomanEncoding, MacExpertEncoding, font-specific built-in encodings, and Differences arrays.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.2",
+          "requirement": "Symbolic fonts and the applicable TrueType cmap selection behavior.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.3",
+          "requirement": "Predefined and embedded CMaps, including Identity-H/Identity-V.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.4",
+          "requirement": "Composite character codes with variable length, codespace ranges, CIDs, inherited CMaps, and CIDToGIDMap.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.5",
+          "requirement": "Horizontal/vertical CID mapping, including CJK writing modes.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.6",
+          "requirement": "Ligatures, accents, combining glyphs, math symbols, and custom glyph IDs.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.7",
+          "requirement": "Correct visual rendering when ToUnicode is missing, invalid, or different from the glyph mapping (rendering and extraction are distinct).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "6.8",
+          "requirement": "Language and script coverage when font programs and positioning data are supplied, including prepositioned right-to-left and complex-script text.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/fonts/cmap.c",
+            "scripts/test_pdf_cmaps.py"
+          ],
+          "limitations": [
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "5"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2,
+        5
+      ],
+      "review_pointers": [
+        "docs/pdf-fonts.md",
+        "src/formats/pdf/fonts/cmap.c",
+        "scripts/test_pdf_cmaps.py"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "TEXT STATE, POSITIONING, SPACING, AND PAINTING [P0 \u2014 TEXT]",
+      "items": [
+        {
+          "id": "7.1",
+          "requirement": "BT/ET text objects and text-object state scope.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.2",
+          "requirement": "Tf font and font size; Tc character spacing; Tw word spacing.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.3",
+          "requirement": "Tz horizontal scaling; TL leading; Ts rise; Tr text render mode.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.4",
+          "requirement": "Text matrices and line matrices: Tm, Td, TD, T*.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.5",
+          "requirement": "Text display: Tj, TJ, single quote (') and double quote (\").",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.6",
+          "requirement": "Per-glyph advances and TJ positioning adjustments, even for non-rendered glyphs; robust fractional spacing and transformations.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.7",
+          "requirement": "Horizontal and vertical writing; rotations, skews, reflections, baseline transformations, superscripts/subscripts, and mixed font sizes.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.8",
+          "requirement": "All 8 text render modes: fill, stroke, fill-and-stroke, invisible, and each corresponding clipping variant.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.9",
+          "requirement": "Text clipping paths and their interactions with later page objects.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.10",
+          "requirement": "Text rendered with patterns, transparency groups, soft masks, blend modes, and non-default color spaces.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.11",
+          "requirement": "Type 3 glyph execution, state isolation, colorized/noncolorized glyphs, widths, and glyph-level clipping.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "7.12",
+          "requirement": "Preserve authored glyph positions: do not perform web-style text reflow or indiscriminate reshaping of already-positioned PDF text.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-fonts.md",
+            "src/formats/pdf/pdf_text.c",
+            "scripts/test_pdf_text_state.py"
+          ],
+          "limitations": [
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "review_pointers": [
+        "docs/pdf-fonts.md",
+        "src/formats/pdf/pdf_text.c",
+        "scripts/test_pdf_text_state.py"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "VECTOR PATHS, STROKING, FILLING, AND CLIPPING [P1]",
+      "items": [
+        {
+          "id": "8.1",
+          "requirement": "m, l, c, v, y, h, re path construction and cubic B\u00e9zier geometry.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.2",
+          "requirement": "Stroke/fill/close operations: S, s, f, F, f*, B, B*, b, b*, n.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.3",
+          "requirement": "Nonzero winding and even-odd filling; self-intersections and holes.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.4",
+          "requirement": "Line widths, hairlines, dash arrays/phases, cap styles, join styles, and miter limits.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.5",
+          "requirement": "Correct transformed strokes under nonuniform and skew transforms.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.6",
+          "requirement": "W/W* clipping; nested clip intersections; clipping from text/forms.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.7",
+          "requirement": "Accurate curve subdivision/flattening, stroke adjustment and antialiasing.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "8.8",
+          "requirement": "Degenerate, disconnected, open, and compound path edge cases.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_stroke.c",
+            "scripts/test_pdf_strokes.py"
+          ],
+          "limitations": [
+            "Antialiasing and automatic stroke adjustment are unfinished."
+          ],
+          "dependencies": [
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        3,
+        4
+      ],
+      "review_pointers": [
+        "docs/formats.md",
+        "src/formats/pdf/pdf_stroke.c",
+        "scripts/test_pdf_strokes.py"
+      ]
+    },
+    {
+      "id": 9,
+      "title": "FORM XOBJECTS AND NESTED REUSABLE GRAPHICS [P1]",
+      "items": [
+        {
+          "id": "9.1",
+          "requirement": "Form XObjects via Do, own matrices, BBox, resource scope, and nested forms.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_forms.py"
+          ],
+          "limitations": [
+            "Annotation appearance dispatch and external-reference behavior are not complete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "9.2",
+          "requirement": "Forms containing text, graphics, images, patterns, masks, and clipping.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_forms.py"
+          ],
+          "limitations": [
+            "Annotation appearance dispatch and external-reference behavior are not complete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "9.3",
+          "requirement": "Reuse at different locations/transforms without state contamination.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_forms.py"
+          ],
+          "limitations": [
+            "Annotation appearance dispatch and external-reference behavior are not complete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "9.4",
+          "requirement": "Form transparency-group dictionaries and group compositing semantics.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_forms.py"
+          ],
+          "limitations": [
+            "Annotation appearance dispatch and external-reference behavior are not complete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "9.5",
+          "requirement": "Appearance stream Form XObjects and correct bounding-box transforms.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_forms.py"
+          ],
+          "limitations": [
+            "Annotation appearance dispatch and external-reference behavior are not complete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "9.6",
+          "requirement": "Legacy reference XObject behavior/fallback when applicable, and explicit policy for unavailable external referenced content.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "9.7",
+          "requirement": "Recursion limits without rejecting valid finite nesting.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_render.c",
+            "scripts/test_pdf_forms.py"
+          ],
+          "limitations": [
+            "Annotation appearance dispatch and external-reference behavior are not complete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "review_pointers": [
+        "docs/formats.md",
+        "src/formats/pdf/pdf_render.c",
+        "scripts/test_pdf_forms.py"
+      ]
+    },
+    {
+      "id": 10,
+      "title": "IMAGE XOBJECTS, INLINE IMAGES, AND MASKS [P1]",
+      "items": [
+        {
+          "id": "10.1",
+          "requirement": "Image XObjects, inline images, inline-image abbreviations and data parsing.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.2",
+          "requirement": "Permitted BitsPerComponent values (1, 2, 4, 8, 16 where applicable), planar/component assumptions, packed samples, and row padding.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.3",
+          "requirement": "Color-space component counts, Decode arrays, grayscale inversion, interpolation flags, and correct scaling/rasterization.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.4",
+          "requirement": "DeviceGray/RGB/CMYK, Indexed, calibrated, ICC, Separation, DeviceN, image color handling as permitted by the given PDF type.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.5",
+          "requirement": "JPEG/DCT, JPEG 2000/JPX, JBIG2, and CCITT image-data combinations.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.6",
+          "requirement": "ImageMask stencil masks and stencil current-color painting.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.7",
+          "requirement": "Explicit masks (Mask arrays/Image XObjects), soft masks (SMask), matte correction, and applicable JPX SMaskInData semantics.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py",
+            "scripts/test_pdf_masks.py"
+          ],
+          "limitations": [
+            "Explicit and soft masks and indirect/null metadata have focused tests. JPX SMaskInData is not implemented; color-managed masking remains incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.9.6, 11.6.5.3"
+          ]
+        },
+        {
+          "id": "10.8",
+          "requirement": "Correct rotation, shear, reflection, cropping, transparency, clipping, and page-space placement of images.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.9",
+          "requirement": "Image alternates/optional content where specified.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "10.10",
+          "requirement": "Robust inline-image termination rules (do not mistake data bytes for EI).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-images.md",
+            "src/formats/pdf/pdf_images.c",
+            "scripts/test_pdf_image_values.py"
+          ],
+          "limitations": [
+            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+          ],
+          "dependencies": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "review_pointers": [
+        "docs/pdf-images.md",
+        "src/formats/pdf/pdf_images.c",
+        "scripts/test_pdf_image_values.py"
+      ]
+    },
+    {
+      "id": 11,
+      "title": "COLOR SPACES, PROFILES, AND COLOR CONVERSION [P1]",
+      "items": [
+        {
+          "id": "11.1",
+          "requirement": "DeviceGray, DeviceRGB, and DeviceCMYK.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_image_colors.c",
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md"
+          ],
+          "limitations": [
+            "Device conversions and supported default-space substitutions are tested. Full output-profile selection, black-point compensation and intent handling remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "11.2",
+          "requirement": "CalGray, CalRGB, and Lab.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_calibrated.c",
+            "scripts/test_pdf_calibrated.py",
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_lab.py"
+          ],
+          "limitations": [
+            "CalGray/CalRGB/Lab source colors target fixed sRGB with zero BlackPoint. Nonzero black-point mapping, output intents and calibrated group blending remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "Selected calibrated source equations and pipeline interactions tested; complete color-management audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.2 through 8.6.5.4",
+            "ISO 32000-2:2020 Table 144",
+            "ICC.1:2022 Annex E.3"
+          ]
+        },
+        {
+          "id": "11.3",
+          "requirement": "ICCBased color spaces and ICC profile parsing/conversion/fallback.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_icc.c",
+            "scripts/test_pdf_icc.py",
+            "docs/pdf-colors.md",
+            "src/formats/pdf/pdf_icc_lut.c",
+            "scripts/test_pdf_icc_lut.py",
+            "scripts/compare_pdf_icc_profiles.py",
+            "scripts/test_pdf_intents.py",
+            "src/formats/pdf/pdf_icc_curve.c",
+            "src/formats/pdf/pdf_icc_mab.c",
+            "scripts/test_pdf_icc_mab.py"
+          ],
+          "limitations": [
+            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Reverse mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and ICC blending remain incomplete."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "Selected native source-profile parsing, curve equations and ownership paths tested; full ICC audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.5",
+            "ICC.1:2022 10.6, 10.18 and Annex F",
+            "ICC.1:2022 8.10, 10.10 and 10.11",
+            "ICC.1:2022 10.12"
+          ]
+        },
+        {
+          "id": "11.4",
+          "requirement": "Indexed, Separation, DeviceN/NChannel, and Pattern color spaces.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_image_colors.c",
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_separation.py",
+            "scripts/test_pdf_devicen.py",
+            "scripts/test_pdf_nchannel.py"
+          ],
+          "limitations": [
+            "Indexed, Pattern, Separation and legacy DeviceN source spaces are supported with the documented alternate-space limits. DeviceN supports up to 32 components. NChannel spot mixtures and physical spot-plane handling remain unfinished.",
+            "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.6.5",
+            "ISO 32000-2:2020 8.6.6.5"
+          ]
+        },
+        {
+          "id": "11.5",
+          "requirement": "Tint transforms, spot-color components, All/None special colorants.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-colors.md",
+            "src/formats/pdf/pdf_tint.c",
+            "scripts/test_pdf_separation.py",
+            "scripts/test_pdf_devicen.py",
+            "scripts/test_pdf_nchannel.py"
+          ],
+          "limitations": [
+            "Single-colorant alternate tint transforms and All/None are implemented, along with legacy DeviceN alternate transforms through 32 components. NChannel spot mixtures, physical spot planes and spot-aware transparency remain unfinished.",
+            "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.6.4",
+            "ISO 32000-2:2020 8.6.6.4",
+            "ISO 32000-1:2008 8.6.6.5",
+            "ISO 32000-2:2020 8.6.6.5"
+          ]
+        },
+        {
+          "id": "11.6",
+          "requirement": "DefaultGray/DefaultRGB/DefaultCMYK substitution.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-colors.md",
+            "src/formats/pdf/pdf_image_colors.c",
+            "scripts/test_pdf_default_colors.py",
+            "scripts/test_pdf_devicen.py",
+            "scripts/test_pdf_nchannel.py",
+            "scripts/test_pdf_icc_lut.py"
+          ],
+          "limitations": [
+            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. Unsupported ICC models, NChannel spot mixtures and calibrated/ICC blending spaces remain unfinished.",
+            "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.6",
+            "ISO 32000-2:2020 8.6.6.5"
+          ]
+        },
+        {
+          "id": "11.7",
+          "requirement": "Stroking/nonstroking colors: G/g, RG/rg, K/k, CS/cs, SC/sc, SCN/scn.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_image_colors.c",
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_default_colors.py",
+            "scripts/test_pdf_devicen.py",
+            "scripts/test_pdf_nchannel.py"
+          ],
+          "limitations": [
+            "Supported calibrated, ICC, Separation and legacy DeviceN source spaces share color operators. NChannel spot mixtures, remaining ICC models and general color management are unfinished.",
+            "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-2:2020 8.6.6.5"
+          ]
+        },
+        {
+          "id": "11.8",
+          "requirement": "Rendering intent, output intents, and black-point compensation where applicable; color management behavior documented and tested.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_intents.c",
+            "src/formats/pdf/pdf_icc.c",
+            "scripts/test_pdf_intents.py",
+            "docs/pdf-colors.md"
+          ],
+          "limitations": [
+            "PDF intent state and supported ICC source tables are implemented, including version 4 absolute/media-white and declared reference-medium mapping. Version 2 absolute handling, general black-point compensation, output profiles/intents and calibrated/group intent conversions remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "Selected source intent paths and state lifetimes tested; complete color-management audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.6.5.8, 8.9.5 and 11.6.7",
+            "ICC.1:2022 6.3.2.2, 6.3.4.3 and 8.10"
+          ]
+        },
+        {
+          "id": "11.9",
+          "requirement": "Correct color handling across images, gradients, transparency, text, patterns, and forms; avoid premature destructive conversions to RGB.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_image_colors.c",
+            "scripts/test_pdf_colors.py",
+            "docs/pdf-colors.md",
+            "scripts/test_pdf_devicen.py",
+            "scripts/test_pdf_nchannel.py",
+            "scripts/test_pdf_icc_lut.py"
+          ],
+          "limitations": [
+            "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and calibrated/ICC blending spaces remain unfinished.",
+            "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "4",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-2:2020 8.6.6.5"
+          ]
+        }
+      ],
+      "dependencies": [
+        1,
+        4,
+        12
+      ],
+      "review_pointers": [
+        "docs/pdf-transparency.md",
+        "src/formats/pdf/pdf_image_colors.c",
+        "scripts/test_pdf_colors.py"
+      ]
+    },
+    {
+      "id": 12,
+      "title": "PDF FUNCTION TYPES [P1 \u2014 PREREQUISITE FOR SHADING AND COLOR]",
+      "items": [
+        {
+          "id": "12.1",
+          "requirement": "Type 0 sampled functions: samples, sizes, bits, order, domains/ranges, Encode/Decode, multidimensional indexing and interpolation.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_functions.c",
+            "scripts/test_pdf_functions.py"
+          ],
+          "limitations": [
+            "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "12.2",
+          "requirement": "Type 2 exponential interpolation functions.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_functions.c",
+            "scripts/test_pdf_functions.py"
+          ],
+          "limitations": [
+            "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "12.3",
+          "requirement": "Type 3 stitching functions, bounds and encoding per segment.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_functions.c",
+            "scripts/test_pdf_functions.py"
+          ],
+          "limitations": [
+            "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "12.4",
+          "requirement": "Type 4 PostScript calculator functions: the defined safe calculator language subset, stack rules, and limits (not unrestricted PostScript).",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_functions.c",
+            "scripts/test_pdf_functions.py"
+          ],
+          "limitations": [
+            "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "12.5",
+          "requirement": "Consistent domain/range clipping and numerically correct interpolation.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_functions.c",
+            "scripts/test_pdf_functions.py"
+          ],
+          "limitations": [
+            "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "12.6",
+          "requirement": "Integration with gradients, tint transforms, soft-mask transfer functions, and any other functions permitted by supported PDF versions.",
+          "status": "partial",
+          "evidence": [
+            "docs/formats.md",
+            "src/formats/pdf/pdf_functions.c",
+            "scripts/test_pdf_functions.py"
+          ],
+          "limitations": [
+            "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2
+      ],
+      "review_pointers": [
+        "docs/formats.md",
+        "src/formats/pdf/pdf_functions.c",
+        "scripts/test_pdf_functions.py"
+      ]
+    },
+    {
+      "id": 13,
+      "title": "TILING PATTERNS AND ALL SEVEN SHADING TYPES [P1]",
+      "items": [
+        {
+          "id": "13.1",
+          "requirement": "Tiling patterns: colored and uncolored, tiling types, pattern matrices, BBox, XStep/YStep, clipping, resource dictionaries, and stencil color.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.2",
+          "requirement": "Shading pattern resources and the direct sh operator.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.3",
+          "requirement": "Type 1 function-based shading.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.4",
+          "requirement": "Type 2 axial shading.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.5",
+          "requirement": "Type 3 radial shading.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.6",
+          "requirement": "Type 4 free-form Gouraud-shaded triangle mesh.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.7",
+          "requirement": "Type 5 lattice-form Gouraud-shaded triangle mesh.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.8",
+          "requirement": "Type 6 Coons patch mesh.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.9",
+          "requirement": "Type 7 tensor-product patch mesh.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.10",
+          "requirement": "Shading domains, backgrounds, extension flags, shared edges, bit-packed mesh coordinates/components, functions, and color-space conversion.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "13.11",
+          "requirement": "Shadings/patterns for text, stroke, fill, nested forms, and transparency.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-shading.md",
+            "src/formats/pdf/pdf_shading.c",
+            "scripts/test_pdf_shading.py"
+          ],
+          "limitations": [
+            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11",
+            "12"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        3,
+        4,
+        8,
+        11,
+        12
+      ],
+      "review_pointers": [
+        "docs/pdf-shading.md",
+        "src/formats/pdf/pdf_shading.c",
+        "scripts/test_pdf_shading.py"
+      ]
+    },
+    {
+      "id": 14,
+      "title": "TRANSPARENCY, MASKS, AND BLEND MODES [P1]",
+      "items": [
+        {
+          "id": "14.1",
+          "requirement": "ca/CA separate nonstroking/stroking opacity.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "14.2",
+          "requirement": "Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, and Luminosity blend modes.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "14.3",
+          "requirement": "Soft masks in alpha and luminosity modes; mask group/backdrop and transfer behavior; correct precedence/interactions with other masks.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "14.4",
+          "requirement": "Transparency groups, group color spaces, isolation and knockout.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py",
+            "src/formats/pdf/pdf_paint_groups.c",
+            "scripts/test_pdf_combined_paint.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 11.7.4.4"
+          ]
+        },
+        {
+          "id": "14.5",
+          "requirement": "Text knockout and interactions with PDF text render modes.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py",
+            "src/formats/pdf/pdf_paint_groups.c",
+            "scripts/test_pdf_combined_paint.py",
+            "scripts/test_pdf_empty_glyphs.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 11.7.4.4",
+            "ISO 32000-1/2 9.3.6"
+          ]
+        },
+        {
+          "id": "14.6",
+          "requirement": "Correct distinction between shape, object opacity, group opacity, and final blended result, including non-isolated group backdrops.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "14.7",
+          "requirement": "Blend-space and color-conversion handling (including nonseparable modes).",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "14.8",
+          "requirement": "Interactions among transparency, clipping, patterns, shadings, images, annotation appearances, and Type 3 glyph graphics.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-transparency.md",
+            "src/formats/pdf/pdf_transparency.c",
+            "scripts/test_pdf_transparency.py"
+          ],
+          "limitations": [
+            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "8",
+            "11"
+          ],
+          "audit": "selected evidence reviewed; detailed audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        3,
+        4,
+        8,
+        11
+      ],
+      "review_pointers": [
+        "docs/pdf-transparency.md",
+        "src/formats/pdf/pdf_transparency.c",
+        "scripts/test_pdf_transparency.py"
+      ]
+    },
+    {
+      "id": 15,
+      "title": "OPTIONAL CONTENT AND LAYERS [P1]",
+      "items": [
+        {
+          "id": "15.1",
+          "requirement": "Optional Content Groups (OCGs) and Membership Dictionaries (OCMDs).",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "15.2",
+          "requirement": "Default/alternate configurations, initial on/off states, base states.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "15.3",
+          "requirement": "Membership policies, visibility expressions, and usage-based visibility.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "15.4",
+          "requirement": "View/print/export intents where relevant; nested marked optional content.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "15.5",
+          "requirement": "Layers containing graphics, text, images, forms, and annotations.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "15.6",
+          "requirement": "A way to select configurations or toggle layers in the terminal viewer.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "15.7",
+          "requirement": "Do not erroneously render mutually exclusive/hidden optional content.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        4
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 16,
+      "title": "ANNOTATION APPEARANCE RENDERING [P1]",
+      "items": [
+        {
+          "id": "16.1",
+          "requirement": "Text, FreeText, Popup, Highlight, Underline, Squiggly, StrikeOut, Caret, and Ink annotations.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.2",
+          "requirement": "Line, Square, Circle, Polygon, PolyLine, Stamp, Watermark annotations.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.3",
+          "requirement": "Link and Widget annotations.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.4",
+          "requirement": "FileAttachment, Redact, PrinterMark, TrapNet, Screen, Sound, Movie, RichMedia, 3D, Projection, and any applicable extension subtypes.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.5",
+          "requirement": "Annotation dictionaries, Rect/QuadPoints, appearance streams and states, AP/AS selection (normal, rollover, down), appearance matrices and BBox.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.6",
+          "requirement": "Border styles, colors, opacity, fill, dash, geometric and text properties.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.7",
+          "requirement": "Flags: Hidden, Invisible, NoView, Print, NoZoom, NoRotate, etc., applied consistently with the chosen display/print intent.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.8",
+          "requirement": "Defined appearance fallback and regeneration behavior where required.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.9",
+          "requirement": "Existing annotation appearances composited over the page in correct order.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "16.10",
+          "requirement": "Distinguish a visible redaction marker from applying secure redaction; distinguish a visible digital signature from cryptographic validation.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "5",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "14",
+            "15"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 17,
+      "title": "ACROFORM WIDGET AND FIELD APPEARANCES [P1]",
+      "items": [
+        {
+          "id": "17.1",
+          "requirement": "Text fields, checkboxes, radio buttons, push buttons, list boxes, combo boxes, and signature fields.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.2",
+          "requirement": "Parent/child field trees, inherited field properties, values and states, export values, selection indices, and correct widget linkage.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.3",
+          "requirement": "Existing appearance streams and when appearance generation is necessary.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.4",
+          "requirement": "DA default appearance, DR resources, fonts, Q alignment, border and background, MK characteristics, captions/icons, and rotation.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.5",
+          "requirement": "Multiline text, comb formatting, password masking, text clipping, automatic font sizing, and rich-text appearances where applicable.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.6",
+          "requirement": "Correct selected/unchecked/on/off states and multi-select behavior.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.7",
+          "requirement": "Applicable legacy NeedAppearances semantics and PDF-version differences.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "17.8",
+          "requirement": "Separate form editing, submission, calculations, and saving from simply rendering the static current field appearance.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "5",
+            "6",
+            "7",
+            "9",
+            "16"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        5,
+        6,
+        7,
+        9,
+        16
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 18,
+      "title": "ENCRYPTED AND PASSWORD-PROTECTED PDFS [P1]",
+      "items": [
+        {
+          "id": "18.1",
+          "requirement": "Password authentication, document permissions and standard security handler revisions required by supported PDF versions.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "18.2",
+          "requirement": "RC4 for legacy-file compatibility; AES-128 and AES-256 with proper key derivation, revision-specific semantics, and integrity checks.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "18.3",
+          "requirement": "Crypt filters, metadata-encryption rules, embedded-file-only encryption, stream and string decryption, and object-stream behavior.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "18.4",
+          "requirement": "Public-key security handling with appropriate credential support where within scope; explicit reporting otherwise.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "18.5",
+          "requirement": "Published encryption extensions (including newer AES-GCM approaches) as separate versioned implementation targets where applicable.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "18.6",
+          "requirement": "Safe password handling; distinguish wrong passwords, corruption, and unsupported encryption methods.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "18.7",
+          "requirement": "Permission handling appropriate to implemented viewer features.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "1",
+            "2"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        2
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 19,
+      "title": "PREPRESS AND SPECIALIZED PRINT GRAPHICS [P1/P2]",
+      "items": [
+        {
+          "id": "19.1",
+          "requirement": "Overprint controls and overprint modes; spot/process plate interactions.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "11",
+            "12",
+            "14"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "19.2",
+          "requirement": "Transfer functions, black generation, undercolor removal where applicable.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "11",
+            "12",
+            "14"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "19.3",
+          "requirement": "Halftone dictionaries, component halftones, origins, and relevant print device behavior or a clearly defined screen-preview equivalent.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "11",
+            "12",
+            "14"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "19.4",
+          "requirement": "Output intents, printer marks, separation previews, and page-box choices.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "11",
+            "12",
+            "14"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "19.5",
+          "requirement": "Legacy prepress dictionaries (e.g. OPI, trapping) interpreted to the extent relevant for displayed/printed output; explicitly track exceptions.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "11",
+            "12",
+            "14"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "19.6",
+          "requirement": "Screen rendering versus printing differences documented and tested.",
+          "status": "missing",
+          "evidence": [
+            "docs/format-conformance.md"
+          ],
+          "limitations": [
+            "No complete implementation of this capability; prerequisites do not count as support."
+          ],
+          "dependencies": [
+            "11",
+            "12",
+            "14"
+          ],
+          "audit": "known unsupported path; detailed version audit pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        11,
+        12,
+        14
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 20,
+      "title": "NAVIGATION, DOCUMENT INFORMATION, AND ATTACHMENTS [P2]",
+      "items": [
+        {
+          "id": "20.1",
+          "requirement": "Page navigation, custom page labels, outline/bookmark trees.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "20.2",
+          "requirement": "Named destinations, Fit/FitH/FitV/FitR/XYZ behavior, internal links.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "20.3",
+          "requirement": "External URI navigation only by deliberate user action.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "20.4",
+          "requirement": "Viewer preferences, document info, XMP metadata, and language.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "20.5",
+          "requirement": "Embedded files, associated files, file specifications, collection/portfolio metadata and appropriate presentation/export behavior.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "20.6",
+          "requirement": "Article threads, page thumbnails, and document-part metadata where relevant.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "20.7",
+          "requirement": "Distinguish parsing metadata from faithfully reproducing page imagery.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 21,
+      "title": "TEXT EXTRACTION, SELECTION, SEARCH, AND ACCESSIBILITY [P2]",
+      "items": [
+        {
+          "id": "21.1",
+          "requirement": "ToUnicode mapping and documented extraction fallbacks.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.2",
+          "requirement": "ActualText replacement text, Alt text, and marked-content semantics.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.3",
+          "requirement": "Tagged PDF structure tree, structure elements, parents/children, RoleMap, namespaces, MCIDs, and reading-order relationships.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.4",
+          "requirement": "Unicode text extraction from ligatures and multi-codepoint mappings.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.5",
+          "requirement": "Search/selection hit geometry aligned to rendered characters.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.6",
+          "requirement": "Language metadata, artifact marking, accessible descriptions, and logical reading order when provided.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.7",
+          "requirement": "Render existing invisible OCR text correctly; OCR generation itself is a separate optional capability.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "21.8",
+          "requirement": "Ensure extraction heuristics do not alter visual text placement.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "5",
+            "6",
+            "7"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        5,
+        6,
+        7
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 22,
+      "title": "INTERACTIVE AND SPECIALIZED DOCUMENT CAPABILITIES [P2]",
+      "items": [
+        {
+          "id": "22.1",
+          "requirement": "AcroForm interaction: edits, field validation, formatting, calculations, submit/reset actions, export/import, and serialization when supported.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.2",
+          "requirement": "Document actions and JavaScript/event APIs, only with deliberate sandboxed policy and appropriate security controls; no automatic untrusted execution.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.3",
+          "requirement": "Legacy XFA static/dynamic forms and correct behavior where supported; distinguish XFA-specific layout from normal AcroForm appearances.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.4",
+          "requirement": "Digital-signature validation: certificate chains, integrity, timestamps, incremental revisions, restrictions, and relevant signature profiles.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.5",
+          "requirement": "Multimedia/3D: distinguish preview/poster appearance rendering from actual audio/video playback or 3D interaction.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.6",
+          "requirement": "Geospatial data, measurement annotations, coordinate transforms and tools.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.7",
+          "requirement": "Presentation transitions, timers, and applicable interactive actions.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "22.8",
+          "requirement": "Clearly mark interactive features as separate from static rendering parity; do not count a poster/fallback as complete interactive support.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "15",
+            "16",
+            "17",
+            "18",
+            "20"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        15,
+        16,
+        17,
+        18,
+        20
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 23,
+      "title": "PDF VARIANTS, CONFORMANCE FAMILIES, AND EXTENSIONS [P1/P2]",
+      "items": [
+        {
+          "id": "23.1",
+          "requirement": "PDF 1.x and PDF 2.0 version-specific behavior, including published fixes.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "23.2",
+          "requirement": "Rendering compatibility with valid documents in PDF/A, PDF/X, PDF/UA, PDF/E, PDF/VT, PDF/R and other applicable profiles.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "23.3",
+          "requirement": "Separate rendering support from validating conformance to a particular archival, accessibility, print or engineering standard.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "23.4",
+          "requirement": "Declared extension dictionaries and exact-version extension behavior; document proprietary/unsupported extensions without silent substitution.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "23.5",
+          "requirement": "Keep a version-to-feature matrix rather than assuming every feature applies unchanged across every PDF version.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 24,
+      "title": "CUPIDIMAGE TERMINAL RENDERING AND ROBUSTNESS [P0/P1]",
+      "items": [
+        {
+          "id": "24.1",
+          "requirement": "Unified, correct rasterization/compositing stage before output encoding.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.2",
+          "requirement": "Accurate ANSI true color, Kitty graphics, and Sixel output of the same rendered page, subject to explicit backend capability limitations.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.3",
+          "requirement": "Per-backend sizing, cell aspect ratios, quantization and alpha handling, with predictable backgrounds and no accidental terminal-layout distortion.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.4",
+          "requirement": "Page rotation, crop selection, zoom, resolution, page ranges and multipage navigation; faithful pixel placement and consistent rasterization.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.5",
+          "requirement": "Correct glyph rasterization, curve antialiasing, resampling, and thin lines.",
+          "status": "partial",
+          "evidence": [
+            "docs/pdf-coverage.md",
+            "src/formats/pdf/raster/coverage.c",
+            "tests/test_pdf_coverage.c",
+            "tests/test_pdf_coverage_oom.c",
+            "scripts/test_pdf_coverage_reference.py",
+            "scripts/test_pdf_tt_bitmap_reference.py",
+            "src/formats/pdf/raster/font_coverage.c",
+            "scripts/test_pdf_text_antialias.py",
+            "docs/pdf-page-hinting.md",
+            "src/formats/pdf/fonts/page_hint.c",
+            "scripts/test_pdf_page_hinting.py"
+          ],
+          "limitations": [
+            "Opt-in outline fill coverage and a selected native legacy TrueType page profile are tested. Defaults retain unhinted center-point fill. Modern/subpixel profiles, variation behavior, CFF/Type 1 hinting, fractional clipping, stroke coverage, image resampling and wider raster fidelity remain incomplete."
+          ],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "selected scan-conversion and optional page hinting/fill evidence reviewed; detailed audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 10.6.1",
+            "ISO 32000-1:2008 10.6.4"
+          ]
+        },
+        {
+          "id": "24.6",
+          "requirement": "Safe resource limits: memory, decompression ratio, recursion, CPU/time, numerical overflow, malformed image/font data, and huge dimensions.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.7",
+          "requirement": "Graceful failures and actionable diagnostics for corrupted data, unknown features, unsupported encodings, cyclic objects, missing resources, etc.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.8",
+          "requirement": "Never execute scripts or follow untrusted external-resource instructions merely to display a PDF page.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.9",
+          "requirement": "Partial rendering is reported as partial; failures are not hidden.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "24.10",
+          "requirement": "Reproducible rendering outputs for comparable test configurations.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "3",
+            "4",
+            "7",
+            "8",
+            "10",
+            "14"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        3,
+        4,
+        7,
+        8,
+        10,
+        14
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 25,
+      "title": "FEATURE TESTING, CORPUS STRATEGY, AND ACCEPTANCE [ALL PRIORITIES]",
+      "items": [
+        {
+          "id": "25.1",
+          "requirement": "Maintain a feature matrix: standard/version, source files, implementation status, focused fixtures, cross-feature test cases, limitations, and bugs.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.2",
+          "requirement": "Add minimal PDFs covering each content operator, font/encoding variant, image decode/mask path, shading type, blend mode, field, and annotation.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.3",
+          "requirement": "Include interaction tests: text clipping + transparency, nested forms + inherited resources, rotated glyphs + nondefault fonts, ICC + spot colors, encrypted object streams, optional content within annotation appearances.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.4",
+          "requirement": "Test each existing asset after relevant changes; keep unrelated formats from regressing when modifying shared rendering or image infrastructure.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.5",
+          "requirement": "Use the Mozilla PDF.js test-PDF corpus as a broad source of legal/test fixtures and py-pdf/sample-files as a supplementary fixture collection, subject to each asset's applicable license.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.6",
+          "requirement": "Do focused automated and regression tests during implementation; do NOT make repeated full manual ratings of all 1,007 reference PDFs while major renderer prerequisites are missing.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.7",
+          "requirement": "Once broad feature coverage is established, compare the 1,007 PDFs against the reference renderer and record ratings, page by page.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.8",
+          "requirement": "Match comparison settings: selected page box, raster size/DPI, rotation, background, font availability, layer visibility, color settings, and annotations/form appearances.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.9",
+          "requirement": "Classify issues specifically: parse error, missing content, wrong font, wrong glyph, text positioning, path/clip geometry, image/mask, color, blend/transparency, pattern/shading, annotations/forms, and corruption.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.10",
+          "requirement": "Fix underlying shared defects; prevent regressions with reduced focused fixtures and cross-feature assertions.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.11",
+          "requirement": "Do not mark a category complete merely because a sample opens, the first page looks plausible, or an unsupported operator is ignored.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "25.12",
+          "requirement": "Preserve an auditable list of not-implemented and partially implemented items until all scoped capabilities are verified.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 26,
+      "title": "EXHAUSTIVE OPERATOR, DICTIONARY, AND STRING-ENCODING AUDIT [P0/P1]",
+      "items": [
+        {
+          "id": "26.1",
+          "requirement": "Audit EVERY applicable page-content operator against the complete version-specific ISO 32000 operator tables, including parameters, defaults, errors, graphics-state effects, and ordering constraints. Examples warranting explicit tests: Type 3 d0/d1, ri rendering intent, i flatness tolerance, and the full ExtGState parameter set.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_render.c",
+            "src/formats/pdf/pdf_stroke.c",
+            "tests/test_pdf_flatness.c",
+            "scripts/test_pdf_flatness.py",
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_path.c"
+          ],
+          "limitations": [
+            "The remaining operator and ExtGState inventory needs a complete version-specific audit."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "Flatness operands, paint-time ordering and selected state interactions tested; broader audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Tables 57 and 58; 10.6.2"
+          ]
+        },
+        {
+          "id": "26.2",
+          "requirement": "Audit EVERY applicable font/resource/graphics/page/annotation dictionary entry by PDF version, including optional and inherited entries, indirect values, fallback values, validation rules, and incompatible combinations.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "26.3",
+          "requirement": "Implement PDFDocEncoding, UTF-16BE and (where permitted by PDF 2.0) UTF-8 text strings, BOM behavior, character escaping, text-string normalization/decoding, and distinction from arbitrary byte strings.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "26.4",
+          "requirement": "Correctly decode file specifications and platform-independent Unicode file names where required; never automatically access referenced files.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "26.5",
+          "requirement": "Verify extended graphics state keys individually, including stroke adjustment, flatness, smoothness, alpha-is-shape, text knockout, halftone, rendering intent, blend modes, transfer functions, black generation, undercolor removal, overprint, opacity and soft masks.",
+          "status": "partial",
+          "evidence": [
+            "src/formats/pdf/pdf_render.c",
+            "src/formats/pdf/pdf_stroke.c",
+            "tests/test_pdf_flatness.c",
+            "scripts/test_pdf_flatness.py",
+            "docs/pdf-content.md",
+            "src/formats/pdf/pdf_path.c"
+          ],
+          "limitations": [
+            "The remaining operator and ExtGState inventory needs a complete version-specific audit."
+          ],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "Flatness operands, paint-time ordering and selected state interactions tested; broader audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Tables 57 and 58; 10.6.2"
+          ]
+        },
+        {
+          "id": "26.6",
+          "requirement": "Confirm Type 3 glyph widths, d0/d1 metrics and cache behavior, and colored/uncolored Type 3 restrictions and drawing semantics.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "26.7",
+          "requirement": "Audit version-specific deprecated features: correctly handle legacy files without treating deprecated mechanisms as preferred for new files.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "26.8",
+          "requirement": "Establish a clear compatibility policy for obsolete PostScript XObjects, external references, and other constructs not representable by a normal static page renderer; follow specified behavior, not guesswork.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "26.9",
+          "requirement": "Test large files, 64-bit file offsets, unusual but valid object-number and generation combinations, and multiple incremental update sequences.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1",
+            "4"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1,
+        4
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 27,
+      "title": "PDF 2.0-SPECIFIC DETAILS TO IMPLEMENT OR TRACK [P0/P1/P2]",
+      "items": [
+        {
+          "id": "27.1",
+          "requirement": "Unicode text strings, Unicode-based password handling, and all applicable PDF 2.0 text-encoding version rules.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.2",
+          "requirement": "Inline-image /L length entry where permitted, rather than depending only on finding the EI terminator.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.3",
+          "requirement": "Page-level OutputIntents and referenced OutputIntents, as distinct from document-level output-intent arrays; applicable MixingHints and SpectralData prepress data.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.4",
+          "requirement": "Correctly interpret PDF 2.0 black-point compensation and relevant color-management/transparent-compositing clarifications.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.5",
+          "requirement": "PDF 2.0 annotation improvements, including annotation opacity/blending, polygon/polyline real paths, stamp-annotation intents, and tab-order rules.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.6",
+          "requirement": "Point data and measurement dictionaries for image and form XObjects, including geospatial behavior where applicable.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.7",
+          "requirement": "Object metadata streams, associated-file relationships, document parts, embedded-file thumbnails, and PDF 2.0 document requirements.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.8",
+          "requirement": "Tagged PDF 2.0: structure namespaces, namespace mappings, newer structure roles, MathML/pronunciation-related semantics, and page-number/Bates artifacts. Track semantic support separately from static-page rendering.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.9",
+          "requirement": "GoToDp, RichMediaExecute and structure-element destination extensions, including no-auto-execution safeguards in the terminal viewer.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.10",
+          "requirement": "Signature-field lock/seed-value behavior and updated signature formats where verification or field editing is within the supported viewer scope.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.11",
+          "requirement": "PRC-based 3D and updated RichMedia/3D handling, distinguishing preview display from actual 3D interaction.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "27.12",
+          "requirement": "Consult the PDF 2.0 application notes on black-point compensation, associated files, and object metadata streams.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 28,
+      "title": "PUBLICLY DOCUMENTED PDF EXTENSIONS AND VERSION MATRIX [P1/P2]",
+      "items": [
+        {
+          "id": "28.1",
+          "requirement": "Detect, identify and record extension namespaces, BaseVersion, level, revision and declared support; handle unknown extensions predictably.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.2",
+          "requirement": "ISO/TS 32001:2022: additional hash algorithms (SHA-3 and SHAKE256).",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.3",
+          "requirement": "ISO/TS 32002:2022: additional digital-signature algorithms (including applicable NIST P-curve, Brainpool and Edwards-curve families).",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.4",
+          "requirement": "ISO/TS 32003:2023: AES-GCM encryption in PDF 2.0.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.5",
+          "requirement": "ISO/TS 32004:2024: integrity protection for encrypted PDFs (MACs).",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.6",
+          "requirement": "ISO/TS 32005:2023: PDF 1.7/2.0 structure namespace inclusion.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.7",
+          "requirement": "ISO/TS 24064:2023: STEP AP 242 assets in RichMedia annotations.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.8",
+          "requirement": "ISO/TS 32007:2024: glTF assets in RichMedia annotations.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.9",
+          "requirement": "PDF Association 2026 BrotliDecode extension, including RFC 7932 codec behavior, separate from the original core ISO filter set.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.10",
+          "requirement": "Applicable legacy Adobe 1.7 extensions, including cases whose features were subsequently incorporated in PDF 2.0.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "28.11",
+          "requirement": "Maintain a versioned table of publicly documented extensions and the exact implementation status of each; additions are ongoing and an unspecified private extension cannot be assumed to work.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "1"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        1
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 29,
+      "title": "FULL VIEWER/INTERACTIVE CAPABILITY AUDIT [P2]",
+      "items": [
+        {
+          "id": "29.1",
+          "requirement": "Implement applicable action subtypes and their constraints: GoTo, GoToR, GoToE, URI, Named, Launch, Hide, SetOCGState, ResetForm, SubmitForm, ImportData, JavaScript, Movie, Sound, Rendition, GoToDp, RichMediaExecute, and version-appropriate extensions. Untrusted actions require explicit policies and user authorization; never launch external programs silently.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "20",
+            "21",
+            "22"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "29.2",
+          "requirement": "Import/export/serialize FDF and XFDF (including applicable XFDF 3.0 requirements) if form-data workflows are included in the product goal.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "20",
+            "21",
+            "22"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "29.3",
+          "requirement": "Implement the applicable, safely sandboxed ECMAScript-for-PDF behavior only if scripting/interactivity is explicitly part of the goal.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "20",
+            "21",
+            "22"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "29.4",
+          "requirement": "Verify PAdES signatures and timestamp/validation data if cryptographic verification is part of the goal; this is distinct from displaying a signed widget's normal appearance.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "20",
+            "21",
+            "22"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "29.5",
+          "requirement": "Treat real redaction application, saving/rewriting PDFs, annotation and form editing, dynamic XFA, and multimedia playback as separate features from accurate static page appearance rendering.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "20",
+            "21",
+            "22"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "29.6",
+          "requirement": "Record which interactions the terminal can genuinely support, which require alternate text-based UI, and which expose only a static preview.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "20",
+            "21",
+            "22"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        20,
+        21,
+        22
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    },
+    {
+      "id": 30,
+      "title": "MEANING OF 'COMPLETE' AND 1:1 ACCEPTANCE [ALL PRIORITIES]",
+      "items": [
+        {
+          "id": "30.1",
+          "requirement": "Define separate acceptance targets for: (A) static page imaging, (B) extraction/navigation/accessibility, (C) interactive documents, and (D) editing/writing. Do not require PDF editing merely to claim complete static page rendering, and do not claim complete viewer support on the strength of static rendering alone.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "30.2",
+          "requirement": "Build a SPEC-TO-TEST COVERAGE MATRIX: each applicable ISO clause, operator, dictionary key/value, filter parameter, font rule, exception, and version-specific behavior must have an explicit status and relevant positive/negative/boundary tests.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "30.3",
+          "requirement": "Compare rendering both on focused synthetic fixtures and large real documents, using identical render dimensions, font substitutions, rotation, boxes, annotation/layer settings, and color management.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "30.4",
+          "requirement": "Compare canonical raster output BEFORE ANSI/Kitty/Sixel conversion so PDF rendering defects are not confused with terminal quantization, cell geometry, or terminal image-protocol limitations.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "30.5",
+          "requirement": "Distinguish a difference due to antialiasing, hinting, font availability, color management or backend quantization from an actual missing feature. Cross-renderer and cross-device byte-for-byte identical pixels are not guaranteed by PDF conformance; achieve measured visual fidelity.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "30.6",
+          "requirement": "Audit capability regressions even when a given reference renderer does not expose or implement a standard feature; standards govern correctness and renderer comparisons guide compatibility.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        },
+        {
+          "id": "30.7",
+          "requirement": "Do not mark this checklist as literally exhaustive for all future, undocumented, private, or proprietary extensions. Add new requirements when encountered in specifications or corpus evidence.",
+          "status": null,
+          "evidence": [],
+          "limitations": [],
+          "dependencies": [
+            "24",
+            "25"
+          ],
+          "audit": "pending",
+          "standard_clauses": []
+        }
+      ],
+      "dependencies": [
+        24,
+        25
+      ],
+      "review_pointers": [
+        "docs/format-conformance.md"
+      ]
+    }
+  ],
+  "standards_index": [
+    "https://pdfa.org/resource/iso-32000-2/",
+    "https://pdfa.org/resource/pdf-specification-archive/",
+    "https://pdf-issues.pdfa.org/",
+    "https://pdfa.org/extensions/",
+    "https://www.rfc-editor.org/info/rfc7995/",
+    "https://www.rfc-editor.org/info/rfc7932/"
+  ],
+  "audit_note": "This is an initial inventory, not a completed clause-by-clause audit. Null status means unassessed, not implemented. Partial entries have selected source/test evidence but still require version, interaction and boundary qualification. Extension names from the supplied checklist require authoritative edition/applicability verification."
+}

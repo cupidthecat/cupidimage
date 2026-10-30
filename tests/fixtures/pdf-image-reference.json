@@ -1,0 +1,607 @@
+{
+  "provenance": "Owned synthetic pixels; expected RGBA is calculated from the source samples, filter and predictor rules, Decode mappings, and stencil, color-key, explicit, soft masks, and RGB compositing.",
+  "cases": [
+    {
+      "asset": "assets/pdf/reference/packed-gray-1bit.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxjYGD4z4AHEwL49BKDR80fNX8gzae1/lHzR80fzOYDADyZvG4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/packed-rgb-4bit-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfMH2HywFXgwpQpGzR81fzCbDwA8mbxu",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gray-16bit-tiff-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxjYGD4z4AHEwKhoaF4MT6zR80fNX+gzV+1ahVeXF9fjxcTAqPmj5o/mM0HAN57G70=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/stencil-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj+M+AFzY0NODF+HUThqPmj5o/kObTWv+o+aPmD2bzAdtnXe4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/color-key-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj434AHMxCCDP/xYnxmj5o/av5Amw9EeDGlCkbNHzV/MJsPAE3U3K4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/soft-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj430ACXhUaShImxexR80fNp7f5V7W1ScL/GRhIwqPmj5o/mM0HALtTXe4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/soft-mask-matte.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJw74ODw/8AoHsWjeBSP4hGHAT8zXq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/explicit-image-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj+M9AEmxoaCAJk2b6qPmj5tPX/MHmnlHzR82np/kAPkZd7g==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/lzw-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfMH2HywFXgwpQpGzR81fzCbDwA8mbxu",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/ascii85-flate-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfMH2HywFXgwpQpGzR81fzCbDwA8mbxu",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/indexed-soft-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj43zCKR/EIxQwM//FjApCQAaPmj5o/mM0HAGbFXe4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/blend-multiply.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxrcHD43zCKR/EoHsWjeMRhAG5E/p8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/blend-screen.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxrYPj/v2EUj+JRPIpH8YjDAK+5vS4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/fill-stroke-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraPj/v2EYYGobOGr+qPmj5o+aT6z5QxUDAH+3fT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/compact-objects.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/lzw-object-stream.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/axial-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/radial-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzFlKGLQmEQxAcuGC5cObBcuWoR5LLJYjrMYrDZxCL4DwgWsdkMcvkwWUxmESxWi+XgisFgEEZ+Gy3vKTwNA8vuzLzd/b73SbYS8KKzX3X0mw4BYnJJujS+7/r3p3YuaOuiNgFictTu/U5OJ39oH35lLV3V3N+aBYjJUYMD99a+0X1pFV51/bilsdsaBYjJUYMD95Y5mJve0Dc1cVcD99XzUJ0AMTlqcOCiSds7u2V+esQHz6ka/lUtQEyOGhy4aNLMwN3g/OiLPdArfgtVvFYpQEyOGhy4aNAm+XP/mJdzZNf0Sc/4/ikfICZHDQ5cNGif7Z/1frI+36zv5yP+r6zfh0e8b9ffufd9vgCTYv0f",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/exponential-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzDEZRREAgFE+n8FgupPNaDXf+QYQQAENNBBBBBl00EEI+/9qvMEJcIQQSClRSqG1xhiDtZbneXDO4b0nhECMkfd9+b6PlBI5Z0op1FpprdF7Z4zBnJO1FntvzjmI+9///ve//1/+P7yd/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/stitching-function.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzDERACEMRNHfYwITmEAFJjCBCVRgAhOYoN+7PRVXpMhMJtl9l6RD1qZoUTVpGnR1hhpTlaXCVuYocb/x7pt/zjjrjrs2bNm8r33DDz/88MP/pf8AjHn9Hw==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/component-functions.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/sampled-32bit-function.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECBCEAQEHK8ziP8/U4z+P15TyP8zzO4zxP3v3GQfMBI4RASolSCq01xhistTzPg3MO7z0hBGKMvO/L932klMg5U0qh1kprjd47YwzmnKy12HtzzkHc//73v//9//L/AV2OvG4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/function-based-shading.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzD1o1AwAgOHpIMsHtxk4F4dAoAgHooQ4lA6HqSAGOpgelCoSG1uKV1pperX+1F6vtKUnpRoNUkvhGodCRLApN5QOhqAIByIEMrh4ELcDl8At75fhWZ//ChkXihmXShlDUsbVcsawmjFayRjTMyaqGVNmxlwtY7mesdbI2GllvHUzDtsZx37GSSfjPMz43s34lWT87mX87Wf8G2RcLKRIxZTLpZRrUspwOeWGmqJXUsb1lHvVlGkzZb6W5n+a/ynbrZTXbsp+O+XIT/E7Kadhynk35VuS8rOXkvRT/gxShgoxV4oxailmRIoZLcfoasydSsykHvOgGjNrxjyuxTypx7xsxGy2YnbdmHftmAM/5mMnxg9jTroxZ0lM2Iv50Y/5NYi5XogYKUbcKEXckiLGyhHjasRkJcLUI2aqEXNmxGItYqUesdqI2GhF7LgRe+0I14846EQchRHH3YjPScRpL+KsH/F1EHGzEHC7GDBWCjCkgIlywD014EElYEYPeFQNWDADlmpB/gf5H7DeCthyA161A/b8gHedgP0w4LAb4CUBx72AT/2AL4OA8YLHRNHjbsnjvuQxVfaYVj1mKx5zusdC1WPR9FiueTyte7xoeKy1PDZcj622x47vsdvxeB16vO16vE88PvQ8DvseRwOPhwWHmaLDbMnhkeQwV3aYVx0eVxwWdYelqsOy6bBSc3hWd3jecFhtOay5Dutthw3fYbPjsB067HQdXiUOuz2Hvb7Dm4GDXWiyVMyVmtSlJsvlnNrkSaXJip6rNnlqNnlWy9Wb+Z9rNXnhNllt5/wmLztN1sJct0kjabLey/WbNAe5gs16MVeyaUg2a+WcavOyYrOq56o2L0yb57Vc3eZZI9eyeerarLRzvs2Tjs1ymOva1BObpV6ub2MPbN4ULPaKFrsli1eSxU7ZYlu12KxYbOgW61WLNdNitWblv5X/Fisti2XXYqltsehbPO5YzIcWc12LR4nFbM9ipm/xcGBxVDA4LBp8KBm8lwzelg1eqwa7FYMd3WCrarBhGqzVDF7UDZ42DJZbBouuwULbYM43mO0YTIcGU12D+4nB3Z7BRN9gfGDwpaDxqahxXNLwJI3Dssa+qvGuorGna7yqamyZGus1jdW6xkpDY6mlseBqPGprzPgaDzoa90KNia6GkWiM9TRu9zVuDjS+FhTOigqnJYXPksJxWeFIVTioKLi6wl5VYcdU2Kgp+a/kv8JiS2HOVZhpK5i+wmRHYTxUGOsq3EoUbvQURvoK1wcKvwoyP4oyYUnmTJI5Kcv4qszHisyBLvOuKrNrymzWZF7WZZ40ZB63ZGZdmQdtmUlf5k5HRg9lRrsyI4mM2pO50pcZGsj8KYgkRZGfJZFvksh5WeRUFfErIke6yH5V5LUpsl0TWauLLDdE5lsi067IvbbIuC+id0RuhCLDXZFricjlnojUF7k4EPlXEPhbFPhdEvglCXwvC5yrAicVgWNd4LAq8NYU2KkJ+S/kv8BcS2DKFZhoC4z5AqMdgeFQ4GpXYCgRuNQTuNAX+G8g8D9omLxu",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/calculator-gradient.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/calculator-conditional.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8JmETlpCkeNX/U/FHzR80fNZ9u5gMAjHn9Hw==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/indexed-vector-fill.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw/z8eTBDi145fctT8UfNHzR81f9T8ATMfAIx5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-cff-simple.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-cff-cid.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-type1.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-type1-filtered.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/394AQYGBrx41PxR80fNHzWfVuYPNQAAL77bXQ==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/standard-font-metrics.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-cmap10.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-post-names.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-state-font-object-stream.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/type3-base-encoding.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nz08AEk/d0kddBcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3szMVfCD/yj5j5L/KPmPkv8o+Y+S/yj5j5L/KPmPkv8o+Y+S/yj5j5L/KPmPkv8AAAAAAAAAAAAAAAAAAAAAAN4d0hb0Pg==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/isolated-opacity-group.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7X1///z8eTECaICakYNT8UfNHzR81f9T8gTEfAAyQej0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj2O/wn2EUj+JRPIpH8YjDACx5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-alpha-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7X1///z8pmFQwav6o+aPmj5o/av6gNB8AjVE6TA==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-luminosity-mask.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzLzPz/P5METCogxexR80fNHzV/1PxR8+lnPgB9yBlM",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/graphics-gray-mask-transfer.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw/z8pmFQwav6o+aPmj5o/av6gNB8AMlw7zA==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/isolated-page-screen.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gray-page-group.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzz9fX97zuKR/EoHsWjeMRhAGIl2R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/knockout-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwzNv7/33gUj+JRPIpH8YjDAA5eli4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/knockout-shape.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwzZjjz33gUj+JRPIpH8YjDAKbq/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/text-object-knockout.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/type3-shape-opacity.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/escaped-content-font.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/literal-text-crlf.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-freeform.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzCEI2EYAAMCaQGXlIDow+bLEByojR3xg8mWJD5WRhfdhMnIQ/1S+LLx+qIwcxKwnzl7334f/P9EzEBiZmFlYiWzsHCROLm4yhUrj4aX75adnIDAyMbOwEtnYOUicXNxkCpXGw0v300/PQGBkYmZhJbKxc5A4ubjJFCqNh5fuh5+egcDIxMzCSmRj5yBxcnGTKVQaDy/dv356BgIjEzMLK5GNnYPEycVNplBpPLx0//jpGQiMTMwsrEQ2dg4SJxc3mUKl8fDSfffTMxAYmZhZWIls7BwkTi5uMoVK4+Gl++anZyAwMjGzsBLZ2DlInFzcZAqVxsNL99VPz0BgZGJmYSWysXOQOLm4yRQqjYeX7m8/PQOBkYmZhZXIxs5B4uTiJlOoNB5eur/89AwERiZmFlYiGzsHiZOLm0yh0nh46b746RkIjEzMLKxENnYOEicXN5lCpfHw0n320zMQGJmYWViJbOwcJE4ubjKFSuPhpfvTT89AYGRiZmElsrFzkDi5uMkUKo2Hl+4PPz0DgZGJmYWVyMbOQeLk4iZTqDQeXrqPfnoGAiMTMwsrkY2dg8TJxU2mUGk8vPwGhvb9Hw==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-lattice.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzCEI2EYAAMCaQGXlIDow+bLEByojR3xg8mWJD5WRhfdhMnIQ/1S+LLx+qIwcxKwnzl7334f/P9EzEBiZmFlYiWzsHCROLm4yhUrj4aX75adnIDAyMbOwEtnYOUicXNxkCpXGw0v300/PQGBkYmZhJbKxc5A4ubjJFCqNh5fuh5+egcDIxMzCSmRj5yBxcnGTKVQaDy/dv356BgIjEzMLK5GNnYPEycVNplBpPLx0//jpGQiMTMwsrEQ2dg4SJxc3mUKl8fDSfffTMxAYmZhZWIls7BwkTi5uMoVK4+Gl++anZyAwMjGzsBLZ2DlInFzcZAqVxsNL99VPz0BgZGJmYSWysXOQOLm4yRQqjYeX7m8/PQOBkYmZhZXIxs5B4uTiJlOoNB5eur/89AwERiZmFlYiGzsHiZOLm0yh0nh46b746RkIjEzMLKxENnYOEicXN5lCpfHw0n320zMQGJmYWViJbOwcJE4ubjKFSuPhpfvTT89AYGRiZmElsrFzkDi5uMkUKo2Hl+4PPz0DgZGJmYWVyMbOQeLk4iZTqDQeXrqPfnoGAiMTMwsrkY2dg8TJxU2mUGk8vPwGhvb9Hw==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-function.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzKEVQGAYAMDf8wRBkjRRlWUDGMACNrCBEYxgBjvYwRA6N4bwhauXUnozcgpKKmoaWjp6BkYmZhZWNnYOTi5uHlL88ccff/y//D/wI/4Q",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/gouraud-indexed.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJztzJECgEAUAMGVPI/zOM/jPI/zOD+P8zzO4zw/2X4jePMBkyl8KX2ovKm9aDxpPejc6d0YTIyuTC7MzixOrI4kBzZ7djsOW04bLmtuKx5LXguyOf74448//l/+H4x5/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/coons-quadratic.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwNzKEOmDgAANCT+4T7AZJ9wuTkNGoWN1W94JtJ5CFxCxK1OhxTKMQSVFXPYKpqSO6eePZ17a//PtMzEBiJTMwsrGwkdg5OLm4yhYdK46X710/PQGAkMjGzsLKR2Dk4ubjJFB4qjZfuj5+egcBIZGJmYWUjsXNwcnGTKTxUGi/dbz89A4GRyMTMwspGYufg5OImU3ioNF66X356BgIjkYmZhZWNxM7BycVNpvBQabx0P/30DARGIhMzCysbiZ2Dk4ubTOGh0njp/vHTMxAYiUzMLKxsJHYOTi5uMoWHSuOl++GnZyAwEpmYWVjZSOwcnFzcZAoPlcZL991Pz0BgJDIxs7Cykdg5OLm4yRQeKo2X7pufnoHASGRiZmFlI7FzcHJxkyk8VBov3Vc/PQOBkcjEzMLKRmLn4OTiJlN4qDReui9+egYCI5GJmYWVjcTOwcnFTabwUGm8dJ/89AwERiITMwsrG4mdg5OLm0zhodJ46T766RkIjEQmZhZWNhI7BycXN5nCQ6Xx0v3tp2cgMBKZmFlY2UjsHJxc3GQKD5XGS/fBT89AYCQyMbOwspHYOTi5uMkUHiqNl/8BTqM9Hg==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/tensor-interior.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwN1D1IFAAAhmGHO2jpZzq15YwaLiNCI8yfiEitCA0J/CGEVALJEAm0I4gUEUEtQTAlCLLCgvREhDpRhFArIiJFEYesRAi6yrG7FnuGZ3237wv+TdvZx34OcYx8iimnhgaaidLJfYZ5Sow483xinS22+UfwR9rOXjI5yFHyOMNFKrnKdVq5Sw+DPOYlr3jDR9bY5A8pgmtpO3vI4ABHOMFpLnCZWhq5yR26GeARL5hijg+s8p3fpAi+0yedLLI5zinOUcEVrtHCbbro5yGjTDLLe1b4xi9SBF6n7ewmRBaHyaWIUi5RQwPNROnkHsM8Y4IZ3rLMVxIkCTzXJ0SYCLkUUkI51dRzg1t00McQT4gxzSJLbJAgSWBInxBhIuRQQDFlVFFHE22008sDRhgnzgJLbJAgSaBbnxBhIuRQwFnKqKKOJlppp4dBRhgjzgKf+cJPkgSi+oQIEyGHAs5SRhV1NNFKOz0MMsIYcRb4zBd+kiTQqE+IMBFyKKCYMqqoo4k22unlASOME2eBJTZIkCRQrU+IMBFyKaSEcqqp5wa36KCPIZ4QY5pFltggQZLAeX1CZHGYXIoo5RI1NNBMlE7uMcwzJpjhLct8JUGS4En7Ip0ssjnOKc5RwRWu0cJtuujnIaNMMst7VvjGL1IEI/pkcIAjnOA0F7hMLY3c5A7dDPCIF0wxxwdW+c5vUgQz/BuZHOQoeZzhIpVc5Tqt3KWHQR7zkle84SNrbPKHFMFd/pn9HOIY+RRTTg0NNBOlk/sM85QYceb5xDpbbPOP//LO8pk=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/coons-fold-priority.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/38UDCRgmMVAW7yWxngXjfERGuNzNMbXaIzv0hg/oTF+TWP8kcb4O43xH9piAEnZjOY=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/tensor-shared-edge.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7/38UjIIRDBgYRvEoHrEYAG89e70=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-bearing.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0cEJwDAAA7Hsv3Q6hKEcRAL/D3wvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPCXc8601/vY1P+t97Gp/1vvY1P/t97Hpv5vvY9N/d96H5v6v/U+NvV/631s6v/W+9jU/633san/W+9jU/+33sem/m+9j03933ofm/q/9T429X/rfWzq/9b72NT/rfexqf9b72NT/7fex6b+b72PTf3feh+b+r/1Pjb1f+t9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwLs+BQft8A==",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/embedded-truetype-short-bearing.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0cEJwDAAA7Hsv3S6Qqk/B5XA/wPfCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8dc6Z9vc+NvV/631s6v/W+9jU/633san/W+9jU/+33sem/m+9j03933ofm/q/9T429X/rfWzq/9b72NT/rfexqf9b72NT/7fex6b+b72PTf3feh+b+r/1Pjb1f+t9bOr/1vvY1P+t97Gp/1vvY1P/t97Hpv5vvY9N/d96HwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBbD5vG7fA=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/separation-tint.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz739Dw//8oHsWjeBSP4hGHAQ6mfT0=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/separation-all.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj43zCKR/EoHsWjeMRhAPAEvq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/separation-none.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxjYPj/n2EUj+JRPIpH8YjDAA3q/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/devicen-32-predictor.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbX2//fz8JmIGBgSRMitmj5o+aP2r+qPmj5tPPfAAGUJxf",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/devicen-32-indexed.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbX2//f/8oHsWjeBSP4hGHASrQui4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/indexed-lab-patch.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/standard-extended-advance.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/substitute-font-widths.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/font-resource-empty.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/font-resource-127.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwMD5Nw0iBunnLqmDngMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/DIzq2DDf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAb1zrQmm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nchannel-process-rgb.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxzaDjw32EUj+JRPIpH8YjDADAEvq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nchannel-process-gray.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxraGj43zCKR/EoHsWjeMRhAPAEvq4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/nchannel-process-cmyk-subset.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJxj+M8wCkfhKByFo3AEQgCMef0f",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-lut16-cmyk.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-lut8-rgb.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJyzsbH5bzOKR/EoHsWjeMRhAIgrjJ8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-lut16-xyz-range.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z5D2//8oHsWjeBSP4hGHASX8li4=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/icc-intent-selection.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//X44FW1paYsU7duzAirGZgQ+Pmj9q/qj5o+aPmj+w5gMAsXqZjg==",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-intent-image-local.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbsWPH/x0k4PLycpIwKWaPmj9q/qj5o+aPmk8/8wFjOCh9",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-mab-b-curves.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-mab-cmyk-grid.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJwrLy//Xz6KR/EoHsWjeMRhAEBtli4=",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/icc-mab-matrix.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJzbuXPn/52jeBSP4lE8ikccBgCdsb89",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/descriptor-font-widths.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/text-fill-stroke-shape.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt2zENwmAURlEfeGD6dWCgAvBUHRUIawcSoCW5KT3DEfAld3xvLPfHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/tJlWn6u3sRx6I+S/iitu7ld5130x7f0R0l/lF71N0/jY/pjD/1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UXJ/T0l/lPRH6d0v+Rb1Jo5Df5T0BwAAAAAAAAAAAAAAAAAAAAAAAAAAAABwDk/tIJiq",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/path-fill-stroke-pattern-holes.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0rENwkAABME+aOO7cQH0RB0uEMcm8Msy0sowwUQXnbRjfb4HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwkx7LuvPtHY7oj5L+KH3281rGztm9/sO96I+S/ijN+prRH1foj5L+KOmPkv4o6Y+S/ijpj5L+KOmPkv4o6Y+S/ijpj5L+KOmPkv4o6Y/SrL+ze/2He9EfJf1RmvVzdYcj+qOkPwAAAAAAAAAAAAAAAAAAAAAAAAAAAACA/7ABVyiyNg==",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/text-fill-stroke-mask-once.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt27ENggAURdFtXIAFXMA1qB3BisptGFBbCxJUTG7AU5wBXnLL/4d5fAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAhnab7z9Wb2A/9UdIfpdduztfbJvrjU/qjpD9KS/2N0+Vt+mML/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1R0h8l/VHSHyX9UdIfJf1Rcn9PSX+U9Edp7Zf8G/Um9kN/lPQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPAfnskGzMQ=",
+      "tolerance": 1
+    },
+    {
+      "asset": "assets/pdf/reference/empty-glyph-preserves-clip.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0cEJAEEQhMDNP+m5HM6HNFhgBN57d/W/MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy+M/W+9MPa/9cLY/9YLY/9bL4z9b70w9r/1wtj/1gtj/1svjP1vvTD2v/XC2P/WC2P/Wy/IB6l3LCE=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/space-code-outline-clip.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0kENACAMwED8mx4iBunnLqmDzgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAX5yzCzb8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/EfJf5T8R8l/lPxHyX+U/AcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwzAVda+hK",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/reference/standard-spacing-advance.pdf",
+      "width": 160,
+      "height": 120,
+      "rgba_zlib": "eJzt0jENADAMwLDyJ91RmNQjjy2FQXYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7MzCm48B8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfJf9R8h8l/1HyHyX/UfIfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUHl57Wm7",
+      "tolerance": 0
+    }
+  ]
+}

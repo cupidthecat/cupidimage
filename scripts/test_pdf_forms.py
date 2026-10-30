@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Render generated Form XObjects and compare their complete pixel output."""
+import base64
 import pathlib
 import struct
 import subprocess
@@ -10,6 +11,7 @@ import zlib
 from test_pdf_pages import document
 from test_pdf_images import image_stream
 from test_jpeg_decoder import jpeg, scan, EOI
+from test_pdf_lzw import literals
 
 RED, BLUE, GRAY = (255, 0, 0), (0, 0, 255), (128, 128, 128)
 PAINT = '1 0 0 rg -100 -100 300 300 re f'
@@ -64,6 +66,13 @@ def main():
                 print('FAIL', name, str(error), file=sys.stderr)
 
         lower_left = lambda x, y: RED if x < 12 and y >= 8 else GRAY
+        for label, payload, filters in (
+            ('hex', PAINT.encode().hex().encode() + b'>', '/ASCIIHexDecode'),
+            ('ascii85', base64.a85encode(PAINT.encode()) + b'~>', '/ASCII85Decode'),
+            ('runlength', bytes([len(PAINT)-1]) + PAINT.encode() + b'\x80', '/RunLengthDecode'),
+            ('ascii85-flate', base64.a85encode(zlib.compress(PAINT.encode())) + b'~>', '[/ASCII85Decode /FlateDecode]'),
+        ):
+            check('filtered-' + label, fixture(form(payload, attrs='/BBox [0 0 9 6] /Filter ' + filters)), lower_left)
         for compression in (None, 0, 6, 9):
             check('paint-' + str(compression), fixture(form(compression=compression)), lower_left)
         check('identity-matrix', fixture(form(attrs='/BBox [0 0 9 6] /Matrix [1 0 0 1 0 0]')), lower_left)
@@ -147,6 +156,17 @@ def main():
                         7: b'<< /Length ' + str(len(cmap)).encode() + b' >>\nstream\n' + cmap + b'\nendstream'}
         check('form-font-map', fixture(form('1 0 0 rg ' + text.replace('(A)', '(Z)'),
               '/BBox [0 0 18 12] /Resources << /Font << /F1 6 0 R >> >>'), extra=font_objects), same=text_reference)
+        for label, payload, filters in (
+            ('hex', cmap.hex().encode() + b'>', '/ASCIIHexDecode'),
+            ('ascii85', base64.a85encode(cmap) + b'~>', '/ASCII85Decode'),
+            ('runlength', bytes([len(cmap)-1]) + cmap + b'\x80', '/RunLengthDecode'),
+            ('lzw', literals(cmap, 1), '/LZWDecode'),
+            ('chain', base64.a85encode(zlib.compress(cmap)) + b'~>', '[/ASCII85Decode /FlateDecode]'),
+        ):
+            cmap_stream=f'<< /Length {len(payload)} /Filter {filters} >>\nstream\n'.encode()+payload+b'\nendstream'
+            check('filtered-font-map-'+label, fixture(form('1 0 0 rg '+text.replace('(A)', '(Z)'),
+                  '/BBox [0 0 18 12] /Resources << /Font << /F1 6 0 R >> >>'),
+                  extra={**font_objects, 7:cmap_stream}), same=text_reference)
         check('indirect-form-font-map', fixture(form('1 0 0 rg ' + text.replace('(A)', '(Z)'),
               '/BBox [0 0 18 12] /Resources 8 0 R'), extra={**font_objects,
               8: '<< /Font 9 0 R >>', 9: '<< /F1 6 0 R >>'}), same=text_reference)
@@ -161,13 +181,14 @@ def main():
               extra={6: form('/F0 Do', '/BBox [0 0 9 6] /Resources << /XObject << /F0 5 0 R >> >>')}), reject=True)
         check('indirect-resources-not-dictionary', fixture(form(attrs='/BBox [0 0 9 6] /Resources 6 0 R'),
               extra={6: '12'}), reject=True)
+        check('non-isolated-group', fixture(form(attrs='/BBox [0 0 9 6] /Group << /S /Transparency >>')),
+              expected=lambda x,y: RED if x<12 and y>=8 else GRAY)
         for name, body in (
             ('missing-bbox', form(attrs='')),
             ('invalid-bbox', form(attrs='/BBox [0 0 bad 6]')),
             ('matrix-short', form(attrs='/BBox [0 0 9 6] /Matrix [1 0 0]')),
             ('matrix-extra', form(attrs='/BBox [0 0 9 6] /Matrix [1 0 0 1 0 0 9]')),
             ('form-type', form(attrs='/BBox [0 0 9 6] /FormType 2')),
-            ('group', form(attrs='/BBox [0 0 9 6] /Group << /S /Transparency >>')),
             ('reference', form(attrs='/BBox [0 0 9 6] /Ref << >>')),
             ('resources', form(attrs='/BBox [0 0 9 6] /Resources /bad')),
             ('filter', form(attrs='/BBox [0 0 9 6] /Filter /LZWDecode')),

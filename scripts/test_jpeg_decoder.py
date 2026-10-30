@@ -47,6 +47,19 @@ def main():
     def add(name, data, accepted=True, width=8, height=8, rgb=(128, 128, 128)):
         cases.append((name, data, int(accepted), width, height, *rgb))
 
+    # T.81 Annex G: a ZRL counts zero coefficients within the spectral band.
+    for se in (15, 16):
+        data = jpeg(progressive=True) + scan(se=0) + b"\x7f"
+        add(f"first-ac-zrl-band-{se}", data + huffman(ac=0xF0) +
+            scan(ss=1, se=se) + b"\x7f" + EOI, se == 16)
+        data += scan(ss=1, se=se, al=1) + b"\x7f"
+        add(f"refine-ac-zrl-band-{se}", data + huffman(ac=0xF0) +
+            scan(ss=1, se=se, ah=1) + b"\x7f" + EOI, se == 16)
+    data = jpeg(progressive=True) + scan(se=0) + b"\x7f"
+    data += scan(ss=1, se=15, al=1) + b"\x7f"
+    add("refine-new-coefficient-past-band", data + huffman(ac=0xF1) +
+        scan(ss=1, se=15, ah=1) + b"\x7f" + EOI, False)
+
     base = jpeg()
     add("baseline-gray", base + scan() + b"\x3f" + EOI)
     add("baseline-rgb", jpeg(3) + scan((1, 2, 3)) + b"\x03" + EOI)

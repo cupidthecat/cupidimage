@@ -18,8 +18,8 @@ if [[ ! -d "$ASSETS_DIR" ]]; then
   exit 1
 fi
 
-shopt -s nullglob
-files=("$ASSETS_DIR"/*.bmp)
+shopt -s nullglob globstar
+files=("$ASSETS_DIR"/**/*.bmp)
 if (( ${#files[@]} == 0 )); then
   echo "No .bmp files found in $ASSETS_DIR" >&2
   exit 1

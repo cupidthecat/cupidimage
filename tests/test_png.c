@@ -343,6 +343,100 @@ static void test_mixed_blocks(void) {
     check("dynamic Huffman to stored block", &test, 1);
 }
 
+static void check_stream(const char *name, const buffer *png, int accepted) {
+    cupidimage_image image = {0};
+    char error[128] = {0};
+    int ok = cupidimage_load_png(png->data, png->size, &image, error, sizeof(error));
+    checks++;
+    if (!!ok != accepted || (!ok && (image.rgba || image.width || image.height || !error[0]))) {
+        fprintf(stderr, "FAIL PNG structure %s: %s\n", name, ok ? "accepted" : error);
+        failures++;
+    }
+    cupidimage_free(&image);
+}
+
+static void test_chunk_structure(void) {
+    png_case sample = new_case(0, 8, 0);
+    buffer good = make_png(&sample), altered;
+    size_t first = 33;
+    uint32_t length = ((uint32_t)good.data[first] << 24) | ((uint32_t)good.data[first + 1] << 16) |
+                      ((uint32_t)good.data[first + 2] << 8) | good.data[first + 3];
+    size_t second = first + 12 + length;
+    check_stream("original", &good, 1);
+    for (size_t i = 8; i + 12 <= good.size;) {
+        altered = good;
+        uint32_t n = ((uint32_t)good.data[i] << 24) | ((uint32_t)good.data[i + 1] << 16) |
+                     ((uint32_t)good.data[i + 2] << 8) | good.data[i + 3];
+        altered.data[i + 8 + n] ^= 1;
+        check_stream("bad chunk CRC", &altered, 0);
+        i += n + 12;
+    }
+    altered = good;
+    altered.size -= 12;
+    check_stream("missing IEND", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    append(&altered, good.data + 8, 25);
+    append(&altered, good.data + first, good.size - first);
+    check_stream("duplicate IHDR", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, 8);
+    chunk(&altered, "teXT", NULL, 0);
+    append(&altered, good.data + 8, good.size - 8);
+    check_stream("IHDR not first", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "ABCD", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
+    check_stream("unknown critical chunk", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "abCD", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
+    check_stream("unknown ancillary chunk", &altered, 1);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "a1CD", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
+    check_stream("nonletter chunk name", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, second);
+    chunk(&altered, "abCD", NULL, 0);
+    append(&altered, good.data + second, good.size - second);
+    check_stream("nonconsecutive IDAT", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, first);
+    chunk(&altered, "IDAT", NULL, 0);
+    append(&altered, good.data + first, good.size - first);
+    check_stream("empty IDAT before data", &altered, 1);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, good.size - 12);
+    chunk(&altered, "tRNS", (uint8_t[]){0, 0}, 2);
+    chunk(&altered, "IEND", NULL, 0);
+    check_stream("late transparency", &altered, 0);
+    altered = (buffer){{0}, 0};
+    append(&altered, good.data, good.size - 12);
+    chunk(&altered, "IEND", "x", 1);
+    check_stream("nonempty IEND", &altered, 0);
+    sample.palette_entries = 1;
+    altered = make_png(&sample);
+    check_stream("grayscale PLTE forbidden", &altered, 0);
+    sample.type = 3;
+    sample.depth = 1;
+    sample.palette_entries = 3;
+    altered = make_png(&sample);
+    check_stream("PLTE exceeds bit depth", &altered, 0);
+    sample.type = 0;
+    sample.depth = 8;
+    sample.palette_entries = 0;
+    buffer raw = scanlines(&sample), compressed = stored_zlib(&raw);
+    compressed.data[compressed.size - 1] ^= 1;
+    sample.idat = compressed.data;
+    sample.idat_size = compressed.size;
+    altered = make_png(&sample);
+    check_stream("zlib checksum with valid chunk CRC", &altered, 0);
+}
+
 int main(void) {
     static const uint8_t depths[] = {1, 2, 4, 8, 16};
     for (uint8_t interlace = 0; interlace < 2; interlace++) {
@@ -366,6 +460,7 @@ int main(void) {
         check("empty palette tRNS", &test, 1);
     }
     test_mixed_blocks();
+    test_chunk_structure();
     printf("PNG regressions: %u checks, %u failures\n", checks, failures);
     return failures ? 1 : 0;
 }

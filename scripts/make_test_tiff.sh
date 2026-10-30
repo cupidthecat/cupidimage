@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUTDIR="tiff"
+OUTDIR="assets/tiff"
 VENV=".tiffgen-venv"
 
 mkdir -p "$OUTDIR"
@@ -22,7 +22,7 @@ import struct
 import numpy as np
 import tifffile as tf
 
-outdir = Path(os.environ.get("OUTDIR", "tiff"))
+outdir = Path(os.environ.get("OUTDIR", "assets/tiff"))
 outdir.mkdir(parents=True, exist_ok=True)
 
 def save(name: str, data, **kw):
@@ -34,6 +34,8 @@ def save_or_skip(name: str, data, **kw):
     try:
         return save(name, data, **kw)
     except NotImplementedError as e:
+        path = outdir / name
+        path.unlink(missing_ok=True)
         (outdir / f"{name}.SKIPPED.txt").write_text(f"Skipped: {e}\n")
         return None
 
@@ -123,7 +125,7 @@ def write_minimal_gray8_tiff(path: Path, w: int, h: int, byteorder: str):
                 if le:
                     f.write(struct.pack(endian + "H", val) + b"\x00\x00")
                 else:
-                    f.write(b"\x00\x00" + struct.pack(endian + "H", val))
+                    f.write(struct.pack(endian + "H", val) + b"\x00\x00")
             else:
                 f.write(struct.pack(endian + "I", val))
         f.write(struct.pack(endian + "I", 0))
@@ -213,7 +215,9 @@ save("lzw-gray8-predictor2-ii.tif",     g8, photometric="minisblack", compressio
 pages = [gray_pattern_u8(64, 64),
          np.rot90(gray_pattern_u8(64, 64)),
          rng.integers(0, 256, size=(64, 64), dtype=np.uint8)]
-tf.imwrite(outdir / "multipage-gray8-lzw-ii.tif", pages, photometric="minisblack", compression="lzw", byteorder="<", metadata=None)
+with tf.TiffWriter(outdir / "multipage-gray8-lzw-ii.tif", byteorder="<") as writer:
+    for page in pages:
+        writer.write(page, photometric="minisblack", compression="lzw", metadata=None)
 
 save("tiled-rgb8-none-ii.tif",     rgb8, photometric="rgb", compression=None,     byteorder="<", tile=(64, 64))
 save("tiled-rgb8-deflate-ii.tif",  rgb8, photometric="rgb", compression="deflate", predictor=2, byteorder="<", tile=(64, 64))
@@ -239,5 +243,7 @@ for subs, name in [((2,2), "420"), ((2,1), "422"), ((1,1), "444")]:
 (outdir / "MANIFEST.txt").write_text("\n".join(sorted(p.name for p in outdir.glob("*"))) + "\n")
 print(f"Wrote TIFFs to: {outdir.resolve()}")
 PY
+
+python3 "$(dirname "${BASH_SOURCE[0]}")/repair_tiff_assets.py"
 
 echo "Done. TIFFs are in: $OUTDIR/"

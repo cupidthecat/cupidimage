@@ -18,8 +18,8 @@ if [[ ! -d "$ASSETS_DIR" ]]; then
   exit 1
 fi
 
-shopt -s nullglob
-files=("$ASSETS_DIR"/*.pdf)
+shopt -s nullglob globstar
+files=("$ASSETS_DIR"/**/*.pdf)
 if (( ${#files[@]} == 0 )); then
   echo "No .pdf files found in $ASSETS_DIR" >&2
   echo "Generate them first: ./scripts/make_test_pdfs.sh" >&2

@@ -1,0 +1,119 @@
+{
+  "fonttools_version": "4.61.1",
+  "upstream_version": "2.004",
+  "complete_work": "https://mirrors.ctan.org/fonts/tex-gyre.zip",
+  "project": "https://www.gust.org.pl/projects/e-foundry/tex-gyre",
+  "fonts": [
+    {
+      "standard_name": "Courier",
+      "file": "courier.cff",
+      "subset_name": "CupidImageSpacing-Courier",
+      "subset_sha256": "d41d7453b795e34af1c778e1784e11880eb2c82f34c6e15214c7c928f101e40a",
+      "original_file": "texgyrecursor-regular.otf",
+      "original_sha256": "0667deb48aa0e88be8f499c4d308e8b9116f290e7f969b0f5a34ee15c9644272",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyrecursor-regular.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Courier-Bold",
+      "file": "courier-bold.cff",
+      "subset_name": "CupidImageSpacing-Courier-Bold",
+      "subset_sha256": "1011d08dcab5d39e541fe30f43d92cee0403abb1b161eb3f34f525af85baa7ef",
+      "original_file": "texgyrecursor-bold.otf",
+      "original_sha256": "95e9755bfa05759e8d1f8fba21a919ba46091e1275aeb5bf831dffd9c93b041e",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyrecursor-bold.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Courier-Oblique",
+      "file": "courier-oblique.cff",
+      "subset_name": "CupidImageSpacing-Courier-Oblique",
+      "subset_sha256": "dd083b6f7344ee564804cee595c5718afb3043fd6d7017a6dfb519b511894011",
+      "original_file": "texgyrecursor-italic.otf",
+      "original_sha256": "545f24a2a9e5dd5ace865fe5e80134f55a37794b36e26abae5424aebff600056",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyrecursor-italic.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Courier-BoldOblique",
+      "file": "courier-boldoblique.cff",
+      "subset_name": "CupidImageSpacing-Courier-BoldOblique",
+      "subset_sha256": "28dab5f291ade17a06b869dfcf11cfe3a5a4cbe822c1059c77ab0592e4bbf6fb",
+      "original_file": "texgyrecursor-bolditalic.otf",
+      "original_sha256": "6aa5c41f489b898aa890c543e7dcd5e732c63894babc65569e01ee7e46533d82",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyrecursor-bolditalic.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Times-Roman",
+      "file": "times-roman.cff",
+      "subset_name": "CupidImageSpacing-Times-Roman",
+      "subset_sha256": "ad5ba2800614681a1ef4f16e33dc6ed327d8ead52bf5e35cb1fe8e9f103cc16e",
+      "original_file": "texgyretermes-regular.otf",
+      "original_sha256": "cc3fe7c707b81428d23d54df3eadd9228a2bf6a4d43125d94df56f5f63134659",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyretermes-regular.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Times-Bold",
+      "file": "times-bold.cff",
+      "subset_name": "CupidImageSpacing-Times-Bold",
+      "subset_sha256": "edb78be88bf92f4b521ea57cae2e561484fe80b028e7a88451c23aaa6f965a1b",
+      "original_file": "texgyretermes-bold.otf",
+      "original_sha256": "2fb3e952065fa153c7e4e64e04b98b9d79225739b6025aa3f0f0782d299ff61e",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyretermes-bold.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Times-Italic",
+      "file": "times-italic.cff",
+      "subset_name": "CupidImageSpacing-Times-Italic",
+      "subset_sha256": "6d93e3d7b63b4f544ed565decf7c2d675a028ea9ee9e239b55e6114b7dcbd15f",
+      "original_file": "texgyretermes-italic.otf",
+      "original_sha256": "6dd103a1672e50568cd2f8a706ccd48443d44d7d073a59d2286f4e6f746575d6",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyretermes-italic.otf",
+      "source_glyph": "space_uni0326"
+    },
+    {
+      "standard_name": "Times-BoldItalic",
+      "file": "times-bolditalic.cff",
+      "subset_name": "CupidImageSpacing-Times-BoldItalic",
+      "subset_sha256": "e73229751d056dfb2bdf541df28a7def8ef99a08d0d0e2d29d293ec16ac9b1fe",
+      "original_file": "texgyretermes-bolditalic.otf",
+      "original_sha256": "1bf6af99cb0e26c12951317032d79b96ae009551e59ccf02a5b24f325ecfec87",
+      "original_url": "https://mirrors.ctan.org/fonts/tex-gyre/opentype/texgyretermes-bolditalic.otf",
+      "source_glyph": "space_uni0326"
+    }
+  ],
+  "notices": [
+    {
+      "file": "GUST-FONT-LICENSE.txt",
+      "sha256": "5eb61bb836bb1845ef668717cb15b382e997748ce2629e4388cc5e4c3fa4e433"
+    },
+    {
+      "file": "LPPL-1.3c.txt",
+      "sha256": "3d262cdf34dafa6955f703c634a8c238ec44109bc8dd6ef34fb7aa54809f7e66"
+    },
+    {
+      "file": "UPSTREAM-GUST-FONT-LICENSE.txt",
+      "sha256": "2bd69affc3da00715116f713f57eab9707e96daf3562ad0215987b15b9c16f73"
+    },
+    {
+      "file": "UPSTREAM-MANIFEST-TeX-Gyre-Cursor.txt",
+      "sha256": "414182f0c4691ef76abd7e78962beb29c34cf777b240ca87263ee6d6d98df5dc"
+    },
+    {
+      "file": "UPSTREAM-MANIFEST-TeX-Gyre-Termes.txt",
+      "sha256": "f68e1704d13ab91fb1ef3c9f14e1db94c066c53aa2ac686879213e3619214bc7"
+    },
+    {
+      "file": "UPSTREAM-README-TeX-Gyre-Cursor.txt",
+      "sha256": "abadfc569c46b6eeec05183cc1965e7d687810bffb14d3d2e5daa58eb8f1f497"
+    },
+    {
+      "file": "UPSTREAM-README-TeX-Gyre-Termes.txt",
+      "sha256": "2ca38f2af08da678b2cdb4ac99f8b3ff72fb7bdcc785ace290cd8ef1b2b947ab"
+    }
+  ],
+  "license_url": "https://www.gust.org.pl/projects/e-foundry/licenses/GUST-FONT-LICENSE.txt"
+}

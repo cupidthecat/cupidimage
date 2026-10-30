@@ -18,8 +18,8 @@ if [[ ! -d "$ASSETS_DIR" ]]; then
   exit 1
 fi
 
-shopt -s nullglob
-files=("$ASSETS_DIR"/*.svg)
+shopt -s nullglob globstar
+files=("$ASSETS_DIR"/**/*.svg)
 if (( ${#files[@]} == 0 )); then
   echo "No .svg files found in $ASSETS_DIR" >&2
   exit 1

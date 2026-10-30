@@ -65,4 +65,24 @@ with tempfile.TemporaryDirectory(prefix="cupidimage-cli-") as directory:
         child.communicate(timeout=5)
         os.close(master)
 
+# Generic xterm environments must not silently emit an unsupported graphics
+# protocol. Explicit Sixel and Kitty signals still select their own output.
+for term, protocol in [('xterm','ansi'),('xterm-256color','ansi'),
+                       ('screen-256color','ansi'),('dumb','ansi'),
+                       ('xterm-kitty','kitty'),('xterm-sixel','sixel')]:
+    env=os.environ.copy()
+    for key in ('WT_SESSION','KITTY_WINDOW_ID','KONSOLE_VERSION','VTE_VERSION','TERM_PROGRAM'):
+        env.pop(key,None)
+    env['TERM']=term
+    result=subprocess.run([str(binary),str(root/'assets/png/basic.png'),'8','4'],
+                          env=env,capture_output=True,timeout=5,check=True)
+    output=result.stdout
+    if protocol=='ansi':
+        assert b'\x1b[48;2;' in output and b'\x1bP' not in output and b'\x1b_G' not in output,term
+    elif protocol=='kitty':
+        assert b'\x1b_G' in output and b'\x1bP' not in output,term
+    else:
+        assert b'\x1bP' in output,term
+    checks+=1
+
 print(f"CLI regressions: {checks} checks passed")

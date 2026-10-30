@@ -3,3 +3,41 @@
 *.py text eol=lf
 *.yml text eol=lf
 Makefile text eol=lf
+
+# Preserve fixture bytes (PDF xref spacing and binary headers are significant).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.ico binary
+*.cur binary
+*.tif binary
+*.tiff binary
+*.tga binary
+*.pdf binary
+
+# Inventory hashes are byte-exact, including SVG and license line endings.
+assets/** -text
+
+# Retain upstream license text verbatim, including its original spacing.
+assets/pdf/pdfjs/LICENSE-DEJAVU.txt -whitespace
+
+# Preserve the original Adobe font metrics and license spacing.
+third_party/adobe-core14/*.afm -text -whitespace
+third_party/adobe-core14/readme.txt -text -whitespace
+
+# Preserve the pinned extended fonts and their original notices byte-for-byte.
+third_party/extended-standard-fonts/*.ttf binary
+third_party/extended-standard-fonts/LICENSE -text -whitespace
+third_party/extended-standard-fonts/AUTHORS -text -whitespace
+
+# Preserve renamed CFF spacing subsets and unchanged upstream license/provenance text.
+third_party/standard-spacing-marks/*.cff binary
+third_party/standard-spacing-marks/*.txt -text -whitespace
+
+# Preserve the upstream raster interface, license and adapted source layout.
+third_party/freetype-raster/ftimage.h -text -whitespace
+third_party/freetype-raster/FTL.TXT -text -whitespace
+third_party/freetype-raster/ftgrays.inc -whitespace

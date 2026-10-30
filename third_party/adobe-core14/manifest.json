@@ -1,0 +1,67 @@
+{
+  "provenance": "Unmodified Adobe Core 14 metrics distributed with Matplotlib 3.10.8",
+  "upstream_package": "https://github.com/matplotlib/matplotlib/tree/v3.10.8/lib/matplotlib/mpl-data/fonts/pdfcorefonts",
+  "original_source": "http://partners.adobe.com/public/developer/font/index.html",
+  "files": [
+    {
+      "file": "Courier-Bold.afm",
+      "sha256": "b080c323e07cd956770b4988fe61c5213099ecf567dfb00860cbf50ab1d7e2c1"
+    },
+    {
+      "file": "Courier-BoldOblique.afm",
+      "sha256": "ce0eb54286c3dd853d5017c25e6be684135a14a9e8fb18fcb18d1bd91a607cbc"
+    },
+    {
+      "file": "Courier-Oblique.afm",
+      "sha256": "bd1426e63d6c4d4378862713d4f71567d3fd0d34d41e11337cf5ea514cd56611"
+    },
+    {
+      "file": "Courier.afm",
+      "sha256": "31d72adad79910126b22a5579ec9e179eee86674ecebe3fcff6f76916193af0e"
+    },
+    {
+      "file": "Helvetica-Bold.afm",
+      "sha256": "8b697881c8ee617a177f6f2e2bbc88570b9fd2b9f0e89ecfc0f5507878f988fc"
+    },
+    {
+      "file": "Helvetica-BoldOblique.afm",
+      "sha256": "526e4eeaa2b5d435cbb7cba3ff42285a473ce132aa1caddb39b48a52cc10aaf6"
+    },
+    {
+      "file": "Helvetica-Oblique.afm",
+      "sha256": "8556038366f9da4aad6d5782ce68afdb96d6d7261da64652f8b5e519110dd91b"
+    },
+    {
+      "file": "Helvetica.afm",
+      "sha256": "db772f2830fb6d000907791d8d26a12524d96943a9a739e520ee855c6b25c96f"
+    },
+    {
+      "file": "Symbol.afm",
+      "sha256": "3f951aa17af8cb4aa1e1288c6b9baa8a30d3e990ebdbe8cf9a3d5acabcb9f771"
+    },
+    {
+      "file": "Times-Bold.afm",
+      "sha256": "7104e6af62c53f029013fb0641a81e31c98589c8f27b5ea6289b25b092c74321"
+    },
+    {
+      "file": "Times-BoldItalic.afm",
+      "sha256": "a7358e772726e91aa87015a001563926ad33dc5a7b2eea9680b34cc78aba385c"
+    },
+    {
+      "file": "Times-Italic.afm",
+      "sha256": "6cae69b92329193fd85082f0c89ad7a318df8fb5c939d7efe5343f88ab09473c"
+    },
+    {
+      "file": "Times-Roman.afm",
+      "sha256": "86136b527a5acee0c3283d56a6b68fc6a3d60982eb3bb0fb6cc54e83ecc8d77a"
+    },
+    {
+      "file": "ZapfDingbats.afm",
+      "sha256": "66e3a6b7d19c2a87e374eabc92a84f86d00884ec242f6ad3253999c408c56a40"
+    },
+    {
+      "file": "readme.txt",
+      "sha256": "311bfca694884d86006fb96de443b0f4359635921b95fc6c161bb94d013b7292"
+    }
+  ]
+}

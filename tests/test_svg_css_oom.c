@@ -6,8 +6,20 @@
 #define calloc fault_calloc
 #define realloc fault_realloc
 #define free fault_free
-#include "../src/cupidimage_svg.c"
-#include "../src/cupidimage_svg_base.c"
+#include "../src/formats/svg/cupidimage_svg.c"
+#include "../src/formats/svg/cupidimage_svg_base.c"
+#include "../src/formats/svg/svg_blur.c"
+#include "../src/formats/svg/svg_css.c"
+#include "../src/formats/svg/svg_defs.c"
+#include "../src/formats/svg/svg_filter_parse.c"
+#include "../src/formats/svg/svg_filters.c"
+#include "../src/formats/svg/svg_geometry.c"
+#include "../src/formats/svg/svg_paint.c"
+#include "../src/formats/svg/svg_parse.c"
+#include "../src/formats/svg/svg_raster.c"
+#include "../src/formats/svg/svg_render.c"
+#include "../src/formats/svg/svg_style.c"
+#include "../src/formats/svg/svg_text.c"
 #undef malloc
 #undef calloc
 #undef realloc
@@ -30,9 +42,9 @@ int main(void) {
             allocation_count = 0;
             fail_at = failure;
             svg_css css;
-            svg_css_init(&css);
-            svg_css_parse(&css, fixtures[fixture]);
-            svg_css_free(&css);
+            cupidimage_svg_css_init(&css);
+            cupidimage_svg_css_parse(&css, fixtures[fixture]);
+            cupidimage_svg_css_free(&css);
             if (failure == 0)
                 total = allocation_count;
             checks++;

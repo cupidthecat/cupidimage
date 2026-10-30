@@ -1,0 +1,8 @@
+#include "../src/formats/pdf/fonts/truetype_components.c"
+#include "../src/formats/pdf/fonts/truetype_hint/composite.c"
+#include "../src/formats/pdf/fonts/truetype_hint/load.c"
+#include "../src/formats/pdf/fonts/truetype_hint/metrics.c"
+#include "../src/formats/pdf/fonts/truetype_hint/prepare.c"
+#include "../src/formats/pdf/fonts/truetype_hint/simple.c"
+#include "../src/formats/pdf/fonts/truetype_hint/transform.c"
+#include "pdf_tt_vm_sources.inc"

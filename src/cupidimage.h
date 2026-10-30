@@ -63,6 +63,18 @@ typedef struct cupidimage_tga_metadata {
     uint8_t *thumbnail_rgba;
 } cupidimage_tga_metadata;
 
+typedef struct cupidimage_pdf_options {
+    /* 0 retains center-point text fill; 1 enables grayscale outline coverage.
+     * Stroke and clip coverage remain binary. Font hinting is separate. */
+    int text_antialias;
+    /* 1 enables the bounded native legacy TrueType instruction profile. */
+    int truetype_hinting;
+    /* 1 enables bounded CFF blue-zone/stem hinting without stem darkening. */
+    int cff_hinting;
+    /* 1 enables bounded Type 1 blue-zone/stem hinting without stem darkening. */
+    int type1_hinting;
+} cupidimage_pdf_options;
+
 typedef struct cupidimage_svg_options {
     uint32_t width;
     uint32_t height;
@@ -131,6 +143,13 @@ int cupidimage_load_pdf_page(const unsigned char *data, size_t size, cupidimage_
                              int page_index, char *err, size_t errcap);
 int cupidimage_load_pdf_page_file(const char *path, cupidimage_image *out, int page_index,
                                   char *err, size_t errcap);
+int cupidimage_load_pdf_page_with_options(const unsigned char *data, size_t size,
+                                          cupidimage_image *out, int page_index,
+                                          const cupidimage_pdf_options *opts, char *err,
+                                          size_t errcap);
+int cupidimage_load_pdf_page_file_with_options(const char *path, cupidimage_image *out,
+                                               int page_index, const cupidimage_pdf_options *opts,
+                                               char *err, size_t errcap);
 int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
                                   size_t errcap);
 int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, size_t errcap);

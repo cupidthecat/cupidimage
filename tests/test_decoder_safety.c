@@ -53,6 +53,13 @@ static int test_ico(void) {
         return 0;
     }
     cupidimage_free(&image);
+    ico[0] = 1; /* ICONDIR reserved field must be zero. */
+    if (cupidimage_load_ico(ico, sizeof(ico), &image, err, sizeof(err)) || image.rgba) {
+        fprintf(stderr, "ICO with invalid reserved header was accepted\n");
+        cupidimage_free(&image);
+        return 0;
+    }
+    ico[0] = 0;
     ico[30] = 0xfe;
     ico[31] = ico[32] = ico[33] = 0xff;
     if (!cupidimage_load_ico(ico, sizeof(ico), &image, err, sizeof(err)) || image.width != 1 ||

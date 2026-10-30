@@ -1,0 +1,72 @@
+{
+  "upstream": "https://pdfium.googlesource.com/pdfium",
+  "mirror": "https://github.com/chromium/pdfium",
+  "revision": "a84323421e94f484faca52dd9d027934eba42ab8",
+  "directory": "core/fxge/fontdata/chromefontdata",
+  "files": [
+    {
+      "file": "AUTHORS",
+      "sha256": "b061b2c78cb90179f1ab1f939f3f75cabb0d6f9d071c34327c361c08bc532ee8"
+    },
+    {
+      "file": "FoxitDingbats.cpp",
+      "sha256": "ac6b1ad158b84801ae2a36667a95238657fb178e39416d6458350e2f01244eeb"
+    },
+    {
+      "file": "FoxitFixed.cpp",
+      "sha256": "3cc4b5cac082c400946901aee373e9428fb0d97f1521841c2166a97ebae47352"
+    },
+    {
+      "file": "FoxitFixedBold.cpp",
+      "sha256": "acdcfa88015c8e095222458fec8c57bb5b8975fe5ef10fc1fa9c61ff82723f3c"
+    },
+    {
+      "file": "FoxitFixedBoldItalic.cpp",
+      "sha256": "721a8222ce5435265eb34e2c8b81d134162e05f6f3a4d11351de7b0a2d5cfbf8"
+    },
+    {
+      "file": "FoxitFixedItalic.cpp",
+      "sha256": "5d6d13346f5775d4f73301e1e4bec2263d89623e92f4232c07080189896a8c1b"
+    },
+    {
+      "file": "FoxitSans.cpp",
+      "sha256": "4236f63c88c96038096fdec95262d3cd642c3f05f3ac9b0c9ba58be0b39e6953"
+    },
+    {
+      "file": "FoxitSansBold.cpp",
+      "sha256": "fe37fe0fb256ad4ffeda37bf24815d73426c6ecfa359c4478496140905536d5c"
+    },
+    {
+      "file": "FoxitSansBoldItalic.cpp",
+      "sha256": "4ff97c8f7d74ff83131f61c42dcec77338220e2c78c30bd1b1cdffdd09bdfadb"
+    },
+    {
+      "file": "FoxitSansItalic.cpp",
+      "sha256": "1658590be777c913e0ae68e876690434a08a938527567b7355416f2f35675f6d"
+    },
+    {
+      "file": "FoxitSerif.cpp",
+      "sha256": "7994beed26c82e6b12db7be4382661664fb36feabb0b1954dd04c3b2480ac9c3"
+    },
+    {
+      "file": "FoxitSerifBold.cpp",
+      "sha256": "1cb8751afa61c8b6d34dd106aa0e667211c3e149d8e65fcef41002b3b369825a"
+    },
+    {
+      "file": "FoxitSerifBoldItalic.cpp",
+      "sha256": "b09d0b8ac2834eb778bad882768431729e6369af790bb4b3609485f1d8bc0640"
+    },
+    {
+      "file": "FoxitSerifItalic.cpp",
+      "sha256": "b8e0d95412b997549c7b8079d64f9aa06e22ca27353419e66c9d0a6e98dd3563"
+    },
+    {
+      "file": "FoxitSymbol.cpp",
+      "sha256": "46bcac4ed2c2cffd3f9e9d3a3c9fe69c741013ef7ee22e4f24f064c09594ac81"
+    },
+    {
+      "file": "LICENSE",
+      "sha256": "1fe9dea718fbd75cf149adaf4d8a22a4335604d964ddb76d1b45383dec8668c9"
+    }
+  ]
+}

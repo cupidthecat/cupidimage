@@ -71,6 +71,14 @@ def main():
 
         gray = (128, 128, 128)
         red = (255, 0, 0)
+        check("fractional-page-extent", document("/MediaBox [0 0 595 842]", stream=""), (794, 1123))
+        check("subpixel-page-extent", document("/MediaBox [0 0 .1 .1]", stream=""), (1, 1))
+        check("fractional-rotated-page", document("/MediaBox [0 0 595 842] /Rotate 90", stream=""), (1123, 794))
+        # Sparse content must not change page geometry or move its origin.
+        for angle, dimensions, point in ((0, (600, 800), (306, 396)), (90, (800, 600), (403, 306))):
+            check(f"sparse-full-page-{angle}",
+                  document(f"/MediaBox [10 20 460 620] /Rotate {angle}", stream="1 0 0 rg 235 320 9 6 re f"),
+                  dimensions, ((0, 0, (255, 255, 255)), (*point, red)))
         for angle, dimensions, red_xy, gray_xy in (
                 (0, (24, 16), (3, 13), (20, 2)),
                 (90, (16, 24), (2, 3), (13, 20)),
