@@ -54,7 +54,7 @@ text spacing, FontMatrix equivalences, fractional placement, all text modes,
 stroke styles, deferred clipping, Form-local fonts, invalid options and Sixel
 output. It also checks normal, mixed-case and extensionless filenames.
 
-The focused suite has 153 page/API/CLI checks and 729 allocation/cache checks.
+The focused suite has 153 page/API/CLI checks and 732 allocation/cache checks.
 With the optional comparison engine available, it adds 30 independent grayscale
 page matches. A local run with 75 installed PFB fonts increased the totals to
 1,613 page/API/CLI checks and 1,490 independent grayscale page matches. Two fonts

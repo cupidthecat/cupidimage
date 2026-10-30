@@ -29,6 +29,8 @@ typedef struct {
 } pdf_ps_private_hints;
 
 void cupidimage_pdf_ps_hints_init(pdf_ps_private_hints *hints);
+int cupidimage_pdf_ps_hint_profile(const pdf_ps_private_hints *input,
+                                   pdf_ps_private_hints *selected);
 void cupidimage_pdf_ps_hint_set(pdf_ps_private_hints *hints, unsigned field, const double *values,
                                 unsigned count, int delta, int valid);
 

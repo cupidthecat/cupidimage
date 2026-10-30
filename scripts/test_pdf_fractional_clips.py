@@ -43,6 +43,14 @@ def main():
         assert render(tiny('q '+clip+fill+' Q'))[2]==expected
         assert render(tiny('q '+clip+'Q '+fill))[2]==bytes((255,0,0,255))*16
         assert render(tiny(clip+fill),0)[2]==b'\xff'*64,'binary compatibility changed'
+        # Rebuilding a large rectangular clip must not spend the general
+        # polygon sweep budget for every saved-state scope.
+        page='/MediaBox [0 0 612 792]'
+        rectangle='.1875 .1875 611.625 791.625 re W n '
+        paint='1 0 0 rg 0 0 612 792 re f'
+        expected_large=render(document(page,stream=rectangle+paint))
+        repeated='q '+rectangle+'Q '
+        assert render(document(page,stream=repeated*40+rectangle+paint))==expected_large
         for group in ('','/Group << /S /Transparency /I true /CS /DeviceRGB >>',
                       '/Group << /S /Transparency /I false /CS /DeviceRGB >>'):
             objects={10:form(fill,'/BBox [0 0 3 3] '+group)}

@@ -48,7 +48,7 @@ from the existing shared page budget. Unused work is returned; work already
 spent is not.
 
 The core's coordinate, scale and allocation bounds still apply. Allocation,
-invalid hint data, transform overflow or budget exhaustion fails the draw and
+invalid hint data consumed by the selected profile, transform overflow or budget exhaustion fails the draw and
 releases partial results. Empty outlines, invisible text and zero text-size or
 horizontal-scale cases do not execute fitting. Empty masks and unused mask bits
 retain diagnosed malformed-input recovery; they are not treated as valid syntax.
@@ -58,13 +58,13 @@ retain diagnosed malformed-input recovery; they are not treated as valid syntax.
 `make test-pdf-cff-page-hinting` covers:
 
 - PDF width overrides, composite accents and horizontal/vertical CID advances.
-- Different private dictionaries, FontMatrix placement and FD-only matrices.
+- Different private dictionaries, unused stem/darkening metadata, FontMatrix placement and FD-only matrices.
 - Rotation, reflection, shear, unequal scales and fractional origins.
 - Deferred clipping, cap/join/dash stroke paths and Form-local fonts.
 - Spacing-mark fallback equivalence, invalid options and malformed hint fields.
 - Sixel output with ordinary, mixed-case and extensionless filenames.
 
-The focused suite has 572 page/API/CLI checks, 969 allocation/cache checks and
+The focused suite has 704 page/API/CLI checks, 1,132 allocation/cache checks and
 350 independent grayscale page matches when the optional reference engine is
 available. Stroke and clip cases compare the independently obtained device
 outline through the vector paths; they do not claim full independent stroke

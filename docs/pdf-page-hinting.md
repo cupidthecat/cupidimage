@@ -56,7 +56,7 @@ malformed programs.
 
 - 1,188 frame, budget, ownership and retained-output checks;
 - 102 core page/API/CLI checks when the optional comparison engine is absent;
-- 978 allocation/cache/eager-surface checks, including Form-local font lifetimes;
+- 987 allocation/cache/eager-surface checks, including Form-local font lifetimes;
 - 60 independent authored grayscale bitmaps, with simple/composite glyphs and
   multiple sizes, origins and affine transforms;
 - 144 independent pinned Latin bitmaps with engine 2.13.3 or newer;

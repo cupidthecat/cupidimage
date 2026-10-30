@@ -10,6 +10,25 @@ void cupidimage_pdf_ps_hints_init(pdf_ps_private_hints *hints) {
     memcpy(hints->scalars, ps_hint_defaults, sizeof(ps_hint_defaults));
 }
 
+/* The selected fitter consumes blue zones and LanguageGroup. Unused metadata
+ * must not prevent fitting, but invalid parameters that affect the map do. */
+int cupidimage_pdf_ps_hint_profile(const pdf_ps_private_hints *input,
+                                   pdf_ps_private_hints *selected) {
+    const unsigned fields = (1u << PDF_PS_BLUE_VALUES) | (1u << PDF_PS_OTHER_BLUES) |
+                            (1u << PDF_PS_FAMILY_BLUES) | (1u << PDF_PS_FAMILY_OTHER_BLUES) |
+                            (1u << PDF_PS_BLUE_SCALE) | (1u << PDF_PS_BLUE_SHIFT) |
+                            (1u << PDF_PS_BLUE_FUZZ) | (1u << PDF_PS_LANGUAGE_GROUP);
+    if (!input || !selected || (input->invalid & fields))
+        return 0;
+    *selected = *input;
+    selected->invalid = 0;
+    selected->counts[4] = selected->counts[5] = 0;
+    memset(selected->arrays[4], 0, sizeof(selected->arrays[4]));
+    memset(selected->arrays[5], 0, sizeof(selected->arrays[5]));
+    selected->scalars[3] = selected->scalars[4] = selected->scalars[5] = selected->scalars[7] = 0;
+    return 1;
+}
+
 void cupidimage_pdf_ps_hint_set(pdf_ps_private_hints *hints, unsigned field, const double *values,
                                 unsigned count, int delta, int valid) {
     if (field >= PDF_PS_HINT_FIELDS)

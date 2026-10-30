@@ -24,6 +24,22 @@ void cupidimage_pdf_clip_geometry_release(pdf_clip_geometry *geometry, size_t *b
     }
 }
 
+static int clip_is_rectangle(const pdf_clip_geometry *geometry) {
+    if (!geometry->count)
+        return 1;
+    if (geometry->count != 4)
+        return 0;
+    for (unsigned i = 0; i < 4; i++) {
+        const pdf_region_edge *a = geometry->edges + i;
+        const pdf_region_edge *b = geometry->edges + (i + 1) % 4;
+        int horizontal = a->y0 == a->y1, vertical = a->x0 == a->x1;
+        if (horizontal == vertical || a->x1 != b->x0 || a->y1 != b->y0 ||
+            horizontal == (b->y0 == b->y1))
+            return 0;
+    }
+    return 1;
+}
+
 pdf_clip_geometry *cupidimage_pdf_clip_geometry_create(pdf_clip_geometry *parent,
                                                        const pdf_region_edge *edges, unsigned count,
                                                        unsigned even_odd, size_t *bytes_used,
@@ -112,6 +128,8 @@ pdf_clip_geometry *cupidimage_pdf_clip_geometry_create(pdf_clip_geometry *parent
         geometry->edges[j] = edges[i];
         geometry->edges[j++].region = 0;
     }
+    geometry->rectangle = !count || bounds[2] <= bounds[0] || bounds[3] <= bounds[1] ||
+                          ((!parent || parent->rectangle) && clip_is_rectangle(geometry));
     geometry->parent = parent;
     (void)cupidimage_pdf_clip_geometry_retain(parent);
     *bytes_used += bytes;

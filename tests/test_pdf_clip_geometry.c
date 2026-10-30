@@ -22,11 +22,12 @@ int main(void) {
             pdf_clip_geometry *a =
                 cupidimage_pdf_clip_geometry_create(NULL, rectangle, 4, 0, &bytes, &work);
             if (a) {
-                assert(a->references == 1 && a->depth == 1 && a->total_edges == 4);
+                assert(a->references == 1 && a->depth == 1 && a->total_edges == 4 && a->rectangle);
                 pdf_clip_geometry *b =
                     cupidimage_pdf_clip_geometry_create(a, rectangle, 4, 1, &bytes, &work);
                 if (b) {
-                    assert(a->references == 2 && b->depth == 2 && b->total_edges == 8);
+                    assert(a->references == 2 && b->depth == 2 && b->total_edges == 8 &&
+                           b->rectangle);
                     cupidimage_pdf_clip_geometry_release(a, &bytes);
                     a = NULL;
                     unsigned char rules[64] = {0};
@@ -87,6 +88,40 @@ int main(void) {
     cupidimage_pdf_clip_geometry_release(head, &bytes);
     assert(!bytes && !live_count);
     checks++;
+    pdf_region_edge triangle[] = {{0, 0, 1, 0, 0}, {1, 0, 0, 1, 0}, {0, 1, 0, 0, 0}};
+    work = 1000;
+    pdf_clip_geometry *nonrect =
+        cupidimage_pdf_clip_geometry_create(NULL, triangle, 3, 0, &bytes, &work);
+    assert(nonrect && !nonrect->rectangle);
+    pdf_clip_geometry *child =
+        cupidimage_pdf_clip_geometry_create(nonrect, rectangle, 4, 0, &bytes, &work);
+    assert(child && !child->rectangle);
+    cupidimage_pdf_clip_geometry_release(child, &bytes);
+    child = cupidimage_pdf_clip_geometry_create(nonrect, NULL, 0, 0, &bytes, &work);
+    assert(child && child->rectangle);
+    cupidimage_pdf_clip_geometry_release(child, &bytes);
+    cupidimage_pdf_clip_geometry_release(nonrect, &bytes);
+    assert(!bytes && !live_count);
+    checks += 3;
+    const pdf_region_edge shapes[][4] = {
+        {{0, 0, 0, 1, 0}, {0, 1, 1, 1, 0}, {1, 1, 1, 0, 0}, {1, 0, 0, 0, 0}},
+        {{0, 0, 1, 0, 0}, {1, 0, .75, 1, 0}, {.75, 1, .25, 1, 0}, {.25, 1, 0, 0, 0}},
+        {{0, 0, 1, 1, 0}, {1, 1, 0, 1, 0}, {0, 1, 1, 0, 0}, {1, 0, 0, 0, 0}},
+        {{0, 0, 1, 0, 0}, {1, 0, 0, 0, 0}, {0, 1, 1, 1, 0}, {1, 1, 0, 1, 0}},
+        {{.25, .25, .25, .25, 0},
+         {.25, .25, .25, .25, 0},
+         {.25, .25, .25, .25, 0},
+         {.25, .25, .25, .25, 0}}};
+    for (unsigned i = 0; i < 5; i++)
+        for (unsigned rule = 0; rule < 2; rule++) {
+            work = 1000;
+            pdf_clip_geometry *g =
+                cupidimage_pdf_clip_geometry_create(NULL, shapes[i], 4, rule, &bytes, &work);
+            assert(g && g->rectangle == (i == 0 || i == 4));
+            cupidimage_pdf_clip_geometry_release(g, &bytes);
+            assert(!bytes && !live_count);
+            checks++;
+        }
     printf("PDF clip geometry: %u scope, limit and ownership checks passed\n", checks);
     return 0;
 }

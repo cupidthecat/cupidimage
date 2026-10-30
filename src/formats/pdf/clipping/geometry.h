@@ -5,7 +5,7 @@
 typedef struct pdf_clip_geometry {
     struct pdf_clip_geometry *parent;
     size_t bytes;
-    unsigned references, count, total_edges, depth, even_odd;
+    unsigned references, count, total_edges, depth, even_odd, rectangle;
     double bounds[4];
     pdf_region_edge edges[];
 } pdf_clip_geometry;

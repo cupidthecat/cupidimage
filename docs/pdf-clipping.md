@@ -80,13 +80,27 @@ Allocation failure, exhausted work or unsupported ranges fail the page. They do
 not silently switch to a binary clip or return a partially clipped page. The
 standalone rasterizers clear their output pointers on failure.
 
+## Rectangular clip cost
+
+A single closed, axis-aligned rectangle has a direct area calculation. Its
+intersection with a chain of rectangles is another rectangle, so the renderer
+uses the retained bounds instead of a general polygon sweep. Full-coverage tests
+for glyph crops also use those bounds. Empty intersections remain empty.
+
+The optimization requires exact edge connectivity and alternating horizontal
+and vertical edges. A trapezoid, bow-tie, multiple contours or nonrectangular
+parent keeps the general path. It does not replace arbitrary shapes with their
+bounding boxes or increase the work limit. An owned page with 40 saved-state
+rectangular clips now completes under the existing budget and matches the
+single-clip result.
+
 ## Verification
 
 `make test-pdf-clip-regions` runs:
 
 - 6,912 analytic, independent-geometry, boundary and allocation/cancellation checks;
-- 286 clip-node scope, depth, reuse and ownership checks;
-- 80 page checks and 729 document allocation-failure checks.
+- 299 clip-node scope, depth, reuse and ownership checks;
+- 82 page checks and 613 document allocation-failure checks.
 
 The page cases cover repeated and disjoint subpixel clips, nonzero/even-odd holes,
 all four text-clipping modes, empty and collapsed glyphs, saved graphics states,

@@ -100,6 +100,20 @@ int cupidimage_pdf_clip_render_geometry(pdf_render_state *st, pdf_clip_mask *cli
         bottom = (int)fmax(0, fmin(st->img->height, ceil(b[3])));
     if (right <= left || bottom <= top)
         return 1;
+    if (clip->geometry->rectangle) {
+        for (int y = top; y < bottom; y++) {
+            long double height = fmaxl(0, fminl(b[3], y + 1) - fmaxl(b[1], y));
+            for (int x = left; x < right; x++) {
+                long double width = fmaxl(0, fminl(b[2], x + 1) - fmaxl(b[0], x));
+                unsigned char alpha = (unsigned char)fminl(255, floorl(width * height * 256));
+                size_t pixel = (size_t)y * st->img->width + x;
+                clip->coverage[pixel] = alpha;
+                if (alpha)
+                    clip->bits[pixel / 8] |= (unsigned char)(1u << (pixel % 8));
+            }
+        }
+        return 1;
+    }
     unsigned char rules[64] = {0}, *mask = NULL;
     pdf_region_edge *edges = NULL;
     unsigned count = 0;
@@ -126,6 +140,13 @@ int cupidimage_pdf_clip_contains_crop(pdf_render_state *st, int left, int top, i
     pdf_clip_mask *clip = st->gs.clip;
     if (!clip || !clip->coverage)
         return 1;
+    if (clip->geometry && clip->geometry->rectangle) {
+        if (!st->clip_budget->tests_left)
+            return 0;
+        st->clip_budget->tests_left--;
+        const double *bounds = clip->geometry->bounds;
+        return bounds[0] <= left && bounds[1] <= top && bounds[2] >= right && bounds[3] >= bottom;
+    }
     size_t area = (size_t)(right - left) * (bottom - top);
     if (area > st->clip_budget->tests_left)
         return 0;
