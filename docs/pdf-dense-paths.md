@@ -52,7 +52,11 @@ because an object with zero opacity can still contribute shape to knockout.
 Each scanned pixel consumes one work unit, including pixels outside a shading's
 domain or BBox. Function and tint evaluation retain their additional costs. The
 shared shading budget stays at 134,217,728 units. The owned clipped workload of
-192 shading invocations now fits; its unclipped counterpart is still rejected.
+192 shading invocations now fits. A paired small-canvas test sets a 10,000-unit
+budget: 192 clipped invocations leave exactly 2,128 units, while the unclipped
+case exhausts it. The expensive full-page exhaustion check remains available
+through `scripts/test_pdf_shading_work.py` with `--slow-limit`; it is excluded
+from the default CI workload.
 
 ## Tests and remaining limits
 

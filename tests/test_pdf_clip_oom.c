@@ -699,6 +699,53 @@ int main(int argc, char **argv) {
                     }
             }
     }
+    /* A small paired workload proves clipping preserves the work limit without
+     * exhausting the full page budget through millions of color conversions. */
+    for (unsigned clipped = 0; clipped < 2; clipped++) {
+        const char *document =
+            "3 0 obj << /Resources << /Shading << /Sh 4 0 R >> >> >> endobj\n"
+            "4 0 obj << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 12 0] "
+            "/Function << /FunctionType 2 /Domain [0 1] /C0 [0] /C1 [0] /N 1 >> >> endobj\n";
+        uint8_t pixels[16 * 16 * 4];
+        memset(pixels, 255, sizeof(pixels));
+        cupidimage_image image = {.width = 16, .height = 16, .rgba = pixels};
+        pdf_form_budget budget = {0};
+        budget.calls_left = 256;
+        budget.shade_evaluations_left = 10000;
+        pdf_render_state state = {0};
+        state.img = &image;
+        state.document = (const unsigned char *)document;
+        state.document_size = strlen(document);
+        state.page_object = 3;
+        state.page_top_pts = 12;
+        state.gs.ctm[0] = state.gs.ctm[3] = 1;
+        state.gs.fill_alpha = 1;
+        state.form_budget = &budget;
+        fail_at = 0;
+        pdf_clip_mask *clip = fault_calloc(1, sizeof(*clip) + 32);
+        if (!clip)
+            return 1;
+        clip->bytes = 32;
+        clip->bits[0] = 1;
+        state.gs.clip = clipped ? clip : NULL;
+        unsigned completed = 0;
+        while (completed < 192 && cupidimage_pdf_draw_shading(&state, "Sh"))
+            completed++;
+        checks++;
+        if ((clipped && (completed != 192 || budget.shade_evaluations_left != 2128)) ||
+            (!clipped && completed >= 192))
+            failures++;
+        if (clipped)
+            for (size_t pixel = 0; pixel < 256; pixel++) {
+                unsigned char expected = pixel ? 255 : 0;
+                if (pixels[pixel * 4] != expected || pixels[pixel * 4 + 1] != expected ||
+                    pixels[pixel * 4 + 2] != expected || pixels[pixel * 4 + 3] != 255)
+                    failures++;
+            }
+        fault_free(clip);
+        if (live_count)
+            failures++;
+    }
     /* Page isolation preserves the caller's pixels until a complete render succeeds. */
     for (unsigned variant = 0; variant < 5; variant++) {
         const char *attribute = variant == 0   ? ""

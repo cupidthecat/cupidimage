@@ -51,7 +51,10 @@ def main():
             expected = bytes(v for y in range(h) for x in range(w) for v in
                              ((0, 255, 0, 255) if 4 <= x < 16 and h-12 <= y < h-4 else (255,) * 4))
             assert pixels == expected, (kind, aa)
-        render(page(2, 192, clip=''), reject=True)
+        # The small direct-budget test checks exhaustion without painting tens
+        # of millions of pixels under sanitizers on shared CI runners.
+        if '--slow-limit' in sys.argv[3:]:
+            render(page(2, 192, clip=''), reject=True)
         for size, clip, aa in itertools.product(((5.25, 3.75), (6.75, 5.25)),
                 ('0 0 .75 .75 re W n', '0 0 0 0 re W n',
                  '.75 .75 .75 1.5 re 3 0 .75 3 re W* n'), (False, True)):
