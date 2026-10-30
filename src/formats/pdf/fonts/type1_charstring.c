@@ -1,5 +1,6 @@
 #include "encoding.h"
 #include "type1.h"
+#include "type1/counter.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +13,8 @@ typedef struct {
     double stack[24], other[24], flex_points[7][2], flex_start[2];
     double x, y, start_x, start_y, sbx, sby;
     unsigned count, other_count, flex_count, work;
-    int started, open, flex;
+    int started, open, flex, counter_closed;
+    pdf_type1_counter counter;
 } t1_state;
 
 static int t1_cs_hint(t1_state *st, unsigned kind, unsigned vertical, const double *values,
@@ -125,11 +127,26 @@ static int t1_other(t1_state *st) {
     if (st->count < 2 || st->other_count)
         return 0;
     int id, args;
-    if (!t1_cs_int(st->stack[st->count - 1], 0, 3, &id) ||
+    if (!t1_cs_int(st->stack[st->count - 1], 0, 13, &id) ||
         !t1_cs_int(st->stack[st->count - 2], 0, 22, &args) || (unsigned)args > st->count - 2)
         return 0;
     double *values = st->stack + st->count - 2 - (unsigned)args;
     st->count -= 2 + (unsigned)args;
+    if (id == 12 || id == 13) {
+        if (st->count || st->counter_closed)
+            return 0;
+        size_t quota = *st->work_left < st->work ? *st->work_left : st->work;
+        size_t before = quota;
+        int ok = cupidimage_pdf_type1_counter_push(&st->counter, values, (unsigned)args, id == 13,
+                                                   st->trace, st->outline->count, &quota);
+        size_t spent = before - quota;
+        *st->work_left -= spent;
+        st->work -= (unsigned)spent;
+        return ok;
+    }
+    if (id > 3 || st->counter.active)
+        return 0;
+    st->counter_closed = 1;
     if (id == 1) {
         if (args || st->flex || !st->open)
             return 0;
@@ -252,8 +269,9 @@ static int t1_cs_run(t1_state *st, pdf_cff_slice code, unsigned depth) {
             st->outline->width = s[op == 13 ? 1 : 2];
             st->outline->width_y = op == 13 ? 0 : s[3];
         } else {
-            if (!st->started)
+            if (!st->started || st->counter.active)
                 return 0;
+            st->counter_closed = 1;
             if (op == 14) {
                 if (n || st->flex || st->other_count)
                     return 0;
@@ -337,7 +355,9 @@ int cupidimage_pdf_type1_outline_budget(const pdf_type1_font *font, unsigned gly
     st.trace = trace;
     st.work_left = work_left;
     st.work = 65536;
-    if (t1_cs_run(&st, font->glyphs[glyph].code, 0) == 2)
+    int ok = t1_cs_run(&st, font->glyphs[glyph].code, 0) == 2 && !st.counter.active;
+    cupidimage_pdf_type1_counter_free(&st.counter);
+    if (ok)
         return 1;
     cupidimage_pdf_type2_free(outline);
     cupidimage_pdf_type1_trace_free(trace);

@@ -29,6 +29,7 @@
 #include "../src/formats/pdf/fonts/truetype_cmap.c"
 #include "../src/formats/pdf/fonts/truetype_names.c"
 #include "../src/formats/pdf/fonts/type1.c"
+#include "../src/formats/pdf/fonts/type1/counter.c"
 #include "../src/formats/pdf/fonts/type1/hints.c"
 #include "../src/formats/pdf/fonts/type1/lexer.c"
 #include "../src/formats/pdf/fonts/type1/trace.c"

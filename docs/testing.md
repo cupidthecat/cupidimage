@@ -735,3 +735,7 @@ compare named and positional PDF options, verify recorded pixel hashes, reject
 stale probes without changing reports, and ensure profile changes cannot reuse
 a previous rating. Simulated skips are kept only in temporary test reports; the
 suite does not perform a manual corpus rating pass.
+
+Type 1 counter-data checks run with `make test-pdf-type1`. They exercise chunk
+ordering, malformed groups, budgets, allocation failure and compatibility drawing.
+See [the counter-data guide](pdf-type1-counter-data.md) for the tested scope.

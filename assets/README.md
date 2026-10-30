@@ -39,3 +39,8 @@ complete raster remains decoded-unverified. Regenerate it with
 programs. Use `--pdf-type1-hinting --pdf-text-aa` to exercise their fitted page
 path. Its complete raster remains decoded-unverified. Regenerate it with
 `scripts/generate_pdf_type1_page_hinting_fixture.py`.
+
+`pdf/type1-counter-hints.pdf` exercises chunked Type 1 counter metadata with two
+horizontal stems. The metadata no longer prevents rendering; designer counter
+priorities remain unapplied. Its full raster is decoded-unverified. Regenerate it
+with `scripts/generate_pdf_type1_counter_fixture.py`.

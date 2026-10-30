@@ -76,6 +76,11 @@ and outline. The budgeted entry point shares a caller's remaining work while
 keeping the 65,536-token limit per charstring. The ordinary outline API keeps its
 existing composite assembly and makes no trace allocations.
 
+Counter-control OtherSubrs 12/13 retain their chunked group data in separate
+trace events. Those events preserve encoded deltas and signed widths, not absolute
+stem coordinates. They do not change the current fitting map. See
+[Type 1 counter data](pdf-type1-counter-data.md) for bounds and checks.
+
 ## Tests and remaining work
 
 `make test-pdf-cff` includes 1,542 primitive checks, 36 authored private-parameter

@@ -257,7 +257,8 @@ kept distinct from literal names, but their dictionary lookup is not executed.
 
 Type 1 outlines support sidebearings and width vectors, line/cubic paths,
 subroutines, division, seac accents, and standard OtherSubrs 0 through 3 for flex
-and hint replacement. Literal [private hint parameters](pdf-postscript-hints.md)
+and hint replacement. Standard [counter-data calls 12 and 13](pdf-type1-counter-data.md)
+are decoded without applying designer counter priorities. Literal [private hint parameters](pdf-postscript-hints.md)
 are retained, with diagnostics for unresolved expressions. Optional traces retain
 stems, replacements, dotsection and flex inputs. A bounded
 [fitter](pdf-postscript-gridfit.md) consumes them. Enable its

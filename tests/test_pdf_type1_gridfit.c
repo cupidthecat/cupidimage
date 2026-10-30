@@ -13,6 +13,7 @@ static void bitmap_free(void *buffer) {
 #include "../src/formats/pdf/fonts/postscript/page.c"
 #include "../src/formats/pdf/fonts/postscript/type1_gridfit.c"
 #include "../src/formats/pdf/fonts/postscript/type1_shape.c"
+#include "../src/formats/pdf/fonts/type1/counter.c"
 #include "../src/formats/pdf/fonts/type1/trace.c"
 #include "../src/formats/pdf/fonts/type1_charstring.c"
 #include "../src/formats/pdf/fonts/type2.c"
@@ -198,7 +199,7 @@ int main(int argc, char **argv) {
                 t.events = NULL;
                 break;
             case 2:
-                e[0].kind = 5;
+                e[0].kind = PDF_T1_HINT_COUNTER + 1;
                 break;
             case 3:
                 e[0].vertical = 2;

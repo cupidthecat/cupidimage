@@ -13,7 +13,7 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
     if (!private_hints || !trace || !source || !size || !selected || !stem_count ||
         source->composite || source->count > 65536 || (source->count && !source->segments) ||
         trace->count > 65536 || (trace->count && !trace->events) ||
-        (trace->diagnostics & ~PDF_T1_HINT_BAD_WIDTH))
+        (trace->diagnostics & ~(PDF_T1_HINT_BAD_WIDTH | PDF_T1_HINT_COUNTER_DATA)))
         return 0;
     /* This profile uses blue zones, shift/fuzz/scale and LanguageGroup. It does
      * not infer values for unused or unresolved stem-snap/darkening fields. */
@@ -33,13 +33,21 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
     *stem_count = 0;
     for (unsigned i = 0; i < trace->count; i++) {
         const pdf_type1_hint_event *event = trace->events + i;
-        if (event->kind > PDF_T1_HINT_FLEX || event->vertical > 1 ||
-            (event->kind > PDF_T1_HINT_STEM3 && event->vertical) ||
+        if (event->kind > PDF_T1_HINT_COUNTER || event->vertical > 1 ||
+            (event->kind > PDF_T1_HINT_STEM3 && event->kind != PDF_T1_HINT_COUNTER &&
+             event->vertical) ||
             event->segment > source->count || (i && event->segment < trace->events[i - 1].segment))
             return 0;
         for (unsigned j = 0; j < 6; j++)
             if (!isfinite(event->values[j]) || fabs(event->values[j]) > 1e30)
                 return 0;
+        if (event->kind == PDF_T1_HINT_COUNTER &&
+            (!(trace->diagnostics & PDF_T1_HINT_COUNTER_DATA) || event->segment != 0 ||
+             event->values[2] < 0 || event->values[2] > 65535 ||
+             floor(event->values[2]) != event->values[2] ||
+             event->values[3] != (event->values[1] < 0) || event->values[4] != 0 ||
+             event->values[5] != 0))
+            return 0;
         if (event->kind > PDF_T1_HINT_STEM3)
             continue;
         unsigned count = event->kind == PDF_T1_HINT_STEM3 ? 3 : 1;

@@ -833,12 +833,18 @@
             "docs/pdf-postscript-gridfit.md",
             "docs/pdf-type1-page-hinting.md",
             "scripts/test_pdf_type1_page_hinting.py",
-            "assets/pdf/native-type1-hinting.pdf"
+            "assets/pdf/native-type1-hinting.pdf",
+            "docs/pdf-type1-counter-data.md",
+            "src/formats/pdf/fonts/type1/counter.c",
+            "tests/test_pdf_type1_counter.c",
+            "scripts/test_pdf_type1_counters.py",
+            "assets/pdf/type1-counter-hints.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution and computed font dictionaries remain unsupported.",
-            "Literal private hint fields and ordered charstring hint traces feed an optional bounded page fitter. Computed parameters carry unresolved diagnostics; broader hinting and font-program qualification remain unfinished."
+            "Literal private hint fields and ordered charstring hint traces feed an optional bounded page fitter. Computed parameters carry unresolved diagnostics; broader hinting and font-program qualification remain unfinished.",
+            "Standard OtherSubrs 12/13 counter-data blocks are decoded and retained. Designer counter priorities are not applied by the current fitting profile."
           ],
           "dependencies": [
             "1",

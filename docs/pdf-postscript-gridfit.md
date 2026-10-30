@@ -137,7 +137,7 @@ Type 1 hinting on/off. The pairs also agree in 48 optional independent page chec
 
 ## Remaining work
 
-Computed private dictionaries, broader OtherSubrs,
+Designer counter priorities, computed private dictionaries, broader OtherSubrs,
 flex policy, stem darkening, synthetic bold, fractional private parameters and
 broader font-program arithmetic qualification remain open. The matching outlines
 and bitmaps establish the tested profile, not complete CFF/PDF rendering parity.
