@@ -162,7 +162,7 @@ def main():
                 assert actual==expected,(kind,size,matrix,sum(a!=b for a,b in zip(actual,expected)))
                 references+=1
     print(f'PDF text antialias: {checks} page checks; {allocations} allocation/cache checks; '
-          f'{references} independent curve bitmaps; clip coverage remains binary')
+          f'{references} independent curve bitmaps; fractional clipping has separate geometry tests')
 
 
 if __name__=='__main__':

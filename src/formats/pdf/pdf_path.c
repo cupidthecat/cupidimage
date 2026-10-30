@@ -61,8 +61,10 @@ static void pdf_path_line_to(pdf_path *p, float x, float y) {
 void cupidimage_pdf_path_close(pdf_path *p) {
     if (!p || !p->has_current || !p->has_subpath)
         return;
-    if (fabsf(p->current_x - p->subpath_start_x) > 1e-4f ||
-        fabsf(p->current_y - p->subpath_start_y) > 1e-4f) {
+    /* A short closing edge still determines the join direction. A move followed
+     * by closepath is a closed point, which round caps can paint. */
+    if (p->seg_count == p->subpath_first_seg || p->current_x != p->subpath_start_x ||
+        p->current_y != p->subpath_start_y) {
         pdf_path_add_seg(p, p->current_x, p->current_y, p->subpath_start_x, p->subpath_start_y);
     }
     if (p->seg_count > p->subpath_first_seg)

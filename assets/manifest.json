@@ -502,6 +502,10 @@
       "sha256": "c9ce5e462027e5b16d754776e9ea4c411127c9c4cad1b1df75f12c3bfc2ceb24"
     },
     {
+      "path": "assets/pdf/fractional-clipping.pdf",
+      "sha256": "2dddfc60515f32ca718de3e706847b234ae633d7f76a89ceabe7000e006107c5"
+    },
+    {
       "path": "assets/pdf/minimal_xref.pdf",
       "sha256": "4df8cc51695b7fddeeb98f8f5ae4cd9b059e92c4bd70959fab53bfb675b860e9"
     },
@@ -944,7 +948,7 @@
     },
     {
       "path": "assets/pdf/text-coverage.pdf",
-      "sha256": "d6800a7e5a2b998e586238007a5f125489a9e3ea961ca9188b683f01c5575848"
+      "sha256": "f493d500ec563e7f36ab278007a9125729835cd6aed79792aef116f0419ec7a8"
     },
     {
       "path": "assets/pdf/text-strokes.pdf",

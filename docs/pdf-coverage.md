@@ -13,9 +13,10 @@ Enable it with `--pdf-text-aa`, or set `cupidimage_pdf_options.text_antialias` t
 when calling a page loader with options. Omitted options and zero retain the
 existing center-point fill path while the wider raster pipeline is qualified.
 
-Text strokes use the [analytic stroke union](pdf-stroke-outlines.md). Clip
-coverage remains binary, as do bitmap fallback glyphs and the
-ordinary graphics in Type 3 programs. Text inside a Form, a pattern or a soft-mask
+Text strokes use the [analytic stroke union](pdf-stroke-outlines.md).
+[Geometric clipping](pdf-clipping.md) also follows the coverage option. Bitmap
+fallback painting and ordinary graphics in Type 3 programs keep their existing
+geometry policies. Text inside a Form, a pattern or a soft-mask
 form inherits the option. Native TrueType page hinting has a separate
 [explicit option](pdf-page-hinting.md), as do [CFF hinting](pdf-cff-page-hinting.md)
 and [Type 1 hinting](pdf-type1-page-hinting.md). Smoothing alone enables none of them.
@@ -94,6 +95,6 @@ at several sizes and transforms. Its complete page raster is decoded-unverified;
 the focused analytic and independent cases above are the pixel evidence. Rebuild
 it with `scripts/generate_pdf_text_coverage_fixture.py`.
 
-Fractional text clipping, broader stroke and combined-paint qualification,
+Broader clipping, stroke and combined-paint qualification,
 broader hinted-page qualification and a default smoothing policy remain open. The
 coverage option is deliberately explicit until those paths have broader tests.

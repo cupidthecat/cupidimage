@@ -286,6 +286,9 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
     if (pixels > parent->clip_budget->tests_left)
         return 0;
     parent->clip_budget->tests_left -= pixels;
+    int saved_clip = parent->paint_coverage_clipped;
+    if (parent->text_antialias)
+        parent->paint_coverage_clipped = 1;
     for (unsigned y = group->top; y < group->bottom; y++)
         for (unsigned x = group->left; x < group->right; x++) {
             size_t pixel = (size_t)y * group->image.width + x;
@@ -297,6 +300,7 @@ int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency
                 parent, (int)x, (int)y, color, alpha * parent->gs.fill_alpha,
                 shape * (parent->gs.alpha_is_shape ? parent->gs.fill_alpha : 1));
         }
+    parent->paint_coverage_clipped = saved_clip;
     return !parent->image_failed;
 }
 

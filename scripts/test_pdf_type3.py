@@ -151,6 +151,12 @@ def main():
         for program in ['', '0 0 500 700 re f','600 1 d0','500 0 d0','600 0 d0 600 0 d0','600 0 500 700 0 0 d1','BI /W 1 /H 1 /IM true ID x EI 600 0 d0']:
             check('bad-glyph',fixture(start+'(A) Tj ET',programs=[program,'500 0 d0']),reject=True)
         check('outside-d0',document('/MediaBox [0 0 120 90]',stream='600 0 d0'),reject=True)
+        point='600 0 d0 1 J 200 w 200 300 m h S'
+        check('closed-point-charproc',fixture('BT /F 30 Tf 12 30 Td (A) Tj ET',programs=[point,point]),
+              expected='1 J 6 w 18 39 m 18 39 l S',reference=False)
+        near='600 0 d0 200 w 0 0 m 400 0 l 400 600 l 0 600 l 0 .0005 l h S'
+        check('short-closing-charproc',fixture('BT /F 30 Tf 12 30 Td (A) Tj ET',programs=[near,near]),
+              expected='6 w 12 30 12 18 re S',reference=False)
     print(f'PDF Type 3: {count} checks passed; {refs} independent comparisons')
 
 

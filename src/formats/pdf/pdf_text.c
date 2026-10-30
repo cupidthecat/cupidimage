@@ -92,6 +92,31 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     }
     if (det == 0)
         return;
+    if (clipping && st->text_antialias) {
+        for (int row = 0; row < 8; row++)
+            for (int first = 0; first < 8;) {
+                if (!(glyph[row] & (1u << first))) {
+                    first++;
+                    continue;
+                }
+                int end = first + 1;
+                while (end < 8 && (glyph[row] & (1u << end)))
+                    end++;
+                double gx[4] = {first, end, end, first}, gy[4] = {row, row, row + 1, row + 1},
+                       px[4], py[4];
+                for (unsigned i = 0; i < 4; i++) {
+                    px[i] = (m[0] * gx[i] + m[2] * gy[i] + m[4] - st->page_x0_pts) * ratio;
+                    py[i] = (st->page_top_pts - m[1] * gx[i] - m[3] * gy[i] - m[5]) * ratio;
+                }
+                for (unsigned i = 0; i < 4; i++)
+                    if (!cupidimage_pdf_clip_append_edge(st, px[i], py[i], px[(i + 1) % 4],
+                                                         py[(i + 1) % 4])) {
+                        st->image_failed = 1;
+                        return;
+                    }
+                first = end;
+            }
+    }
     double min_x = st->img->width, max_x = 0, min_y = st->img->height, max_y = 0;
     for (int corner = 0; corner < 4; corner++) {
         double gx = (corner & 1) ? 8 : 0, gy = (corner & 2) ? 8 : 0;

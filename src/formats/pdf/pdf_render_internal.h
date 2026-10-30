@@ -1,6 +1,7 @@
 #ifndef CUPIDIMAGE_PDF_RENDER_INTERNAL_H
 #define CUPIDIMAGE_PDF_RENDER_INTERNAL_H
 
+#include "clipping/geometry.h"
 #include "fonts/page_hint.h"
 #include "pdf_internal.h"
 
@@ -33,6 +34,12 @@ typedef struct {
 typedef struct {
     unsigned references;
     size_t bytes;
+    pdf_clip_geometry *geometry;
+    unsigned char *coverage;
+    size_t coverage_bytes;
+    unsigned captured_form_depth;
+    pdf_region_edge *pending_edges;
+    unsigned pending_count, pending_capacity;
     unsigned char bits[];
 } pdf_clip_mask;
 
@@ -155,6 +162,7 @@ typedef struct {
     pdf_object_id page_object;
     const pdf_object_view *resource_override;
     int image_failed;
+    int paint_coverage_clipped;
     int text_antialias, truetype_hinting, cff_hinting, type1_hinting;
     char *error;
     size_t error_capacity;
@@ -312,11 +320,27 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
                                      size_t *position);
 
 int cupidimage_pdf_text_clip_prepare(pdf_render_state *st);
+void cupidimage_pdf_clip_retain(pdf_clip_mask *);
+void cupidimage_pdf_clip_release(pdf_render_state *, pdf_clip_mask *);
+int cupidimage_pdf_clip_capture_forms(pdf_render_state *);
+int cupidimage_pdf_clip_limit_mask(pdf_render_state *, const unsigned char *, int, unsigned char *,
+                                   int, int, int, int);
+int cupidimage_pdf_clip_append_edge_to(pdf_render_state *, pdf_clip_mask *, double, double, double,
+                                       double);
+void cupidimage_pdf_clip_pending_clear(pdf_render_state *, pdf_clip_mask *);
+int cupidimage_pdf_clip_render_geometry(pdf_render_state *, pdf_clip_mask *);
+int cupidimage_pdf_clip_contains_crop(pdf_render_state *, int, int, int, int);
+int cupidimage_pdf_clip_intersect(pdf_render_state *, const pdf_region_edge *, unsigned,
+                                  const pdf_region_ellipse *, unsigned, const double[4], int, int,
+                                  int, int, unsigned char **);
+int cupidimage_pdf_clip_append_edge(pdf_render_state *, double, double, double, double);
+int cupidimage_pdf_clip_path_geometry(pdf_render_state *, pdf_clip_mask *, const pdf_path *, int);
+int cupidimage_pdf_clip_finish_geometry(pdf_render_state *, pdf_clip_mask *);
 void cupidimage_pdf_text_end(pdf_render_state *st);
 void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path,
                                     unsigned char *target);
 int cupidimage_pdf_stroke_path_coverage(pdf_render_state *, const pdf_path *, int, int, int, int,
-                                        unsigned char **);
+                                        int, unsigned char **);
 void cupidimage_pdf_text_begin(pdf_render_state *st);
 void cupidimage_pdf_text_move(pdf_render_state *st, double x, double y);
 void cupidimage_pdf_text_advance(pdf_render_state *st, double distance);

@@ -55,6 +55,8 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_font_program.c"
 #undef cupidimage_pdf_font_outline
+#include "../src/formats/pdf/clipping/geometry.c"
+#include "../src/formats/pdf/pdf_clip_regions.c"
 #include "../src/formats/pdf/pdf_font_substitution.c"
 #include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
@@ -85,6 +87,8 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_stroke_geometry.c"
 #include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_tint.c"
+#include "../src/formats/pdf/raster/region.c"
+#include "../src/formats/pdf/raster/region_ellipse.c"
 static int test_text_lazy_enabled = 1;
 
 static int test_text_surface(const pdf_render_state *parent, pdf_transparency_group *group,

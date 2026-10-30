@@ -19,29 +19,35 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream,
                                  size_t stream_len);
 
-static void pdf_clip_retain(pdf_clip_mask *clip) {
+void cupidimage_pdf_clip_retain(pdf_clip_mask *clip) {
     if (clip)
         clip->references++;
 }
 
-static void pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
+void cupidimage_pdf_clip_release(pdf_render_state *st, pdf_clip_mask *clip) {
     if (clip && --clip->references == 0) {
         st->clip_budget->bytes_used -= clip->bytes;
+        cupidimage_pdf_clip_geometry_release(clip->geometry, &st->clip_budget->bytes_used);
+        st->clip_budget->bytes_used -=
+            (size_t)clip->pending_capacity * sizeof(*clip->pending_edges);
+        free(clip->pending_edges);
+        st->clip_budget->bytes_used -= clip->coverage_bytes;
+        free(clip->coverage);
         free(clip);
     }
 }
 
 void cupidimage_pdf_render_state_release(pdf_render_state *st) {
     cupidimage_pdf_text_group_discard(st);
-    pdf_clip_release(st, st->gs.clip);
+    cupidimage_pdf_clip_release(st, st->gs.clip);
     cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
-    pdf_clip_release(st, st->text_clip);
+    cupidimage_pdf_clip_release(st, st->text_clip);
     if (st->text_winding) {
         st->clip_budget->bytes_used -= st->text_winding_bytes;
         free(st->text_winding);
     }
     for (int i = 0; i < st->gs_stack_len; i++) {
-        pdf_clip_release(st, st->gs_stack[i].clip);
+        cupidimage_pdf_clip_release(st, st->gs_stack[i].clip);
         cupidimage_pdf_soft_mask_release(st, st->gs_stack[i].soft_mask);
     }
 }
@@ -63,8 +69,13 @@ static int pdf_pixel_visible(const pdf_render_state *st, int x, int y) {
         return 0;
     }
     size_t pixel = (size_t)y * img->width + (size_t)x;
+    if (st->paint_coverage_clipped)
+        return 1;
     if (st->gs.clip && !(st->gs.clip->bits[pixel / 8] & (1u << (pixel % 8))))
         return 0;
+    if (st->text_antialias && st->gs.clip && st->gs.clip->coverage &&
+        st->gs.clip->captured_form_depth == (unsigned)st->form_depth)
+        return 1;
     double px = st->page_x0_pts + (x + 0.5) * (72.0 / 96.0);
     double py = st->page_top_pts - (y + 0.5) * (72.0 / 96.0);
     for (int i = 0; i < st->form_depth; i++) {
@@ -84,6 +95,11 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
         return;
     cupidimage_image *img = st->img;
     size_t pixel = (size_t)y * img->width + (size_t)x;
+    if (!st->paint_coverage_clipped && st->gs.clip && st->gs.clip->coverage) {
+        double clip = st->gs.clip->coverage[pixel] / 255.0;
+        alpha *= clip;
+        shape *= clip;
+    }
     if (st->gs.soft_mask) {
         if (st->gs.soft_mask->width != img->width || st->gs.soft_mask->height != img->height) {
             st->image_failed = 1;
@@ -152,6 +168,11 @@ void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const do
     if (shape <= 0 || !pdf_pixel_visible(st, x, y))
         return;
     size_t pixel = (size_t)y * st->img->width + (size_t)x;
+    if (!st->paint_coverage_clipped && st->gs.clip && st->gs.clip->coverage) {
+        double clip = st->gs.clip->coverage[pixel] / 255.0;
+        alpha *= clip;
+        shape *= clip;
+    }
     if (st->gs.soft_mask) {
         if (st->gs.soft_mask->width != st->img->width ||
             st->gs.soft_mask->height != st->img->height) {
@@ -420,6 +441,7 @@ static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
 static int pdf_apply_clip(pdf_render_state *st) {
     size_t bytes = ((size_t)st->img->width * st->img->height + 7) / 8;
     if (st->path.overflow || !st->clip_budget->calls_left ||
+        st->clip_budget->bytes_used > 64u * 1024u * 1024u ||
         bytes > 64u * 1024u * 1024u - st->clip_budget->bytes_used)
         return 0;
     st->clip_budget->calls_left--;
@@ -428,16 +450,26 @@ static int pdf_apply_clip(pdf_render_state *st) {
         return 0;
     clip->references = 1;
     clip->bytes = bytes;
-    if (!pdf_rasterize_path(st, st->pending_clip == 2, clip->bits)) {
-        free(clip);
+    st->clip_budget->bytes_used += bytes;
+    if (!st->text_antialias && !pdf_rasterize_path(st, st->pending_clip == 2, clip->bits)) {
+        cupidimage_pdf_clip_release(st, clip);
         return 0;
     }
-    if (st->gs.clip) {
+    if (st->text_antialias &&
+        !cupidimage_pdf_clip_path_geometry(st, clip, &st->path, st->pending_clip == 2)) {
+        cupidimage_pdf_clip_release(st, clip);
+        return 0;
+    }
+    if (st->text_antialias && st->gs.clip && clip->geometry == st->gs.clip->geometry &&
+        clip->captured_form_depth == st->gs.clip->captured_form_depth) {
+        cupidimage_pdf_clip_release(st, clip);
+        return 1;
+    }
+    if (st->gs.clip && !st->text_antialias) {
         for (size_t i = 0; i < bytes; i++)
             clip->bits[i] &= st->gs.clip->bits[i];
     }
-    st->clip_budget->bytes_used += bytes;
-    pdf_clip_release(st, st->gs.clip);
+    cupidimage_pdf_clip_release(st, st->gs.clip);
     st->gs.clip = clip;
     return 1;
 }
@@ -446,6 +478,8 @@ int cupidimage_pdf_text_clip_prepare(pdf_render_state *st) {
     if (st->text_clip)
         return 1;
     size_t pixels = (size_t)st->img->width * st->img->height, bytes = (pixels + 7) / 8;
+    if (st->clip_budget->bytes_used > 64u * 1024u * 1024u)
+        return 0;
     size_t available = 64u * 1024u * 1024u - st->clip_budget->bytes_used;
     if (!st->clip_budget->calls_left || bytes > available ||
         pixels > (available - bytes) / sizeof(int32_t))
@@ -472,11 +506,22 @@ void cupidimage_pdf_text_end(pdf_render_state *st) {
     if (!cupidimage_pdf_text_group_end(st))
         st->image_failed = 1;
     if (st->text_clip) {
-        if (st->gs.clip)
-            for (size_t i = 0; i < st->text_clip->bytes; i++)
-                st->text_clip->bits[i] &= st->gs.clip->bits[i];
-        pdf_clip_release(st, st->gs.clip);
-        st->gs.clip = st->text_clip;
+        if (st->text_antialias && !cupidimage_pdf_clip_finish_geometry(st, st->text_clip)) {
+            st->image_failed = 1;
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: text clip geometry exceeds limits");
+        }
+        if (!st->image_failed && st->text_antialias && st->gs.clip &&
+            st->text_clip->geometry == st->gs.clip->geometry &&
+            st->text_clip->captured_form_depth == st->gs.clip->captured_form_depth) {
+            cupidimage_pdf_clip_release(st, st->text_clip);
+        } else {
+            if (st->gs.clip && !st->text_antialias)
+                for (size_t i = 0; i < st->text_clip->bytes; i++)
+                    st->text_clip->bits[i] &= st->gs.clip->bits[i];
+            cupidimage_pdf_clip_release(st, st->gs.clip);
+            st->gs.clip = st->text_clip;
+        }
         st->text_clip = NULL;
         st->clip_budget->bytes_used -= st->text_winding_bytes;
         free(st->text_winding);
@@ -927,7 +972,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         }
     } else if (strcmp(op, "q") == 0) {
         if (st->gs_stack_len < (int)(sizeof(st->gs_stack) / sizeof(st->gs_stack[0]))) {
-            pdf_clip_retain(st->gs.clip);
+            cupidimage_pdf_clip_retain(st->gs.clip);
             cupidimage_pdf_soft_mask_retain(st->gs.soft_mask);
             st->gs_stack[st->gs_stack_len++] = st->gs;
         } else {
@@ -937,7 +982,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         }
     } else if (strcmp(op, "Q") == 0) {
         if (st->gs_stack_len > 0) {
-            pdf_clip_release(st, st->gs.clip);
+            cupidimage_pdf_clip_release(st, st->gs.clip);
             cupidimage_pdf_soft_mask_release(st, st->gs.soft_mask);
             st->gs = st->gs_stack[--st->gs_stack_len];
         }
@@ -1043,6 +1088,13 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
 
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream,
                                  size_t stream_len) {
+    st->paint_coverage_clipped = 0;
+    if (!cupidimage_pdf_clip_capture_forms(st)) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity, "pdf: form clip geometry exceeds limits");
+        return 0;
+    }
+
     char *err = st->error;
     size_t errcap = st->error_capacity;
     pdf_operand ops[64];
@@ -1283,7 +1335,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
         goto done;
     *child = *st;
     child->text_group = NULL;
-    pdf_clip_retain(child->gs.clip);
+    cupidimage_pdf_clip_retain(child->gs.clip);
     cupidimage_pdf_soft_mask_retain(child->gs.soft_mask);
     child->gs_stack_len = 0;
     child->pending_clip = 0;
@@ -1381,7 +1433,7 @@ int cupidimage_pdf_draw_form(pdf_render_state *st, pdf_object_id object,
     *child = *st;
     child->text_group = NULL;
     child->in_text = 0;
-    pdf_clip_retain(child->gs.clip);
+    cupidimage_pdf_clip_retain(child->gs.clip);
     cupidimage_pdf_soft_mask_retain(child->gs.soft_mask);
     child->gs_stack_len = 0;
     child->text_clip = NULL;

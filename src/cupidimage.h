@@ -65,7 +65,7 @@ typedef struct cupidimage_tga_metadata {
 
 typedef struct cupidimage_pdf_options {
     /* 0 retains binary text coverage; 1 enables grayscale outline fills/strokes.
-     * Clip coverage remains binary. Font hinting is separate. */
+     * Geometric clips use fractional coverage. Font hinting is separate. */
     int text_antialias;
     /* 1 enables the bounded native legacy TrueType instruction profile. */
     int truetype_hinting;

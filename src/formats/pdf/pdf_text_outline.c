@@ -72,6 +72,30 @@ static int outline_cubic(pdf_path *path, outline_point a, outline_point c1, outl
            outline_cubic(path, mid, right, cb, b, 0, depth + 1, flatness_squared);
 }
 
+static int outline_clip_edge(pdf_render_state *st, pdf_clip_mask *target, const outline_edge *edge,
+                             unsigned depth, double tolerance) {
+    if (!edge->quadratic ||
+        (outline_distance(edge->a, edge->b, edge->control) <= tolerance &&
+         (edge->quadratic != 2 || outline_distance(edge->a, edge->b, edge->control2) <= tolerance)))
+        return cupidimage_pdf_clip_append_edge_to(st, target, edge->a.x, edge->a.y, edge->b.x,
+                                                  edge->b.y);
+    if (depth == 16)
+        return 0;
+    outline_point ac = outline_mid(edge->a, edge->control);
+    if (edge->quadratic == 1) {
+        outline_point cb = outline_mid(edge->control, edge->b), mid = outline_mid(ac, cb);
+        outline_edge left = {edge->a, ac, mid, 1, {0, 0}}, right = {mid, cb, edge->b, 1, {0, 0}};
+        return outline_clip_edge(st, target, &left, depth + 1, tolerance) &&
+               outline_clip_edge(st, target, &right, depth + 1, tolerance);
+    }
+    outline_point cc = outline_mid(edge->control, edge->control2),
+                  cb = outline_mid(edge->control2, edge->b);
+    outline_point lc = outline_mid(ac, cc), rc = outline_mid(cc, cb), mid = outline_mid(lc, rc);
+    outline_edge left = {edge->a, ac, mid, 2, lc}, right = {mid, rc, edge->b, 2, cb};
+    return outline_clip_edge(st, target, &left, depth + 1, tolerance) &&
+           outline_clip_edge(st, target, &right, depth + 1, tolerance);
+}
+
 static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outline_edge *edges,
                             unsigned *count, const double m[6], double flatness_squared) {
     outline_point current = {0};
@@ -319,6 +343,9 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     int aa_stroke = st->text_antialias;
     int ok = 0, borrowed = 0;
     pdf_paint_group combined = {0};
+    pdf_clip_mask paint_geometry = {0};
+    int coverage_clipped = 0, fill_top_down = 0,
+        saved_coverage_clipped = st->paint_coverage_clipped;
     if (!cupidimage_pdf_font_outline(program, glyph, &outline, &cff_outline,
                                      &st->form_budget->outline_cache_bytes_left, &borrowed))
         goto done;
@@ -425,6 +452,10 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         ok = 1;
         goto done;
     }
+    if (clipping && st->text_antialias)
+        for (unsigned i = 0; i < edge_count; i++)
+            if (!outline_clip_edge(st, st->text_clip, edges + i, 0, flatness_squared))
+                goto done;
     double x0 = st->img->width, y0 = st->img->height, x1 = 0, y1 = 0;
     for (unsigned i = 0; i < edge_count; i++) {
         const outline_edge *e = edges + i;
@@ -475,9 +506,31 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                                       program->is_cff || program->is_type1 ? m : draw_matrix, left,
                                       top, right, bottom, &st->clip_budget->tests_left, &fill))
         goto done;
+    coverage_clipped = st->text_antialias && pixels && mode != 3 && st->gs.clip &&
+                       st->gs.clip->coverage &&
+                       !cupidimage_pdf_clip_contains_crop(st, left, top, right, bottom);
+    if (coverage_clipped && fill) {
+        for (unsigned i = 0; i < edge_count; i++)
+            if (!outline_clip_edge(st, &paint_geometry, edges + i, 0, flatness_squared))
+                goto done;
+        unsigned char *mask = NULL;
+        if (!cupidimage_pdf_clip_intersect(st, paint_geometry.pending_edges,
+                                           paint_geometry.pending_count, NULL, 0, NULL, left, top,
+                                           right, bottom, &mask))
+            goto done;
+        if (!cupidimage_pdf_clip_limit_mask(st, fill, 1, mask, left, top, right, bottom)) {
+            free(mask);
+            goto done;
+        }
+        free(fill);
+        fill = mask;
+        fill_top_down = 1;
+        cupidimage_pdf_clip_pending_clear(st, &paint_geometry);
+    }
     if (aa_stroke && pixels && (mode == 1 || mode == 2) &&
         !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
-        if (!cupidimage_pdf_stroke_path_coverage(st, path, left, top, right, bottom, &stroke_aa)) {
+        if (!cupidimage_pdf_stroke_path_coverage(st, path, left, top, right, bottom,
+                                                 coverage_clipped, &stroke_aa)) {
             cupidimage_set_err(st->error, st->error_capacity,
                                "pdf: unable to rasterize text stroke");
             goto done;
@@ -487,6 +540,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         goto done;
     if (pixels && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined, aa_stroke))
         goto done;
+    st->paint_coverage_clipped = coverage_clipped;
     for (int y = top; y < bottom && !st->image_failed; y++)
         for (int x = left; x < right && !st->image_failed; x++) {
             int winding = need_winding ? outline_winding(edges, edge_count, x + .5, y + .5) : 0;
@@ -508,7 +562,10 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                     : (stroke && (stroke[pixel / 8] & bit) ? 255u : 0u);
             unsigned coverage =
                 st->text_antialias
-                    ? (fill ? fill[(size_t)(bottom - y - 1) * (right - left) + x - left] : 0)
+                    ? (fill ? fill[(size_t)(fill_top_down ? y - top : bottom - y - 1) *
+                                       (right - left) +
+                                   x - left]
+                            : 0)
                     : ((mode == 0 || mode == 2) && winding ? 255 : 0);
             if (coverage && (stroked < 255 || combined.surface.image.rgba))
                 cupidimage_pdf_paint_pixel(st, x, y, 0, coverage / 255.0);
@@ -519,6 +576,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
 done:
     if (!cupidimage_pdf_fill_stroke_end(st, &combined, ok))
         ok = 0;
+    st->paint_coverage_clipped = saved_coverage_clipped;
+    cupidimage_pdf_clip_pending_clear(st, &paint_geometry);
     cupidimage_pdf_tt_hint_shape_free(&hinted);
     cupidimage_pdf_type2_free(&hinted_cff);
     free(fill);

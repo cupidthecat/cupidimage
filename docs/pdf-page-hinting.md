@@ -8,7 +8,7 @@ to zero, so existing callers and asset oracles retain their previous rendering.
 The option applies to supported embedded and substitute TrueType programs. It
 executes font/preparation/glyph instructions and uses the resulting device
 outline for fill, stroke and text clipping. CFF, Type 1 and bitmap glyphs keep
-their existing paths. Stroke coverage follows `--pdf-text-aa`; clip coverage remains binary.
+their existing paths. Stroke and clip coverage follow `--pdf-text-aa`.
 
 ## Sizing and placement
 
@@ -80,6 +80,7 @@ pixel evidence.
 
 This is a selected legacy profile, not complete TrueType or PDF rendering parity.
 Modern subpixel instruction policies, variation behavior, dropout scan conversion,
-Type 1 grid fitting, fractional clipping and full stroke/combined-paint coverage
-remain unfinished. CFF has its own [bounded page option](pdf-cff-page-hinting.md). The [VM](pdf-truetype-vm.md), [loader](pdf-truetype-loader.md) and
+broader clipping and stroke/combined-paint qualification remain unfinished.
+[CFF](pdf-cff-page-hinting.md) and [Type 1](pdf-type1-page-hinting.md) have their
+own bounded page options. The [VM](pdf-truetype-vm.md), [loader](pdf-truetype-loader.md) and
 [coverage](pdf-coverage.md) guides list the narrower contracts and known differences.

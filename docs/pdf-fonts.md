@@ -326,8 +326,8 @@ programs, widths or CID metrics.
 [Issue #50](https://github.com/cupidthecat/cupidimage/issues/50) tracks font and
 text fidelity in the current PDF work. The main gaps are:
 
-- Broader TrueType instruction and hinting-profile qualification, fractional text
-  clipping, broader stroke qualification and complete antialiased text composition.
+- Broader TrueType instruction and hinting-profile qualification, broader text
+  clipping and stroke qualification and complete antialiased text composition.
 - Nonembedded multiple-master instance matching, synthetic fonts and custom Type 1 procedures.
 - CFF2 and variable-font applicability still needs a PDF-version-specific audit.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
@@ -842,5 +842,5 @@ analytic area, independent bitmap and allocation-failure tests. Page painting ca
 use it for TrueType/CFF/Type 1 fills through `--pdf-text-aa` or the PDF options API.
 The default remains center-point coverage. Page glyphs remain unhinted unless
 `--pdf-tt-hinting` is also enabled for TrueType programs. Text strokes use [analytic union coverage](pdf-stroke-outlines.md) with the
-same option; text clip coverage is still binary. Standalone bitmap tests and page tests have separate qualification
+same option; [text clip coverage](pdf-clipping.md) uses geometric intersections. Standalone bitmap tests and page tests have separate qualification
 scopes; neither establishes complete font fidelity.

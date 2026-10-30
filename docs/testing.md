@@ -739,3 +739,13 @@ suite does not perform a manual corpus rating pass.
 Type 1 counter-data checks run with `make test-pdf-type1`. They exercise chunk
 ordering, malformed groups, budgets, allocation failure and compatibility drawing.
 See [the counter-data guide](pdf-type1-counter-data.md) for the tested scope.
+
+
+## Fractional PDF clipping
+
+`make test-pdf-clip-regions` checks analytic region intersections, reference-counted
+clip ownership and page-level clipping. It includes repeated constraints, disjoint
+subpixel regions, holes, transformed Form boundaries and allocation failures.
+`assets/pdf/fractional-clipping.pdf` is a decoded-unverified visual sample, rebuilt
+with `scripts/generate_pdf_fractional_clip_fixture.py`. See the
+[clipping guide](pdf-clipping.md) for limits and remaining raster qualification.

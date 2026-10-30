@@ -44,3 +44,9 @@ path. Its complete raster remains decoded-unverified. Regenerate it with
 horizontal stems. The metadata no longer prevents rendering; designer counter
 priorities remain unapplied. Its full raster is decoded-unverified. Regenerate it
 with `scripts/generate_pdf_type1_counter_fixture.py`.
+
+
+`pdf/fractional-clipping.pdf` shows clipped outlines, a fractional Form boundary
+and repeated narrow clips. Use `--pdf-text-aa` to exercise fractional coverage.
+Its complete raster is decoded-unverified. Regenerate it with
+`scripts/generate_pdf_fractional_clip_fixture.py`.

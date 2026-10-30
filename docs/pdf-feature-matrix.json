@@ -1481,7 +1481,11 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
             "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
@@ -1502,10 +1506,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Opt-in fractional text clipping is tested with geometric intersections, deferred application and saved state. Wider font/profile, color and transparency combinations remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -1698,10 +1706,14 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in fractional path, text and Form clipping is tested. General vector antialiasing, automatic stroke adjustment and wider cross-feature qualification remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -4358,10 +4370,14 @@
             "scripts/test_pdf_page_hinting.py",
             "docs/pdf-stroke-outlines.md",
             "scripts/test_pdf_text_strokes.py",
-            "tests/test_pdf_stroke_union.c"
+            "tests/test_pdf_stroke_union.c",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
-            "Opt-in outline fills and analytic text-stroke unions are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. Fractional clipping, general vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete."
+            "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete."
           ],
           "dependencies": [
             "3",

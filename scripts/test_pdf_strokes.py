@@ -56,6 +56,24 @@ def main():
                   expected=lambda x,y,c=cap: (9<=x<=27 and abs(y-15)<=3) or
                     (c==1 and min((x-9)**2+(y-15)**2,(x-27)**2+(y-15)**2)<=9) or
                     (c==2 and 6<=x<=30 and abs(y-15)<=3),reference=cap!=1)
+        for cap in range(3):
+            check('closed-point-'+str(cap),f'{cap} J 6 w 18 15 m h S',
+                  expected=lambda x,y,c=cap:c==1 and (x-18)**2+(y-15)**2<=9,
+                  reference=cap!=1)
+        check('trailing-open-point','1 J 6 w 18 15 m S',expected=lambda x,y:False)
+        check('repeated-close-point','1 J 6 w 18 15 m h h S',
+              equivalent='1 J 6 w 18 15 m 18 15 l S',reference=False)
+        near_closures=(
+            '9 9 m 27 9 l 27 21 l 9 21 l 9 9.00002 l h',
+            '27 9 m 27 21 l 9 21 l 9 9 l 26.99998 9 l h',
+            '27 21 m 9 21 l 9 9 l 27 9 l 27 20.99998 l h',
+            '9 21 m 9 9 l 27 9 l 27 21 l 9.00002 21 l h')
+        for corner,commands in enumerate(near_closures):
+            for cap in range(3):
+                for join in range(3):
+                    style=f'{cap} J {join} j 6 w '
+                    check(f'short-closing-edge-{corner}-{cap}-{join}',style+commands+' S',
+                          equivalent=style+'9 9 18 12 re S',reference=join==0)
         check('default-butt','6 w 9 15 m 27 15 l S',equivalent='9 12 18 6 re f')
         for join in range(3):
             shape='6 6 m 12 6 l 12 18 l 30 18 l 30 24 l 9 24 l 9 21 l 6 21 l h f'

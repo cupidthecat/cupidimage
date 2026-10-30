@@ -380,12 +380,15 @@ Binary Type 1 font streams now use their decoded outlines instead of bitmap
 fallback glyphs. The font parser and charstring interpreter are separate modules.
 The tests cover encryption, readstring boundaries, encoding overrides, flex and
 accent composition. MacExpertEncoding is included for Type 1 and CFF fonts.
-Hinting, custom OtherSubrs and general PostScript font-program execution remain
-open; the current implementation does not claim complete Type 1 fidelity.
+Bounded native hinting is available through its explicit option. Custom OtherSubrs
+and general PostScript font-program execution remain open; the implementation
+does not claim complete Type 1 fidelity.
 
-A space-only clipping regression was confirmed against an independent renderer.
-The text object now retains an empty glyph clip and intersects it at ET. Type 3
-fonts retain their separate text-rendering-mode behavior.
+Glyphs without outlines do not change the clipping path. A nonempty outline
+that collapses under its transform can still create an empty clip. Selected
+outline geometry, not a character-code shortcut, decides which case applies.
+Type 3 fonts retain their separate text-rendering-mode behavior. Opt-in
+[fractional clipping](pdf-clipping.md) has its own geometry and ownership tests.
 
 ## Standard PDF font advances
 

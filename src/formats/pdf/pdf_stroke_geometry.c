@@ -404,8 +404,64 @@ void cupidimage_pdf_stroke_segments(pdf_render_state *st, const pdf_path *path,
     (void)stroke_geometry(st, path, target, NULL);
 }
 
+static int stroke_clip_coverage(pdf_render_state *st, const stroke_aa_path *path, int left, int top,
+                                int right, int bottom, unsigned char **output) {
+    unsigned lines = 0, circles = 0;
+    for (unsigned i = 0; i < path->count; i++) {
+        if (path->shapes[i].count == 1)
+            circles++;
+        else
+            lines += path->shapes[i].count;
+    }
+    if (lines > 65536 || lines + circles > st->clip_budget->tests_left)
+        return 0;
+    st->clip_budget->tests_left -= lines + circles;
+    pdf_region_edge *edges = malloc((lines ? lines : 1) * sizeof(*edges));
+    pdf_region_ellipse *ellipses = malloc((circles ? circles : 1) * sizeof(*ellipses));
+    unsigned n = 0, k = 0;
+    unsigned char *mask = NULL;
+    int ok = 0;
+    if (!edges || !ellipses)
+        goto done;
+    for (unsigned i = 0; i < path->count; i++) {
+        const pdf_stroke_union_shape *shape = path->shapes + i;
+        if (shape->count == 1) {
+            ellipses[k++] = (pdf_region_ellipse){shape->points[0].x, shape->points[0].y, 0, 0};
+            continue;
+        }
+        double area = 0;
+        for (unsigned j = 0; j < shape->count; j++) {
+            const pdf_stroke_union_point a = shape->points[j],
+                                         b = shape->points[(j + 1) % shape->count],
+                                         o = shape->points[0];
+            area += (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+        }
+        for (unsigned j = 0; j < shape->count; j++) {
+            unsigned a = area < 0 ? (shape->count - j) % shape->count : j;
+            unsigned b = area < 0 ? (shape->count - j - 1) % shape->count : (j + 1) % shape->count;
+            edges[n++] = (pdf_region_edge){shape->points[a].x, shape->points[a].y,
+                                           shape->points[b].x, shape->points[b].y, 0};
+        }
+    }
+    if (!cupidimage_pdf_clip_intersect(st, edges, n, ellipses, k, path->axes, left, top, right,
+                                       bottom, &mask))
+        goto done;
+    if (!cupidimage_pdf_clip_limit_mask(st, *output, 0, mask, left, top, right, bottom))
+        goto done;
+    free(*output);
+    *output = mask;
+    mask = NULL;
+    ok = 1;
+done:
+    free(edges);
+    free(ellipses);
+    free(mask);
+    return ok;
+}
+
 int cupidimage_pdf_stroke_path_coverage(pdf_render_state *st, const pdf_path *path, int left,
-                                        int top, int right, int bottom, unsigned char **output) {
+                                        int top, int right, int bottom, int clipped,
+                                        unsigned char **output) {
     if (!output)
         return 0;
     *output = NULL;
@@ -414,6 +470,12 @@ int cupidimage_pdf_stroke_path_coverage(pdf_render_state *st, const pdf_path *pa
     if (ok)
         ok = cupidimage_pdf_stroke_union(primitives.shapes, primitives.count, primitives.axes, left,
                                          top, right, bottom, &st->clip_budget->tests_left, output);
+    if (ok && clipped)
+        ok = stroke_clip_coverage(st, &primitives, left, top, right, bottom, output);
     free(primitives.shapes);
+    if (!ok) {
+        free(*output);
+        *output = NULL;
+    }
     return ok;
 }

@@ -14,7 +14,7 @@ PDF previews include packed, indexed, fax- and JPEG-compressed images, inline
 images, image masks, filter chains, opacity and RGB blending. Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard and Latin vector font substitutes, and unhinted embedded
-TrueType, CFF and Type 1 outlines. Optional grayscale fills and selected
+TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](docs/pdf-clipping.md), plus selected
 [TrueType](docs/pdf-page-hinting.md), [CFF](docs/pdf-cff-page-hinting.md) and
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
 profiles have separate controls and limits.

@@ -31,8 +31,7 @@ required by ISO 32000-1 section 9.9.
 Each draw owns its fitted outline. It does not cache device-space geometry in
 the font-space cache. Fills, strokes and deferred text clipping share the same
 fitted path. Open contours remain open for stroking, and logical charstring
-current-point records do not create painted segments. Stroke coverage follows `--pdf-text-aa`;
-clip coverage remains binary. Forms inherit the option, including those with local fonts.
+current-point records do not create painted segments. Stroke and clip coverage follow `--pdf-text-aa`. Forms inherit the option, including those with local fonts.
 
 ## Bounds and errors
 

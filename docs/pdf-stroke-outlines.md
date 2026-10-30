@@ -2,8 +2,9 @@
 
 `--pdf-text-aa` enables grayscale fills and strokes for supported TrueType, CFF
 and Type 1 outlines. The API equivalent is `text_antialias = 1` in the PDF options.
-The default remains binary coverage. Text clips, bitmap fallback glyphs and
-ordinary Type 3 graphics still use their existing binary paths.
+The default remains binary coverage. [Clipping edges](pdf-clipping.md) follow the
+same option. Bitmap fallback painting and ordinary Type 3 graphics retain their
+existing geometry policies.
 
 ## Stroke geometry
 
@@ -17,6 +18,9 @@ The shared stroke engine builds segment rectangles, joins and caps. Miter joins
 fall back to bevel joins at the miter limit. Round caps and joins remain analytic
 ellipses under an affine transform. Projecting square caps extend the glyph's
 paint bounds even when the miter limit is smaller than their diagonal extent.
+
+Explicit path closing retains short final edges because they still determine
+join direction. A move followed by closepath retains a closed point.
 
 A zero-length dash retains the underlying segment's direction, so a square cap
 has a defined orientation. A genuinely degenerate subpath paints only with round
@@ -44,7 +48,7 @@ boundary can differ by one level when equivalent calculations round differently.
 Fill-and-stroke text uses a temporary knockout group when fractional stroke
 coverage requires it. Fill and stroke opacity, alpha-is-shape and a caller soft
 mask retain their separate roles. The soft mask is applied to the combined result
-once. Clipping remains a separate, binary operation.
+once. Clipping remains a separate geometric intersection, applied before painting.
 
 ## Bounds and ownership
 
@@ -77,7 +81,7 @@ polygon clipping checks straight open glyphs with butt and square caps under
 rotation, reflection, shear, nonuniform scale and hairline widths.
 
 The owned `assets/pdf/text-strokes.pdf` sample is decoded-unverified. It is a
-visual regression aid, not an exact full-page oracle. Fractional text clipping,
+visual regression aid, not an exact full-page oracle. Broader clipping qualification,
 general vector antialiasing, broader curve/hinting qualification, automatic stroke
 adjustment and a default smoothing policy remain unfinished. Passing these focused
 tests does not establish complete PDF rendering or stroke fidelity.
