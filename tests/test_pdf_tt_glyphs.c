@@ -49,7 +49,7 @@ static unsigned char *read_file(const char *path, size_t *length) {
 
 static int native_probe(const char *path, const char *size, const char *y_size, const char *index,
                         int grayscale, int factor, const int32_t *matrix, const int32_t *offset,
-                        int recover) {
+                        int recover, unsigned profile) {
     char *end;
     long ppem = strtol(size, &end, 10);
     if (!*size || *end || ppem < 1 || ppem > 96 * 64 / factor)
@@ -70,9 +70,9 @@ static int native_probe(const char *path, const char *size, const char *y_size, 
         return 2;
     }
     pdf_tt_hint hint;
-    int ok = cupidimage_pdf_tt_hint_init_xy(&hint, &font, (int32_t)ppem * factor,
-                                            (int32_t)y_ppem * factor, (int32_t)y_ppem * factor,
-                                            grayscale, 0, 1000000);
+    int ok = cupidimage_pdf_tt_hint_init_profile(&hint, &font, (int32_t)ppem * factor,
+                                                 (int32_t)y_ppem * factor, (int32_t)y_ppem * factor,
+                                                 grayscale, 0, profile, 1000000);
     if (ok)
         ok = cupidimage_pdf_tt_hint_glyph(&hint, (unsigned)glyph);
     pdf_tt_hint_shape shape = {0};
@@ -103,7 +103,9 @@ static int native_probe(const char *path, const char *size, const char *y_size, 
 
 int main(int argc, char **argv) {
     if (argc == 12 &&
-        (!strcmp(argv[2], "--native-matrix") || !strcmp(argv[2], "--native-matrix-gray"))) {
+        (!strcmp(argv[2], "--native-matrix") || !strcmp(argv[2], "--native-matrix-gray") ||
+         !strcmp(argv[2], "--native-matrix-modern") ||
+         !strcmp(argv[2], "--native-matrix-modern-gray"))) {
         int32_t values[6];
         for (unsigned i = 0; i < 6; i++) {
             char *end;
@@ -113,19 +115,28 @@ int main(int argc, char **argv) {
                 return 2;
             values[i] = (int32_t)value;
         }
-        return native_probe(argv[1], argv[3], argv[4], argv[5],
-                            !strcmp(argv[2], "--native-matrix-gray"), 64, values, values + 4, 0);
+        return native_probe(argv[1], argv[3], argv[4], argv[5], strstr(argv[2], "gray") != NULL, 64,
+                            values, values + 4, 0,
+                            strstr(argv[2], "modern") ? PDF_TT_PROFILE_MODERN
+                                                      : PDF_TT_PROFILE_LEGACY);
     }
-    if (argc == 6 && (!strcmp(argv[2], "--native-xy") || !strcmp(argv[2], "--native-xy-gray") ||
-                      !strcmp(argv[2], "--native-f26-xy")))
-        return native_probe(argv[1], argv[3], argv[4], argv[5],
-                            !strcmp(argv[2], "--native-xy-gray"),
-                            !strcmp(argv[2], "--native-f26-xy") ? 1 : 64, NULL, NULL, 0);
+    if (argc == 6 &&
+        (!strcmp(argv[2], "--native-xy") || !strcmp(argv[2], "--native-xy-gray") ||
+         !strcmp(argv[2], "--native-xy-modern") || !strcmp(argv[2], "--native-xy-modern-gray") ||
+         !strcmp(argv[2], "--native-f26-xy")))
+        return native_probe(argv[1], argv[3], argv[4], argv[5], strstr(argv[2], "gray") != NULL,
+                            !strcmp(argv[2], "--native-f26-xy") ? 1 : 64, NULL, NULL, 0,
+                            strstr(argv[2], "modern") ? PDF_TT_PROFILE_MODERN
+                                                      : PDF_TT_PROFILE_LEGACY);
     if (argc == 5 &&
         (!strcmp(argv[2], "--native") || !strcmp(argv[2], "--native-gray") ||
          !strcmp(argv[2], "--native-subset") || !strcmp(argv[2], "--native-subset-gray")))
         return native_probe(argv[1], argv[3], argv[3], argv[4], strstr(argv[2], "gray") != NULL, 64,
-                            NULL, NULL, strstr(argv[2], "subset") != NULL);
+                            NULL, NULL, strstr(argv[2], "subset") != NULL, PDF_TT_PROFILE_LEGACY);
+    if (argc == 5 &&
+        (!strcmp(argv[2], "--native-modern") || !strcmp(argv[2], "--native-modern-gray")))
+        return native_probe(argv[1], argv[3], argv[3], argv[4], strstr(argv[2], "gray") != NULL, 64,
+                            NULL, NULL, 0, PDF_TT_PROFILE_MODERN);
     if (argc != 4)
         return 2;
     char *end;

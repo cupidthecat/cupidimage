@@ -2,6 +2,8 @@
 #define CUPIDIMAGE_PDF_TT_VM_INTERNAL_H
 #include "vm.h"
 
+void cupidimage_pdf_tt_vm_profile_begin(pdf_tt_vm *);
+unsigned cupidimage_pdf_tt_vm_profile_info(const pdf_tt_vm *, unsigned);
 int cupidimage_pdf_tt_vm_fail(pdf_tt_vm *, pdf_tt_vm_error);
 int cupidimage_pdf_tt_vm_push(pdf_tt_vm *, int64_t);
 int cupidimage_pdf_tt_vm_need(pdf_tt_vm *, unsigned);

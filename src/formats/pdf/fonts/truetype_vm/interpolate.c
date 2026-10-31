@@ -99,6 +99,10 @@ static int vm_iup_point(pdf_tt_vm *vm, unsigned point, unsigned a, unsigned b, u
 }
 
 static int vm_iup(pdf_tt_vm *vm, unsigned axis) {
+    if (vm->compatibility == 7)
+        return 1;
+    if (vm->compatibility)
+        vm->compatibility |= axis ? 1u : 2u;
     if (vm->graphics.zone[2] != 1)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_POINT);
     if (vm->stage == PDF_TT_VM_PREP)

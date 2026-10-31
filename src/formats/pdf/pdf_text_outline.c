@@ -376,9 +376,12 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     double draw_matrix[6];
     memcpy(draw_matrix, m, sizeof(m));
     if (st->truetype_hinting && !zero_text_transform && !program->is_cff && !program->is_type1) {
-        if (!cupidimage_pdf_page_hint_shape(&st->form_budget->hint_cache, program, glyph, m,
-                                            st->text_antialias, &st->clip_budget->tests_left,
-                                            &hinted)) {
+        unsigned profile = st->truetype_hinting == CUPIDIMAGE_PDF_TT_HINT_MODERN
+                               ? PDF_TT_PROFILE_MODERN
+                               : PDF_TT_PROFILE_LEGACY;
+        if (!cupidimage_pdf_page_hint_shape_profile(&st->form_budget->hint_cache, program, glyph, m,
+                                                    st->text_antialias, profile,
+                                                    &st->clip_budget->tests_left, &hinted)) {
             cupidimage_set_err(st->error, st->error_capacity,
                                "pdf: unable to grid-fit TrueType glyph");
             goto done;

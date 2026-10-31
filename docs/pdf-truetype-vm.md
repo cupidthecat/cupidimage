@@ -132,8 +132,10 @@ WCVTF and SSW use the same coefficient. DELTAC1/2/3 apply only at the selected p
 and support delta shifts 0 through 6. Every pair is bounded and charged to the
 execution budget, including pairs that do not match the current size.
 
-GETINFO exposes the legacy version-35 configuration, grayscale and explicit
-rotation/stretch flags; it does not advertise variations or LCD rendering.
+The default GETINFO profile exposes version 35, grayscale and explicit
+rotation/stretch flags. The optional [modern profile](pdf-truetype-modern.md)
+exposes version 40 and its grayscale compatibility capabilities. Neither
+profile advertises variations or an LCD pixel layout.
 Different device-axis sizes do not infer an additional transform flag. MPPEM and
 DELTA size selection follow the current projection; MPS returns the supplied
 F26Dot6 point size. These interfaces are tested separately from PDF text painting.
@@ -352,7 +354,7 @@ perpendicular-vector movement failure, one had a truncated glyph description,
 13 font containers were rejected and three failed the diagnostic parser. These
 are diagnostic results, not a corpus-wide pass or PDF rendering qualification.
 
-The selected legacy profile is integrated with [PDF text painting](pdf-page-hinting.md),
+The selected legacy and modern profiles are integrated with [PDF text painting](pdf-page-hinting.md),
 including [monochrome scan conversion](pdf-monochrome.md). Broader font-program
 qualification, variation and LCD behavior remain unfinished. PDF advances continue
 to come from the document rather than hinted phantom widths.

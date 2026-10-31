@@ -37,6 +37,8 @@ static int tt_init_font(pdf_tt_font *f, const unsigned char *data, size_t length
         size_t offset = tt_u32(record + 8), size = tt_u32(record + 12);
         if (offset > length || size > length - offset)
             return 0;
+        if (!memcmp(record, "name", 4) && !f->name.data)
+            f->name = (pdf_tt_table){data + offset, size};
         for (unsigned j = 0; j < sizeof(tags) / sizeof(*tags); j++)
             if (!memcmp(record, tags[j], 4)) {
                 if (tables[j]->data)

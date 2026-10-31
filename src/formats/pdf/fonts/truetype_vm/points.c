@@ -100,6 +100,10 @@ int cupidimage_pdf_tt_vm_move(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t dis
 }
 
 int cupidimage_pdf_tt_vm_shift(pdf_tt_vm *vm, pdf_tt_vm_point *point, int64_t x, int64_t y) {
+    if (vm->compatibility)
+        x = 0;
+    if (vm->compatibility == 7)
+        y = 0;
     if (x < -INT64_C(4294967295) || x > INT64_C(4294967295) || y < -INT64_C(4294967295) ||
         y > INT64_C(4294967295))
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_ARITHMETIC);

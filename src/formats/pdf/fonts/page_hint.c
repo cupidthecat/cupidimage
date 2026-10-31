@@ -11,7 +11,7 @@ struct pdf_page_hint {
     pdf_tt_hint hint;
     int32_t pixels, points;
     int grayscale;
-    unsigned transform_flags;
+    unsigned transform_flags, profile;
 };
 
 void cupidimage_pdf_page_hint_free(pdf_page_hint **cache) {
@@ -69,11 +69,19 @@ static unsigned page_hint_transform_flags(const int32_t matrix[4]) {
 int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, pdf_font_program *program, unsigned glyph,
                                    const double matrix[6], int grayscale, size_t *work_left,
                                    pdf_tt_hint_shape *shape) {
+    return cupidimage_pdf_page_hint_shape_profile(cache, program, glyph, matrix, grayscale,
+                                                  PDF_TT_PROFILE_LEGACY, work_left, shape);
+}
+
+int cupidimage_pdf_page_hint_shape_profile(pdf_page_hint **cache, pdf_font_program *program,
+                                           unsigned glyph, const double matrix[6], int grayscale,
+                                           unsigned profile, size_t *work_left,
+                                           pdf_tt_hint_shape *shape) {
     if (!shape)
         return 0;
     memset(shape, 0, sizeof(*shape));
     if (!cache || !program || program->is_cff || program->is_type1 || !matrix || !work_left ||
-        (grayscale != 0 && grayscale != 1))
+        (grayscale != 0 && grayscale != 1) || profile > PDF_TT_PROFILE_MODERN)
         return 0;
     for (unsigned i = 0; i < 6; i++)
         if (!isfinite(matrix[i]))
@@ -103,7 +111,7 @@ int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, pdf_font_program *prog
     unsigned transform_flags = grayscale ? 0 : page_hint_transform_flags(transform);
     if (*cache && ((*cache)->program != program || (*cache)->pixels != ppem * 64 ||
                    (*cache)->points != points || (*cache)->grayscale != grayscale ||
-                   (*cache)->transform_flags != transform_flags))
+                   (*cache)->transform_flags != transform_flags || (*cache)->profile != profile))
         cupidimage_pdf_page_hint_free(cache);
     if (!*cache) {
         if (!page_hint_prepare_cost(&program->font, work_left))
@@ -119,10 +127,11 @@ int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, pdf_font_program *prog
         entry->points = points;
         entry->grayscale = grayscale;
         entry->transform_flags = transform_flags;
+        entry->profile = profile;
         size_t quota = page_hint_quota(work_left);
-        if (!quota || !cupidimage_pdf_tt_hint_init_xy(&entry->hint, &program->font, entry->pixels,
-                                                      entry->pixels, points, grayscale,
-                                                      transform_flags, quota))
+        if (!quota || !cupidimage_pdf_tt_hint_init_profile(
+                          &entry->hint, &program->font, entry->pixels, entry->pixels, points,
+                          grayscale, transform_flags, profile, quota))
             goto fail;
         *work_left += entry->hint.vm.work_left;
     }

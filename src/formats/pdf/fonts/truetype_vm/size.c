@@ -156,15 +156,7 @@ int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *vm, unsigned op) {
     int32_t a = vm->stack[vm->stack_size - 1];
     int32_t b = count == 2 ? vm->stack[vm->stack_size - 2] : 0;
     if (op == 0x88) {
-        /* Legacy grayscale configuration; no variations or LCD modes advertised. */
-        unsigned info = (a & 1) ? 35 : 0;
-        if ((a & 2) && (vm->size.transform_flags & PDF_TT_VM_ROTATED))
-            info |= 256;
-        if ((a & 4) && (vm->size.transform_flags & PDF_TT_VM_STRETCHED))
-            info |= 512;
-        if ((a & 32) && vm->size.grayscale)
-            info |= 4096;
-        vm->stack[vm->stack_size - 1] = (int32_t)info;
+        vm->stack[vm->stack_size - 1] = (int32_t)cupidimage_pdf_tt_vm_profile_info(vm, (unsigned)a);
         return 1;
     }
     if (op == 0x1f) {
@@ -184,7 +176,9 @@ int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *vm, unsigned op) {
     } else {
         if (a < 1 || a > 3 || (b != 0 && b != (1 << (a - 1))))
             return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
-        if (vm->stage == PDF_TT_VM_PREP || (vm->stage == PDF_TT_VM_GLYPH && a == 3)) {
+        if (vm->stage == PDF_TT_VM_GLYPH && a == 3 && vm->profile == PDF_TT_PROFILE_MODERN)
+            vm->compatibility = ((unsigned)b & 4) ^ 4;
+        else if (vm->stage == PDF_TT_VM_PREP || (vm->stage == PDF_TT_VM_GLYPH && a == 3)) {
             unsigned mask = 1u << (a - 1);
             vm->graphics.instruction_control =
                 (vm->graphics.instruction_control & ~mask) | (unsigned)b;

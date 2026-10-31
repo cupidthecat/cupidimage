@@ -30,6 +30,11 @@ The full sample is decoded-unverified. Regenerate it with
 `scripts/generate_pdf_page_hinting_fixture.py`; its font source is in
 `scripts/generate_pdf_page_hinting_font.py`.
 
+`pdf/modern-truetype-hinting.pdf` uses an owned font with separate horizontal
+and vertical adjustments. Compare `--pdf-tt-hinting` with
+`--pdf-tt-modern-hinting`, both with `--pdf-text-aa`. Its full raster remains
+decoded-unverified. Regenerate it with `scripts/generate_pdf_tt_modern_fixture.py`.
+
 `pdf/native-cff-hinting.pdf` embeds owned blue-zone and composite glyph programs.
 Use `--pdf-cff-hinting --pdf-text-aa` to exercise their fitted page path. Its
 complete raster remains decoded-unverified. Regenerate it with

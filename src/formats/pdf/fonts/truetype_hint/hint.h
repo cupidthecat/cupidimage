@@ -15,6 +15,8 @@ typedef struct {
 int cupidimage_pdf_tt_hint_init(pdf_tt_hint *, const pdf_tt_font *, int32_t, int32_t, int, size_t);
 int cupidimage_pdf_tt_hint_init_xy(pdf_tt_hint *, const pdf_tt_font *, int32_t, int32_t, int32_t,
                                    int, unsigned, size_t);
+int cupidimage_pdf_tt_hint_init_profile(pdf_tt_hint *, const pdf_tt_font *, int32_t, int32_t,
+                                        int32_t, int, unsigned, unsigned, size_t);
 void cupidimage_pdf_tt_hint_free(pdf_tt_hint *);
 
 typedef struct {

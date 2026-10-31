@@ -88,9 +88,12 @@ support. See [PDF security](pdf-security.md) for unsupported handlers and extens
 pointer. Set `text_antialias` to 1 for grayscale TrueType/CFF/Type 1 fills and strokes.
 Set `graphics_antialias` to 1 for vector fills and strokes, including Type 3 paths.
 Either option enables fractional clipping edges.
-Set `truetype_hinting` to 1 to execute the native legacy TrueType profile, and
-`cff_hinting` to 1 for the bounded CFF profile. Set `type1_hinting` to 1 for the
-bounded Type 1 profile. Each field accepts only 0 or 1.
+Set `truetype_hinting` to `CUPIDIMAGE_PDF_TT_HINT_LEGACY` (1) for legacy fitting
+or `CUPIDIMAGE_PDF_TT_HINT_MODERN` (2) for the modern grayscale instruction
+profile. Zero disables fitting. The struct layout is unchanged.
+Set `cff_hinting` to 1 for the bounded CFF profile and `type1_hinting` to 1 for
+the bounded Type 1 profile. All fields other than `truetype_hinting` accept only
+0 or 1.
 Initialize the options struct to zero before setting fields. A null pointer or
 all-zero fields preserve unhinted center-point fills. Page indices remain
 zero-based.

@@ -57,16 +57,21 @@ def fixture(font, name, ppem):
 
 
 def main():
-    version = ctypes.c_uint(35)
-    assert freetype.FT_Property_Set(freetype.get_handle(), b'truetype', b'interpreter-version',
-                                   ctypes.byref(version)) == 0
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('probe')
     parser.add_argument('--all-simple', action='store_true')
     parser.add_argument('--native', action='store_true')
     parser.add_argument('--gray', action='store_true')
+    parser.add_argument('--profile', choices=('legacy', 'modern'), default='legacy')
     parser.add_argument('--nonuniform', action='store_true')
     options = parser.parse_args()
+    if options.profile == "modern" and not options.native:
+        parser.error("modern profile requires --native")
+    version = ctypes.c_uint(40 if options.profile == 'modern' else 35)
+    assert freetype.FT_Property_Set(freetype.get_handle(), b'truetype', b'interpreter-version',
+                                   ctypes.byref(version)) == 0
+    if options.profile == 'modern' and not options.native:
+        parser.error('--profile modern requires --native')
     if (options.gray or options.nonuniform) and not options.native:
         parser.error("--gray/--nonuniform require --native")
     if options.nonuniform and options.all_simple:
@@ -92,7 +97,7 @@ def main():
                     face.set_pixel_sizes(x_ppem, ppem)
                     for name in names:
                         if options.native:
-                            mode = ('--native-xy-gray' if options.gray else '--native-xy') if options.nonuniform else ('--native-gray' if options.gray else '--native')
+                            mode = '--native' + ('-xy' if options.nonuniform else '') + ('-modern' if options.profile == 'modern' else '') + ('-gray' if options.gray else '')
                             dimensions = [str(x_ppem), str(ppem)] if options.nonuniform else [str(ppem)]
                             command = [options.probe, str(font_path), mode, *dimensions, str(font.getGlyphID(name))]
                         else:
@@ -126,7 +131,7 @@ def main():
     assert not failures, (len(failures), failures[:20])
     assert len(rejected) == (4 if all_simple else 0), rejected
     print(f'TrueType simple glyph reference: {checked} outline matches at {len(sizes)} sizes; '
-          f'{len(rejected)} specified-invalid IP rejections; engine {freetype.version()}; '
+          f'{len(rejected)} specified-invalid IP rejections; profile {options.profile}; engine {freetype.version()}; '
           f'{"native loading" if options.native else "supplied geometry"}; '
           f'{"grayscale" if options.gray else "monochrome"}; {"nonuniform" if options.nonuniform else "uniform"}; no composites or PDF rendering')
 

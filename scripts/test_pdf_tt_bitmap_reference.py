@@ -12,7 +12,8 @@ from pdf_tt_reference import outline_state
 from test_pdf_tt_points_reference import build_font, push
 from test_pdf_tt_composite_transforms import build
 
-version = ctypes.c_uint(35)
+modern = "--modern" in sys.argv[3:]
+version = ctypes.c_uint(40 if modern else 35)
 assert freetype.FT_Property_Set(freetype.get_handle(), b'truetype', b'interpreter-version',
                                ctypes.byref(version)) == 0
 matrices = ((65536, 0, 0, 65536), (-65536, 0, 0, 65536), (0, 65536, -65536, 0),
@@ -20,19 +21,32 @@ matrices = ((65536, 0, 0, 65536), (-65536, 0, 0, 65536), (0, 65536, -65536, 0),
             (32768, 0, 0, 98304))
 offsets = ((0, 0), (17, -23), (-129, 97), (1024, -2048))
 sizes = ((13, 13), (13, 37), (37, 13))
-checked = 0
+checked = skipped = 0
 with tempfile.TemporaryDirectory(prefix='cupid-tt-bitmap-') as directory:
     path = Path(directory) / 'bitmap.ttf'
-    for composite in (False, True):
+    cases = [(False, False, 2), (True, False, 2)]
+    if modern:
+        cases += [(False, True, 2), (True, True, 2), (True, False, 1), (True, True, 1)]
+    for composite, full_control, component_case in cases:
+        # Earlier engines suppress composite X rounding even for fonts requiring
+        # full control. This profile follows the selected 2.14.3 behavior.
+        if full_control and component_case == 1 and freetype.version() < (2, 14, 3):
+            skipped += len(sizes) * len(matrices) * len(offsets)
+            continue
         if composite:
             build(path, (.75, .25, -.125, 1), (-50, 73), push(1) + b'\x2f',
-                  b'\x00' + push(0) + b'\x2f', 2)
+                  b'\x00' + push(0) + b'\x2f', component_case)
             glyph = 3
         else:
             build_font([push(1) + b'\x2f\x00' + push(0) + b'\x2f'], path)
             glyph = 1
+        if full_control:
+            from fontTools.ttLib import TTFont
+            with TTFont(path) as font:
+                font['name'].setName('Owned DFKai-SB profile fixture', 1, 3, 1, 0x409)
+                font.save(path)
         for (x, y), matrix, offset in itertools.product(sizes, matrices, offsets):
-            lines = subprocess.check_output([sys.argv[1], str(path), '--native-matrix-gray',
+            lines = subprocess.check_output([sys.argv[1], str(path), '--native-matrix-modern-gray' if modern else '--native-matrix-gray',
                 str(x), str(y), str(glyph), *map(str, matrix), *map(str, offset)], text=True).splitlines()
             assert lines[0].startswith('1 0 0 0 '), lines[0]
             native = [tuple(map(int, line.split())) for line in lines[1:]]
@@ -42,7 +56,7 @@ with tempfile.TemporaryDirectory(prefix='cupid-tt-bitmap-') as directory:
                                freetype.Vector(*offset))
             face.load_glyph(glyph, freetype.FT_LOAD_NO_BITMAP | freetype.FT_LOAD_NO_AUTOHINT)
             reference = outline_state(face)
-            assert native == reference
+            assert native == reference, (composite, full_control, component_case, x, y, native, reference)
             left = min(p[0] for p in native) // 64 - 1
             bottom = min(p[1] for p in native) // 64 - 1
             right = (max(p[0] for p in native) + 63) // 64 + 1
@@ -55,4 +69,5 @@ with tempfile.TemporaryDirectory(prefix='cupid-tt-bitmap-') as directory:
             assert actual == expected, (composite, x, y, matrix, offset)
             checked += 1
 print(f'TrueType bitmap pipeline: {checked} exact grayscale matches; simple/composite, '
-      f'nonuniform sizes and affine transforms; engine {freetype.version()}; no PDF pages')
+      f'{skipped} full-control rounding cases skipped on older engines; '
+      f'nonuniform sizes and affine transforms; profile {version.value}; engine {freetype.version()}; no PDF pages')

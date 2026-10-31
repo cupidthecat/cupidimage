@@ -3,8 +3,9 @@
 The native hinting loader connects simple/composite glyph decoding to the
 [instruction engine](pdf-truetype-vm.md). It is tested separately from PDF rendering.
 Default PDF pages still use unhinted outlines. An explicit [page option](pdf-page-hinting.md)
-now connects this loader to device outlines and coverage. Broader font-program and
-modern-profile qualification remain unfinished.
+connects this loader to device outlines and coverage, with separate legacy and
+[modern grayscale](pdf-truetype-modern.md) profiles. Broader font-program
+qualification remains unfinished.
 
 ## Ownership and preparation
 
@@ -63,7 +64,9 @@ Horizontal phantom y coordinates and vertical phantom x coordinates are zero in
 this legacy uniform configuration. The original coordinates retain scaled
 fractions. Current horizontal x and vertical y positions are rounded to pixel grid
 lines before instruction execution, unless preparation inhibits hinting. Inhibition
-also leaves the glyph instructions unexecuted.
+also leaves the glyph instructions unexecuted. The modern grayscale profile uses
+half the horizontal advance for vertical phantom X coordinates and restores
+unrounded phantom positions when compatibility movement is active.
 
 Results remain owned by `vm.zones[1]`, with the four phantom points included in
 `count` and excluded from `outline_count`. A consumer can normalize the final outline

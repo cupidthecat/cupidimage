@@ -21,9 +21,10 @@ def main():
     parser.add_argument('probe')
     parser.add_argument('--all', action='store_true')
     parser.add_argument('--gray', action='store_true')
+    parser.add_argument('--profile', choices=('legacy', 'modern'), default='legacy')
     parser.add_argument('--nonuniform', action='store_true')
     options = parser.parse_args()
-    version = ctypes.c_uint(35)
+    version = ctypes.c_uint(40 if options.profile == 'modern' else 35)
     assert freetype.FT_Property_Set(freetype.get_handle(), b'truetype', b'interpreter-version',
                                    ctypes.byref(version)) == 0
     if options.nonuniform and options.all:
@@ -42,7 +43,7 @@ def main():
                 face.set_pixel_sizes(x_ppem, ppem)
                 for name in names:
                     index = font.getGlyphID(name)
-                    mode = ('--native-xy-gray' if options.gray else '--native-xy') if options.nonuniform else ('--native-gray' if options.gray else '--native')
+                    mode = '--native' + ('-xy' if options.nonuniform else '') + ('-modern' if options.profile == 'modern' else '') + ('-gray' if options.gray else '')
                     dimensions = [str(x_ppem), str(ppem)] if options.nonuniform else [str(ppem)]
                     result = subprocess.run([options.probe, str(path), mode, *dimensions, str(index)],
                                             capture_output=True, text=True, timeout=20)
@@ -67,7 +68,7 @@ def main():
             del face
     assert not failures, (len(failures), failures[:30])
     print(f'TrueType composite reference: {checked} outlines at {len(sizes)} sizes, 0 failures; '
-          f'engine {freetype.version()}; {"grayscale" if options.gray else "monochrome"}; '
+          f'engine {freetype.version()}; profile {options.profile}; {"grayscale" if options.gray else "monochrome"}; '
           f'{"nonuniform" if options.nonuniform else "uniform"}; native assembly and instructions, no PDF rendering')
 
 

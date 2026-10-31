@@ -22,7 +22,8 @@ TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](
 [vector paths](docs/pdf-graphics-coverage.md), plus selected
 [TrueType](docs/pdf-page-hinting.md), [CFF](docs/pdf-cff-page-hinting.md) and
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
-profiles have separate controls and limits. TrueType includes
+profiles have separate controls and limits. TrueType offers legacy and
+[modern grayscale fitting](docs/pdf-truetype-modern.md), both opt-in, and includes
 [monochrome dropout control](docs/pdf-monochrome.md) for narrow strokes.
 [Default layer visibility](docs/pdf-optional-content.md) controls painting while
 preserving text advances and clipping. Existing [annotation and widget appearances](docs/pdf-annotations.md)

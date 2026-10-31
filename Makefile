@@ -19,8 +19,8 @@ TEST_TARGETS = test-pdf-monochrome test-pdf-type1-flex test-pdf-flex test-pdf-jp
 TEST_BINS = test_pdf_tt_scan test_pdf_monochrome test_pdf_monochrome_oom test_pdf_type1_flex test_pdf_flex test_pdf_flex_oom test_pdf_jpx test_pdf_jpx_file test_pdf_subset_fonts test_pdf_optional_content test_pdf_clip_work test_pdf_path_storage test_pdf_color_transfer test_pdf_icc_reverse test_pdf_icc_inverse test_pdf_image_sampling test_pdf_region test_pdf_clip_geometry test_sixel_dither test_pdf_stroke_union test_pdf_type1_counter test_pdf_type1_gridfit test_pdf_type1_trace test_pdf_type1_lexer test_pdf_ps_gridfit test_pdf_page_hint test_pdf_coverage test_pdf_coverage_oom test_pdf_tt_loader test_pdf_tt_glyphs test_pdf_tt_vm test_pdf_icc_mab test_pdf_icc_lut test_pdf_flatness test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
-TEST_TARGETS += test-pdf-cid-substitution
-TEST_BINS += test_pdf_cid_encoding test_pdf_scanline test_pdf_clip_crop
+TEST_TARGETS += test-pdf-cid-substitution test-pdf-tt-policy
+TEST_BINS += test_pdf_tt_policy test_pdf_cid_encoding test_pdf_scanline test_pdf_clip_crop
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
@@ -121,7 +121,9 @@ test-pdf-type1-page-hinting: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oo
 test-pdf-page-hinting: $(BINDIR)/test_pdf_page_hint $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
 	$(BINDIR)/test_pdf_page_hint
 	python3 scripts/generate_pdf_page_hinting_fixture.py --check
+	python3 scripts/generate_pdf_tt_modern_fixture.py --check
 	python3 scripts/test_pdf_page_hinting.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
+	python3 scripts/test_pdf_tt_modern_pages.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
 
 test-pdf-text-antialias: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
 	python3 scripts/generate_pdf_text_coverage_fixture.py --check
@@ -133,6 +135,7 @@ test-pdf-coverage: $(BINDIR)/test_pdf_coverage $(BINDIR)/test_pdf_coverage_oom $
 	python3 scripts/test_pdf_coverage_bounds.py $<
 	python3 scripts/test_pdf_coverage_reference.py $<
 	python3 scripts/test_pdf_tt_bitmap_reference.py $(BINDIR)/test_pdf_tt_glyphs $<
+	python3 scripts/test_pdf_tt_bitmap_reference.py $(BINDIR)/test_pdf_tt_glyphs $< --modern
 
 test-jpeg-reference: $(BINDIR)/test_format_pixels
 	python3 scripts/test_jpeg_reference.py $<
@@ -606,6 +609,7 @@ test-pdf-tt-vm: $(BINDIR)/test_pdf_tt_vm $(BINDIR)/test_pdf_tt_glyphs
 	$(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_vm_reference.py $(BINDIR)/test_pdf_tt_vm
+	python3 scripts/test_pdf_tt_profile_reference.py $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_cvt_precision.py $(BINDIR)/test_pdf_tt_vm
 	python3 scripts/test_pdf_tt_projection_precision.py $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/test_pdf_tt_prep_reference.py $(BINDIR)/test_pdf_tt_vm
@@ -878,3 +882,10 @@ test-pdf-sparse-groups: $(BINDIR)/test_pdf_group_storage $(BINDIR)/test_pdf_page
 	$(BINDIR)/test_pdf_group_storage
 	python3 scripts/generate_pdf_sparse_groups_fixture.py --check
 	python3 scripts/test_pdf_sparse_groups.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+$(BINDIR)/test_pdf_tt_policy: tests/test_pdf_tt_policy.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-tt-policy: $(BINDIR)/test_pdf_tt_policy
+	$<
+	python3 scripts/test_pdf_tt_policy.py $<

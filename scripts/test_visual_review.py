@@ -2,12 +2,14 @@
 """Offline tests for review selection, ratings, and resume fingerprints."""
 from pathlib import Path
 import argparse
+import contextlib
+import io
 import hashlib
 import json
 import tempfile
 import unittest
 from review_assets import ask, automatic_failure, collect, label, review_key, select_range
-from pdf_render_options import OPTIONS, add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options
+from pdf_render_options import MODERN_TT_FLAG, pdf_option_key_values, OPTIONS, add_pdf_options, pdf_option_values, pdf_option_arguments, supports_pdf_options
 
 
 class ReviewTests(unittest.TestCase):
@@ -87,6 +89,23 @@ class ReviewTests(unittest.TestCase):
         old_caps=json.dumps({'schema':1,'pdf_options':[flag for flag,_,_ in OPTIONS if flag!='--pdf-graphics-aa']})
         self.assertFalse(supports_pdf_options(old_caps,graphics))
         self.assertEqual(legacy_profile,review_key('/image','sha',0,'probe','cli','sixel',pdf_options={**values,'graphics_antialias':False}))
+
+    def test_modern_pdf_profile(self):
+        parser=argparse.ArgumentParser()
+        add_pdf_options(parser)
+        modern=pdf_option_values(parser.parse_args([MODERN_TT_FLAG,'--pdf-text-aa']))
+        self.assertEqual(modern['truetype_hinting'],2)
+        self.assertEqual(pdf_option_arguments(modern),['--pdf-text-aa',MODERN_TT_FLAG])
+        legacy={**modern,'truetype_hinting':True}
+        self.assertNotEqual(review_key('/image','sha',0,'probe','cli','sixel',pdf_options=modern),
+                            review_key('/image','sha',0,'probe','cli','sixel',pdf_options=legacy))
+        caps={'schema':1,'pdf_options':[flag for flag,_,_ in OPTIONS]}
+        self.assertFalse(supports_pdf_options(json.dumps(caps),modern))
+        caps['pdf_options'].append(MODERN_TT_FLAG)
+        self.assertTrue(supports_pdf_options(json.dumps(caps),modern))
+        with self.assertRaises(ValueError):pdf_option_key_values({'truetype_hinting':3})
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            parser.parse_args(['--pdf-tt-hinting',MODERN_TT_FLAG])
 
     def test_fingerprints(self):
         base=review_key('/image','sha',0,'probe','cli','auto')

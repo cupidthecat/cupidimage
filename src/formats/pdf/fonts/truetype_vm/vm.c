@@ -296,6 +296,7 @@ int cupidimage_pdf_tt_vm_run(pdf_tt_vm *vm, const unsigned char *data, size_t le
     if (stage != PDF_TT_VM_GLYPH && stage != PDF_TT_VM_FONT && stage != PDF_TT_VM_PREP)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
     vm->stage = stage;
+    cupidimage_pdf_tt_vm_profile_begin(vm);
     if (stage != PDF_TT_VM_GLYPH)
         vm->prepared = 0;
     vm->stack_size = 0;

@@ -15,7 +15,8 @@
 static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
-            "number] [--pdf-text-aa] [--pdf-graphics-aa] [--pdf-tt-hinting] [--pdf-cff-hinting] "
+            "number] [--pdf-text-aa] [--pdf-graphics-aa] "
+            "[--pdf-tt-hinting|--pdf-tt-modern-hinting] [--pdf-cff-hinting] "
             "[--pdf-type1-hinting] [--pdf-password-file path|-] [--pdf-password-raw] "
             "[--sixel] "
             "[--sixel-colors N] "
@@ -29,6 +30,8 @@ static void usage(const char *prog) {
     fprintf(stderr, "  --pdf-password-raw: interpret password bytes as legacy PDFDocEncoding\n");
     fprintf(stderr, "  --pdf-text-aa: enable grayscale PDF outline text and clipping edges\n");
     fprintf(stderr, "  --pdf-tt-hinting: execute the native legacy TrueType hinting profile\n");
+    fprintf(stderr, "  --pdf-tt-modern-hinting: select modern TrueType hinting; use --pdf-text-aa "
+                    "for grayscale\n");
     fprintf(stderr, "  --pdf-cff-hinting: enable native CFF outline hinting\n");
     fprintf(stderr,
             "  --pdf-graphics-aa: enable grayscale PDF vector painting and clipping edges\n");
@@ -955,8 +958,15 @@ int main(int argc, char **argv) {
             pdf_options.cff_hinting = 1;
             continue;
         }
-        if (strcmp(argv[i], "--pdf-tt-hinting") == 0) {
-            pdf_options.truetype_hinting = 1;
+        if (strcmp(argv[i], "--pdf-tt-hinting") == 0 ||
+            strcmp(argv[i], "--pdf-tt-modern-hinting") == 0) {
+            int profile = strcmp(argv[i], "--pdf-tt-hinting") == 0 ? CUPIDIMAGE_PDF_TT_HINT_LEGACY
+                                                                   : CUPIDIMAGE_PDF_TT_HINT_MODERN;
+            if (pdf_options.truetype_hinting && pdf_options.truetype_hinting != profile) {
+                fprintf(stderr, "Choose one TrueType hinting profile.\n");
+                return 1;
+            }
+            pdf_options.truetype_hinting = profile;
             continue;
         }
         if (strcmp(argv[i], "--pdf-text-aa") == 0) {

@@ -6,6 +6,12 @@ int cupidimage_pdf_tt_vm_flags_op(pdf_tt_vm *vm, unsigned op) {
     unsigned count = op == 0x80 ? vm->graphics.loop : 2;
     if (!cupidimage_pdf_tt_vm_need(vm, count))
         return 0;
+    if (vm->compatibility == 7) {
+        vm->stack_size -= count;
+        if (op == 0x80)
+            vm->graphics.loop = 1;
+        return 1;
+    }
     unsigned zone = vm->graphics.zone[0];
     if (zone > 1)
         return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_POINT);
