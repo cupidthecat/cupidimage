@@ -17,7 +17,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [CFF descendant binding](pdf-cff-bindings.md): direct glyph indices and CID-keyed charset selection.
 - [Embedded CID subset recovery](pdf-subset-fonts.md): bounded compatibility for damaged font locations and selectors.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
-- [Type 2 flex hints](pdf-flex.md): retained thresholds, device-space selection and comparison limits.
+- [PostScript flex hints](pdf-flex.md): Type 2 depth selection, Type 1 pixel-phase adjustment and comparison limits.
 - [TrueType instruction engine](pdf-truetype-vm.md): tested foundations and the unfinished hinting integration.
 - [Native TrueType loading](pdf-truetype-loader.md): glyphs, phantom points and preparation lifetimes.
 - [TrueType composites](pdf-truetype-composites.md): component transforms, attachments, shared state and bounds.

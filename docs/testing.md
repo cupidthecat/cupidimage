@@ -757,3 +757,16 @@ subpixel regions, holes, transformed Form boundaries and allocation failures.
 `assets/pdf/fractional-clipping.pdf` is a decoded-unverified visual sample, rebuilt
 with `scripts/generate_pdf_fractional_clip_fixture.py`. See the
 [clipping guide](pdf-clipping.md) for limits and remaining raster qualification.
+
+## PostScript flex hints
+
+`make test-pdf-flex test-pdf-type1-flex` checks retained charstring metadata,
+threshold boundaries, Type 1 pixel-phase adjustment, transformed page painting,
+clipping and failure ownership. The two font formats use different procedures;
+unhinted geometry and PDF text advances remain unchanged. Embedded Type 1
+PaintType values are compared in every PDF text rendering mode.
+
+The optional `compare_pdf_flex.py` and `compare_pdf_type1_flex.py` scripts report
+legacy engines that retain unadjusted curves separately from matching outlines.
+Those differences are not tolerances or accepted pixel matches. See
+[flex rendering](pdf-flex.md) for the specified rules and selected device profile.

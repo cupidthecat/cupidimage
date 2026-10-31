@@ -19,6 +19,8 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
         return 0;
     double origin[2] = {size->origin_x / 65536.0, size->origin_y / 65536.0};
     *stem_count = 0;
+    unsigned last_flex = 0;
+    int has_flex = 0;
     for (unsigned i = 0; i < trace->count; i++) {
         const pdf_type1_hint_event *event = trace->events + i;
         if (event->kind > PDF_T1_HINT_COUNTER || event->vertical > 1 ||
@@ -36,6 +38,20 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
              event->values[3] != (event->values[1] < 0) || event->values[4] != 0 ||
              event->values[5] != 0))
             return 0;
+        if (has_flex && event->segment == last_flex + 1)
+            return 0;
+        if (event->kind == PDF_T1_HINT_FLEX) {
+            if (event->segment >= source->count || source->count - event->segment < 2 ||
+                source->segments[event->segment].kind != PDF_CFF_CURVE ||
+                source->segments[event->segment + 1].kind != PDF_CFF_CURVE ||
+                (has_flex && event->segment <= last_flex + 1) || event->values[5] != 0)
+                return 0;
+            for (unsigned axis = 0; axis < 2; axis++)
+                if (!ps_type1_coordinate(event->values[3 + axis] + origin[axis]))
+                    return 0;
+            has_flex = 1;
+            last_flex = event->segment;
+        }
         if (event->kind > PDF_T1_HINT_STEM3)
             continue;
         unsigned count = event->kind == PDF_T1_HINT_STEM3 ? 3 : 1;

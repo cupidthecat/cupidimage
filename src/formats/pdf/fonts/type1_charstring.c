@@ -162,7 +162,9 @@ static int t1_other(t1_state *st) {
     } else if (id == 0) {
         if (args != 3 || !st->flex || st->flex_count != 7)
             return 0;
-        if (!t1_cs_hint(st, PDF_T1_HINT_FLEX, 0, values, 3))
+        double flex_values[5] = {values[0], values[1], values[2], st->flex_points[0][0],
+                                 st->flex_points[0][1]};
+        if (!t1_cs_hint(st, PDF_T1_HINT_FLEX, 0, flex_values, 5))
             return 0;
         st->flex = 0;
         st->x = st->flex_start[0];

@@ -68,7 +68,7 @@ def main():
         for x, y in [(50, 0), (-35, 0), (10, 10), (25, 0), (25, 0), (10, -10), (15, 0)]:
             flex += command([x, y], 21) + command([2], 10)
         flex += command([50, 100, 0, 0], 10) + end
-        run(flex, [(4, 1, 0, 50, 100, 0)], subrs=subrs)
+        run(flex, [(4, 1, 0, 50, 100, 0, 50, 0)], subrs=subrs)
         for code in (WIDTH + command([10], 1) + end, WIDTH + command([10, 20], 1),
                      WIDTH + command([1], 10) + end):
             run(code, ok=False)

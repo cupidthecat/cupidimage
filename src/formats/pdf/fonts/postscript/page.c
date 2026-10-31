@@ -49,6 +49,9 @@ static int ps_page_shape(const void *font, unsigned glyph, const double f[6],
         for (unsigned row = 0; row < 2; row++)
             size.flex_transform[column * 2 + row] =
                 text_matrix[row] * f[column * 2] + text_matrix[row + 2] * f[column * 2 + 1];
+    for (unsigned row = 0; row < 2; row++)
+        size.flex_offset[row] =
+            text_matrix[row] * f[4] + text_matrix[row + 2] * f[5] + text_matrix[row + 4];
     int32_t font_matrix[4], page_matrix[4], font_offset[2] = {0}, page_offset[2];
     for (unsigned i = 0; i < 4; i++)
         if (!ps_page_fixed(f[i] / unit, font_matrix + i) ||

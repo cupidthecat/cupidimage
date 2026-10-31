@@ -14,8 +14,9 @@ enum { PDF_T1_HINT_BAD_WIDTH = 1, PDF_T1_HINT_COUNTER_DATA = 2 };
 
 typedef struct {
     unsigned kind, segment, vertical;
-    /* Stem pairs are absolute font coordinates. Flex retains depth and endpoint.
-     * Counter events retain encoded delta/width, group priority and final-pair flag. */
+    /* Stem pairs are absolute font coordinates. Flex retains depth, endpoint and the recorded
+     * reference point. Counter events retain encoded delta/width, group priority and final-pair
+     * flag. */
     double values[6];
 } pdf_type1_hint_event;
 

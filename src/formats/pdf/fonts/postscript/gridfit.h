@@ -12,6 +12,7 @@ typedef struct {
      * the diagonal fitting scales. Translation does not affect depth. */
     double flex_transform[4];
     int flex_transform_set;
+    double flex_offset[2]; /* Device origin for Type 1 pixel-phase adjustment. */
 } pdf_ps_gridfit_size;
 
 /* Returns an owned, device-pixel outline, quantized down to the 1/64-pixel grid.

@@ -78,7 +78,7 @@ Its complete page raster remains decoded-unverified.
 ## Remaining scope
 
 Type 2 [flex depth selection](pdf-flex.md) is applied in the explicit CFF profile.
-Type 1 flex remains separate. Stem darkening, synthetic bold, fractional
+Type 1 uses a separately tested flex procedure. Stem darkening, synthetic bold, fractional
 private parameters, broader charstring arithmetic and larger fitting ranges
 remain unfinished. Clipping and stroke curves need broader profile qualification.
 The tested profile is not complete CFF or PDF rendering parity.
