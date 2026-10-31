@@ -6,6 +6,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 
 - [Source architecture](architecture.md): module responsibilities and build boundaries.
 - [Formats](formats.md): decoder features, rendering behavior, and limits.
+- [PDF password security](pdf-security.md): credentials, encrypted objects, crypt filters and limits.
 - [PDF objects and revisions](pdf-objects.md): cross-reference tables, streams, generations and limits.
 - [PDF annotation appearances](pdf-annotations.md): stored drawing streams, widget states, visibility and placement.
 - [PDF optional content](pdf-optional-content.md): default layer states, membership expressions and hidden text.

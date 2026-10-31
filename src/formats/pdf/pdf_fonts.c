@@ -599,7 +599,7 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
                                        const unsigned char *dict_data, size_t dict_start,
                                        size_t dict_end, pdf_font_table *table, int graphics,
                                        char *err, size_t errcap, const pdf_xref *xref) {
-    pdf_object_view dictionary = {dict_data, dict_end + 2, NULL, xref};
+    pdf_object_view dictionary = {dict_data, dict_end + 2, NULL, xref, 0};
     size_t pos = dict_start;
     while (pos < dict_end) {
         cupidimage_pdf_skip_ws_and_comments(dict_data, dict_end, &pos);

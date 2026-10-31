@@ -138,6 +138,11 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #include "../src/formats/pdf/pdf_intents.c"
 #include "../src/formats/pdf/pdf_transparency.c"
 #include "../src/formats/pdf/pdf_xref.c"
+#include "../src/formats/pdf/security/decrypt.c"
+#include "../src/formats/pdf/security/password.c"
+#include "../src/formats/pdf/security/security.c"
+#include "../src/formats/pdf/security/strings.c"
+#include "../src/formats/pdf/security/syntax.c"
 #include "fixtures/pdf-cff.inc"
 #include "fixtures/pdf-truetype.inc"
 #include "fixtures/pdf-type1.inc"
@@ -147,8 +152,8 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #undef free
 
 static int test_document_allocations(const char *path, int expected_failure, int antialias,
-                                     int hinting, int cff_hinting, int type1_hinting,
-                                     int graphics) {
+                                     int hinting, int cff_hinting, int type1_hinting, int graphics,
+                                     const cupidimage_pdf_password *password) {
     FILE *file = fopen(path, "rb");
     if (!file || fseek(file, 0, SEEK_END))
         return 2;
@@ -175,8 +180,9 @@ static int test_document_allocations(const char *path, int expected_failure, int
     allocation_count = 0;
     cupidimage_image uncached = {0};
     char baseline_error[256];
-    int baseline_ok = cupidimage_load_pdf_page_with_options(
-        document, (size_t)length, &uncached, 0, &options, baseline_error, sizeof(baseline_error));
+    int baseline_ok =
+        cupidimage_load_pdf_page_with_password(document, (size_t)length, &uncached, 0, &options,
+                                               password, baseline_error, sizeof(baseline_error));
     if (baseline_ok == expected_failure)
         failures++;
     if (baseline_ok) {
@@ -201,8 +207,8 @@ static int test_document_allocations(const char *path, int expected_failure, int
         fail_at = failure;
         cupidimage_image image = {0};
         char error[256];
-        int ok = cupidimage_load_pdf_page_with_options(document, (size_t)length, &image, 0,
-                                                       &options, error, sizeof(error));
+        int ok = cupidimage_load_pdf_page_with_password(document, (size_t)length, &image, 0,
+                                                        &options, password, error, sizeof(error));
         if (!failure) {
             total = allocation_count;
             if (ok == expected_failure)
@@ -227,11 +233,21 @@ static int test_document_allocations(const char *path, int expected_failure, int
 }
 
 int main(int argc, char **argv) {
+    if (argc == 4 && !strcmp(argv[1], "--password")) {
+        unsigned char bytes[4097];
+        size_t length = fread(bytes, 1, sizeof(bytes), stdin);
+        if (length > 4096 || ferror(stdin))
+            return 2;
+        cupidimage_pdf_password password = {bytes, length, 0};
+        int result = test_document_allocations(argv[2], atoi(argv[3]), 0, 0, 0, 0, 0, &password);
+        cupidimage_pdf_crypto_erase(bytes, sizeof(bytes));
+        return result;
+    }
     if (argc >= 3 && argc <= 8)
         return test_document_allocations(
             argv[1], atoi(argv[2]), argc >= 4 ? atoi(argv[3]) : 0, argc >= 5 ? atoi(argv[4]) : 0,
             argc >= 6 ? atoi(argv[5]) : 0, argc >= 7 ? atoi(argv[6]) : 0,
-            argc >= 8 ? atoi(argv[7]) : 0);
+            argc >= 8 ? atoi(argv[7]) : 0, NULL);
 
     static const struct {
         const char *content;
@@ -871,7 +887,7 @@ int main(int argc, char **argv) {
     }
     {
         const unsigned char data[] = "<< /Group << /S /Transparency /I true >> >>";
-        pdf_object_view form = {data, sizeof(data) - 1, NULL, NULL};
+        pdf_object_view form = {data, sizeof(data) - 1, NULL, NULL, 0};
         cupidimage_image image = {0};
         image.width = image.height = 5000;
         pdf_form_budget budget = {0};
@@ -1089,7 +1105,7 @@ int main(int argc, char **argv) {
             if (!owned)
                 return 1;
             memcpy(owned, "xx<< /N 1 >>", 12);
-            pdf_object_view view = {owned + 2, 10, owns_view ? owned : NULL, NULL};
+            pdf_object_view view = {owned + 2, 10, owns_view ? owned : NULL, NULL, 0};
             pdf_pattern pattern = {0};
             pdf_pattern_store store = {0};
             pdf_render_state state = {0};
@@ -1235,7 +1251,7 @@ int main(int argc, char **argv) {
         state.img = &image;
         state.patterns = &full;
         full.bytes_used = PATTERN_BYTES - 1;
-        pdf_object_view view = {(const unsigned char *)"<< >>", 5, NULL, NULL};
+        pdf_object_view view = {(const unsigned char *)"<< >>", 5, NULL, NULL, 0};
         checks++;
         if (pattern_select_shading(&state, &view, 0, 0))
             failures++;
@@ -1258,7 +1274,7 @@ int main(int argc, char **argv) {
                          entries[test]);
             const char *source =
                 "<< /Subtype /Type0 /Encoding /Identity-V /DescendantFonts [6 0 R] >>";
-            pdf_object_view view = {(const unsigned char *)source, strlen(source), NULL, NULL};
+            pdf_object_view view = {(const unsigned char *)source, strlen(source), NULL, NULL, 0};
             size_t total = 0;
             for (size_t failure = 0; failure <= total; failure++) {
                 pdf_font_map font = {0};

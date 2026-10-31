@@ -343,7 +343,7 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
     size_t dict_end = p.used;
     if (!inline_text(&p, ">>"))
         goto done;
-    pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL, st->xref};
+    pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL, st->xref, 0};
     char filter_names[8][32];
     int filter_count = 0;
     if (!cupidimage_pdf_stream_filter_names(&view, filter_names, &filter_count))

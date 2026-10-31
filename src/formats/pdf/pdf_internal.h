@@ -17,6 +17,8 @@ typedef struct {
     unsigned kind, index, order;
 } pdf_xref_entry;
 
+typedef struct pdf_security pdf_security;
+
 typedef struct pdf_xref {
     pdf_xref_entry *entries;
     int count;
@@ -24,6 +26,9 @@ typedef struct pdf_xref {
     pdf_object_id info_obj;
     const unsigned char *data;
     size_t size, object_limit;
+    const unsigned char *trailer_data;
+    size_t trailer_length;
+    pdf_security *security;
 } pdf_xref;
 
 typedef struct {
@@ -31,6 +36,7 @@ typedef struct {
     size_t len;
     unsigned char *owned;
     const pdf_xref *xref;
+    pdf_object_id identity;
 } pdf_object_view;
 
 typedef struct {
@@ -203,6 +209,11 @@ int cupidimage_pdf_image_filters(const pdf_object_view *, const pdf_image_stream
 int cupidimage_pdf_filter_parameter_applies(const char *filter, const char *key);
 int cupidimage_pdf_stream_filter_names(const pdf_object_view *view, char filters[8][32],
                                        int *total);
+int cupidimage_pdf_decode_normalized_stream(const pdf_object_view *original,
+                                            const pdf_object_view *parameters,
+                                            const unsigned char *data, size_t length,
+                                            unsigned char **decoded, size_t *decoded_length,
+                                            const pdf_image_stream_profile *profile);
 int cupidimage_pdf_decode_direct_image_stream(const pdf_object_view *view,
                                               const unsigned char *data, size_t length,
                                               unsigned char **decoded, size_t *decoded_length,

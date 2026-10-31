@@ -3991,53 +3991,74 @@
         {
           "id": "18.1",
           "requirement": "Password authentication, document permissions and standard security handler revisions required by supported PDF versions.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-security.md",
+            "src/formats/pdf/security/security.c",
+            "scripts/test_pdf_security.py",
+            "scripts/test_pdf_security_malformed.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "No public-key handlers, AES-GCM/MAC extensions or signature verification. Attachment authorization and complete permission/error APIs remain unfinished."
           ],
           "dependencies": [
             "1",
             "2"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Standard revisions 2-6 have focused password, page, object-stream and failure tests; broader extensions and workflows remain open.",
+          "standard_clauses": [
+            "ISO 32000-1 section 7.6",
+            "ISO 32000-2 section 7.6 and published clause 7 errata",
+            "RFC 3454 and RFC 4013"
+          ]
         },
         {
           "id": "18.2",
           "requirement": "RC4 for legacy-file compatibility; AES-128 and AES-256 with proper key derivation, revision-specific semantics, and integrity checks.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-security.md",
+            "src/formats/pdf/security/security.c",
+            "scripts/test_pdf_security.py",
+            "scripts/test_pdf_security_malformed.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "No public-key handlers, AES-GCM/MAC extensions or signature verification. Attachment authorization and complete permission/error APIs remain unfinished."
           ],
           "dependencies": [
             "1",
             "2"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Standard revisions 2-6 have focused password, page, object-stream and failure tests; broader extensions and workflows remain open.",
+          "standard_clauses": [
+            "ISO 32000-1 section 7.6",
+            "ISO 32000-2 section 7.6 and published clause 7 errata",
+            "RFC 3454 and RFC 4013"
+          ]
         },
         {
           "id": "18.3",
           "requirement": "Crypt filters, metadata-encryption rules, embedded-file-only encryption, stream and string decryption, and object-stream behavior.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-security.md",
+            "src/formats/pdf/security/security.c",
+            "scripts/test_pdf_security.py",
+            "scripts/test_pdf_security_malformed.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "No public-key handlers, AES-GCM/MAC extensions or signature verification. Attachment authorization and complete permission/error APIs remain unfinished."
           ],
           "dependencies": [
             "1",
             "2"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Standard revisions 2-6 have focused password, page, object-stream and failure tests; broader extensions and workflows remain open.",
+          "standard_clauses": [
+            "ISO 32000-1 section 7.6",
+            "ISO 32000-2 section 7.6 and published clause 7 errata",
+            "RFC 3454 and RFC 4013"
+          ]
         },
         {
           "id": "18.4",
@@ -4076,36 +4097,50 @@
         {
           "id": "18.6",
           "requirement": "Safe password handling; distinguish wrong passwords, corruption, and unsupported encryption methods.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-security.md",
+            "src/formats/pdf/security/security.c",
+            "scripts/test_pdf_security.py",
+            "scripts/test_pdf_security_malformed.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "No public-key handlers, AES-GCM/MAC extensions or signature verification. Attachment authorization and complete permission/error APIs remain unfinished."
           ],
           "dependencies": [
             "1",
             "2"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Standard revisions 2-6 have focused password, page, object-stream and failure tests; broader extensions and workflows remain open.",
+          "standard_clauses": [
+            "ISO 32000-1 section 7.6",
+            "ISO 32000-2 section 7.6 and published clause 7 errata",
+            "RFC 3454 and RFC 4013"
+          ]
         },
         {
           "id": "18.7",
           "requirement": "Permission handling appropriate to implemented viewer features.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-security.md",
+            "src/formats/pdf/security/security.c",
+            "scripts/test_pdf_security.py",
+            "scripts/test_pdf_security_malformed.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "No public-key handlers, AES-GCM/MAC extensions or signature verification. Attachment authorization and complete permission/error APIs remain unfinished."
           ],
           "dependencies": [
             "1",
             "2"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Standard revisions 2-6 have focused password, page, object-stream and failure tests; broader extensions and workflows remain open.",
+          "standard_clauses": [
+            "ISO 32000-1 section 7.6",
+            "ISO 32000-2 section 7.6 and published clause 7 errata",
+            "RFC 3454 and RFC 4013"
+          ]
         }
       ],
       "dependencies": [

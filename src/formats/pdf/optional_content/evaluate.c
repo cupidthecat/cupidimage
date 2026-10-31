@@ -124,7 +124,7 @@ static int oc_membership(pdf_optional_content *store, const pdf_object_view *vie
                 break;
             }
         } else
-            item = (pdf_object_view){value.data, value.len, NULL, value.xref};
+            item = (pdf_object_view){value.data, value.len, NULL, value.xref, 0};
         oc_result group = {0};
         ok = cupidimage_pdf_oc_null(&item) || oc_group(store, &item, object, &group);
         cupidimage_pdf_object_view_release(&item);

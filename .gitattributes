@@ -48,3 +48,7 @@ third_party/freetype-raster/FTL.TXT -text -whitespace
 third_party/freetype-raster/ftgrays.inc -whitespace
 third_party/freetype-monochrome/ftraster.inc -text -whitespace
 third_party/freetype-monochrome/ftmisc.h -text -whitespace
+
+third_party/bearssl/* -text whitespace=-blank-at-eol
+
+third_party/unicode32/* -text -whitespace

@@ -12,7 +12,7 @@ static int jpx_device_space(const pdf_render_state *st, unsigned components,
                                          : NULL;
     if (!name)
         return 0;
-    pdf_object_view view = {(const unsigned char *)name, strlen(name), NULL, NULL};
+    pdf_object_view view = {(const unsigned char *)name, strlen(name), NULL, NULL, 0};
     size_t pos = 0;
     return cupidimage_pdf_image_color_space(st, &view, &pos, 0, space);
 }

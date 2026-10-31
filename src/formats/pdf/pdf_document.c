@@ -83,6 +83,7 @@ int cupidimage_pdf_dictionary_view(const pdf_object_view *parent, size_t start,
                 view->data = parent->data + start;
                 view->len = pos - start;
                 view->xref = parent->xref;
+                view->identity = parent->identity;
                 *end = pos;
                 return 1;
             }
@@ -263,6 +264,7 @@ void cupidimage_pdf_object_view_release(pdf_object_view *view) {
     view->data = NULL;
     view->len = 0;
     view->xref = NULL;
+    view->identity = 0;
 }
 
 int cupidimage_pdf_object_header(const unsigned char *data, size_t size, size_t pos,
@@ -377,7 +379,7 @@ static int extract_dict_int(const unsigned char *data, size_t start, size_t end,
                             int *value) {
     if (end <= start || !key || key[0] != '/')
         return 0;
-    pdf_object_view dictionary = {data + start, end - start, NULL, NULL};
+    pdf_object_view dictionary = {data + start, end - start, NULL, NULL, 0};
     size_t pos;
     pdf_object_id reference;
     double number;
@@ -466,7 +468,7 @@ static int extract_object_from_objstm(const unsigned char *data, size_t size,
             continue;
         }
 
-        pdf_object_view container = {data + obj_start, obj_end - obj_start, NULL, NULL};
+        pdf_object_view container = {data + obj_start, obj_end - obj_start, NULL, NULL, 0};
         if (!cupidimage_pdf_image_name_is(&container, "Type", "ObjStm")) {
             pos = obj_end;
             continue;
@@ -619,7 +621,7 @@ int cupidimage_pdf_extract_dict_ref(const unsigned char *data, size_t start, siz
                                     const char *key, pdf_object_id *obj_num) {
     if (end <= start || !key || key[0] != '/')
         return 0;
-    pdf_object_view dictionary = {data + start, end - start, NULL, NULL};
+    pdf_object_view dictionary = {data + start, end - start, NULL, NULL, 0};
     size_t pos;
     if (!cupidimage_pdf_page_value(&dictionary, key + 1, &pos))
         return 0;
@@ -632,7 +634,7 @@ static int extract_dict_refs(const unsigned char *data, size_t start, size_t end
                              pdf_object_id *objs, int max_objs, int *out_count) {
     if (!objs || max_objs <= 0 || !out_count || end <= start || key[0] != '/')
         return 0;
-    pdf_object_view view = {data + start, end - start, NULL, NULL};
+    pdf_object_view view = {data + start, end - start, NULL, NULL, 0};
     size_t pos;
     *out_count = 0;
     if (!cupidimage_pdf_page_value(&view, key + 1, &pos))

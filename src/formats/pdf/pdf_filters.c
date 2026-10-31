@@ -1,5 +1,6 @@
 #include "compression/ccitt.h"
 #include "pdf_internal.h"
+#include "security/security.h"
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
@@ -135,6 +136,7 @@ static int pdf_filter_runlength(const unsigned char *data, size_t length, pdf_fi
 typedef struct {
     int predictor, colors, columns, bits, early, color_transform;
     cupidimage_ccitt_options fax;
+    char crypt_name[128];
 } pdf_filter_params;
 
 static int pdf_filter_lzw(const unsigned char *data, size_t length, int early,
@@ -280,6 +282,8 @@ static int pdf_filter_null(const pdf_object_view *view, size_t *pos) {
 }
 
 int cupidimage_pdf_filter_parameter_applies(const char *filter, const char *key) {
+    if (!strcmp(key, "Name") || !strcmp(key, "Type"))
+        return !strcmp(filter, "Crypt");
     int lzw = !strcmp(filter, "LZWDecode") || !strcmp(filter, "LZW");
     int predict = lzw || !strcmp(filter, "FlateDecode") || !strcmp(filter, "Fl");
     int fax = !strcmp(filter, "CCITTFaxDecode") || !strcmp(filter, "CCF");
@@ -304,6 +308,17 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
     size_t end;
     if (!cupidimage_pdf_dictionary_view(view, *pos, &dictionary, &end))
         return 0;
+    if (!strcmp(filter, "Crypt")) {
+        size_t value;
+        char type[128];
+        *pos = end;
+        if (cupidimage_pdf_page_value(&dictionary, "Type", &value) &&
+            (!cupidimage_pdf_read_name(&dictionary, &value, type) ||
+             strcmp(type, "CryptFilterDecodeParms")))
+            return 0;
+        return !cupidimage_pdf_page_value(&dictionary, "Name", &value) ||
+               cupidimage_pdf_read_name(&dictionary, &value, params->crypt_name);
+    }
     static const char *keys[] = {
         "Predictor",        "Colors",     "Columns", "BitsPerComponent",       "EarlyChange",
         "ColorTransform",   "K",          "Rows",    "DamagedRowsBeforeError", "EndOfLine",
@@ -415,13 +430,13 @@ int cupidimage_pdf_stream_filter_names(const pdf_object_view *view, char filters
     return 1;
 }
 
-static int pdf_decode_filters(const pdf_object_view *view, const unsigned char *data, size_t length,
-                              unsigned char **decoded, size_t *decoded_length,
-                              const pdf_image_stream_profile *profile) {
+static int pdf_decode_filters(const pdf_object_view *original, const pdf_object_view *view,
+                              const unsigned char *data, size_t length, unsigned char **decoded,
+                              size_t *decoded_length, const pdf_image_stream_profile *profile) {
     char filters[8][32];
     pdf_filter_params params[8];
     for (int i = 0; i < 8; i++)
-        params[i] = (pdf_filter_params){1, 1, 1, 8, 1, -1, {0, 1728, 0, 0, 0, 1, 0, 0}};
+        params[i] = (pdf_filter_params){1, 1, 1, 8, 1, -1, {0, 1728, 0, 0, 0, 1, 0, 0}, "Identity"};
     int count = 0;
     size_t pos;
     *decoded = NULL;
@@ -444,8 +459,22 @@ static int pdf_decode_filters(const pdf_object_view *view, const unsigned char *
                 return 0;
         }
     }
+    for (int i = 1; i < count; i++)
+        if (!strcmp(filters[i], "Crypt"))
+            return 0;
+    const char *explicit_name = count && !strcmp(filters[0], "Crypt") ? params[0].crypt_name : NULL;
+    pdf_crypt_method method;
+    if (!cupidimage_pdf_security_stream_method(original, explicit_name, &method))
+        return 0;
     unsigned char *owned = NULL;
-    for (int i = 0; i < count; i++) {
+    if (method != PDF_CRYPT_IDENTITY) {
+        const pdf_security *security = original->xref ? original->xref->security : NULL;
+        if (!cupidimage_pdf_security_decrypt(security, original->identity, method, data, length,
+                                             &owned, &length))
+            return 0;
+        data = owned;
+    }
+    for (int i = explicit_name ? 1 : 0; i < count; i++) {
         pdf_filter_buffer out = {0};
         const char *name = filters[i];
         int ok = 0;
@@ -492,7 +521,7 @@ static int pdf_decode_filters(const pdf_object_view *view, const unsigned char *
         data = owned;
         length = out.used;
     }
-    if (!count) {
+    if (!owned) {
         if (length > PDF_FILTER_LIMIT)
             return 0;
         owned = (unsigned char *)malloc(length ? length : 1);
@@ -509,12 +538,20 @@ static int pdf_decode_filters(const pdf_object_view *view, const unsigned char *
 int cupidimage_pdf_decode_direct_stream(const pdf_object_view *view, const unsigned char *data,
                                         size_t length, unsigned char **decoded,
                                         size_t *decoded_length) {
-    return pdf_decode_filters(view, data, length, decoded, decoded_length, NULL);
+    return pdf_decode_filters(view, view, data, length, decoded, decoded_length, NULL);
 }
 
 int cupidimage_pdf_decode_direct_image_stream(const pdf_object_view *view,
                                               const unsigned char *data, size_t length,
                                               unsigned char **decoded, size_t *decoded_length,
                                               const pdf_image_stream_profile *profile) {
-    return pdf_decode_filters(view, data, length, decoded, decoded_length, profile);
+    return pdf_decode_filters(view, view, data, length, decoded, decoded_length, profile);
+}
+
+int cupidimage_pdf_decode_normalized_stream(const pdf_object_view *original,
+                                            const pdf_object_view *parameters,
+                                            const unsigned char *data, size_t length,
+                                            unsigned char **decoded, size_t *decoded_length,
+                                            const pdf_image_stream_profile *profile) {
+    return pdf_decode_filters(original, parameters, data, length, decoded, decoded_length, profile);
 }

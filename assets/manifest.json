@@ -1063,6 +1063,18 @@
       "sha256": "148dfa1730a7c5cc0c248599aa5e08e53596d53013267e91062e2ababf8ab9df"
     },
     {
+      "path": "assets/pdf/security-aes128.pdf",
+      "sha256": "824ddb994b42bea0eeef60b4eb59614c9d3c3b3dc52a0c2ca15cb082e94b9d8e"
+    },
+    {
+      "path": "assets/pdf/security-aes256.pdf",
+      "sha256": "1f18f00805819ab7e50d5e9caf1e699bc256872975eff49f20279997b5a3e775"
+    },
+    {
+      "path": "assets/pdf/security-rc4.pdf",
+      "sha256": "f6893fed90db5104fdc38df2518cd7c966922fa4e043b4d9c3274e313c1956b5"
+    },
+    {
       "path": "assets/pdf/shapes.pdf",
       "sha256": "6a13ebcf7ad613bc357e497af6fc1a17dce530f62ea137c5d60fc3a9743a832c"
     },

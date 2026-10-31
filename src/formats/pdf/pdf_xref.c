@@ -27,6 +27,8 @@ typedef struct {
     size_t size, previous, hybrid;
     int has_previous, has_hybrid;
     pdf_object_id root, info;
+    const unsigned char *data;
+    size_t length;
 } pdf_xref_trailer;
 
 static int xref_word(const unsigned char *data, size_t size, size_t pos, const char *word) {
@@ -147,6 +149,8 @@ static int xref_direct_value(const pdf_object_view *view, size_t *pos, unsigned 
 static int xref_metadata(const pdf_object_view *view, pdf_xref_trailer *trailer) {
     int present;
     memset(trailer, 0, sizeof(*trailer));
+    trailer->data = view->data;
+    trailer->length = view->len;
     if (!xref_key_uint(view, "Size", (size_t)INT_MAX + 1, &trailer->size, 1, &present) ||
         !trailer->size ||
         !xref_key_uint(view, "Prev", SIZE_MAX, &trailer->previous, 0, &trailer->has_previous) ||
@@ -213,7 +217,7 @@ static void xref_recover_catalog_size(const pdf_xref_builder *builder, pdf_xref_
                                           &body) ||
             object != trailer->root)
             return;
-        pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL};
+        pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL, 0};
         pdf_object_view dictionary = {0};
         char name[128];
         if (!cupidimage_pdf_dictionary_view(&tail, 0, &dictionary, &end) ||
@@ -230,7 +234,7 @@ static void xref_recover_catalog_size(const pdf_xref_builder *builder, pdf_xref_
 }
 
 static int xref_table(pdf_xref_builder *builder, size_t offset, pdf_xref_trailer *trailer) {
-    pdf_object_view view = {builder->data, builder->size, NULL, NULL};
+    pdf_object_view view = {builder->data, builder->size, NULL, NULL, 0};
     size_t pos = offset + 4, first_entry = (size_t)builder->result->count;
     for (;;) {
         cupidimage_pdf_skip_ws_and_comments(view.data, view.len, &pos);
@@ -363,7 +367,7 @@ static int xref_stream(pdf_xref_builder *builder, size_t offset, pdf_xref_traile
     size_t body, end, pos, widths[3], index = SIZE_MAX, rows, raw_length;
     if (!cupidimage_pdf_object_header(builder->data, builder->size, offset, &object, &body))
         return 0;
-    pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL}, view = {0};
+    pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL, 0}, view = {0};
     if (!cupidimage_pdf_dictionary_view(&tail, 0, &view, &end) || !xref_metadata(&view, trailer))
         return 0;
     char name[128];
@@ -502,6 +506,8 @@ static int xref_section(pdf_xref_builder *builder, size_t offset, int hybrid, si
                   : xref_stream(builder, offset, &trailer, table_start, table_end)))
         return 0;
     if (latest) {
+        builder->result->trailer_data = trailer.data;
+        builder->result->trailer_length = trailer.length;
         builder->result->root_obj = trailer.root;
         builder->result->info_obj = trailer.info;
         builder->result->object_limit = trailer.size;

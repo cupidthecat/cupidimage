@@ -16,13 +16,17 @@ static void usage(const char *prog) {
     fprintf(stderr,
             "usage: %s [--fit] [--width cols] [--height rows] [--svg-time seconds] [--pdf-page "
             "number] [--pdf-text-aa] [--pdf-graphics-aa] [--pdf-tt-hinting] [--pdf-cff-hinting] "
-            "[--pdf-type1-hinting] "
+            "[--pdf-type1-hinting] [--pdf-password-file path|-] [--pdf-password-raw] "
             "[--sixel] "
             "[--sixel-colors N] "
             "[--sixel-dither MODE] [--ansi] "
             "<image-file> "
             "[max_width] [max_height]\n",
             prog);
+    fprintf(
+        stderr,
+        "  --pdf-password-file path|-: read exact password bytes (up to 4096); - reads stdin\n");
+    fprintf(stderr, "  --pdf-password-raw: interpret password bytes as legacy PDFDocEncoding\n");
     fprintf(stderr, "  --pdf-text-aa: enable grayscale PDF outline text and clipping edges\n");
     fprintf(stderr, "  --pdf-tt-hinting: execute the native legacy TrueType hinting profile\n");
     fprintf(stderr, "  --pdf-cff-hinting: enable native CFF outline hinting\n");
@@ -762,6 +766,77 @@ static int render_svg_animation(const char *path, int maxw, int maxh, int force_
     return 1;
 }
 
+static int preview_pdf(const char *path, int has_pdf_page, int pdf_page,
+                       const cupidimage_pdf_options *pdf_options,
+                       const cupidimage_pdf_password *password, int maxw, int maxh, int force_sixel,
+                       int force_ansi, int sixel_colors, uint8_t sixel_dither) {
+    char err[128];
+    int page_count = 0;
+    if (!cupidimage_get_pdf_page_count_file_with_password(path, &page_count, password, err,
+                                                          sizeof(err))) {
+        fprintf(stderr, "load error: %s\n", err);
+        return 1;
+    }
+    if (page_count <= 0) {
+        fprintf(stderr, "load error: pdf has no pages\n");
+        return 1;
+    }
+
+    int start_page = 0;
+    int end_page = page_count - 1;
+    if (has_pdf_page) {
+        start_page = pdf_page - 1;
+        end_page = start_page;
+        if (start_page < 0 || start_page >= page_count) {
+            fprintf(stderr, "load error: pdf page out of range (1-%d)\n", page_count);
+            return 1;
+        }
+    }
+
+    for (int page = start_page; page <= end_page; page++) {
+        cupidimage_image img;
+        if (!cupidimage_load_pdf_page_file_with_password(path, &img, page, pdf_options, password,
+                                                         err, sizeof(err))) {
+            fprintf(stderr, "load error: %s\n", err);
+            return 1;
+        }
+
+        if (page_count > 1 && !has_pdf_page) {
+            fprintf(stderr, "[pdf page %d/%d]\n", page + 1, page_count);
+        }
+        if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi, sixel_colors,
+                                          sixel_dither)) {
+            fprintf(stderr, "render error\n");
+            cupidimage_free(&img);
+            return 1;
+        }
+        cupidimage_free(&img);
+
+        if (page < end_page) {
+            fputc('\n', stdout);
+        }
+    }
+    return 0;
+}
+
+static void erase_password(unsigned char *bytes, size_t length) {
+    volatile unsigned char *output = bytes;
+    while (length--)
+        *output++ = 0;
+}
+
+static int read_pdf_password(const char *path, unsigned char bytes[4097], size_t *length) {
+    FILE *file = !strcmp(path, "-") ? stdin : fopen(path, "rb");
+    if (!file)
+        return 0;
+    int ok = setvbuf(file, NULL, _IONBF, 0) == 0;
+    *length = ok ? fread(bytes, 1, 4097, file) : 0;
+    ok = ok && !ferror(file) && *length <= 4096;
+    if (file != stdin && fclose(file))
+        ok = 0;
+    return ok;
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         usage(argv[0]);
@@ -777,6 +852,8 @@ int main(int argc, char **argv) {
     cupidimage_pdf_options pdf_options = {0};
     int has_pdf_page = 0;
     int pdf_page = 0;
+    const char *pdf_password_path = NULL;
+    int pdf_password_raw = 0;
     int width_cols = 0;  /* For --width */
     int height_rows = 0; /* For --height */
     int force_sixel = 0;
@@ -854,6 +931,18 @@ int main(int argc, char **argv) {
             i++;
             continue;
         }
+        if (strcmp(argv[i], "--pdf-password-file") == 0) {
+            if (i + 1 >= argc || pdf_password_path) {
+                usage(argv[0]);
+                return 1;
+            }
+            pdf_password_path = argv[++i];
+            continue;
+        }
+        if (strcmp(argv[i], "--pdf-password-raw") == 0) {
+            pdf_password_raw = 1;
+            continue;
+        }
         if (strcmp(argv[i], "--pdf-graphics-aa") == 0) {
             pdf_options.graphics_antialias = 1;
             continue;
@@ -897,7 +986,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (!path) {
+    if (!path || (pdf_password_raw && !pdf_password_path)) {
         usage(argv[0]);
         return 1;
     }
@@ -917,52 +1006,21 @@ int main(int argc, char **argv) {
     char err[128];
     if (path_has_pdf_extension(path) || has_pdf_page || pdf_options.text_antialias ||
         pdf_options.truetype_hinting || pdf_options.cff_hinting || pdf_options.type1_hinting ||
-        pdf_options.graphics_antialias) {
-        int page_count = 0;
-        if (!cupidimage_get_pdf_page_count_file(path, &page_count, err, sizeof(err))) {
-            fprintf(stderr, "load error: %s\n", err);
+        pdf_options.graphics_antialias || pdf_password_path) {
+        unsigned char bytes[4097];
+        size_t length = 0;
+        if (pdf_password_path && !read_pdf_password(pdf_password_path, bytes, &length)) {
+            erase_password(bytes, sizeof(bytes));
+            fprintf(stderr,
+                    "load error: cannot read PDF password or password exceeds 4096 bytes\n");
             return 1;
         }
-        if (page_count <= 0) {
-            fprintf(stderr, "load error: pdf has no pages\n");
-            return 1;
-        }
-
-        int start_page = 0;
-        int end_page = page_count - 1;
-        if (has_pdf_page) {
-            start_page = pdf_page - 1;
-            end_page = start_page;
-            if (start_page < 0 || start_page >= page_count) {
-                fprintf(stderr, "load error: pdf page out of range (1-%d)\n", page_count);
-                return 1;
-            }
-        }
-
-        for (int page = start_page; page <= end_page; page++) {
-            cupidimage_image img;
-            if (!cupidimage_load_pdf_page_file_with_options(path, &img, page, &pdf_options, err,
-                                                            sizeof(err))) {
-                fprintf(stderr, "load error: %s\n", err);
-                return 1;
-            }
-
-            if (page_count > 1 && !has_pdf_page) {
-                fprintf(stderr, "[pdf page %d/%d]\n", page + 1, page_count);
-            }
-            if (!render_image_with_sixel_opts(&img, maxw, maxh, force_sixel, force_ansi,
-                                              sixel_colors, sixel_dither)) {
-                fprintf(stderr, "render error\n");
-                cupidimage_free(&img);
-                return 1;
-            }
-            cupidimage_free(&img);
-
-            if (page < end_page) {
-                fputc('\n', stdout);
-            }
-        }
-        return 0;
+        cupidimage_pdf_password password = {bytes, length, pdf_password_raw};
+        int result = preview_pdf(path, has_pdf_page, pdf_page, &pdf_options,
+                                 pdf_password_path ? &password : NULL, maxw, maxh, force_sixel,
+                                 force_ansi, sixel_colors, sixel_dither);
+        erase_password(bytes, sizeof(bytes));
+        return result;
     }
 
     if (is_gif_file(path)) {
