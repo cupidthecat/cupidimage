@@ -864,7 +864,10 @@
             "scripts/compare_pdf_type1_flex.py",
             "docs/pdf-type1-scopes.md",
             "src/formats/pdf/fonts/type1/syntax.c",
-            "scripts/test_pdf_type1_scopes.py"
+            "scripts/test_pdf_type1_scopes.py",
+            "docs/pdf-type1-replacements.md",
+            "scripts/test_pdf_type1_replacements.py",
+            "assets/pdf/type1-hint-replacements.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
@@ -872,7 +875,8 @@
             "Literal private hint fields and ordered charstring hint traces feed an optional bounded page fitter. Computed parameters carry unresolved diagnostics; broader hinting and font-program qualification remain unfinished.",
             "Standard OtherSubrs 12/13 counter-data blocks are decoded and retained. Designer counter priorities are not applied by the current fitting profile.",
             "Standard Type 1 flex calls retain reference points and apply the documented device-phase procedure. Embedded PaintType is ignored under ISO 32000-1 9.9; PDF text modes still select painting. Known unadjusted-curve reference differences are not counted as matches.",
-            "Literal Type 1 declarations now preserve dictionary ownership and inherited aliases. Arbitrary computed programs, larger hint replacement traces and broader raster qualification remain unfinished."
+            "Literal Type 1 declarations now preserve dictionary ownership and inherited aliases. Arbitrary computed programs and broader raster qualification remain unfinished.",
+            "Longer Type 1 hint traces retain map-overflow behavior instead of rejecting glyphs. The selected map profile uses unhinted mapping beyond its capacity; this does not establish full font fidelity."
           ],
           "dependencies": [
             "1",
@@ -1147,7 +1151,10 @@
             "docs/pdf-monochrome.md",
             "scripts/test_pdf_monochrome_pages.py",
             "tests/test_pdf_tt_scan.c",
-            "tests/fixtures/pdf-monochrome-reference.json"
+            "tests/fixtures/pdf-monochrome-reference.json",
+            "docs/pdf-type1-replacements.md",
+            "scripts/test_pdf_type1_replacements.py",
+            "assets/pdf/type1-hint-replacements.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
@@ -1156,7 +1163,8 @@
             "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
             "The explicit CFF profile retains Type 2 flex thresholds and selects lines or curves in device space. Analytic, paired-page and ownership tests cover this path; retained-curve differences from the tested legacy engine are reported separately. Standard Type 1 flex calls have separate reference-point and pixel-phase handling; custom OtherSubrs and broader font fidelity remain unfinished.",
             "Standard Type 1 flex calls retain reference points and apply the documented device-phase procedure. Embedded PaintType is ignored under ISO 32000-1 9.9; PDF text modes still select painting. Known unadjusted-curve reference differences are not counted as matches.",
-            "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified."
+            "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified.",
+            "Longer Type 1 hint traces retain map-overflow behavior instead of rejecting glyphs. The selected map profile uses unhinted mapping beyond its capacity; this does not establish full font fidelity."
           ],
           "dependencies": [
             "1",

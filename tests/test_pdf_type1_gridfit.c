@@ -276,18 +276,54 @@ int main(int argc, char **argv) {
           out.segments[4].kind == PDF_CFF_END && out.width == 600);
     cupidimage_pdf_type2_free(&out);
     segments[4].kind = PDF_CFF_CLOSE;
-    pdf_type1_hint_event many[97];
-    for (unsigned i = 0; i < 97; i++)
-        many[i] = (pdf_type1_hint_event){PDF_T1_HINT_STEM, 0, 0, {i * 3, 2}};
+    static pdf_type1_hint_event many[65536];
+    for (unsigned i = 0; i < 65536; i++)
+        many[i] = (pdf_type1_hint_event){PDF_T1_HINT_STEM, 0, 0, {(i % 1024) * 3, 2}};
+    pdf_cff_outline unhinted;
+    pdf_type1_hint_trace no_hints = {0};
+    work = 10000000;
+    CHECK(cupidimage_pdf_ps_gridfit_type1(&hints, &no_hints, &source, &size, &unhinted, &work));
     trace.events = many;
-    for (unsigned n = 96; n <= 97; n++) {
-        trace.count = n;
+    const unsigned counts[] = {96, 97, 128, 257, 1024, 65536};
+    for (unsigned n = 0; n < sizeof(counts) / sizeof(*counts); n++) {
+        trace.count = counts[n];
         work = 10000000;
         int ok = cupidimage_pdf_ps_gridfit_type1(&hints, &trace, &source, &size, &out, &work);
-        CHECK(ok == (n == 96));
+        CHECK(ok);
+        if (trace.count > 96) {
+            CHECK(out.count == unhinted.count && out.width == unhinted.width &&
+                  out.width_y == unhinted.width_y);
+            for (unsigned i = 0; i < out.count && i < unhinted.count; i++) {
+                CHECK(out.segments[i].kind == unhinted.segments[i].kind);
+                for (unsigned j = 0; j < 2; j++)
+                    CHECK(out.segments[i].points[j] == unhinted.segments[i].points[j]);
+            }
+        }
+        cupidimage_pdf_type2_free(&out);
+    }
+    cupidimage_pdf_type2_free(&unhinted);
+    CHECK(!live_count);
+    /* Overflow does not bypass validation of later declarations. */
+    many[65535].values[0] = 4097;
+    work = 10000000;
+    CHECK(!cupidimage_pdf_ps_gridfit_type1(&hints, &trace, &source, &size, &out, &work));
+    CHECK(!out.segments && !out.count && !live_count);
+    many[65535].values[0] = 3069;
+    total = 0;
+    for (size_t failure = 0; failure <= total; failure++) {
+        allocation_count = 0;
+        fail_at = failure;
+        work = 10000000;
+        int ok = cupidimage_pdf_ps_gridfit_type1(&hints, &trace, &source, &size, &out, &work);
+        if (!failure)
+            total = allocation_count;
+        CHECK(ok == !failure);
+        if (!ok)
+            CHECK(!out.segments && !out.count);
         cupidimage_pdf_type2_free(&out);
         CHECK(!live_count);
     }
+    fail_at = 0;
     trace.events = events;
     trace.count = 2;
     uint32_t seed = 0x1251;

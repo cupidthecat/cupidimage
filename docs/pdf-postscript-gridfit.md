@@ -74,8 +74,9 @@ The caller frees it with `cupidimage_pdf_type2_free`. The Type 1 font-level wrap
 
 The current limits are:
 
-- 96 stems and 65,536 events. For Type 1, the stem limit includes declarations
-  across all replacement contexts, not just the active group.
+- 96 CFF stems and 65,536 events. Type 1 retains up to 97 map entries to detect
+  overflow and uses the map component's unhinted behavior for larger sets; see
+  [Type 1 replacement traces](pdf-type1-replacements.md).
 - 65,536 input and output segments.
 - Coordinates after component offsets, and private numeric parameters, within
   4,096 font units in magnitude.
@@ -123,11 +124,11 @@ behavior with grid fitting; native encoding-equivalence checks retain the
 
 ### Type 1 checks
 
-`make test-pdf-type1-gridfit` runs 35,358 native checks, including work-budget
+`make test-pdf-type1-gridfit` runs 35,479 native checks, including work-budget
 boundaries, allocation failures, composite cleanup, malformed traces, open
 contours, transforms and 2,000 bounded sizing/origin cases. It also runs optional
-independent checks for 31 authored programs: 420 fitted fill-contour matches at
-uniform sizes, 420 at unequal-axis sizes and 140 exact grayscale glyph bitmaps.
+independent checks for 47 authored programs: 612 fitted fill-contour matches at
+uniform sizes, 612 at unequal-axis sizes and 204 exact grayscale glyph bitmaps.
 
 For installed PFB fonts, use:
 

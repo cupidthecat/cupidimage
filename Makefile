@@ -856,3 +856,9 @@ $(BINDIR)/test_pdf_type1_syntax: tests/test_pdf_type1_syntax.c $(wildcard $(SRCD
 TEST_BINS += test_pdf_type1_scope_oom
 $(BINDIR)/test_pdf_type1_scope_oom: tests/test_pdf_type1_scope_oom.c tests/fault_alloc.h $(SRCDIR)/formats/pdf/fonts/type1.c $(wildcard $(SRCDIR)/formats/pdf/fonts/type1/*) $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+.PHONY: test-pdf-type1-replacements
+test: test-pdf-type1-replacements
+test-pdf-type1-replacements: $(BINDIR)/test_pdf_type1_gridfit $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_type1_replacement_fixture.py --check
+	python3 scripts/test_pdf_type1_replacements.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom

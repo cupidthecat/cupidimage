@@ -166,9 +166,13 @@ at four sizes. Enable `--pdf-cff-hinting` to apply depth-dependent selection.
 The complete sample is decoded-unverified; focused outline and page comparisons
 are described in [Type 2 flex hints](../docs/pdf-flex.md).
 
-
 `pdf/type1-dictionary-scopes.pdf` pairs ordinary Type 1 declarations with nested
 controls and inherited reader/definer aliases. The owned rectangle glyphs must
-have identical geometry in both columns. The generated sample has a complete
+have identical geometry in both columns. The generated sample has a
 complete-page control comparison and allocation-failure checks; see
 [Type 1 dictionary scopes](../docs/pdf-type1-scopes.md).
+
+`pdf/type1-hint-replacements.pdf` pairs six owned Type 1 hint traces with their
+literal outline controls. It includes more than 96 declarations across replacement
+groups and an over-capacity active group. Whole-page tests cover hinting on and
+off; see [Type 1 hint replacements](../docs/pdf-type1-replacements.md).

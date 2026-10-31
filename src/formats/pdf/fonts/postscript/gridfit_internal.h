@@ -254,6 +254,11 @@ static PSGF_FT_Byte *cf2_hintmask_getMaskPtr(CF2_HintMask m) {
 }
 
 static void cf2_hintmask_setAll(CF2_HintMask m, size_t n) {
+    if (n > CF2_MAX_HINTS) {
+        m->isValid = 0;
+        *m->error = 1;
+        return;
+    }
     m->bitCount = n;
     m->byteCount = (n + 7) / 8;
     m->isValid = m->isNew = 1;
