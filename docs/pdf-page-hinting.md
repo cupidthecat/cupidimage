@@ -8,7 +8,8 @@ to zero, so existing callers and asset oracles retain their previous rendering.
 The option applies to supported embedded and substitute TrueType programs. It
 executes font/preparation/glyph instructions and uses the resulting device
 outline for fill, stroke and text clipping. CFF, Type 1 and bitmap glyphs keep
-their existing paths. Stroke and clip coverage follow `--pdf-text-aa`.
+their existing paths. Stroke and clip coverage follow `--pdf-text-aa`. Monochrome TrueType fills consume
+the font's [scan and dropout settings](pdf-monochrome.md).
 
 ## Sizing and placement
 
@@ -56,7 +57,7 @@ malformed programs.
 
 - 1,188 frame, budget, ownership and retained-output checks;
 - 102 core page/API/CLI checks when the optional comparison engine is absent;
-- 987 allocation/cache/eager-surface checks, including Form-local font lifetimes;
+- 1,131 allocation/cache/eager-surface checks, including Form-local font lifetimes;
 - 60 independent authored grayscale bitmaps, with simple/composite glyphs and
   multiple sizes, origins and affine transforms;
 - 144 independent pinned Latin bitmaps with engine 2.13.3 or newer;
@@ -79,7 +80,7 @@ pixel evidence.
 ## Remaining boundaries
 
 This is a selected legacy profile, not complete TrueType or PDF rendering parity.
-Modern subpixel instruction policies, variation behavior, dropout scan conversion,
+Modern subpixel instruction policies, variation behavior,
 broader clipping and stroke/combined-paint qualification remain unfinished.
 [CFF](pdf-cff-page-hinting.md) and [Type 1](pdf-type1-page-hinting.md) have their
 own bounded page options. The [VM](pdf-truetype-vm.md), [loader](pdf-truetype-loader.md) and

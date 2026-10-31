@@ -226,9 +226,9 @@ static int state_programs(void) {
             if (!decode_hex_program(parts[i], code[i], &length[i]))
                 return 2;
         const int32_t raw[] = {64};
-        const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
-                                          {{100, 0}, {100, 0}, 0, 1, 0},
-                                          {{0, 100}, {0, 100}, 0, 1, 1}};
+        const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0, 0},
+                                          {{100, 0}, {100, 0}, 0, 1, 0, 0},
+                                          {{0, 100}, {0, 100}, 0, 1, 1, 0}};
         pdf_tt_vm vm;
         int ok = cupidimage_pdf_tt_vm_init(&vm, 64, 2, raw, 1, 16, 0) &&
                  cupidimage_pdf_tt_vm_set_size(&vm, 64, 64, 64, 0, raw) &&
@@ -268,9 +268,9 @@ static int expression_programs(int geometry, int flags) {
                 cupidimage_pdf_tt_vm_free(&vm);
                 return 2;
             }
-            pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
-                                        {{100, 0}, {100, 0}, 0, 1, 0},
-                                        {{0, 100}, {0, 100}, 0, 1, 1}};
+            pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0, 0},
+                                        {{100, 0}, {100, 0}, 0, 1, 0, 0},
+                                        {{0, 100}, {0, 100}, 0, 1, 1, 0}};
             const int32_t design[][2] = {{31, 35}, {100, 0}, {0, 100}};
             for (unsigned i = 0; i < 3; i++)
                 for (unsigned axis = 0; axis < 2; axis++)

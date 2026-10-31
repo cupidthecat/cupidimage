@@ -17,8 +17,9 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [CFF descendant binding](pdf-cff-bindings.md): direct glyph indices and CID-keyed charset selection.
 - [Embedded CID subset recovery](pdf-subset-fonts.md): bounded compatibility for damaged font locations and selectors.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
-- [TrueType instruction engine](pdf-truetype-vm.md): tested foundations and the unfinished hinting integration.
+- [TrueType instruction engine](pdf-truetype-vm.md): tested instructions, preparation state and remaining profile limits.
 - [Native TrueType loading](pdf-truetype-loader.md): glyphs, phantom points and preparation lifetimes.
+- [Monochrome TrueType rendering](pdf-monochrome.md): scan policies, dropout pixels and bounded raster tests.
 - [TrueType composites](pdf-truetype-composites.md): component transforms, attachments, shared state and bounds.
 - [PDF colors](pdf-colors.md): device and calibrated source conversion, tests and limits.
 - [PDF blending colors](pdf-blending-colors.md): native group encodings, inverse curves, lookup transforms and luminosity.

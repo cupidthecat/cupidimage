@@ -131,6 +131,8 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/raster/coverage.c"
 #include "../src/formats/pdf/raster/font_coverage.c"
+#include "../src/formats/pdf/raster/font_monochrome.c"
+#include "../src/formats/pdf/raster/monochrome.c"
 #include "../src/formats/pdf/raster/stroke_union.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/pdf_intents.c"

@@ -919,12 +919,17 @@
             "docs/pdf-subset-fonts.md",
             "src/formats/pdf/fonts/truetype_subset.c",
             "scripts/test_pdf_subset_fonts.py",
-            "scripts/test_pdf_subset_font_pages.py"
+            "scripts/test_pdf_subset_font_pages.py",
+            "docs/pdf-monochrome.md",
+            "scripts/test_pdf_monochrome_pages.py",
+            "tests/test_pdf_tt_scan.c",
+            "tests/fixtures/pdf-monochrome-reference.json"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options.",
-            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
+            "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified."
           ],
           "dependencies": [
             "1",
@@ -1107,13 +1112,18 @@
             "docs/pdf-subset-fonts.md",
             "src/formats/pdf/fonts/truetype_subset.c",
             "scripts/test_pdf_subset_fonts.py",
-            "scripts/test_pdf_subset_font_pages.py"
+            "scripts/test_pdf_subset_font_pages.py",
+            "docs/pdf-monochrome.md",
+            "scripts/test_pdf_monochrome_pages.py",
+            "tests/test_pdf_tt_scan.c",
+            "tests/fixtures/pdf-monochrome-reference.json"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options.",
             "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option.",
-            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
+            "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified."
           ],
           "dependencies": [
             "1",
@@ -4810,10 +4820,15 @@
             "docs/pdf-clipping.md",
             "scripts/test_pdf_fractional_clips.py",
             "tests/test_pdf_region.c",
-            "tests/test_pdf_clip_geometry.c"
+            "tests/test_pdf_clip_geometry.c",
+            "docs/pdf-monochrome.md",
+            "scripts/test_pdf_monochrome_pages.py",
+            "tests/test_pdf_tt_scan.c",
+            "tests/fixtures/pdf-monochrome-reference.json"
           ],
           "limitations": [
-            "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete."
+            "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete.",
+            "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified."
           ],
           "dependencies": [
             "3",

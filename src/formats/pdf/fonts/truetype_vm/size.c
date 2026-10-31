@@ -101,6 +101,24 @@ static int vm_delta_cvt(pdf_tt_vm *vm, unsigned op) {
     return 1;
 }
 
+static void vm_scan_control(pdf_tt_vm *vm, unsigned flags) {
+    unsigned threshold = flags & 255;
+    vm->graphics.scan_flags = flags & 65535;
+    if (!threshold || threshold == 255) {
+        vm->graphics.scan_control = threshold == 255;
+        return;
+    }
+    int small = vm->size.ppem <= threshold;
+    int rotated = (vm->size.transform_flags & PDF_TT_VM_ROTATED) != 0;
+    int stretched = (vm->size.transform_flags & PDF_TT_VM_STRETCHED) != 0;
+    if (((flags & 0x100) && small) || ((flags & 0x200) && rotated) ||
+        ((flags & 0x400) && stretched))
+        vm->graphics.scan_control = 1;
+    if (((flags & 0x800) && !small) || ((flags & 0x1000) && !rotated) ||
+        ((flags & 0x2000) && !stretched))
+        vm->graphics.scan_control = 0;
+}
+
 int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *vm, unsigned op) {
     unsigned count;
     switch (op) {
@@ -158,8 +176,7 @@ int cupidimage_pdf_tt_vm_size_op(pdf_tt_vm *vm, unsigned op) {
         if (!vm_scale(vm, a, &vm->cvt[b]))
             return 0;
     } else if (op == 0x85) {
-        /* Preserve flags for the future scan converter, rather than dropping them. */
-        vm->graphics.scan_flags = (unsigned)a & 65535;
+        vm_scan_control(vm, (unsigned)a);
     } else if (op == 0x8d) {
         if (a < 0 || a > 7)
             return cupidimage_pdf_tt_vm_fail(vm, PDF_TT_VM_PROGRAM);
