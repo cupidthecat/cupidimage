@@ -779,8 +779,11 @@ installed-font substitution choices.
 Nonembedded CIDFontType2 resources use collection-matched character encodings:
 90ms-RKSJ-H/V and UniJIS-UCS2/UTF16-H/V for Japan1, UniGB-UCS2/UTF16-H/V for
 GB1, UniCNS-UCS2/UTF16-H/V for CNS1, and UniKS-UCS2/UTF16-H/V for Korea1.
-A CMap from another collection is not accepted as a substitute character
-encoding. The renderer translates
+The corresponding Windows encodings also work: GB-EUC, GBK-EUC and GBKp-EUC
+H/V use CP936; ETen-B5 and ETenms-B5 H/V use CP950; KSCms-UHC and
+KSCms-UHC-HW H/V use CP949. These bindings follow the character encodings in
+ISO 32000-1 Table 118. A CMap from another collection is not accepted as a
+substitute character encoding. The renderer translates
 the original character code to Unicode and selects a GID through the substitute
 font's OpenType cmap. It does not select the glyph from the CID or from ToUnicode.
 CIDToGIDMap is ignored for these nonembedded resources, as required by
@@ -792,29 +795,32 @@ Unicode selection. The generator extracts that lookup from the unchanged font
 and verifies that all of its script/language records agree. No kerning, text
 reflow, ligature shaping or font-derived advance replaces the PDF's positioning.
 
-CP932 uses the published, pinned Unicode mapping table, not a host codec.
-Undefined mappings, including byte A0, remain missing glyphs. Identity-H/V and
+CP932, CP936, CP949 and CP950 use the published, pinned Unicode mapping tables,
+not host codecs. Undefined mappings remain missing glyphs, including CP932
+byte A0. Identity-H/V and
 embedded custom encoding CMaps do not describe a supported external Type 2
-character encoding here and retain the existing fallback. Other legacy Chinese
-and Korean encodings also remain separate work. This is not complete
+character encoding here and retain the existing fallback. Mac OS variants,
+HKSCS, EUC-TW, plain EUC-KR and GB18030 character conversion remain separate
+work; they are not guessed from the Windows tables. This is not complete
 nonembedded TrueType or CJK substitution coverage.
 
-The mapping probe checks all 7,915 published CP932 entries and the pinned fonts'
-Unicode cmap repertoire against a separately generated fontTools oracle,
+The mapping probe checks all 60,642 published code-page entries and the pinned
+fonts' Unicode cmap repertoire against a separately generated fontTools oracle,
 including vertical variants, supplementary UTF-16 characters and invalid input.
 Page tests cover each supported encoding, all text modes, PDF metric overrides,
 ignored CIDToGIDMap entries and mixed Type 0/Type 2 resource reuse. The oracle is
 checked in; fontTools is needed only to regenerate it. Across the eight faces,
-714,872 glyph-index checks cover the pinned Unicode and vertical mappings.
+925,840 glyph-index checks cover the pinned Unicode and vertical mappings.
 All 182,326 source glyphs also decode their outlines and hint programs without
 unsupported-hint diagnostics. Empty glyph programs remain empty.
-Chinese and Korean paired-page tests add 211 rendering checks and 202 allocation
+Chinese and Korean paired-page tests add 323 rendering checks and 535 allocation
 checks, including supplementary codes, collection mismatches, unsupported
 supplied fonts and the shared table budget.
 
 The owned cid-substitute-gb1.pdf, cid-substitute-cns1.pdf and
 cid-substitute-korea1.pdf assets show regular serif/sans horizontal CID text and
-vertical external Type 2 Unicode text. Their full-page rasters remain
+vertical external Type 2 Unicode text. Their matching `-legacy.pdf` samples
+exercise the Windows code-page paths. These full-page rasters remain
 decoded-unverified pending visual review.
 
 Independent complete-page raster comparison is separate:

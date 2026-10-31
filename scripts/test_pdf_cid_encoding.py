@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check every pinned CP932 mapping and Unicode scalar against an independent oracle."""
+"""Check pinned code pages and Unicode scalars against independent font oracles."""
 import base64
 import hashlib
 import json
@@ -8,7 +8,7 @@ import struct
 import subprocess
 import sys
 import zlib
-from generate_pdf_cp932 import mappings
+from generate_pdf_codepages import mappings
 
 
 def main():
@@ -20,7 +20,8 @@ def main():
         assert len(rows) == reference['count']
         scalars = {row[0]: row[1:] for row in rows}
         assert len(scalars) == len(rows)
-        cp932 = mappings()
+        codepage = {'': 932, '-cn': 936, '-tw': 950, '-k1': 949}[suffix]
+        mapping = mappings(codepage)
         for index, (face, record) in enumerate(zip(('gothic', 'mincho'), reference['fonts'])):
             path = Path('third_party/cid-standard-fonts') / record['file']
             assert hashlib.sha256(path.read_bytes()).hexdigest() == record['sha256']
@@ -29,10 +30,10 @@ def main():
             count, nonempty, diagnostics = map(int, result.stdout.split())
             assert count == record['glyphs'] and 0 < nonempty <= count and diagnostics == 0, (face, suffix, result.stdout)
             outlines += count
-            for encoding in (('cp932', 'ucs2', 'utf16') if not suffix else ('ucs2', 'utf16')):
+            for encoding in (f'cp{codepage}', 'ucs2', 'utf16'):
                 cases = []
-                if encoding == 'cp932':
-                    cases = [(code, 1 if code < 256 else 2, scalar) for code, scalar in cp932]
+                if encoding.startswith('cp'):
+                    cases = [(code, 1 if code < 256 else 2, scalar) for code, scalar in mapping]
                     cases += [(0x81, 1, None), (0xa0, 1, None), (0x41, 2, None),
                               (0x8140, 1, None), (0xffff, 2, None)]
                 else:

@@ -33,7 +33,7 @@ $(BINDIR)/test_pdf_cid_encoding: tests/test_pdf_cid_encoding.c $(LIB)
 
 test-pdf-cid-substitution: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_cid_encoding
 	python3 scripts/generate_pdf_cid_fonts.py --check
-	python3 scripts/generate_pdf_cp932.py --check
+	python3 scripts/generate_pdf_codepages.py --check
 	python3 scripts/test_pdf_cid_encoding.py $(BINDIR)/test_pdf_cid_encoding
 	python3 scripts/generate_pdf_cid_substitution_fixtures.py --check
 	python3 scripts/generate_pdf_cjk_fixtures.py --check

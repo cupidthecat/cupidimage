@@ -26,7 +26,7 @@ compressed length. Each face has its own translation unit. The compressed font
 bytes together occupy about 43.7 MiB in the binary.
 
 The renderer uses collection-matched CID selection for nonembedded CIDFontType0
-resources. Selected Unicode predefined CMaps also support character-code/cmap
+resources. Selected Unicode and Windows predefined CMaps also support character-code/cmap
 selection for external CIDFontType2 fonts. Vertical GID variants are extracted
 from each unchanged font's single vrt2 lookup and checked against an independent
 fontTools oracle. See ../../docs/pdf-fonts.md for encodings, limits and tests.

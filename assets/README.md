@@ -122,6 +122,7 @@ oracles. Regenerate them with `scripts/generate_pdf_jpx_fixtures.py`.
 
 The cid-substitute-gb1.pdf, cid-substitute-cns1.pdf and cid-substitute-korea1.pdf
 samples exercise regular serif/sans Chinese and Korean substitutes, with
-horizontal CIDFontType0 and vertical Unicode CIDFontType2 text. They remain
-decoded-unverified visual assets. Regenerate them with
+horizontal CIDFontType0 and vertical Unicode CIDFontType2 text. Their `-legacy.pdf`
+companions exercise CP936, CP950 and CP949. They remain decoded-unverified visual
+assets. Regenerate them with
 scripts/generate_pdf_cjk_fixtures.py; paired embedded-program tests are separate.

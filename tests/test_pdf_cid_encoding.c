@@ -18,6 +18,21 @@ static void check_collection_encodings(void) {
         assert(cupidimage_pdf_cid_substitute_encoding("90ms-RKSJ-V", orderings[i]) ==
                (i == 0 ? PDF_CID_SUBSTITUTE_CP932 : PDF_CID_SUBSTITUTE_NONE));
     }
+    const char *legacy[] = {"GB-EUC-H",    "GBK-EUC-V",   "GBKp-EUC-H",    "ETen-B5-V",
+                            "ETenms-B5-H", "KSCms-UHC-V", "KSCms-UHC-HW-H"};
+    unsigned collection[] = {1, 1, 1, 2, 2, 3, 3};
+    unsigned encoding[] = {PDF_CID_SUBSTITUTE_CP936, PDF_CID_SUBSTITUTE_CP936,
+                           PDF_CID_SUBSTITUTE_CP936, PDF_CID_SUBSTITUTE_CP950,
+                           PDF_CID_SUBSTITUTE_CP950, PDF_CID_SUBSTITUTE_CP949,
+                           PDF_CID_SUBSTITUTE_CP949};
+    for (unsigned i = 0; i < sizeof(legacy) / sizeof(*legacy); i++)
+        for (unsigned j = 0; j < 4; j++)
+            assert(cupidimage_pdf_cid_substitute_encoding(legacy[i], orderings[j]) ==
+                   (collection[i] == j ? encoding[i] : PDF_CID_SUBSTITUTE_NONE));
+    assert(!cupidimage_pdf_cid_substitute_encoding("B5pc-H", "CNS1"));
+    assert(!cupidimage_pdf_cid_substitute_encoding("HKscs-B5-H", "CNS1"));
+    assert(!cupidimage_pdf_cid_substitute_encoding("GBK2K-H", "GB1"));
+    assert(!cupidimage_pdf_cid_substitute_encoding("KSCpc-EUC-H", "Korea1"));
     assert(!cupidimage_pdf_cid_substitute_encoding("UniGB-UTF16-Hextra", "GB1"));
     assert(!cupidimage_pdf_cid_substitute_encoding("UniGB-UCS2", "GB1"));
 }
@@ -26,7 +41,10 @@ int main(int argc, char **argv) {
     check_collection_encodings();
     if (argc != 4)
         return 2;
-    unsigned encoding = !strcmp(argv[3], "cp932")   ? PDF_CID_SUBSTITUTE_CP932
+    unsigned encoding = !strcmp(argv[3], "cp936")   ? PDF_CID_SUBSTITUTE_CP936
+                        : !strcmp(argv[3], "cp949") ? PDF_CID_SUBSTITUTE_CP949
+                        : !strcmp(argv[3], "cp950") ? PDF_CID_SUBSTITUTE_CP950
+                        : !strcmp(argv[3], "cp932") ? PDF_CID_SUBSTITUTE_CP932
                         : !strcmp(argv[3], "ucs2")  ? PDF_CID_SUBSTITUTE_UCS2
                         : !strcmp(argv[3], "utf16") ? PDF_CID_SUBSTITUTE_UTF16
                                                     : 0;
@@ -74,6 +92,13 @@ int main(int argc, char **argv) {
         return 2;
     }
     if (validate) {
+        for (unsigned fd = 0; fd < program->cff.private_count; fd++) {
+            if (program->cff.private_dicts[fd].hints.invalid) {
+                fprintf(stderr, "CID private hints are invalid in dictionary %u\n", fd);
+                cupidimage_pdf_font_program_free(program);
+                return 3;
+            }
+        }
         unsigned nonempty = 0, diagnostics = 0;
         for (unsigned glyph = 0; glyph < program->cff.chars.count; glyph++) {
             pdf_cff_outline outline = {0};

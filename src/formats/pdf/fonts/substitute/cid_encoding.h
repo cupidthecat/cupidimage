@@ -8,7 +8,10 @@ enum {
     PDF_CID_SUBSTITUTE_NONE,
     PDF_CID_SUBSTITUTE_CP932,
     PDF_CID_SUBSTITUTE_UCS2,
-    PDF_CID_SUBSTITUTE_UTF16
+    PDF_CID_SUBSTITUTE_UTF16,
+    PDF_CID_SUBSTITUTE_CP936,
+    PDF_CID_SUBSTITUTE_CP949,
+    PDF_CID_SUBSTITUTE_CP950
 };
 
 unsigned cupidimage_pdf_cid_substitute_encoding(const char *name, const char *ordering);

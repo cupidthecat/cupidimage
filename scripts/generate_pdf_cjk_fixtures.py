@@ -8,12 +8,13 @@ import struct
 import sys
 import zlib
 from test_pdf_pages import document
-from test_pdf_cjk_substitution import PREFIX, WORDS
+from test_pdf_cjk_substitution import PREFIX, WORDS, LEGACY
+from generate_pdf_codepages import mappings
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def fixtures():
+def fixtures(legacy=False):
     manifest = json.loads((ROOT / 'third_party/cid-standard-fonts/manifest.json').read_text())['files']
     for start in (2, 4, 6):
         rows = manifest[start:start + 2]
@@ -23,6 +24,11 @@ def fixtures():
         oracle = {r[0]: r[1:] for r in struct.iter_unpack(
             '>I4H', zlib.decompress(base64.b64decode(reference['records_zlib'])))}
         scalars = list(map(ord, WORDS[collection]))
+        codepage, families = LEGACY[collection]
+        family = families[1] if collection == 'GB1' else families[0]
+        reverse = {}
+        for code, scalar in mappings(codepage):
+            reverse.setdefault(scalar, code)
         objects = {5: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'}
         names = ['/Label 5 0 R']
         content = [f'BT /Label 14 Tf 24 270 Td ({collection}: regular CID substitutes) Tj ET']
@@ -30,26 +36,31 @@ def fixtures():
             serif, external = index % 2, index >= 2
             n = 10 + index * 3
             row = rows[serif]
-            encoding = PREFIX[collection] + '-UTF16-V' if external else 'Identity-H'
+            encoding = ((family + '-V' if legacy else PREFIX[collection] + '-UTF16-V')
+                        if external else 'Identity-H')
             names.append(f'/F{index} {n} 0 R')
             objects[n] = f'<< /Type /Font /Subtype /Type0 /BaseFont /Missing{collection} /Encoding /{encoding} /DescendantFonts [{n+1} 0 R] >>'
             objects[n+1] = f'<< /Type /Font /Subtype /CIDFontType{2 if external else 0} /BaseFont /Missing{collection} /DW 1000 /FontDescriptor {n+2} 0 R /CIDSystemInfo << /Registry (Adobe) /Ordering ({collection}) /Supplement {row["supplement"]} >> >>'
             objects[n+2] = f'<< /Type /FontDescriptor /Flags {6 if serif else 4} /FontBBox [-1000 -1000 2000 2000] /Ascent 880 /Descent -120 >>'
             if external:
-                encoded = WORDS[collection].encode('utf-16-be').hex()
+                encoded = (b''.join(reverse[c].to_bytes(1 if reverse[c] < 256 else 2, 'big')
+                                    for c in scalars).hex() if legacy else
+                           WORDS[collection].encode('utf-16-be').hex())
                 x, y = 80 + 160 * serif, 145
             else:
                 encoded = ''.join(f'{oracle[c][serif * 2]:04x}' for c in scalars)
                 x, y = 24, 235 - 38 * serif
             content.append(f'BT /F{index} 20 Tf {x} {y} Td <{encoded}> Tj ET')
-        content += ['BT /Label 9 Tf 24 165 Td (CIDFontType0 horizontal; CIDFontType2 vertical below) Tj ET']
-        yield f'cid-substitute-{collection.lower()}.pdf', document(
+        label = family if legacy else PREFIX[collection] + '-UTF16'
+        content += [f'BT /Label 9 Tf 24 165 Td (CIDFontType0 horizontal; {label} Type2 below) Tj ET']
+        ending = '-legacy' if legacy else ''
+        yield f'cid-substitute-{collection.lower()}{ending}.pdf', document(
             '/MediaBox [0 0 360 300] /Resources << /Font << ' + ' '.join(names) + ' >> >>',
             stream=' '.join(content), extra=objects)
 
 
 if __name__ == '__main__':
-    for name, data in fixtures():
+    for name, data in (*fixtures(), *fixtures(True)):
         path = ROOT / 'assets/pdf' / name
         if '--check' in sys.argv:
             assert path.read_bytes() == data, 'Regenerate ' + name

@@ -502,16 +502,28 @@
       "sha256": "6e46e1d5a60807d20e7d07c052e3e56c2de991ac098c32672df681e4b6760c96"
     },
     {
+      "path": "assets/pdf/cid-substitute-cns1-legacy.pdf",
+      "sha256": "f5766ec5f4253151ee44116f2fe5a0289a99a27f6f57aca2a00afe4c0ee1860c"
+    },
+    {
       "path": "assets/pdf/cid-substitute-cns1.pdf",
-      "sha256": "3d39dae44d8e860989dc585e7b0264c1c61b289be2cd7df5aa8c24416c8ac296"
+      "sha256": "3bb9f2b3758ba98391ba96491e2439881385cf1c91dcbefbea6b2250c0b75905"
+    },
+    {
+      "path": "assets/pdf/cid-substitute-gb1-legacy.pdf",
+      "sha256": "f90b02897d49ba72e2f354279edd12a8b2d6b1c6d009da84b86c7a60188c7257"
     },
     {
       "path": "assets/pdf/cid-substitute-gb1.pdf",
-      "sha256": "bddc3a8493540e6ebe75dbaf8491211e29636075544be14baee123e0abefd1b5"
+      "sha256": "ffd564de3f5967d578f6d70b32b070aebf50946a0afe4ab2ed4c913724c73359"
+    },
+    {
+      "path": "assets/pdf/cid-substitute-korea1-legacy.pdf",
+      "sha256": "9d05b9a94ffb2e9666dfea60d3ecd60cd5d75572d3c8b8087067f4a06207786b"
     },
     {
       "path": "assets/pdf/cid-substitute-korea1.pdf",
-      "sha256": "9dacb6dd2910655ab6aa91a3674ddf2e1c442e7b79e7c11c7d96757c1cd4d683"
+      "sha256": "f86948754e991690fa5ea5b2f863e6028a12f0992146f34e90693bac7d847e26"
     },
     {
       "path": "assets/pdf/cie-blending.pdf",

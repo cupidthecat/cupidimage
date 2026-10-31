@@ -3,12 +3,31 @@
 #include "../program.h"
 #include "cid_data.h"
 #include "cp932_data.inc"
+#include "cp936_data.inc"
+#include "cp949_data.inc"
+#include "cp950_data.inc"
 #include <string.h>
 
 unsigned cupidimage_pdf_cid_substitute_encoding(const char *name, const char *ordering) {
-    if ((!ordering || !strcmp(ordering, "Japan1")) &&
-        (!strcmp(name, "90ms-RKSJ-H") || !strcmp(name, "90ms-RKSJ-V")))
-        return PDF_CID_SUBSTITUTE_CP932;
+    static const struct {
+        const char *name, *ordering;
+        unsigned encoding;
+    } legacy[] = {{"90ms-RKSJ", "Japan1", PDF_CID_SUBSTITUTE_CP932},
+                  {"GB-EUC", "GB1", PDF_CID_SUBSTITUTE_CP936},
+                  {"GBK-EUC", "GB1", PDF_CID_SUBSTITUTE_CP936},
+                  {"GBKp-EUC", "GB1", PDF_CID_SUBSTITUTE_CP936},
+                  {"ETen-B5", "CNS1", PDF_CID_SUBSTITUTE_CP950},
+                  {"ETenms-B5", "CNS1", PDF_CID_SUBSTITUTE_CP950},
+                  {"KSCms-UHC", "Korea1", PDF_CID_SUBSTITUTE_CP949},
+                  {"KSCms-UHC-HW", "Korea1", PDF_CID_SUBSTITUTE_CP949}};
+
+    for (unsigned i = 0; i < sizeof(legacy) / sizeof(*legacy); i++) {
+        size_t length = strlen(legacy[i].name);
+        if ((!ordering || !strcmp(ordering, legacy[i].ordering)) &&
+            !strncmp(name, legacy[i].name, length) &&
+            (!strcmp(name + length, "-H") || !strcmp(name + length, "-V")))
+            return legacy[i].encoding;
+    }
 
     static const struct {
         const char *prefix, *ordering;
@@ -72,19 +91,39 @@ static unsigned cid_vertical_glyph(const pdf_cid_font_source *source, unsigned g
 unsigned cupidimage_pdf_cid_substitute_glyph(const pdf_font_program *program, unsigned encoding,
                                              uint32_t code, size_t bytes, int vertical) {
     uint32_t scalar = code;
-    if (encoding == PDF_CID_SUBSTITUTE_CP932) {
+    const uint16_t (*mapping)[2] = NULL;
+    size_t count = 0;
+    switch (encoding) {
+        case PDF_CID_SUBSTITUTE_CP932:
+            mapping = cid_cp932;
+            count = sizeof(cid_cp932) / sizeof(*cid_cp932);
+            break;
+        case PDF_CID_SUBSTITUTE_CP936:
+            mapping = cid_cp936;
+            count = sizeof(cid_cp936) / sizeof(*cid_cp936);
+            break;
+        case PDF_CID_SUBSTITUTE_CP949:
+            mapping = cid_cp949;
+            count = sizeof(cid_cp949) / sizeof(*cid_cp949);
+            break;
+        case PDF_CID_SUBSTITUTE_CP950:
+            mapping = cid_cp950;
+            count = sizeof(cid_cp950) / sizeof(*cid_cp950);
+            break;
+    }
+    if (mapping) {
         if ((bytes != 1 && bytes != 2) || (bytes == 1 && code > 255) ||
             (bytes == 2 && code < 256) || code > 65535)
             return 0;
-        size_t lo = 0, hi = sizeof(cid_cp932) / sizeof(*cid_cp932);
+        size_t lo = 0, hi = count;
         scalar = 0xffffffffu;
         while (lo < hi) {
             size_t mid = lo + (hi - lo) / 2;
-            if (cid_cp932[mid][0] == code) {
-                scalar = cid_cp932[mid][1];
+            if (mapping[mid][0] == code) {
+                scalar = mapping[mid][1];
                 break;
             }
-            if (cid_cp932[mid][0] < code)
+            if (mapping[mid][0] < code)
                 lo = mid + 1;
             else
                 hi = mid;

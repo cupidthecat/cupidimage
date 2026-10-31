@@ -35,8 +35,8 @@ third_party/extended-standard-fonts/AUTHORS -text -whitespace
 third_party/cid-standard-fonts/*.otf binary
 third_party/cid-standard-fonts/LICENSE -text -whitespace
 src/formats/pdf/fonts/substitute/*.inc linguist-generated=true
-third_party/unicode-cp932/CP932.TXT -text -whitespace
-third_party/unicode-cp932/LICENSE -text -whitespace
+third_party/unicode-codepages/CP*.TXT -text -whitespace
+third_party/unicode-codepages/LICENSE -text -whitespace
 
 # Preserve renamed CFF spacing subsets and unchanged upstream license/provenance text.
 third_party/standard-spacing-marks/*.cff binary
