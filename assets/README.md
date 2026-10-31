@@ -124,6 +124,13 @@ scripts/generate_pdf_cff_binding_fixtures.py.
 JPEG 2000 samples, palette expansion and embedded alpha. Both have literal pixel
 oracles. Regenerate them with `scripts/generate_pdf_jpx_fixtures.py`.
 
+The cid-substitute-gb1.pdf, cid-substitute-cns1.pdf and cid-substitute-korea1.pdf
+samples exercise regular serif/sans Chinese and Korean substitutes, with
+horizontal CIDFontType0 and vertical Unicode CIDFontType2 text. Their `-legacy.pdf`
+companions exercise CP936, CP950 and CP949. They remain decoded-unverified visual
+assets. Regenerate them with
+scripts/generate_pdf_cjk_fixtures.py; paired embedded-program tests are separate.
+
 The post-aat4-names.pdf and post-high-index-names.pdf samples use owned glyph
 outlines with legacy character-code names and modern high custom-name indices.
 They remain decoded-unverified. Regenerate them with

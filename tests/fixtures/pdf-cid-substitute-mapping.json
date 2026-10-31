@@ -5,11 +5,13 @@
   "fonts": [
     {
       "file": "HaranoAjiGothic-Regular.otf",
-      "sha256": "fb846296a5af628d5eaa5ac28838723a099b421c9b4f0d871413d2ad41893518"
+      "sha256": "fb846296a5af628d5eaa5ac28838723a099b421c9b4f0d871413d2ad41893518",
+      "glyphs": 23060
     },
     {
       "file": "HaranoAjiMincho-Regular.otf",
-      "sha256": "66ef3270e68690612e8bf982acfad0e8b40212ce64661cce2bb6d3a98ac84717"
+      "sha256": "66ef3270e68690612e8bf982acfad0e8b40212ce64661cce2bb6d3a98ac84717",
+      "glyphs": 23060
     }
   ],
   "count": 15821,

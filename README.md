@@ -14,7 +14,7 @@ PDF previews include packed, indexed, fax-, JPEG- and [JPEG 2000](docs/pdf-jpeg2
 images, image masks, filter chains, opacity and transparency blending. Image dictionaries can
 request [bilinear sampling](docs/pdf-image-interpolation.md). Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
-metrics, standard and Latin vector font substitutes, selected Japanese CID-keyed
+metrics, standard and Latin vector font substitutes, selected CJK CID-keyed
 substitutes, and unhinted embedded
 TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](docs/pdf-clipping.md),
 [vector paths](docs/pdf-graphics-coverage.md), plus selected

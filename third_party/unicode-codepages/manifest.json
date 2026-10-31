@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "file": "CP932.TXT",
+      "url": "https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP932.TXT",
+      "sha256": "c9bc0b0cd42e0fbcb82a09635bb5abed86afbdd4abc9e76fa5716638217cb59f"
+    },
+    {
+      "file": "LICENSE",
+      "url": "https://www.unicode.org/license.txt",
+      "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96"
+    },
+    {
+      "file": "CP936.TXT",
+      "url": "https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP936.TXT",
+      "sha256": "b86f601c575e9ab457380b6f7abef03c75499cc6075bdc8b4b27f3f2de74bf6a"
+    },
+    {
+      "file": "CP949.TXT",
+      "url": "https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP949.TXT",
+      "sha256": "f57e6fef9d1ed44f445e319a8e1b879ce6b6064520ab571c341e47b892e32abc"
+    },
+    {
+      "file": "CP950.TXT",
+      "url": "https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP950.TXT",
+      "sha256": "ed403857b05e07ecd5667c7eff6b25898cb1fefe2d06cfe718d82d631e6058b6"
+    }
+  ]
+}

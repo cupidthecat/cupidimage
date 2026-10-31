@@ -1,5 +1,5 @@
 /* Generated from the pinned published CP932 table.
- * Unicode License V3: third_party/unicode-cp932/LICENSE.
+ * Unicode License V3: third_party/unicode-codepages/LICENSE.
  * Copyright 1991-2026 Unicode, Inc. */
 static const uint16_t cid_cp932[][2] = {
     {0x0000, 0x0000},

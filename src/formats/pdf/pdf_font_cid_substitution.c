@@ -56,7 +56,7 @@ static int cid_substitute_number(const unsigned char *data, size_t size,
 }
 
 static pdf_font_program *cid_substitute_load(const pdf_cid_font_source *source) {
-    if (source->decoded_length > 8u * 1024u * 1024u)
+    if (source->decoded_length > 16u * 1024u * 1024u)
         return NULL;
     pdf_font_program *program = calloc(1, sizeof(*program));
     if (!program)
@@ -95,13 +95,13 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
         !cupidimage_pdf_font_dictionary_at(data, size, &array, at, &descendant))
         goto done;
     unsigned substitute_encoding = PDF_CID_SUBSTITUTE_NONE;
+    char encoding_name[128] = {0};
     if (cupidimage_pdf_entry_is_name(data, size, &descendant, "Subtype", "CIDFontType2")) {
         pdf_object_view encoding = {0};
-        char name[128];
         size_t pos = 0;
         int supplied = cupidimage_pdf_optional_value(data, size, view, "Encoding", &encoding);
-        if (supplied > 0 && cupidimage_pdf_read_name(&encoding, &pos, name))
-            substitute_encoding = cupidimage_pdf_cid_substitute_encoding(name);
+        if (supplied > 0 && cupidimage_pdf_read_name(&encoding, &pos, encoding_name))
+            substitute_encoding = cupidimage_pdf_cid_substitute_encoding(encoding_name, NULL);
         cupidimage_pdf_object_view_release(&encoding);
         if (supplied < 0)
             goto done;
@@ -121,11 +121,22 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
         goto done;
     int registry =
         present ? cid_substitute_string(data, size, &collection, "Registry", "Adobe") : 0;
-    int ordering =
-        registry > 0 ? cid_substitute_string(data, size, &collection, "Ordering", "Japan1") : 0;
-    if (registry < 0 || ordering < 0)
+    const pdf_cid_font_source *source = NULL, *serif_source = NULL;
+    if (registry < 0)
         goto done;
-    if (!registry || !ordering) {
+    for (unsigned i = 0; registry && i < PDF_CID_SOURCE_COUNT; i += 2) {
+        int ordering = cid_substitute_string(data, size, &collection, "Ordering",
+                                             cupidimage_pdf_cid_sources[i]->ordering);
+        if (ordering < 0)
+            goto done;
+        if (ordering) {
+            source = cupidimage_pdf_cid_sources[i];
+            serif_source = cupidimage_pdf_cid_sources[i + 1];
+            break;
+        }
+    }
+    if (!source || (substitute_encoding &&
+                    !cupidimage_pdf_cid_substitute_encoding(encoding_name, source->ordering))) {
         ok = 1;
         goto done;
     }
@@ -133,7 +144,7 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
     present = cid_substitute_number(data, size, &collection, "Supplement", &supplement);
     if (present < 0 || supplement < 0 || floor(supplement) != supplement)
         goto done;
-    if (!present || supplement > cupidimage_pdf_cid_gothic.supplement) {
+    if (!present || supplement > source->supplement) {
         ok = 1;
         goto done;
     }
@@ -167,8 +178,8 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
     cupidimage_pdf_object_view_release(&name_value);
     if (!valid_name)
         goto done;
-    const pdf_cid_font_source *source =
-        serif ? &cupidimage_pdf_cid_mincho : &cupidimage_pdf_cid_gothic;
+    if (serif)
+        source = serif_source;
     for (int i = 0; i < table->count; i++) {
         pdf_font_program *cached = table->fonts[i].program;
         if (cached && cached->cid_substitute == source) {
