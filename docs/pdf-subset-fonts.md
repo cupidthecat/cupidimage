@@ -1,6 +1,6 @@
 # Embedded CID subset-font recovery
 
-Two narrowly defined recovery paths help display damaged embedded CID fonts.
+Three narrowly defined recovery paths help display damaged embedded CID fonts.
 They do not make the damaged font programs conforming, substitute different
 outlines, or relax the normal font parser entry points. Simple-font loading
 retains its existing validation policy.
@@ -36,6 +36,22 @@ The ordinary TrueType initializer continues to reject unordered locations.
 Out-of-range offsets, truncated location/metric tables and invalid glyph
 payloads are not repaired. This recovery does not reconstruct missing font data
 or promise to recover arbitrary overlapping descriptions.
+
+## Missing TrueType zone declaration
+
+OpenType's [maxp table](https://learn.microsoft.com/en-us/typography/opentype/spec/maxp)
+requires maxZones to be 1 or 2. Some embedded CID subsets instead set both
+maxZones and maxTwilightPoints to zero, even though a preparation program remains.
+The PDF CID loader marks this specific case for compatibility. The hinting
+initializer can then prepare the implicit glyph zone without inventing twilight
+points. Normal standalone and simple-font hinting still reject maxZones = 0.
+
+The original font bytes are unchanged. A nonzero twilight count does not qualify
+for this recovery, and maxZones values above 2 remain invalid. Instruction access
+keeps its normal bounds: a program that accesses a missing twilight point fails.
+The flag belongs to the retained font program and is copied into its prepared
+hinting state. It neither allocates extra point storage nor changes PDF widths,
+vertical origins or character selection. It also composes with location recovery.
 
 ## CFF font-dictionary selection
 
@@ -81,3 +97,25 @@ bytes are not redistributed.
 
 See [PDF fonts](pdf-fonts.md), [native TrueType loading](pdf-truetype-loader.md)
 and [the feature inventory](pdf-feature-matrix.md) for the broader work.
+
+### Zone-declaration checks
+
+`make test-pdf-cid-zone-recovery` compares owned zero-zone and valid controls across
+horizontal/vertical CID text, all text modes, hinted/unhinted outlines, grayscale
+coverage and reordered locations. It includes invalid-zone and twilight-access
+cases, strict simple-font rejection, Form-local cache lifetimes and allocation
+failures: 273 page checks and 645 allocation checks. Optional owned-font comparisons
+add 48 exact outline checks. The owned `assets/pdf/cid-truetype-zero-zones.pdf` has a whole-page control.
+The loader unit suite exercises all sizes from 1 through 96 in both instruction
+profiles, preparation scan controls, allocation failure and retained strict limits.
+
+All three pages of the pinned [vertical-text document](https://github.com/mozilla/pdf.js/blob/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/vertical.pdf) now render with all five
+PDF options enabled. Its embedded subset contains 3,723 glyph IDs, only eight with
+nonempty outlines. At six sizes and in both monochrome and grayscale profiles,
+all 44,676 native outline comparisons match the independent legacy instruction
+profile in both tested engine versions, 2.13.2 and 2.14.3. The count includes empty glyphs. Original document and font bytes are
+not redistributed, and successful loading does not establish whole-page fidelity.
+
+The original page comparisons still differ at 96 DPI: mean absolute channel error
+is 1.38435 for page 1 and 1.15854 for pages 2 and 3, with maximum error 251. These
+are recovered pages with remaining raster differences, not full-page matches.

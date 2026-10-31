@@ -526,6 +526,10 @@
       "sha256": "f86948754e991690fa5ea5b2f863e6028a12f0992146f34e90693bac7d847e26"
     },
     {
+      "path": "assets/pdf/cid-truetype-zero-zones.pdf",
+      "sha256": "290665de06ad8414382e55bfdcdca7d78bbb77658abb9594f4f7277c1ed072ae"
+    },
+    {
       "path": "assets/pdf/cie-blending.pdf",
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },

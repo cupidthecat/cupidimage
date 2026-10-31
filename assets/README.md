@@ -176,3 +176,7 @@ complete-page control comparison and allocation-failure checks; see
 literal outline controls. It includes more than 96 declarations across replacement
 groups and an over-capacity active group. Whole-page tests cover hinting on and
 off; see [Type 1 hint replacements](../docs/pdf-type1-replacements.md).
+
+`pdf/cid-truetype-zero-zones.pdf` contains owned CID glyphs with a missing maxZones
+declaration and no twilight points. Hinted/unhinted whole-page controls compare
+it with a valid declaration; see [CID subset recovery](../docs/pdf-subset-fonts.md).

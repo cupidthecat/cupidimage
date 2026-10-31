@@ -15,6 +15,15 @@ static int subset_compare(const void *left, const void *right) {
     return (a > b) - (a < b);
 }
 
+static void subset_hint_zones(pdf_tt_font *font) {
+    /* A glyph zone is implicit. No twilight storage is inferred from a missing
+     * maxZones declaration; instruction access retains ordinary bounds. */
+    if (font->maxp.length >= 32 && font->maxp.data[0] == 0 && font->maxp.data[1] == 1 &&
+        font->maxp.data[2] == 0 && font->maxp.data[3] == 0 && font->maxp.data[14] == 0 &&
+        font->maxp.data[15] == 0 && font->maxp.data[16] == 0 && font->maxp.data[17] == 0)
+        font->recovered_zero_zones = 1;
+}
+
 int cupidimage_pdf_tt_init_subset(pdf_tt_font *font, const unsigned char *data, size_t length,
                                   uint32_t **glyph_ends) {
     if (!glyph_ends)
@@ -22,8 +31,10 @@ int cupidimage_pdf_tt_init_subset(pdf_tt_font *font, const unsigned char *data, 
     *glyph_ends = NULL;
     if (!font)
         return 0;
-    if (cupidimage_pdf_tt_init(font, data, length))
+    if (cupidimage_pdf_tt_init(font, data, length)) {
+        subset_hint_zones(font);
         return 1;
+    }
     /* Only location ordering is relaxed. Header, metric and table bounds still
      * pass the ordinary checks before any offset becomes an address. */
     if (!cupidimage_pdf_tt_init_tables(font, data, length))
@@ -61,5 +72,6 @@ int cupidimage_pdf_tt_init_subset(pdf_tt_font *font, const unsigned char *data, 
     free(locations);
     font->glyph_ends = ends;
     *glyph_ends = ends;
+    subset_hint_zones(font);
     return 1;
 }
