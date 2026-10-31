@@ -591,7 +591,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
                                                                      : shape);
         }
     }
-    ok = 1;
+    ok = !st->image_failed;
 done:
     cupidimage_pdf_patterns_end_paint(st);
     st->gs.soft_mask = graphics_mask;
@@ -602,7 +602,7 @@ done:
     cupidimage_pdf_object_view_release(&mask_view);
     free(samples);
     cupidimage_pdf_object_view_release(&image);
-    if (!ok)
+    if (!ok && st->error && st->error_capacity && !st->error[0])
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: invalid or unsupported image XObject");
     return ok;

@@ -868,3 +868,13 @@ test: test-pdf-cid-zone-recovery
 test-pdf-cid-zone-recovery: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_tt_glyphs
 	python3 scripts/generate_pdf_cid_zone_fixture.py --check
 	python3 scripts/test_pdf_cid_zone_recovery.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_tt_glyphs
+
+TEST_BINS += test_pdf_group_storage
+$(BINDIR)/test_pdf_group_storage: tests/test_pdf_group_storage.c tests/fault_alloc.h $(wildcard $(SRCDIR)/formats/pdf/transparency/storage.*) | $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+.PHONY: test-pdf-sparse-groups
+test: test-pdf-sparse-groups
+test-pdf-sparse-groups: $(BINDIR)/test_pdf_group_storage $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	$(BINDIR)/test_pdf_group_storage
+	python3 scripts/generate_pdf_sparse_groups_fixture.py --check
+	python3 scripts/test_pdf_sparse_groups.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom

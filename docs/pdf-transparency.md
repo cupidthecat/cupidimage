@@ -312,3 +312,11 @@ Outline and bitmap text now start their implicit group only when a glyph has
 drawable geometry. Outline-less glyphs neither allocate that surface nor establish
 a text clip. See the [font guide](pdf-fonts.md#glyphs-without-outlines) for the
 specified clipping exception and the comparison renderer's differing behavior.
+
+
+## Group sample storage
+
+[Native group samples](pdf-group-storage.md) are allocated in bounded blocks while
+keeping the existing double-precision blend equations. Implicit text and Type 3
+groups can retain a page backdrop without reserving dense color/alpha/shape planes
+for untouched pixels. The RGBA view stays page-sized, and memory limits still apply.

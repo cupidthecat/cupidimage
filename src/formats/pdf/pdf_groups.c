@@ -33,7 +33,7 @@ static double group_initial_alpha(const pdf_transparency_group *group, size_t pi
         return 0;
     if (group->parent) {
         double a0 = group_initial_alpha(group->parent, pixel);
-        double ag = group->parent->knockout ? 0 : group->parent->alpha[pixel];
+        double ag = group->parent->knockout ? 0 : cupidimage_pdf_group_alpha(group->parent, pixel);
         return ag + a0 * (1 - ag);
     }
     return group->backdrop->rgba[pixel * 4 + 3] / 255.0;
@@ -42,7 +42,7 @@ static double group_initial_alpha(const pdf_transparency_group *group, size_t pi
 static void group_initial_color(const pdf_transparency_group *group, size_t pixel, double *out) {
     if (!group->isolated && group->parent &&
         (group->parent->knockout ||
-         (group->parent->lazy_backdrop && group->parent->shape[pixel] == 0))) {
+         (group->parent->lazy_backdrop && cupidimage_pdf_group_shape(group->parent, pixel) == 0))) {
         double inherited[4] = {0};
         group_initial_color(group->parent, pixel, inherited);
         memcpy(out, inherited, group->channels * sizeof(*out));
@@ -50,14 +50,18 @@ static void group_initial_color(const pdf_transparency_group *group, size_t pixe
     }
     for (unsigned i = 0; i < group->channels; i++)
         out[i] = group->isolated ? 0
-                 : group->parent ? group->parent->color[pixel * group->parent->channels + i]
+                 : group->parent ? cupidimage_pdf_group_color(group->parent, pixel)[i]
                                  : (i < 3 ? group->backdrop->rgba[pixel * 4 + i] / 255.0 : 0);
 }
 
 /* ISO 32000-1 11.4.8: shape controls replacement separately from opacity.
  * A knockout member uses the group's initial backdrop, not earlier members. */
-void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double *source,
-                                double alpha, double shape, int blend_mode) {
+int cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double *source,
+                               double alpha, double shape, int blend_mode) {
+    double *sample =
+        group->color ? NULL : cupidimage_pdf_group_storage_write(&group->storage, pixel);
+    if (!sample && !group->color)
+        return 0;
     unsigned x = (unsigned)(pixel % group->image.width);
     unsigned y = (unsigned)(pixel / group->image.width);
     if (x < group->left)
@@ -68,15 +72,15 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
         group->right = x + 1;
     if (y + 1 > group->bottom)
         group->bottom = y + 1;
-    double a0 = group_initial_alpha(group, pixel), ag = group->alpha[pixel];
+    double a0 = group_initial_alpha(group, pixel), ag = cupidimage_pdf_group_alpha(group, pixel);
     double previous_alpha = ag + a0 * (1 - ag);
     double base_group_alpha = group->knockout ? 0 : ag;
     double ab = base_group_alpha + a0 * (1 - base_group_alpha);
     double result_group_alpha = (1 - shape) * ag + (shape - alpha) * base_group_alpha + alpha;
     double ar = result_group_alpha + a0 * (1 - result_group_alpha);
-    double *color = group->color + pixel * group->channels, backdrop[4] = {0}, blended[4] = {0},
-           converted[4] = {0};
-    if (group->lazy_backdrop && group->shape[pixel] == 0)
+    double *color = group->color ? group->color + pixel * group->channels : sample + 2,
+           backdrop[4] = {0}, blended[4] = {0}, converted[4] = {0};
+    if (group->lazy_backdrop && cupidimage_pdf_group_shape(group, pixel) == 0)
         group_initial_color(group, pixel, color);
     if (group->knockout)
         group_initial_color(group, pixel, backdrop);
@@ -101,9 +105,17 @@ void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, con
         if (i < 3)
             group->image.rgba[pixel * 4 + i] = cupidimage_pdf_clamp_u8(color[i]);
     }
-    group->alpha[pixel] = fmax(0, fmin(1, result_group_alpha));
-    group->shape[pixel] = shape + group->shape[pixel] * (1 - shape);
+    double final_alpha = fmax(0, fmin(1, result_group_alpha));
+    double final_shape = shape + cupidimage_pdf_group_shape(group, pixel) * (1 - shape);
+    if (sample) {
+        sample[0] = final_alpha;
+        sample[1] = final_shape;
+    } else {
+        group->alpha[pixel] = final_alpha;
+        group->shape[pixel] = final_shape;
+    }
     group->image.rgba[pixel * 4 + 3] = cupidimage_pdf_clamp_u8(ar);
+    return 1;
 }
 
 int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparency_group *group,
@@ -119,53 +131,57 @@ int cupidimage_pdf_group_surface(const pdf_render_state *parent, pdf_transparenc
     const size_t limit = PDF_TRANSPARENCY_MEMORY_LIMIT;
     if (parent->img->width && pixels / parent->img->width != parent->img->height)
         return 0;
-    size_t per_pixel = 4 + (2 + group->channels) * sizeof(double);
     if (parent->form_budget->transparency_bytes_live > limit ||
-        pixels > (limit - parent->form_budget->transparency_bytes_live) / per_pixel)
+        pixels > (limit - parent->form_budget->transparency_bytes_live) / 4)
         return 0;
     group->image.rgba = calloc(pixels, 4);
     if (!group->image.rgba)
         return 0;
-    group->alpha = calloc(pixels, (2 + group->channels) * sizeof(*group->alpha));
-    if (!group->alpha) {
-        free(group->image.rgba);
-        group->image.rgba = NULL;
+    group->bytes = pixels * 4;
+    parent->form_budget->transparency_bytes_live += group->bytes;
+    if (!cupidimage_pdf_group_storage_init(&group->storage, pixels, group->channels,
+                                           &parent->form_budget->transparency_bytes_live, limit)) {
+        cupidimage_pdf_group_free(parent, group);
         return 0;
     }
-    group->color = group->alpha + pixels;
-    group->shape = group->color + pixels * group->channels;
     group->isolated = isolated;
     group->gray = group->blend.colors.components == 1;
     group->parent = parent->group;
     group->backdrop = parent->img;
-    if (!isolated && !group->lazy_backdrop) {
-        for (size_t pixel = 0; pixel < pixels; pixel++) {
-            group_initial_color(group, pixel, group->color + pixel * group->channels);
-            for (unsigned i = 0; i < 3; i++)
-                group->image.rgba[pixel * 4 + i] =
-                    cupidimage_pdf_clamp_u8(group->color[pixel * group->channels + i]);
-            group->image.rgba[pixel * 4 + 3] =
-                cupidimage_pdf_clamp_u8(group_initial_alpha(group, pixel));
-        }
-    }
     group->image.width = parent->img->width;
     group->image.height = parent->img->height;
     group->left = group->image.width;
     group->top = group->image.height;
     group->right = group->bottom = 0;
-    group->bytes = pixels * per_pixel;
-    parent->form_budget->transparency_bytes_live += group->bytes;
+    if (!isolated && !group->lazy_backdrop) {
+        for (size_t pixel = 0; pixel < pixels; pixel++) {
+            double *sample = cupidimage_pdf_group_storage_write(&group->storage, pixel);
+            if (!sample) {
+                cupidimage_pdf_group_free(parent, group);
+                return 0;
+            }
+            group_initial_color(group, pixel, sample + 2);
+            for (unsigned i = 0; i < 3; i++)
+                group->image.rgba[pixel * 4 + i] = cupidimage_pdf_clamp_u8(sample[2 + i]);
+            group->image.rgba[pixel * 4 + 3] =
+                cupidimage_pdf_clamp_u8(group_initial_alpha(group, pixel));
+        }
+    }
     if (background) {
         group->left = group->top = 0;
         group->right = group->image.width;
         group->bottom = group->image.height;
         for (size_t pixel = 0; pixel < pixels; pixel++) {
-            group->alpha[pixel] = group->shape[pixel] = 1;
+            double *sample = cupidimage_pdf_group_storage_write(&group->storage, pixel);
+            if (!sample) {
+                cupidimage_pdf_group_free(parent, group);
+                return 0;
+            }
+            sample[0] = sample[1] = 1;
             for (unsigned i = 0; i < group->channels; i++) {
-                group->color[pixel * group->channels + i] = fmax(0, fmin(1, background[i]));
+                sample[2 + i] = fmax(0, fmin(1, background[i]));
                 if (i < 3)
-                    group->image.rgba[pixel * 4 + i] =
-                        cupidimage_pdf_clamp_u8(group->color[pixel * group->channels + i]);
+                    group->image.rgba[pixel * 4 + i] = cupidimage_pdf_clamp_u8(sample[2 + i]);
             }
             group->image.rgba[pixel * 4 + 3] = 255;
         }
@@ -302,12 +318,12 @@ done:
 
 void cupidimage_pdf_group_source(const pdf_transparency_group *group, size_t pixel, double *color,
                                  double *alpha, double *shape) {
-    *alpha = group->alpha[pixel];
-    *shape = group->shape[pixel];
+    *alpha = cupidimage_pdf_group_alpha(group, pixel);
+    *shape = cupidimage_pdf_group_shape(group, pixel);
     double backdrop[4] = {0}, a0 = group_initial_alpha(group, pixel);
     group_initial_color(group, pixel, backdrop);
     for (unsigned i = 0; i < group->channels; i++) {
-        double cn = group->color[pixel * group->channels + i];
+        double cn = cupidimage_pdf_group_color(group, pixel)[i];
         /* Remove the initial backdrop once, retaining precision through recomposition. */
         color[i] =
             *alpha > 0 ? fmax(0, fmin(1, cn + (cn - backdrop[i]) * a0 * (1 - *alpha) / *alpha)) : 0;
@@ -351,11 +367,11 @@ finished:
     return !parent->image_failed;
 }
 
-void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group) {
+void cupidimage_pdf_group_free(const pdf_render_state *parent, pdf_transparency_group *group) {
     if (group->image.rgba) {
         parent->form_budget->transparency_bytes_live -= group->bytes;
         free(group->image.rgba);
-        free(group->alpha);
+        cupidimage_pdf_group_storage_free(&group->storage);
         memset(group, 0, sizeof(*group));
     }
 }

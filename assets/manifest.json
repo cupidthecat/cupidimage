@@ -631,6 +631,10 @@
       "sha256": "90f4a096fc9d09371bf33f7ade8fa434841857f9f94ff2e718da00ed58f13d8f"
     },
     {
+      "path": "assets/pdf/nested-type3-groups.pdf",
+      "sha256": "2add1a9ec0eab9182012b54842d22686d48fb7d434e7f68ec6d6170160853cc0"
+    },
+    {
       "path": "assets/pdf/nonembedded-latin-families.pdf",
       "sha256": "7c7392e7f2e1268d0e4f34aa6b95364b5057d87e3f9036d9ce376c72c1905e0e"
     },

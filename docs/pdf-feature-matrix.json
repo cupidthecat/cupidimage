@@ -975,11 +975,15 @@
             "scripts/test_pdf_embedded_fonts.py",
             "docs/pdf-graphics-coverage.md",
             "src/formats/pdf/pdf_path_coverage.c",
-            "scripts/test_pdf_graphics_antialias.py"
+            "scripts/test_pdf_graphics_antialias.py",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "Opt-in graphics coverage now includes Type 3 paths. Image/shading coverage and wider Type 3 color/transparency interactions remain incomplete."
+            "Opt-in graphics coverage now includes Type 3 paths. Image/shading coverage and wider Type 3 color/transparency interactions remain incomplete.",
+            "Sparse native group storage supports deeper implicit Type 3/text groups without increasing memory budgets. Paired-page and allocation tests do not establish full transparency or font fidelity."
           ],
           "dependencies": [
             "1",
@@ -2979,10 +2983,14 @@
           "evidence": [
             "docs/pdf-shading.md",
             "src/formats/pdf/pdf_shading.c",
-            "scripts/test_pdf_shading.py"
+            "scripts/test_pdf_shading.py",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
-            "Geometry support does not establish complete color-space or antialiased raster fidelity."
+            "Geometry support does not establish complete color-space or antialiased raster fidelity.",
+            "Native group samples are allocated on demand within the existing transparency and pattern-cache budgets. Owned equivalence and allocation tests cover implicit groups and inline-image failure propagation; broader rendering fidelity remains incomplete."
           ],
           "dependencies": [
             "3",
@@ -3085,10 +3093,14 @@
             "scripts/test_pdf_cmyk_groups.py",
             "tests/test_pdf_color_transfer.c",
             "docs/pdf-group-work.md",
-            "scripts/test_pdf_group_work.py"
+            "scripts/test_pdf_group_work.py",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
-            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete.",
+            "Native group samples are allocated on demand within the existing transparency and pattern-cache budgets. Owned equivalence and allocation tests cover implicit groups and inline-image failure propagation; broader rendering fidelity remains incomplete."
           ],
           "dependencies": [
             "3",
@@ -3121,10 +3133,14 @@
             "scripts/test_pdf_cmyk_groups.py",
             "tests/test_pdf_color_transfer.c",
             "docs/pdf-group-work.md",
-            "scripts/test_pdf_group_work.py"
+            "scripts/test_pdf_group_work.py",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
-            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete.",
+            "Native group samples are allocated on demand within the existing transparency and pattern-cache budgets. Owned equivalence and allocation tests cover implicit groups and inline-image failure propagation; broader rendering fidelity remains incomplete."
           ],
           "dependencies": [
             "3",
@@ -3158,10 +3174,14 @@
             "docs/pdf-cmyk-blending.md",
             "src/formats/pdf/color/black_generation.c",
             "scripts/test_pdf_cmyk_groups.py",
-            "tests/test_pdf_color_transfer.c"
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
-            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete.",
+            "Native group samples are allocated on demand within the existing transparency and pattern-cache budgets. Owned equivalence and allocation tests cover implicit groups and inline-image failure propagation; broader rendering fidelity remains incomplete."
           ],
           "dependencies": [
             "3",
@@ -3195,10 +3215,14 @@
             "scripts/test_pdf_cmyk_groups.py",
             "tests/test_pdf_color_transfer.c",
             "docs/pdf-group-work.md",
-            "scripts/test_pdf_group_work.py"
+            "scripts/test_pdf_group_work.py",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
-            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete.",
+            "Native group samples are allocated on demand within the existing transparency and pattern-cache budgets. Owned equivalence and allocation tests cover implicit groups and inline-image failure propagation; broader rendering fidelity remains incomplete."
           ],
           "dependencies": [
             "3",
@@ -3261,10 +3285,14 @@
             "scripts/test_pdf_cmyk_groups.py",
             "tests/test_pdf_color_transfer.c",
             "docs/pdf-group-work.md",
-            "scripts/test_pdf_group_work.py"
+            "scripts/test_pdf_group_work.py",
+            "docs/pdf-group-storage.md",
+            "src/formats/pdf/transparency/storage.c",
+            "scripts/test_pdf_sparse_groups.py"
           ],
           "limitations": [
-            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete.",
+            "Native group samples are allocated on demand within the existing transparency and pattern-cache budgets. Owned equivalence and allocation tests cover implicit groups and inline-image failure propagation; broader rendering fidelity remains incomplete."
           ],
           "dependencies": [
             "3",

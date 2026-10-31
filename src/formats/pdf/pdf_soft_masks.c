@@ -161,11 +161,11 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     st->form_budget->transparency_bytes_live += bytes;
     st->clip_budget->tests_left -= pixels;
     for (size_t pixel = 0; pixel < pixels; pixel++) {
-        const double *color = surface.color + pixel * surface.channels;
+        const double *color = cupidimage_pdf_group_color(&surface, pixel);
         double composed[4] = {0};
-        double value = surface.alpha[pixel];
+        double value = cupidimage_pdf_group_alpha(&surface, pixel);
         if (luminosity && isolated) {
-            double shape = surface.shape[pixel];
+            double shape = cupidimage_pdf_group_shape(&surface, pixel);
             if (shape == 0)
                 color = background;
             else if (shape != 1 || value != 1) {

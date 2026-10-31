@@ -42,7 +42,7 @@ static void pattern_free(pdf_pattern *pattern) {
     cupidimage_pdf_object_view_release(&pattern->definition);
     if (pattern->surface) {
         free(pattern->surface->image.rgba);
-        free(pattern->surface->alpha);
+        cupidimage_pdf_group_storage_free(&pattern->surface->storage);
         free(pattern->surface);
     }
     free(pattern);
@@ -101,7 +101,7 @@ void cupidimage_pdf_pattern_surface_release(pdf_render_state *st, pdf_pattern *p
         return;
     st->patterns->bytes_used -= pattern->surface_bytes;
     free(pattern->surface->image.rgba);
-    free(pattern->surface->alpha);
+    cupidimage_pdf_group_storage_free(&pattern->surface->storage);
     free(pattern->surface);
     pattern->surface = NULL;
     pattern->surface_bytes = 0;
@@ -134,12 +134,12 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
             sy >= st->img->height)
             return 0;
         pixel = (size_t)sy * st->img->width + (size_t)sx;
-        memcpy(rgb, pattern->surface->color + pixel * pattern->surface->channels,
+        memcpy(rgb, cupidimage_pdf_group_color(pattern->surface, pixel),
                pattern->surface->channels * sizeof(double));
         if (pattern->surface->channels == 3)
             rgb[3] = 0;
-        *shape = pattern->surface->shape[pixel];
-        *alpha = pattern->surface->alpha[pixel];
+        *shape = cupidimage_pdf_group_shape(pattern->surface, pixel);
+        *alpha = cupidimage_pdf_group_alpha(pattern->surface, pixel);
         return 1;
     }
     const pdf_blend_space *blend = cupidimage_pdf_current_blend(st);

@@ -25,7 +25,9 @@ the same distinction, so a four-channel ICC space does not inherit DeviceCMYK's
 initial K value.
 
 The shared transparency limit remains 256 MiB. The owned four-level mask fixture
-now fits without increasing that limit. A deeper CMYK mask stack is still rejected.
+fits without increasing that limit. [Sparse native samples](pdf-group-storage.md)
+also admit a deeper stack with untouched ancestors. A densely painted ancestor
+stack still reaches the limit.
 There is no cross-invocation mask cache.
 
 ## Clipped color evaluation
@@ -59,7 +61,7 @@ inside black-generation functions.
 
 ## Qualification and remaining work
 
-The group-work target checks 40 pages and 198 allocation-failure cases, including
+The group-work target checks 41 pages and 238 allocation-failure cases, including
 large and small nested masks, root knockout, Alpha/Luminosity behavior, backdrop
 colors, invalid root flags, clipping and unchanged limit failures. Stitching
 tests include 29 function cases. Existing mask, CMYK, calibrated and clipping

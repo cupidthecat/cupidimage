@@ -180,3 +180,8 @@ off; see [Type 1 hint replacements](../docs/pdf-type1-replacements.md).
 `pdf/cid-truetype-zero-zones.pdf` contains owned CID glyphs with a missing maxZones
 declaration and no twilight points. Hinted/unhinted whole-page controls compare
 it with a valid declaration; see [CID subset recovery](../docs/pdf-subset-fonts.md).
+
+`pdf/nested-type3-groups.pdf` places a small owned glyph inside six Type 3 fonts.
+Its large canvas exercises sparse group storage without increasing memory limits.
+A flattened leaf program supplies an exact whole-page control; see
+[PDF group storage](../docs/pdf-group-storage.md).

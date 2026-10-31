@@ -136,6 +136,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_tint.c"
 #include "../src/formats/pdf/raster/region.c"
 #include "../src/formats/pdf/raster/region_ellipse.c"
+#include "../src/formats/pdf/transparency/storage.c"
 static int test_text_lazy_enabled = 1;
 
 static int test_text_surface(const pdf_render_state *parent, pdf_transparency_group *group,
@@ -921,6 +922,18 @@ int main(int argc, char **argv) {
         pdf_transparency_group group = {0};
         allocation_count = 0;
         fail_at = 0;
+        /* An untouched 5000-square group needs only RGBA and the sparse index. */
+        checks++;
+        if (!cupidimage_pdf_group_begin(&child, &parent, &form, &group) ||
+            budget.transparency_bytes_live >= PDF_TRANSPARENCY_MEMORY_LIMIT)
+            failures++;
+        cupidimage_pdf_group_free(&parent, &group);
+        checks++;
+        if (budget.transparency_bytes_live || live_count)
+            failures++;
+        /* The unchanged cap still rejects a surface whose RGBA alone is too large. */
+        image.width = image.height = 10000;
+        allocation_count = 0;
         checks++;
         if (cupidimage_pdf_group_begin(&child, &parent, &form, &group) || allocation_count ||
             budget.transparency_bytes_live)

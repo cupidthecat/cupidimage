@@ -5,6 +5,7 @@
 #include "fonts/page_hint.h"
 #include "optional_content/state.h"
 #include "pdf_internal.h"
+#include "transparency/storage.h"
 
 #define PDF_COLOR_COMPONENTS 32
 
@@ -264,7 +265,8 @@ int cupidimage_pdf_blend_luminosity(const pdf_render_state *, const pdf_blend_sp
 
 struct pdf_transparency_group {
     cupidimage_image image;
-    double *alpha, *color, *shape;
+    pdf_group_storage storage;
+    double *alpha, *color, *shape; /* Borrowed planes for cached pattern tiles. */
     unsigned channels;
     const pdf_transparency_group *parent;
     const cupidimage_image *backdrop;
@@ -274,6 +276,22 @@ struct pdf_transparency_group {
     size_t bytes;
 };
 
+static inline double cupidimage_pdf_group_alpha(const pdf_transparency_group *group, size_t pixel) {
+    return group->alpha ? group->alpha[pixel]
+                        : cupidimage_pdf_group_storage_read(&group->storage, pixel)[0];
+}
+
+static inline double cupidimage_pdf_group_shape(const pdf_transparency_group *group, size_t pixel) {
+    return group->shape ? group->shape[pixel]
+                        : cupidimage_pdf_group_storage_read(&group->storage, pixel)[1];
+}
+
+static inline const double *cupidimage_pdf_group_color(const pdf_transparency_group *group,
+                                                       size_t pixel) {
+    return group->color ? group->color + pixel * group->channels
+                        : cupidimage_pdf_group_storage_read(&group->storage, pixel) + 2;
+}
+
 typedef struct {
     pdf_transparency_group surface;
     pdf_soft_mask *mask;
@@ -281,8 +299,8 @@ typedef struct {
 
 int cupidimage_pdf_fill_stroke_begin(pdf_render_state *, pdf_paint_group *, int);
 int cupidimage_pdf_fill_stroke_end(pdf_render_state *, pdf_paint_group *, int);
-void cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double *source,
-                                double alpha, double shape, int blend_mode);
+int cupidimage_pdf_group_paint(pdf_transparency_group *group, size_t pixel, const double *source,
+                               double alpha, double shape, int blend_mode);
 int cupidimage_pdf_intent_name(const char *);
 int cupidimage_pdf_read_intent(const pdf_render_state *, const pdf_object_view *, const char *,
                                int *);
@@ -304,7 +322,7 @@ int cupidimage_pdf_page_group_begin(pdf_render_state *st, pdf_transparency_group
 void cupidimage_pdf_group_source(const pdf_transparency_group *group, size_t pixel, double *color,
                                  double *alpha, double *shape);
 int cupidimage_pdf_group_finish(pdf_render_state *parent, const pdf_transparency_group *group);
-void cupidimage_pdf_group_free(pdf_render_state *parent, pdf_transparency_group *group);
+void cupidimage_pdf_group_free(const pdf_render_state *parent, pdf_transparency_group *group);
 
 int cupidimage_pdf_text_group_begin(pdf_render_state *st);
 int cupidimage_pdf_text_group_end(pdf_render_state *st);

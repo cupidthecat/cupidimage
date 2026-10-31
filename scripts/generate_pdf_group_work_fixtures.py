@@ -10,12 +10,14 @@ from test_pdf_forms import form
 from test_pdf_type3 import stream
 
 
-def mask_page(size=(612,792),depth=4,space='/DeviceGray'):
+def mask_page(size=(612,792),depth=4,space='/DeviceGray',materialize=False):
     width,height=size
     objects={}
     for level in range(depth):
         n=10+level
         content=('' if level==depth-1 else '/M gs ')+f'1 g 0 0 {width} {height} re f'
+        if materialize and level < depth-1:
+            content=f'1 g 0 0 {width} {height} re f '+content
         resources='' if level==depth-1 else '/Resources << /ExtGState << /M << /SMask << /S /Luminosity /G '+str(n+1)+' 0 R >> >> >> >>'
         objects[n]=form(content,f'/BBox [0 0 {width} {height}] /Group << /S /Transparency /I true /CS '+space+' >> '+resources)
     return document(f'/MediaBox [0 0 {width} {height}] /Resources << /ExtGState << /M << /SMask << /S /Luminosity /G 10 0 R >> >> >> >>',
