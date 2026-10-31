@@ -33,14 +33,14 @@ int cupidimage_pdf_annotation_item(pdf_render_state *st, const pdf_object_view *
         if (status < 0)
             return 0;
         if (!status)
-            *out = (pdf_object_view){(const unsigned char *)"null", 4, NULL, st->xref};
+            *out = (pdf_object_view){(const unsigned char *)"null", 4, NULL, st->xref, 0};
     } else {
-        pdf_object_view tail = {source->data + start, source->len - start, NULL, source->xref};
+        pdf_object_view tail = {source->data + start, source->len - start, NULL, source->xref, 0};
         if (cupidimage_pdf_annotation_null(&tail))
             end = start + 4;
         else if (!cupidimage_pdf_dictionary_view(source, start, out, &end))
             return 0;
-        *out = (pdf_object_view){source->data + start, end - start, NULL, source->xref};
+        *out = (pdf_object_view){source->data + start, end - start, NULL, source->xref, 0};
     }
     size_t cost = 4;
     if (!cupidimage_pdf_annotation_null(out) && !cupidimage_pdf_annotation_dictionary(out, &cost)) {

@@ -136,3 +136,10 @@ outlines with legacy character-code names and modern high custom-name indices.
 They remain decoded-unverified. Regenerate them with
 scripts/generate_pdf_post_table_fixtures.py; separate paired tests verify glyph
 selection and PDF widths.
+
+The security-rc4.pdf, security-aes128.pdf and security-aes256.pdf assets have empty
+user passwords and synthetic owner credentials. Each has a literal red-page
+oracle and a nonzero content-object generation. They test encrypted loading
+through the existing default APIs. Regenerate their exact bytes with
+scripts/generate_pdf_security_assets.py. The larger password/structure fixtures
+and independent generation procedure are described in ../docs/pdf-security.md.

@@ -18,6 +18,8 @@ nonzero status.
 | `--sixel-colors N` | Palette size, 2–256; default 256. |
 | `--sixel-dither MODE` | `none`, `floyd-steinberg`, `atkinson`, or `ordered`; default Floyd–Steinberg. |
 | `--svg-time seconds` | Render a sampled SVG animation time instead of autoplay. |
+| `--pdf-password-file path` | Read exact password bytes from a file; `-` reads standard input. Maximum 4,096 bytes. |
+| `--pdf-password-raw` | Treat those bytes as PDFDocEncoding for legacy revisions instead of UTF-8. Requires a password source. |
 | `--pdf-page number` | Render one PDF page, numbered from 1. |
 | `--pdf-graphics-aa` | Enable grayscale vector fills and strokes, Type 3 paths and geometric clipping edges. |
 | `--pdf-text-aa` | Enable grayscale outline text fills, strokes and geometric clipping edges. Hinting is unchanged. |
@@ -68,3 +70,19 @@ misnamed file to the CLI can bypass format-specific page or animation handling.
 
 Redirected output is still terminal escape data, not a PNG or other image export.
 Use the library's RGBA output when another application needs decoded pixels.
+
+## Password-protected PDFs
+
+The default password is empty. To open a document with a nonempty password, use
+`--pdf-password-file path` or `--pdf-password-file -` for a pipe. The password is
+never taken from a literal command-line argument, printed in diagnostics or saved.
+Trailing newlines are password bytes, not separators; do not add one unless it is
+part of the password. Temporary credential buffers are cleared after use.
+
+UTF-8 passwords use the preparation rules for the file's security revision.
+`--pdf-password-raw` is an explicit compatibility option for already encoded legacy
+PDFDocEncoding bytes. It is rejected for modern AES-256 revisions. Unsupported
+handlers and incorrect credentials for protected page data produce a load error
+without page output. Documents with only deferred encrypted attachments can still
+show their unencrypted pages.
+The [security guide](pdf-security.md) describes algorithms and remaining limits.

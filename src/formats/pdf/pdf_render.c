@@ -688,7 +688,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
                     valid = cupidimage_pdf_optional_resource(st, ops[1].str, &visible);
                 else {
                     pdf_object_view value = {(const unsigned char *)ops[1].str, ops[1].len, NULL,
-                                             st->xref};
+                                             st->xref, 0};
                     valid = cupidimage_pdf_optional_dictionary_visibility(st, &value, &visible);
                 }
             }

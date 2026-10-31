@@ -673,3 +673,45 @@ test-pdf-cff-page-hinting: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom 
 	python3 scripts/test_pdf_cff_page_hinting.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
 
 $(BINDIR)/test_asset_probe $(BINDIR)/test_pdf_pages: tests/pdf_probe_options.h
+
+TEST_TARGETS += test-pdf-security-primitives
+TEST_BINS += test_pdf_crypto test_pdf_authenticate test_pdf_password
+.PHONY: test-pdf-security-primitives
+test: test-pdf-security-primitives
+
+$(BINDIR)/test_pdf_crypto: tests/test_pdf_crypto.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_authenticate: tests/test_pdf_authenticate.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_password: tests/test_pdf_password.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-security-primitives: $(BINDIR)/test_pdf_crypto $(BINDIR)/test_pdf_authenticate $(BINDIR)/test_pdf_password $(BINDIR)/test_pdf_password_oom
+	$(BINDIR)/test_pdf_password_oom
+	python3 scripts/check_pdf_crypto_sources.py
+	python3 scripts/generate_pdf_password_tables.py --check
+	python3 scripts/test_pdf_crypto.py $(BINDIR)/test_pdf_crypto
+	python3 scripts/test_pdf_authenticate.py $(BINDIR)/test_pdf_authenticate
+	python3 scripts/test_pdf_password.py $(BINDIR)/test_pdf_password
+
+TEST_BINS += test_pdf_password_oom
+$(BINDIR)/test_pdf_password_oom: tests/test_pdf_password_oom.c src/formats/pdf/security/password.c src/formats/pdf/security/password_data.inc tests/fault_alloc.h $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+
+TEST_TARGETS += test-pdf-security
+TEST_BINS += test_pdf_security test_pdf_security_stream
+.PHONY: test-pdf-security
+test: test-pdf-security
+$(BINDIR)/test_pdf_security: tests/test_pdf_security.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-security: $(BINDIR)/test_pdf_security $(BINDIR)/test_pdf_security_stream $(BINDIR)/test_pdf_clip_oom $(CLI)
+	python3 scripts/generate_pdf_security_assets.py --check
+	python3 scripts/test_pdf_security.py $(BINDIR)/test_pdf_security $(BINDIR)/test_pdf_clip_oom --cli $(CLI) --stream-probe $(BINDIR)/test_pdf_security_stream
+	python3 scripts/test_pdf_security_malformed.py $(BINDIR)/test_pdf_security $(BINDIR)/test_pdf_clip_oom
+
+$(BINDIR)/test_pdf_security_stream: tests/test_pdf_security_stream.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)

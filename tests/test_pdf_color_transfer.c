@@ -15,7 +15,7 @@ static unsigned checks, failures;
     } while (0)
 
 static int select_state(pdf_render_state *st, const char *text) {
-    pdf_object_view view = {(const unsigned char *)text, strlen(text), NULL, NULL};
+    pdf_object_view view = {(const unsigned char *)text, strlen(text), NULL, NULL, 0};
     pdf_graphics_state next = st->gs;
     if (!cupidimage_pdf_color_function_state(st, &view, &next))
         return 0;
