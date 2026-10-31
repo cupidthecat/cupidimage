@@ -8,6 +8,10 @@ bundled CFF substitutes with the same programs embedded in a PDF. See
 
 ## Everyday checks
 
+`make test-pdf-cid-substitution` verifies the pinned Japanese CID font bundle and
+paired embedded/substituted page rendering, including resource sharing and
+allocation-failure recovery. It does not require installed system fonts.
+
 ```sh
 make -j2 all test
 make test-pdf-corpus

@@ -25,7 +25,7 @@ static uint32_t cff_sfnt_uint(const unsigned char *p) {
     return (uint32_t)p[0] * 16777216u + (uint32_t)p[1] * 65536u + (unsigned)p[2] * 256u + p[3];
 }
 
-static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table) {
+int cupidimage_pdf_cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table) {
     if (length < 12 || memcmp(data, "OTTO", 4))
         return 0;
     unsigned count = (unsigned)data[4] * 256 + data[5];
@@ -289,7 +289,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                        parts[1]) ||
             !ps_pdf_encoding(data, size, view, program))
             goto done;
-    } else if (cff_stream || cff_sfnt_table(program->bytes, program->length, &cff)) {
+    } else if (cff_stream || cupidimage_pdf_cff_sfnt_table(program->bytes, program->length, &cff)) {
         program->is_cff = 1;
         if (!(program->cid ? cupidimage_pdf_cff_init_subset(&program->cff, cff.data, cff.length)
                            : cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length)) ||

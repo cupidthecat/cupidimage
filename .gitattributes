@@ -32,6 +32,9 @@ third_party/adobe-core14/readme.txt -text -whitespace
 third_party/extended-standard-fonts/*.ttf binary
 third_party/extended-standard-fonts/LICENSE -text -whitespace
 third_party/extended-standard-fonts/AUTHORS -text -whitespace
+third_party/cid-standard-fonts/*.otf binary
+third_party/cid-standard-fonts/LICENSE -text -whitespace
+src/formats/pdf/fonts/substitute/*.inc linguist-generated=true
 
 # Preserve renamed CFF spacing subsets and unchanged upstream license/provenance text.
 third_party/standard-spacing-marks/*.cff binary

@@ -486,6 +486,14 @@
       "sha256": "3327d0f6f6a794506727d678fe8262b17e09414c1f4cb7f76c4ae67e6dce5115"
     },
     {
+      "path": "assets/pdf/cid-japanese-gothic.pdf",
+      "sha256": "36eeaa1fe9219a82cb9ed83e553a95377b499f51837772f2fed4957cde5ef8f6"
+    },
+    {
+      "path": "assets/pdf/cid-japanese-mincho-vertical.pdf",
+      "sha256": "6380d8d6e33d82309b79cc35c84ea7e122cc745f867d23d179c36ab3a446e08b"
+    },
+    {
       "path": "assets/pdf/cie-blending.pdf",
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },

@@ -19,11 +19,18 @@ TEST_TARGETS = test-pdf-jpx test-pdf-cff-bindings test-pdf-annotations test-pdf-
 TEST_BINS = test_pdf_jpx test_pdf_jpx_file test_pdf_subset_fonts test_pdf_optional_content test_pdf_clip_work test_pdf_path_storage test_pdf_color_transfer test_pdf_icc_reverse test_pdf_icc_inverse test_pdf_image_sampling test_pdf_region test_pdf_clip_geometry test_sixel_dither test_pdf_stroke_union test_pdf_type1_counter test_pdf_type1_gridfit test_pdf_type1_trace test_pdf_type1_lexer test_pdf_ps_gridfit test_pdf_page_hint test_pdf_coverage test_pdf_coverage_oom test_pdf_tt_loader test_pdf_tt_glyphs test_pdf_tt_vm test_pdf_icc_mab test_pdf_icc_lut test_pdf_flatness test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
+TEST_TARGETS += test-pdf-cid-substitution
+
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
 lib: $(LIB)
 cli: $(CLI)
 test: $(TEST_TARGETS)
+
+test-pdf-cid-substitution: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_cid_fonts.py --check
+	python3 scripts/generate_pdf_cid_substitution_fixtures.py --check
+	python3 scripts/test_pdf_cid_substitution.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 $(BINDIR)/test_pdf_region: tests/test_pdf_region.c $(shell find $(SRCDIR)/formats/pdf/raster -name 'region*')
 	@mkdir -p $(BINDIR)

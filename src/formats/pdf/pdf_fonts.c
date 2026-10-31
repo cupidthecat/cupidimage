@@ -678,7 +678,8 @@ static int pdf_collect_fonts_from_dict(const unsigned char *data, size_t size,
                  cupidimage_pdf_parse_standard_font(data, size, &font_view, font,
                                                     &table->program_bytes) &&
                  cupidimage_pdf_parse_substitute_font(data, size, &font_view, font,
-                                                      &table->program_bytes);
+                                                      &table->program_bytes) &&
+                 cupidimage_pdf_parse_cid_substitute(data, size, &font_view, font, table);
         if (ok) {
             /* Extraction metadata must not discard a valid glyph program or CID metrics. */
             ok = pdf_parse_font_tounicode(data, size, &font_view, font, NULL, 0);

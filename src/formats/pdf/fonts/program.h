@@ -25,6 +25,7 @@ struct pdf_font_program {
     size_t length, gid_length;
     unsigned glyphs[256];
     int cid;
+    const struct pdf_cid_font_source *cid_substitute;
     pdf_cached_outline outline_cache[PDF_FONT_OUTLINE_CACHE_SLOTS];
     unsigned outline_cache_next;
     struct pdf_font_program *extended;

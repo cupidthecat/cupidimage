@@ -43,6 +43,12 @@ is hidden here: these RGB files have no subsampling. Regenerate them with
 
 ## PDF samples
 
+`cid-japanese-gothic.pdf` and `cid-japanese-mincho-vertical.pdf` are owned,
+nonembedded Japanese CID text samples. Regenerate them with
+`scripts/generate_pdf_cid_substitution_fixtures.py`. The asset audit treats their
+visible glyphs as decoded-unverified; the separate CID-substitution suite compares
+substituted pages with pinned, explicitly embedded font programs.
+
 `assets/pdf/pypdf/minimal-document.pdf` is an unchanged copy of
 [001-trivial/minimal-document.pdf](https://github.com/py-pdf/sample-files/blob/02b8203bf416db3dbdb03438bc8278dfcb0555f3/001-trivial/minimal-document.pdf)
 from **py-pdf/sample-files**, contributed by that project's contributors.

@@ -333,7 +333,7 @@ text fidelity in the current PDF work. The main gaps are:
 - CFF2 and variable-font applicability still needs a PDF-version-specific audit.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- Symbolic/script/CJK substitutes and broader missing-font matching.
+- Broader symbolic/script/CJK substitutes beyond the selected Japanese CID-keyed faces.
 
 The applicability of newer font formats and tables must be checked against the
 PDF version; this list is not a claim that every PDF version requires them.
@@ -727,6 +727,42 @@ programs explicitly embedded in PDFs. It tests both simple-font types, encodings
 PDF width overrides, all text modes, transformed text, embedded-program priority,
 invalid metadata and allocation recovery. The owned width-marker asset has an
 analytic reference; the visible family sample remains decoded-unverified.
+
+## CID-keyed Japanese substitutes
+
+Nonembedded CIDFontType0 resources can use bundled regular-weight Japanese
+outlines when CIDSystemInfo explicitly names Adobe-Japan1, supplement 0 through
+7. Harano Aji Gothic supplies the default sans-serif face; the Serif descriptor
+flag selects Harano Aji Mincho. The recognized names HeiseiMin-W3, Ryumin-Light,
+MS-Mincho and MSMincho also select Mincho, including valid subset prefixes.
+
+Glyph selection uses the font's CID charset. It does not reinterpret CIDs as
+Unicode or use ToUnicode to choose outlines. Predefined and embedded CMaps keep
+their existing character-code mapping, while W, DW, W2 and DW2 continue to govern
+PDF placement. Horizontal and vertical text use the same outline path, including
+text clipping, transforms and the native CFF hinting option.
+
+The original font files are preserved byte-for-byte in the compressed bundle.
+Each decoded face is shared within its font-resource table, even when resources
+have different widths or CMaps. Program ownership remains reference-counted and
+charged to the existing 64 MiB font-program budget. A supplied embedded program
+takes precedence; an unsupported supplied program is not hidden by substitution.
+
+This is limited substitution support, not complete CJK font coverage. Only two
+regular faces are bundled, source-font glyph coverage limits still apply, and
+style/stretch matching is incomplete. Other registries, collections and newer
+supplements keep the existing fallback. Nonembedded CIDFontType2 needs the
+character-code/cmap selection specified in ISO 32000 section 9.7.4.2 and is not
+handled by this CID-keyed resolver. Collection identifiers longer than the
+bounded 1,024-byte parsing window are rejected rather than allocated without a
+limit.
+
+`make test-pdf-cid-substitution` checks the packed source bytes and compares
+substituted pages with the same programs embedded explicitly. It covers all text
+modes, horizontal/vertical metrics, transforms, predefined CMaps, direct and
+indirect collection identifiers, extraction metadata, resource reuse and
+allocation failures. These checks do not establish parity with every platform's
+installed-font substitution choices.
 
 ## Undefined TrueType encoding slots
 

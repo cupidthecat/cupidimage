@@ -47,7 +47,9 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   Unicode maps and glyph rasterization. `fonts/` holds binary font tables,
   encoding data, the bounded PDF encoding CMap parser and the bitmap fallback. `pdf_font_program.c` connects embedded
   programs to PDF resources; `pdf_font_substitution.c` owns pinned substitute loading
-  and recognized nonembedded-family selection. `pdf_font_truetype.c` handles PDF encoding selection
+  and recognized nonembedded-family selection. `pdf_font_cid_substitution.c` selects
+  collection-matched Japanese CID outlines from `fonts/substitute/` and shares
+  decoded programs within a resource table. `pdf_font_truetype.c` handles PDF encoding selection
   and glyph-name fallback for embedded TrueType programs. `pdf_text_outline.c` handles quadratic/cubic glyph
   coverage and text clipping. `fonts/cff.c` reads compact font data, and
   `fonts/type2.c` interprets its bounded charstrings. `fonts/type1.c` reads and

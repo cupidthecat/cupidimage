@@ -79,6 +79,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/optional_content/state.c"
 #include "../src/formats/pdf/optional_content/values.c"
 #include "../src/formats/pdf/pdf_clip_regions.c"
+#include "../src/formats/pdf/pdf_font_cid_substitution.c"
 #include "../src/formats/pdf/pdf_font_substitution.c"
 #include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"

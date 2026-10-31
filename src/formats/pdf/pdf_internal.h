@@ -276,6 +276,8 @@ int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
                                        size_t *budget);
 int cupidimage_pdf_parse_substitute_font(const unsigned char *, size_t, const pdf_object_view *,
                                          pdf_font_map *, size_t *);
+int cupidimage_pdf_parse_cid_substitute(const unsigned char *, size_t, const pdf_object_view *,
+                                        pdf_font_map *, pdf_font_table *);
 int cupidimage_pdf_truetype_encoding(const unsigned char *data, size_t size,
                                      const pdf_object_view *view, const pdf_object_view *descriptor,
                                      pdf_font_program *program);

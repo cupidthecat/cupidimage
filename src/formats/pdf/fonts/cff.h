@@ -25,6 +25,7 @@ typedef struct {
 
 int cupidimage_pdf_cff_index(pdf_cff_slice source, size_t *position, pdf_cff_index *index);
 int cupidimage_pdf_cff_item(const pdf_cff_index *index, unsigned item, pdf_cff_slice *slice);
+int cupidimage_pdf_cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table);
 int cupidimage_pdf_cff_dict(pdf_cff_slice source, pdf_cff_dict *dict, int private_dict);
 
 typedef struct {
