@@ -333,7 +333,7 @@ text fidelity in the current PDF work. The main gaps are:
 - CFF2 and variable-font applicability still needs a PDF-version-specific audit.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- Broader symbolic/script/CJK substitutes beyond the selected Japanese CID-keyed faces.
+- Broader symbolic/script/CJK substitutes, weights and styles beyond the selected CID-keyed faces.
 
 The applicability of newer font formats and tables must be checked against the
 PDF version; this list is not a claim that every PDF version requires them.
@@ -728,13 +728,20 @@ PDF width overrides, all text modes, transformed text, embedded-program priority
 invalid metadata and allocation recovery. The owned width-marker asset has an
 analytic reference; the visible family sample remains decoded-unverified.
 
-## CID-keyed Japanese substitutes
+## CID-keyed CJK substitutes
 
-Nonembedded CIDFontType0 resources can use bundled regular-weight Japanese
-outlines when CIDSystemInfo explicitly names Adobe-Japan1, supplement 0 through
-7. Harano Aji Gothic supplies the default sans-serif face; the Serif descriptor
-flag selects Harano Aji Mincho. The recognized names HeiseiMin-W3, Ryumin-Light,
-MS-Mincho and MSMincho also select Mincho, including valid subset prefixes.
+Nonembedded CIDFontType0 resources can use bundled regular-weight outlines when
+CIDSystemInfo explicitly names one of these Adobe collections:
+
+- Japan1, supplements 0 through 7.
+- GB1, supplements 0 through 6.
+- CNS1, supplements 0 through 7.
+- Korea1, supplements 0 through 2.
+
+Each collection has its own pinned Harano Aji Gothic and Mincho programs. Gothic
+is the default sans-serif face; the Serif descriptor flag selects Mincho. The
+recognized Japanese names HeiseiMin-W3, Ryumin-Light, MS-Mincho and MSMincho also
+select Mincho, including valid subset prefixes.
 
 Glyph selection uses the font's CID charset. It does not reinterpret CIDs as
 Unicode or use ToUnicode to choose outlines. Predefined and embedded CMaps keep
@@ -745,12 +752,17 @@ text clipping, transforms and the native CFF hinting option.
 The original font files are preserved byte-for-byte in the compressed bundle.
 Each decoded face is shared within its font-resource table, even when resources
 have different widths or CMaps. Program ownership remains reference-counted and
-charged to the existing 64 MiB font-program budget. A supplied embedded program
+charged to the existing 64 MiB font-program budget. Individual substitute programs
+are bounded to 16 MiB, matching the embedded-program limit; the largest pinned
+face is about 10.94 MiB. All eight programs together occupy 57,400,576 decoded
+bytes before small parser structures, and a shared-table test loads all eight.
+A supplied embedded program
 takes precedence; an unsupported supplied program is not hidden by substitution.
 
 This is limited substitution support, not complete CJK font coverage. Only two
-regular faces are bundled, source-font glyph coverage limits still apply, and
-style/stretch matching is incomplete. Other registries, collections and newer
+regular faces per collection are bundled, source-font glyph coverage limits still apply, and
+style/stretch matching is incomplete. Upstream labels the Chinese and Korean
+variants experimental. Other registries, collections and newer
 supplements keep the existing fallback. Collection identifiers longer than the
 bounded 1,024-byte parsing window are rejected rather than allocated without a
 limit.
@@ -764,8 +776,11 @@ installed-font substitution choices.
 
 ### External Type 2 character selection
 
-Nonembedded CIDFontType2 resources in the same collection can use these faces
-with 90ms-RKSJ-H/V, UniJIS-UCS2-H/V and UniJIS-UTF16-H/V. The renderer translates
+Nonembedded CIDFontType2 resources use collection-matched character encodings:
+90ms-RKSJ-H/V and UniJIS-UCS2/UTF16-H/V for Japan1, UniGB-UCS2/UTF16-H/V for
+GB1, UniCNS-UCS2/UTF16-H/V for CNS1, and UniKS-UCS2/UTF16-H/V for Korea1.
+A CMap from another collection is not accepted as a substitute character
+encoding. The renderer translates
 the original character code to Unicode and selects a GID through the substitute
 font's OpenType cmap. It does not select the glyph from the CID or from ToUnicode.
 CIDToGIDMap is ignored for these nonembedded resources, as required by
@@ -780,7 +795,8 @@ reflow, ligature shaping or font-derived advance replaces the PDF's positioning.
 CP932 uses the published, pinned Unicode mapping table, not a host codec.
 Undefined mappings, including byte A0, remain missing glyphs. Identity-H/V and
 embedded custom encoding CMaps do not describe a supported external Type 2
-character encoding here and retain the existing fallback. This is not complete
+character encoding here and retain the existing fallback. Other legacy Chinese
+and Korean encodings also remain separate work. This is not complete
 nonembedded TrueType or CJK substitution coverage.
 
 The mapping probe checks all 7,915 published CP932 entries and the pinned fonts'
@@ -788,14 +804,37 @@ Unicode cmap repertoire against a separately generated fontTools oracle,
 including vertical variants, supplementary UTF-16 characters and invalid input.
 Page tests cover each supported encoding, all text modes, PDF metric overrides,
 ignored CIDToGIDMap entries and mixed Type 0/Type 2 resource reuse. The oracle is
-checked in; fontTools is needed only to regenerate it.
+checked in; fontTools is needed only to regenerate it. Across the eight faces,
+714,872 glyph-index checks cover the pinned Unicode and vertical mappings.
+All 182,326 source glyphs also decode their outlines and hint programs without
+unsupported-hint diagnostics. Empty glyph programs remain empty.
+Chinese and Korean paired-page tests add 211 rendering checks and 202 allocation
+checks, including supplementary codes, collection mismatches, unsupported
+supplied fonts and the shared table budget.
+
+The owned cid-substitute-gb1.pdf, cid-substitute-cns1.pdf and
+cid-substitute-korea1.pdf assets show regular serif/sans horizontal CID text and
+vertical external Type 2 Unicode text. Their full-page rasters remain
+decoded-unverified pending visual review.
 
 Independent complete-page raster comparison is separate:
 `python3 scripts/compare_pdf_cid_rasters.py bin/test_pdf_pages` records exact
 channel differences and exits unsuccessfully for any nonmatching page. It does
-not align, crop or tolerate differences. The current Japanese grayscale samples
-still differ from the independent renderer even with the same font bytes
-embedded; paired substitution checks are not independent pixel-parity claims.
+not align, crop or tolerate differences. It compares matching unhinted profiles
+and retains both grid-aligned and fractional-origin input cases. Its default
+Japan1 selection has 12 grid-aligned pages, all matching exactly. The fractional cases still differ because the
+raster profiles retain different origin precision; those failures remain in the
+default comparison. Paired substitution checks are not independent pixel-parity
+claims. Native hinted Japanese outlines were also checked separately against two
+independent font-engine versions at the sampled glyphs and size.
+
+With `--collection all`, 42 of 48 grid-aligned pages match exactly. Six Chinese
+cases at 18 points retain differences of one to four channel levels; all 48
+fractional-origin pages differ. Point-level inspection traced the Chinese cases
+to scale quantization: at 24 pixels per em, a source coordinate of 889 lands at
+1366 in 26.6 device units in the native path and 1365 in the independent engine.
+No tolerance or glyph-specific adjustment hides this remaining raster-profile
+work. The expanded diagnostic returns a failure for these differences.
 
 ## Undefined TrueType encoding slots
 

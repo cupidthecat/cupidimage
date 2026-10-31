@@ -36,7 +36,9 @@ test-pdf-cid-substitution: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom 
 	python3 scripts/generate_pdf_cp932.py --check
 	python3 scripts/test_pdf_cid_encoding.py $(BINDIR)/test_pdf_cid_encoding
 	python3 scripts/generate_pdf_cid_substitution_fixtures.py --check
+	python3 scripts/generate_pdf_cjk_fixtures.py --check
 	python3 scripts/test_pdf_cid_substitution.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_cjk_substitution.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 $(BINDIR)/test_pdf_region: tests/test_pdf_region.c $(shell find $(SRCDIR)/formats/pdf/raster -name 'region*')
 	@mkdir -p $(BINDIR)

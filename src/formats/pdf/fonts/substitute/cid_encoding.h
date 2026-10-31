@@ -11,7 +11,7 @@ enum {
     PDF_CID_SUBSTITUTE_UTF16
 };
 
-unsigned cupidimage_pdf_cid_substitute_encoding(const char *name);
+unsigned cupidimage_pdf_cid_substitute_encoding(const char *name, const char *ordering);
 int cupidimage_pdf_cid_substitute_cmap(struct pdf_font_program *program);
 unsigned cupidimage_pdf_cid_substitute_glyph(const struct pdf_font_program *program,
                                              unsigned encoding, uint32_t code, size_t bytes,

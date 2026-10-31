@@ -502,6 +502,18 @@
       "sha256": "6e46e1d5a60807d20e7d07c052e3e56c2de991ac098c32672df681e4b6760c96"
     },
     {
+      "path": "assets/pdf/cid-substitute-cns1.pdf",
+      "sha256": "3d39dae44d8e860989dc585e7b0264c1c61b289be2cd7df5aa8c24416c8ac296"
+    },
+    {
+      "path": "assets/pdf/cid-substitute-gb1.pdf",
+      "sha256": "bddc3a8493540e6ebe75dbaf8491211e29636075544be14baee123e0abefd1b5"
+    },
+    {
+      "path": "assets/pdf/cid-substitute-korea1.pdf",
+      "sha256": "9dacb6dd2910655ab6aa91a3674ddf2e1c442e7b79e7c11c7d96757c1cd4d683"
+    },
+    {
       "path": "assets/pdf/cie-blending.pdf",
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },

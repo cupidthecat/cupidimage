@@ -119,3 +119,9 @@ scripts/generate_pdf_cff_binding_fixtures.py.
 `pdf/reference/jpx-native-rgb.pdf` and `jpx-palette-opacity.pdf` exercise native
 JPEG 2000 samples, palette expansion and embedded alpha. Both have literal pixel
 oracles. Regenerate them with `scripts/generate_pdf_jpx_fixtures.py`.
+
+The cid-substitute-gb1.pdf, cid-substitute-cns1.pdf and cid-substitute-korea1.pdf
+samples exercise regular serif/sans Chinese and Korean substitutes, with
+horizontal CIDFontType0 and vertical Unicode CIDFontType2 text. They remain
+decoded-unverified visual assets. Regenerate them with
+scripts/generate_pdf_cjk_fixtures.py; paired embedded-program tests are separate.

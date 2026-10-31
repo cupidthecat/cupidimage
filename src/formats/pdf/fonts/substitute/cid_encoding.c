@@ -5,13 +5,27 @@
 #include "cp932_data.inc"
 #include <string.h>
 
-unsigned cupidimage_pdf_cid_substitute_encoding(const char *name) {
-    if (!strcmp(name, "90ms-RKSJ-H") || !strcmp(name, "90ms-RKSJ-V"))
+unsigned cupidimage_pdf_cid_substitute_encoding(const char *name, const char *ordering) {
+    if ((!ordering || !strcmp(ordering, "Japan1")) &&
+        (!strcmp(name, "90ms-RKSJ-H") || !strcmp(name, "90ms-RKSJ-V")))
         return PDF_CID_SUBSTITUTE_CP932;
-    if (!strcmp(name, "UniJIS-UCS2-H") || !strcmp(name, "UniJIS-UCS2-V"))
-        return PDF_CID_SUBSTITUTE_UCS2;
-    if (!strcmp(name, "UniJIS-UTF16-H") || !strcmp(name, "UniJIS-UTF16-V"))
-        return PDF_CID_SUBSTITUTE_UTF16;
+
+    static const struct {
+        const char *prefix, *ordering;
+    } collections[] = {
+        {"UniJIS", "Japan1"}, {"UniGB", "GB1"}, {"UniCNS", "CNS1"}, {"UniKS", "Korea1"}};
+
+    for (unsigned i = 0; i < sizeof(collections) / sizeof(*collections); i++) {
+        size_t prefix = strlen(collections[i].prefix);
+        if ((ordering && strcmp(ordering, collections[i].ordering)) ||
+            strncmp(name, collections[i].prefix, prefix))
+            continue;
+        const char *suffix = name + prefix;
+        if (!strcmp(suffix, "-UCS2-H") || !strcmp(suffix, "-UCS2-V"))
+            return PDF_CID_SUBSTITUTE_UCS2;
+        if (!strcmp(suffix, "-UTF16-H") || !strcmp(suffix, "-UTF16-V"))
+            return PDF_CID_SUBSTITUTE_UTF16;
+    }
     return PDF_CID_SUBSTITUTE_NONE;
 }
 

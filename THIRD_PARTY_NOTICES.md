@@ -343,8 +343,15 @@ notices and the pinned adaptation record are in third_party/openjpeg.
 
 ## Harano Aji CID substitute fonts
 
-HaranoAjiGothic-Regular.otf and HaranoAjiMincho-Regular.otf are bundled without modification.
-Source: https://github.com/trueroad/HaranoAjiFonts
+The Gothic and Mincho Regular OpenType files for Japan1, GB1 (CN), CNS1 (TW),
+and Korea1 (K1) are bundled without modification. Pinned revisions and file
+hashes are listed in third_party/cid-standard-fonts/manifest.json.
+
+Sources:
+- https://github.com/trueroad/HaranoAjiFonts
+- https://github.com/trueroad/HaranoAjiFontsCN
+- https://github.com/trueroad/HaranoAjiFontsTW
+- https://github.com/trueroad/HaranoAjiFontsK1
 
 Harano Aji Gothic: Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
 
