@@ -52,3 +52,6 @@ third_party/freetype-monochrome/ftmisc.h -text -whitespace
 third_party/bearssl/* -text whitespace=-blank-at-eol
 
 third_party/unicode32/* -text -whitespace
+
+third_party/jbig2-tables/LICENSE.txt -text -whitespace
+third_party/jbig2-tables/NOTICE.txt -text -whitespace

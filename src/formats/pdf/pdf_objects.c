@@ -111,7 +111,8 @@ static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *v
                                  "EndOfBlock",
                                  "BlackIs1",
                                  "Name",
-                                 "Type"};
+                                 "Type",
+                                 "JBIG2Globals"};
     if (depth >= PDF_OBJECT_DEPTH)
         return 0;
     cupidimage_pdf_skip_ws_and_comments(view->data, view->len, pos);
@@ -156,9 +157,21 @@ static int object_parameter_value(const pdf_xref *xref, const pdf_object_view *v
                 continue;
             if (!object_parameter_append(out, "/", 1) ||
                 !object_parameter_append(out, keys[i], strlen(keys[i])) ||
-                !object_parameter_append(out, " ", 1) ||
-                !object_parameter_value(xref, &dictionary, &at, out, depth + 1, work, profile,
-                                        filter))
+                !object_parameter_append(out, " ", 1))
+                return 0;
+            if (!strcmp(keys[i], "JBIG2Globals")) {
+                /* Preserve the stream's object identity for its own decryption key. */
+                size_t start = at;
+                pdf_object_id globals;
+                if (object_word(&dictionary, at, "null"))
+                    at += 4;
+                else if (!cupidimage_pdf_parse_reference(&dictionary, &at, &globals))
+                    return 0;
+                if (!object_parameter_append(out, dictionary.data + start, at - start) ||
+                    !object_parameter_append(out, " ", 1))
+                    return 0;
+            } else if (!object_parameter_value(xref, &dictionary, &at, out, depth + 1, work,
+                                               profile, filter))
                 return 0;
         }
         *pos = end;

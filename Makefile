@@ -729,6 +729,103 @@ test-pdf-security: $(BINDIR)/test_pdf_security $(BINDIR)/test_pdf_security_strea
 $(BINDIR)/test_pdf_security_stream: tests/test_pdf_security_stream.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
+# Bounded JBIG2 primitives and independently encoded bitmap fixtures.
+JBIG2_DIR = $(SRCDIR)/formats/pdf/images/jbig2
+TEST_BINS += test_pdf_jbig2_core test_pdf_jbig2_arithmetic test_pdf_jbig2_generic test_pdf_jbig2_mmr
+.PHONY: test-pdf-jbig2
+test: test-pdf-jbig2
+
+test-pdf-jbig2: $(addprefix $(BINDIR)/,test_pdf_jbig2_core test_pdf_jbig2_arithmetic test_pdf_jbig2_generic test_pdf_jbig2_mmr)
+	python3 scripts/check_pdf_jbig2_sources.py
+	python3 scripts/test_pdf_jbig2_organization.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_file
+	python3 scripts/test_pdf_jbig2_aggregate.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_dictionary --file-decoder $(BINDIR)/test_pdf_jbig2_file
+	python3 scripts/generate_pdf_jbig2_fixture.py --check
+	$(BINDIR)/test_pdf_jbig2_core
+	$(BINDIR)/test_pdf_jbig2_arithmetic
+	$(BINDIR)/test_pdf_jbig2_mmr
+	$(BINDIR)/test_pdf_jbig2_regions
+	$(BINDIR)/test_pdf_jbig2_segments
+	$(BINDIR)/test_pdf_jbig2_document
+	python3 scripts/test_pdf_jbig2_images.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_pages --oom $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_jbig2_halftone.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_halftone --file-decoder $(BINDIR)/test_pdf_jbig2_file
+	python3 scripts/test_pdf_jbig2_generic.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_generic --file-decoder $(BINDIR)/test_pdf_jbig2_file
+	python3 scripts/test_pdf_jbig2_refinement.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_refinement --file-decoder $(BINDIR)/test_pdf_jbig2_file
+	python3 scripts/test_pdf_jbig2_text.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_text --file-decoder $(BINDIR)/test_pdf_jbig2_file
+	python3 scripts/test_pdf_jbig2_dictionary.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_dictionary
+	python3 scripts/test_pdf_jbig2_symbol_refinement.py $(BINDIR)/test_pdf_jbig2_arithmetic $(BINDIR)/test_pdf_jbig2_text $(BINDIR)/test_pdf_jbig2_dictionary --file-decoder $(BINDIR)/test_pdf_jbig2_file
+
+$(BINDIR)/test_pdf_jbig2_core: tests/test_pdf_jbig2_core.c tests/fault_alloc.h $(wildcard $(JBIG2_DIR)/*) $(wildcard third_party/jbig2-tables/*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c bits.c bitmap.c huffman.c huffman_table.c symbol_codes.c) -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_jbig2_arithmetic: tests/test_pdf_jbig2_arithmetic.c $(wildcard $(JBIG2_DIR)/*) $(wildcard third_party/openjpeg/*) third_party/jbig2-tables/arithmetic.inc
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c memory.c) -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_jbig2_generic: tests/test_pdf_jbig2_generic.c $(wildcard $(JBIG2_DIR)/*) third_party/jbig2-tables/arithmetic.inc
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c generic.c bitmap.c memory.c) -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_jbig2_mmr: tests/test_pdf_jbig2_mmr.c tests/fault_alloc.h $(wildcard $(JBIG2_DIR)/*) $(wildcard $(SRCDIR)/compression/ccitt*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_refinement
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_refinement
+$(BINDIR)/test_pdf_jbig2_refinement: tests/test_pdf_jbig2_refinement.c $(wildcard $(JBIG2_DIR)/*) third_party/jbig2-tables/arithmetic.inc
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c refinement.c bitmap.c memory.c) -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_regions
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_regions
+$(BINDIR)/test_pdf_jbig2_regions: tests/test_pdf_jbig2_regions.c tests/fault_alloc.h $(wildcard $(JBIG2_DIR)/*) third_party/jbig2-tables/arithmetic.inc
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c generic.c refinement.c bitmap.c) -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_segments
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_segments
+$(BINDIR)/test_pdf_jbig2_segments: tests/test_pdf_jbig2_segments.c tests/fault_alloc.h $(wildcard $(JBIG2_DIR)/*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,segments.c bits.c) -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_text
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_text
+$(BINDIR)/test_pdf_jbig2_text: tests/test_pdf_jbig2_text.c $(wildcard $(JBIG2_DIR)/*) $(wildcard third_party/jbig2-tables/*.inc)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c bits.c coding.c text.c huffman.c refinement.c bitmap.c memory.c) -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_dictionary
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_dictionary
+$(BINDIR)/test_pdf_jbig2_dictionary: tests/test_pdf_jbig2_dictionary.c $(wildcard $(JBIG2_DIR)/*) $(wildcard third_party/jbig2-tables/*.inc) $(wildcard $(SRCDIR)/compression/ccitt*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c bits.c coding.c dictionary.c generic.c text.c huffman.c refinement.c bitmap.c memory.c mmr.c) $(SRCDIR)/compression/ccitt.c -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_halftone
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_halftone
+$(BINDIR)/test_pdf_jbig2_halftone: tests/test_pdf_jbig2_halftone.c $(wildcard $(JBIG2_DIR)/*) third_party/jbig2-tables/arithmetic.inc $(wildcard $(SRCDIR)/compression/ccitt*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(addprefix $(JBIG2_DIR)/,arithmetic.c generic.c bitmap.c memory.c patterns.c halftone.c mmr.c) $(SRCDIR)/compression/ccitt.c -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_file
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_file $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+$(BINDIR)/test_pdf_jbig2_file: tests/test_pdf_jbig2_file.c $(wildcard $(JBIG2_DIR)/*) $(wildcard third_party/jbig2-tables/*.inc) $(wildcard $(SRCDIR)/compression/ccitt*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(filter-out $(JBIG2_DIR)/filter.c,$(wildcard $(JBIG2_DIR)/*.c)) $(SRCDIR)/compression/ccitt.c -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_document
+test-pdf-jbig2: $(BINDIR)/test_pdf_jbig2_document
+$(BINDIR)/test_pdf_jbig2_document: tests/test_pdf_jbig2_document.c tests/fault_alloc.h tests/fixtures/pdf-jbig2.inc $(wildcard $(JBIG2_DIR)/*) $(wildcard third_party/jbig2-tables/*.inc) $(wildcard $(SRCDIR)/compression/ccitt*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(SRCDIR)/compression/ccitt.c -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_jbig2_pdf_samples
+$(BINDIR)/test_pdf_jbig2_pdf_samples: tests/test_pdf_jbig2_pdf_samples.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+.PHONY: test-pdf-jbig2-corpus
+test-pdf-jbig2-corpus: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_jbig2_pdf_samples
+	python3 scripts/test_pdf_jbig2_corpus.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_jbig2_pdf_samples --download
+
 # Flex metadata, device thresholds and authored line/curve equivalence.
 test-pdf-flex: $(BINDIR)/test_pdf_flex $(BINDIR)/test_pdf_flex_oom $(BINDIR)/test_pdf_ps_gridfit $(BINDIR)/test_pdf_cff $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/generate_pdf_flex_fixture.py --check

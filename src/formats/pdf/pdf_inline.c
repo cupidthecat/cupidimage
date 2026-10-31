@@ -349,7 +349,7 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
     if (!cupidimage_pdf_stream_filter_names(&view, filter_names, &filter_count))
         goto done;
     for (int i = 0; i < filter_count; i++)
-        if (!strcmp(filter_names[i], "JPXDecode"))
+        if (!strcmp(filter_names[i], "JPXDecode") || !strcmp(filter_names[i], "JBIG2Decode"))
             goto done;
     size_t decoded_size;
     if (!inline_raw_size(st, &view, &decoded_size))

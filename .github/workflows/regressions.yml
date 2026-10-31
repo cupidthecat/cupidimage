@@ -17,6 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: make -j2 all test
       - run: make test-pdf-corpus
+      - run: make test-pdf-jbig2-corpus
       - uses: actions/upload-artifact@v4
         if: always()
         with:
