@@ -10,6 +10,12 @@ CASES = {
     'cid-japanese-mincho-vertical.pdf': fixture(
         serif=True, name='HeiseiMin-W3', encoding='/Identity-V',
         content='BT /F 24 Tf 140 90 Td <0cd40e8a07a0> Tj ET'),
+    'cid-japanese-truetype.pdf': fixture(
+        serif=True, name='HeiseiMin-W3', subtype='CIDFontType2', encoding='/90ms-RKSJ-H',
+        content='BT /F 20 Tf 20 45 Td <4193fa967b8cea81418169> Tj ET'),
+    'cid-japanese-truetype-vertical.pdf': fixture(
+        serif=True, name='HeiseiMin-W3', subtype='CIDFontType2', encoding='/90ms-RKSJ-V',
+        content='BT /F 14 Tf 140 100 Td <4193fa967b8cea81418169> Tj ET'),
 }
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 #include "fonts/cmap.h"
+#include "fonts/substitute/cid_encoding.h"
 #include "pdf_render_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -352,6 +353,7 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         double width, advance_y = 0, origin_x = 0, origin_y = 0;
         uint32_t cp;
         unsigned encoded = bytes[before], glyph = 0;
+        int selected_glyph = 0;
         if (font && font->cid) {
             size_t used;
             uint32_t source;
@@ -364,7 +366,15 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                 cupidimage_set_err(st->error, st->error_capacity, "pdf: CMap work limit exceeded");
                 break;
             }
-            if (font->program && !cupidimage_pdf_font_program_has_glyph(font->program, cid)) {
+            if (font->program && font->cid->substitute_encoding) {
+                glyph = valid
+                            ? cupidimage_pdf_cid_substitute_glyph(font->program,
+                                                                  font->cid->substitute_encoding,
+                                                                  source, used, font->cid->vertical)
+                            : 0;
+                selected_glyph = 1;
+            } else if (font->program &&
+                       !cupidimage_pdf_font_program_has_glyph(font->program, cid)) {
                 cid = notdef;
                 if (!cupidimage_pdf_font_program_has_glyph(font->program, cid))
                     cid = 0;
@@ -395,7 +405,8 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
             }
         }
         if (font && font->program) {
-            glyph = cupidimage_pdf_font_program_glyph(font->program, encoded);
+            if (!selected_glyph)
+                glyph = cupidimage_pdf_font_program_glyph(font->program, encoded);
             if (!font->cid && !font->has_widths && !font->has_missing_width) {
                 if (!st->form_budget->glyph_calls_left ||
                     !cupidimage_pdf_font_program_advance(

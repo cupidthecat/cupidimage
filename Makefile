@@ -20,6 +20,7 @@ TEST_BINS = test_pdf_jpx test_pdf_jpx_file test_pdf_subset_fonts test_pdf_option
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
 TEST_TARGETS += test-pdf-cid-substitution
+TEST_BINS += test_pdf_cid_encoding
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
@@ -27,8 +28,13 @@ lib: $(LIB)
 cli: $(CLI)
 test: $(TEST_TARGETS)
 
-test-pdf-cid-substitution: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+$(BINDIR)/test_pdf_cid_encoding: tests/test_pdf_cid_encoding.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-cid-substitution: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_cid_encoding
 	python3 scripts/generate_pdf_cid_fonts.py --check
+	python3 scripts/generate_pdf_cp932.py --check
+	python3 scripts/test_pdf_cid_encoding.py $(BINDIR)/test_pdf_cid_encoding
 	python3 scripts/generate_pdf_cid_substitution_fixtures.py --check
 	python3 scripts/test_pdf_cid_substitution.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 

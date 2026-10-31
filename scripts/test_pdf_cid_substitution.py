@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Check CID-keyed Japanese substitutes against the same embedded font bytes."""
 from pathlib import Path
+import base64
+import json
+import struct
 import subprocess
 import sys
 import tempfile
 import zlib
+from generate_pdf_cp932 import mappings
 from test_pdf_pages import document
 from test_pdf_type3 import stream
 
@@ -38,7 +42,7 @@ def fixture(serif=False, embedded=False, content=None, encoding='/Identity-H',
                     stream=content or 'BT /F 24 Tf 20 45 Td <0cd40e8a07a0> Tj ET', extra=objects)
 
 
-def shared_fixture(explicit=False):
+def shared_fixture(explicit=False, type2_first=False):
     objects = {}
     resources = []
     commands = ['BT']
@@ -46,18 +50,21 @@ def shared_fixture(explicit=False):
     for i in range(24):
         number = 10 + i * 3
         width = 500 if i % 2 else 1000
+        type2 = not explicit and (i % 2 == int(not type2_first))
+        encoding = '/UniJIS-UTF16-H' if type2 else '/Identity-H'
         if not explicit or i == 0:
             resources.append(f'/F{i} {number} 0 R')
             objects[number] = f'<< /Type /Font /Subtype /Type0 /BaseFont /SharedJapanese '
-            objects[number] += f'/Encoding /Identity-H /DescendantFonts [{number + 1} 0 R] >>'
-            objects[number + 1] = f'<< /Type /Font /Subtype /CIDFontType0 /BaseFont /SharedJapanese '
+            objects[number] += f'/Encoding {encoding} /DescendantFonts [{number + 1} 0 R] >>'
+            objects[number + 1] = f'<< /Type /Font /Subtype /CIDFontType{2 if type2 else 0} /BaseFont /SharedJapanese '
             objects[number + 1] += f'/FontDescriptor {number + 2} 0 R /DW {width} '
             objects[number + 1] += '/CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 7 >> >>'
             objects[number + 2] = '<< /Type /FontDescriptor /Flags 4 >>'
         if explicit:
             commands.append(f'/F0 10 Tf 1 0 0 1 {x} 40 Tm <0cd4> Tj')
         else:
-            commands.append((f'/F{i} 10 Tf ' + ('10 40 Td ' if not i else '') + '<0cd4> Tj'))
+            commands.append((f'/F{i} 10 Tf ' + ('10 40 Td ' if not i else '') +
+                             ('<65e5>' if type2 else '<0cd4>') + ' Tj'))
         x += width / 100
     commands.append('ET')
     return document('/MediaBox [0 0 240 110] /Resources << /Font << ' +
@@ -122,6 +129,68 @@ def main():
             assert render(fixture(serif=serif, attributes='/ToUnicode 12 0 R', extra={
                 12: stream('1 beginbfchar <0cd4> <0041> endbfchar')})) == baseline
             fault(fixture(serif=serif))
+        reference = json.loads(Path('tests/fixtures/pdf-cid-substitute-mapping.json').read_text())
+        assert reference['cid_equals_gid']
+        oracle = {row[0]: row[1:] for row in struct.iter_unpack(
+            '>I4H', zlib.decompress(base64.b64decode(reference['records_zlib'])))}
+        cp932 = dict(mappings())
+        for serif in (False, True):
+            for family in ('90ms-RKSJ', 'UniJIS-UCS2', 'UniJIS-UTF16'):
+                if family == '90ms-RKSJ':
+                    codes = [0x41, 0x93fa, 0x967b, 0x8cea, 0x8141, 0x8169, 0xb6]
+                    scalars = [cp932[code] for code in codes]
+                    encoded = b''.join(code.to_bytes(1 if code < 256 else 2, 'big') for code in codes)
+                else:
+                    scalars = [0x41, 0x65e5, 0x672c, 0x8a9e, 0x3001, 0xff08, 0xff76]
+                    if family.endswith('UTF16'):
+                        scalars.append(0x2000b)
+                    encoded = ''.join(map(chr, scalars)).encode('utf-16-be')
+                for vertical in (False, True):
+                    direction = 'V' if vertical else 'H'
+                    selector = int(serif) * 2 + int(vertical)
+                    gids = b''.join(oracle.get(scalar, (0, 0, 0, 0))[selector].to_bytes(2, 'big')
+                                    for scalar in scalars)
+                    for mode in range(8):
+                        start = f'.6 w BT /F 12 Tf {mode} Tr .5 Tc 90 Tz 1 Ts 1 .1 -.05 1 50 96 Tm '
+                        finish = ' Tj ET' + (' .2 .4 .8 rg 0 0 240 110 re f' if mode >= 4 else '')
+                        actual = fixture(serif=serif, subtype='CIDFontType2',
+                                         encoding='/' + family + '-' + direction,
+                                         content=start + '<' + encoded.hex() + '>' + finish)
+                        expected = fixture(serif=serif, embedded=True,
+                                           encoding='/Identity-' + direction,
+                                           content=start + '<' + gids.hex() + '>' + finish)
+                        for hinted in (False, True) if mode in (0, 7) else (False,):
+                            assert render(actual, hinted=hinted) == render(expected, hinted=hinted), (
+                                serif, family, direction, mode)
+                    if family == '90ms-RKSJ':
+                        fault(actual)
+            # External TrueType glyph indices are unrelated to CIDToGIDMap.
+            kwargs = dict(serif=serif, subtype='CIDFontType2', encoding='/90ms-RKSJ-H',
+                          content='BT /F 20 Tf 20 40 Td <4193fa> Tj ET')
+            baseline = render(fixture(**kwargs))
+            for value in ('/Identity', '42', '11 0 R'):
+                assert render(fixture(**kwargs, metrics='/DW 1000 /CIDToGIDMap ' + value,
+                                      extra={11: stream(bytes(65536))})) == baseline
+            assert render(fixture(**kwargs, attributes='/ToUnicode 12 0 R', extra={
+                12: stream('1 beginbfchar <93fa> <0041> endbfchar')})) == baseline
+            # Code 0x41 maps to CID 264, but the Unicode cmap chooses GID 34.
+            # The advance must still use CID 264, including for invisible text.
+            actual = fixture(serif=serif, subtype='CIDFontType2', encoding='/90ms-RKSJ-H',
+                             metrics='/DW 1000 /W [264 [300] 34 [900]]',
+                             content='BT /F 20 Tf 20 40 Td 3 Tr <41> Tj 0 Tr <93fa> Tj ET')
+            expected = fixture(serif=serif, embedded=True,
+                               metrics='/DW 1000 /W [34 [300]]',
+                               content='BT /F 20 Tf 20 40 Td 3 Tr <0022> Tj 0 Tr <0cd4> Tj ET')
+            assert render(actual) == render(expected)
+            # An external Type 2 font selects from the character encoding even
+            # when the predefined CID map has no selector for that character.
+            # U+2027 is present in the pinned font's Unicode cmap as GID 638.
+            actual = fixture(serif=serif, subtype='CIDFontType2', encoding='/UniJIS-UTF16-H',
+                             metrics='/DW 500', content='BT /F 20 Tf 20 40 Td <202765e5> Tj ET')
+            target = oracle[0x2027][int(serif) * 2]
+            expected = fixture(serif=serif, embedded=True, metrics='/DW 500',
+                               content=f'BT /F 20 Tf 20 40 Td <{target:04x}0cd4> Tj ET')
+            assert render(actual) == render(expected)
         serif = render(fixture(serif=True, embedded=True))
         for name in ('HeiseiMin-W3', 'Ryumin-Light', 'MS-Mincho', 'ABCDEF+HeiseiMin-W3'):
             assert render(fixture(name=name, flags=4)) == serif
@@ -139,6 +208,7 @@ def main():
                            extra={11: stream('broken', '/Subtype /Unsupported')}), reject=True)
         # A shared outline program must not share per-resource PDF widths.
         assert render(shared_fixture()) == render(shared_fixture(explicit=True))
+        assert render(shared_fixture(type2_first=True)) == render(shared_fixture(explicit=True))
         fault(shared_fixture())
     print(f'PDF CID substitutes: {checks} render checks; {allocations} allocation checks')
 

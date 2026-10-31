@@ -1,6 +1,7 @@
 #include "fonts/encoding.h"
 #include "fonts/program.h"
 #include "fonts/substitute/cid_data.h"
+#include "fonts/substitute/cid_encoding.h"
 #include "pdf_content_syntax.h"
 #include "pdf_internal.h"
 #include <math.h>
@@ -72,7 +73,8 @@ static pdf_font_program *cid_substitute_load(const pdf_cid_font_source *source) 
                                 &decoded) &&
         decoded == program->length &&
         cupidimage_pdf_cff_sfnt_table(program->bytes, program->length, &cff) &&
-        cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length) && program->cff.top.cid)
+        cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length) && program->cff.top.cid &&
+        cupidimage_pdf_cid_substitute_cmap(program))
         return program;
     cupidimage_pdf_font_program_free(program);
     return NULL;
@@ -92,9 +94,24 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
     if (at == array.len || array.data[at++] != '[' ||
         !cupidimage_pdf_font_dictionary_at(data, size, &array, at, &descendant))
         goto done;
-    /* External Type 2 fonts require character-code/cmap selection, not direct
-     * CID selection. This resolver supplies only CID-keyed Type 0 substitutes. */
-    if (!cupidimage_pdf_entry_is_name(data, size, &descendant, "Subtype", "CIDFontType0")) {
+    unsigned substitute_encoding = PDF_CID_SUBSTITUTE_NONE;
+    if (cupidimage_pdf_entry_is_name(data, size, &descendant, "Subtype", "CIDFontType2")) {
+        pdf_object_view encoding = {0};
+        char name[128];
+        size_t pos = 0;
+        int supplied = cupidimage_pdf_optional_value(data, size, view, "Encoding", &encoding);
+        if (supplied > 0 && cupidimage_pdf_read_name(&encoding, &pos, name))
+            substitute_encoding = cupidimage_pdf_cid_substitute_encoding(name);
+        cupidimage_pdf_object_view_release(&encoding);
+        if (supplied < 0)
+            goto done;
+        /* External Type 2 fonts use character-code/cmap selection, never the
+         * document's CIDToGIDMap or a direct CID-indexed substitute lookup. */
+        if (!substitute_encoding) {
+            ok = 1;
+            goto done;
+        }
+    } else if (!cupidimage_pdf_entry_is_name(data, size, &descendant, "Subtype", "CIDFontType0")) {
         ok = 1;
         goto done;
     }
@@ -158,6 +175,7 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
             if (!cupidimage_pdf_font_program_retain(cached))
                 goto done;
             font->program = cached;
+            font->cid->substitute_encoding = substitute_encoding;
             ok = 1;
             goto done;
         }
@@ -173,6 +191,7 @@ int cupidimage_pdf_parse_cid_substitute(const unsigned char *data, size_t size,
     }
     table->program_bytes += cost;
     font->program = program;
+    font->cid->substitute_encoding = substitute_encoding;
     ok = 1;
 done:
     cupidimage_pdf_object_view_release(&descriptor);

@@ -1,0 +1,95 @@
+#include "cid_encoding.h"
+#include "../../pdf_internal.h"
+#include "../program.h"
+#include "cid_data.h"
+#include "cp932_data.inc"
+#include <string.h>
+
+unsigned cupidimage_pdf_cid_substitute_encoding(const char *name) {
+    if (!strcmp(name, "90ms-RKSJ-H") || !strcmp(name, "90ms-RKSJ-V"))
+        return PDF_CID_SUBSTITUTE_CP932;
+    if (!strcmp(name, "UniJIS-UCS2-H") || !strcmp(name, "UniJIS-UCS2-V"))
+        return PDF_CID_SUBSTITUTE_UCS2;
+    if (!strcmp(name, "UniJIS-UTF16-H") || !strcmp(name, "UniJIS-UTF16-V"))
+        return PDF_CID_SUBSTITUTE_UTF16;
+    return PDF_CID_SUBSTITUTE_NONE;
+}
+
+static uint32_t cid_encoding_u32(const unsigned char *p) {
+    return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
+}
+
+int cupidimage_pdf_cid_substitute_cmap(pdf_font_program *program) {
+    const unsigned char *data = program->bytes;
+    size_t length = program->length;
+    if (length < 12 || memcmp(data, "OTTO", 4))
+        return 0;
+    unsigned count = (unsigned)data[4] * 256 + data[5];
+    if (count > (length - 12) / 16)
+        return 0;
+    for (unsigned i = 0; i < count; i++) {
+        const unsigned char *entry = data + 12 + i * 16;
+        if (memcmp(entry, "cmap", 4))
+            continue;
+        uint32_t offset = cid_encoding_u32(entry + 8), bytes = cid_encoding_u32(entry + 12);
+        if (offset > length || bytes > length - offset)
+            return 0;
+        program->font.cmap = (pdf_tt_table){data + offset, bytes};
+        program->font.glyphs = program->cff.chars.count;
+        return 1;
+    }
+    return 0;
+}
+
+static unsigned cid_vertical_glyph(const pdf_cid_font_source *source, unsigned glyph) {
+    size_t lo = 0, hi = source->vertical_count;
+    while (lo < hi) {
+        size_t mid = lo + (hi - lo) / 2;
+        if (source->vertical[mid][0] == glyph)
+            return source->vertical[mid][1];
+        if (source->vertical[mid][0] < glyph)
+            lo = mid + 1;
+        else
+            hi = mid;
+    }
+    return glyph;
+}
+
+unsigned cupidimage_pdf_cid_substitute_glyph(const pdf_font_program *program, unsigned encoding,
+                                             uint32_t code, size_t bytes, int vertical) {
+    uint32_t scalar = code;
+    if (encoding == PDF_CID_SUBSTITUTE_CP932) {
+        if ((bytes != 1 && bytes != 2) || (bytes == 1 && code > 255) ||
+            (bytes == 2 && code < 256) || code > 65535)
+            return 0;
+        size_t lo = 0, hi = sizeof(cid_cp932) / sizeof(*cid_cp932);
+        scalar = 0xffffffffu;
+        while (lo < hi) {
+            size_t mid = lo + (hi - lo) / 2;
+            if (cid_cp932[mid][0] == code) {
+                scalar = cid_cp932[mid][1];
+                break;
+            }
+            if (cid_cp932[mid][0] < code)
+                lo = mid + 1;
+            else
+                hi = mid;
+        }
+    } else if (encoding == PDF_CID_SUBSTITUTE_UTF16 && bytes == 4) {
+        uint32_t high = code >> 16, low = code & 65535;
+        if (high < 0xd800 || high > 0xdbff || low < 0xdc00 || low > 0xdfff)
+            return 0;
+        scalar = 0x10000 + ((high - 0xd800) << 10) + low - 0xdc00;
+    } else if ((encoding != PDF_CID_SUBSTITUTE_UTF16 && encoding != PDF_CID_SUBSTITUTE_UCS2) ||
+               bytes != 2 || code > 65535)
+        return 0;
+    if (scalar > 0x10ffff || (scalar >= 0xd800 && scalar <= 0xdfff))
+        return 0;
+    unsigned glyph = cupidimage_pdf_tt_map(&program->font, scalar, 3, 10);
+    if (!glyph)
+        glyph = cupidimage_pdf_tt_map(&program->font, scalar, 3, 1);
+    if (!glyph)
+        glyph = cupidimage_pdf_tt_map(&program->font, scalar, 0, -1);
+    return vertical && program->cid_substitute ? cid_vertical_glyph(program->cid_substitute, glyph)
+                                               : glyph;
+}

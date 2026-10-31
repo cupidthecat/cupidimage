@@ -62,6 +62,7 @@ typedef struct pdf_cmap pdf_cmap;
 typedef struct {
     pdf_cmap *encoding;
     int vertical;
+    unsigned substitute_encoding;
     double default_width, default_advance_y, default_origin_y;
     pdf_cid_metric *metrics;
 } pdf_cid_font;

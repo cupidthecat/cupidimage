@@ -494,6 +494,14 @@
       "sha256": "6380d8d6e33d82309b79cc35c84ea7e122cc745f867d23d179c36ab3a446e08b"
     },
     {
+      "path": "assets/pdf/cid-japanese-truetype-vertical.pdf",
+      "sha256": "1e76e72fd79218a94c4c7982673317b53d45ddae53bd172b82bbcab42915a114"
+    },
+    {
+      "path": "assets/pdf/cid-japanese-truetype.pdf",
+      "sha256": "6e46e1d5a60807d20e7d07c052e3e56c2de991ac098c32672df681e4b6760c96"
+    },
+    {
       "path": "assets/pdf/cie-blending.pdf",
       "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
     },

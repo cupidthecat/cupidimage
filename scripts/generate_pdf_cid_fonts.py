@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import zlib
+from pdf_sfnt_metadata import vertical_substitutions
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'third_party/cid-standard-fonts'
@@ -31,9 +32,13 @@ def generate(row):
         for at in range(0, len(block), 20):
             line = '    "' + ''.join(f'\\x{byte:02x}' for byte in block[at:at + 20]) + '"'
             lines.append(line + (',' if at + 20 >= len(block) else ''))
+    vertical = vertical_substitutions(raw)
+    lines += ['};', 'static const uint16_t cid_vertical[][2] = {']
+    lines += [f'    {{{a}, {b}}},' for a, b in vertical]
     lines += ['};', f'const pdf_cid_font_source cupidimage_pdf_cid_{row["face"]} = {{',
               f'    "{row["file"]}", "{row["registry"]}", "{row["ordering"]}", {row["supplement"]},',
-              f'    (const unsigned char *)cid_data, {len(packed)}, {len(raw)}', '};', '']
+              f'    (const unsigned char *)cid_data, {len(packed)}, {len(raw)},',
+              f'    cid_vertical, {len(vertical)}', '};', '']
     return '\n'.join(lines)
 
 

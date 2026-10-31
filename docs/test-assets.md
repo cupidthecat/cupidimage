@@ -43,8 +43,9 @@ is hidden here: these RGB files have no subsampling. Regenerate them with
 
 ## PDF samples
 
-`cid-japanese-gothic.pdf` and `cid-japanese-mincho-vertical.pdf` are owned,
-nonembedded Japanese CID text samples. Regenerate them with
+`cid-japanese-gothic.pdf`, `cid-japanese-mincho-vertical.pdf` and the two
+`cid-japanese-truetype*.pdf` files are owned, nonembedded Japanese CID text samples.
+They include character-code selection and vertical variants. Regenerate them with
 `scripts/generate_pdf_cid_substitution_fixtures.py`. The asset audit treats their
 visible glyphs as decoded-unverified; the separate CID-substitution suite compares
 substituted pages with pinned, explicitly embedded font programs.

@@ -751,9 +751,7 @@ takes precedence; an unsupported supplied program is not hidden by substitution.
 This is limited substitution support, not complete CJK font coverage. Only two
 regular faces are bundled, source-font glyph coverage limits still apply, and
 style/stretch matching is incomplete. Other registries, collections and newer
-supplements keep the existing fallback. Nonembedded CIDFontType2 needs the
-character-code/cmap selection specified in ISO 32000 section 9.7.4.2 and is not
-handled by this CID-keyed resolver. Collection identifiers longer than the
+supplements keep the existing fallback. Collection identifiers longer than the
 bounded 1,024-byte parsing window are rejected rather than allocated without a
 limit.
 
@@ -763,6 +761,41 @@ modes, horizontal/vertical metrics, transforms, predefined CMaps, direct and
 indirect collection identifiers, extraction metadata, resource reuse and
 allocation failures. These checks do not establish parity with every platform's
 installed-font substitution choices.
+
+### External Type 2 character selection
+
+Nonembedded CIDFontType2 resources in the same collection can use these faces
+with 90ms-RKSJ-H/V, UniJIS-UCS2-H/V and UniJIS-UTF16-H/V. The renderer translates
+the original character code to Unicode and selects a GID through the substitute
+font's OpenType cmap. It does not select the glyph from the CID or from ToUnicode.
+CIDToGIDMap is ignored for these nonembedded resources, as required by
+ISO 32000 section 9.7.4.2. The original CIDs still select all PDF metrics, including
+when the Unicode cmap has no glyph.
+
+Vertical text applies the pinned font's `vrt2` single-substitution lookup after
+Unicode selection. The generator extracts that lookup from the unchanged font
+and verifies that all of its script/language records agree. No kerning, text
+reflow, ligature shaping or font-derived advance replaces the PDF's positioning.
+
+CP932 uses the published, pinned Unicode mapping table, not a host codec.
+Undefined mappings, including byte A0, remain missing glyphs. Identity-H/V and
+embedded custom encoding CMaps do not describe a supported external Type 2
+character encoding here and retain the existing fallback. This is not complete
+nonembedded TrueType or CJK substitution coverage.
+
+The mapping probe checks all 7,915 published CP932 entries and the pinned fonts'
+Unicode cmap repertoire against a separately generated fontTools oracle,
+including vertical variants, supplementary UTF-16 characters and invalid input.
+Page tests cover each supported encoding, all text modes, PDF metric overrides,
+ignored CIDToGIDMap entries and mixed Type 0/Type 2 resource reuse. The oracle is
+checked in; fontTools is needed only to regenerate it.
+
+Independent complete-page raster comparison is separate:
+`python3 scripts/compare_pdf_cid_rasters.py bin/test_pdf_pages` records exact
+channel differences and exits unsuccessfully for any nonmatching page. It does
+not align, crop or tolerate differences. The current Japanese grayscale samples
+still differ from the independent renderer even with the same font bytes
+embedded; paired substitution checks are not independent pixel-parity claims.
 
 ## Undefined TrueType encoding slots
 

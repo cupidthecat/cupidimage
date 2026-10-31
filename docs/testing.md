@@ -11,6 +11,10 @@ bundled CFF substitutes with the same programs embedded in a PDF. See
 `make test-pdf-cid-substitution` verifies the pinned Japanese CID font bundle and
 paired embedded/substituted page rendering, including resource sharing and
 allocation-failure recovery. It does not require installed system fonts.
+The same target checks external Type 2 character selection and vertical GIDs
+against `tests/fixtures/pdf-cid-substitute-mapping.json`. Regenerating that
+independent oracle uses `scripts/generate_pdf_cid_mapping_reference.py` and
+fontTools; normal regression runs use only the checked-in oracle and pinned data.
 
 ```sh
 make -j2 all test
