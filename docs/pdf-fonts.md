@@ -311,7 +311,7 @@ pattern and transparency regressions exercise the same renderer.
 
 Each retained font program is limited to 16 MiB, with 64 MiB of program storage
 per collected font table. A CIDToGIDMap is at most 131,072 bytes. Glyph decoding
-allows 65,536 points, 4,096 contours, 4,096 component calls and 16 nested component
+allows 65,536 points, up to 32,767 TrueType contours, 4,096 component calls and 16 nested component
 levels. Stroked outlines share the path's 65,536-segment bound. Pixel intersection
 work and text clipping use the page's shared budgets.
 
@@ -1043,3 +1043,11 @@ by ISO 32000, rather than live multiple-master programs.
 The [CID subset compatibility path](pdf-subset-fonts.md#missing-truetype-zone-declaration)
 handles maxZones = 0 only when maxTwilightPoints is also zero. It preserves strict
 standalone hinting checks, instruction bounds and the original font bytes.
+
+## Font stream boundaries
+
+The PDF reader can recover selected malformed scalar terminators and encrypted
+Type 1 segment lengths without replacing the embedded font. The
+[boundary recovery guide](pdf-font-stream-boundaries.md) describes the parsed
+operator checks, limits and paired tests. This is damaged-input compatibility,
+not a relaxation of the font specifications or proof of complete font fidelity.

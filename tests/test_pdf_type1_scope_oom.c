@@ -13,7 +13,7 @@
 #undef free
 
 int main(int argc, char **argv) {
-    if (argc != 5)
+    if (argc != 5 && argc != 6)
         return 2;
     FILE *file = fopen(argv[1], "rb");
     if (!file || fseek(file, 0, SEEK_END)) {
@@ -41,7 +41,9 @@ int main(int argc, char **argv) {
         fail_at = failure;
         allocation_count = 0;
         pdf_type1_font font;
-        int ok = cupidimage_pdf_type1_init(&font, data, (size_t)size, clear, encrypted);
+        int ok = argc == 6 && !strcmp(argv[5], "--pdf-boundaries")
+                     ? cupidimage_pdf_type1_init_pdf(&font, data, (size_t)size, clear, encrypted)
+                     : cupidimage_pdf_type1_init(&font, data, (size_t)size, clear, encrypted);
         if (!failure)
             total = allocation_count;
         if (ok != (expected && (!failure || failure > total))) {

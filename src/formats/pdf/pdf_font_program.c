@@ -263,6 +263,7 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
     pdf_cff_slice cff = {program->bytes, program->length};
     if (!strcmp(program_key, "FontFile")) {
         size_t parts[3] = {0};
+        int boundaries = 1;
         const char *keys[] = {"Length1", "Length2", "Length3"};
         for (unsigned i = 0; i < 3; i++) {
             pdf_object_view value = {0};
@@ -274,19 +275,24 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
             int valid = cupidimage_pdf_dictionary_value(data, size, &stream, keys[i], &value);
             cupidimage_pdf_skip_ws_and_comments(value.data, value.len, &at);
             valid = valid && cupidimage_pdf_parse_pdf_number(value.data, value.len, &at, &number) &&
-                    isfinite(number) && number >= 0 && number <= 16u * 1024u * 1024u &&
-                    floor(number) == number;
+                    isfinite(number) && number >= 0 && floor(number) == number;
+            valid = valid && (at == value.len || cupidimage_pdf_is_ws(value.data[at]) ||
+                              cupidimage_pdf_is_delim(value.data[at]));
             cupidimage_pdf_object_view_release(&value);
             if (!valid)
                 goto done;
-            parts[i] = (size_t)number;
+            if (number > program->length)
+                boundaries = 0;
+            else
+                parts[i] = (size_t)number;
         }
         if (parts[0] > program->length || parts[1] > program->length - parts[0] ||
             parts[2] > program->length - parts[0] - parts[1])
-            goto done;
+            boundaries = 0;
         program->is_type1 = 1;
-        if (!cupidimage_pdf_type1_init(&program->type1, program->bytes, program->length, parts[0],
-                                       parts[1]) ||
+        if (!cupidimage_pdf_type1_init_pdf(&program->type1, program->bytes, program->length,
+                                           boundaries ? parts[0] : SIZE_MAX,
+                                           boundaries ? parts[1] : SIZE_MAX) ||
             !ps_pdf_encoding(data, size, view, program))
             goto done;
     } else if (cff_stream || cupidimage_pdf_cff_sfnt_table(program->bytes, program->length, &cff)) {

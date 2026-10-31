@@ -24,6 +24,8 @@ typedef struct {
 
 int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, size_t length,
                               size_t clear_length, size_t encrypted_length);
+/* PDF recovery beyond declared lengths requires verified eexec/closefile boundaries. */
+int cupidimage_pdf_type1_init_pdf(pdf_type1_font *, const unsigned char *, size_t, size_t, size_t);
 void cupidimage_pdf_type1_free(pdf_type1_font *font);
 unsigned cupidimage_pdf_type1_name(const pdf_type1_font *font, const char *name);
 int cupidimage_pdf_type1_outline(const pdf_type1_font *font, unsigned glyph,

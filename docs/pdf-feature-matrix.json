@@ -41,10 +41,14 @@
           "evidence": [
             "docs/pdf-objects.md",
             "src/formats/pdf/pdf_xref.c",
-            "scripts/test_pdf_xref.py"
+            "scripts/test_pdf_xref.py",
+            "docs/pdf-font-stream-boundaries.md",
+            "scripts/test_pdf_font_boundaries.py",
+            "assets/pdf/recovered-font-streams.pdf"
           ],
           "limitations": [
-            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished.",
+            "Selected damaged font wrappers have bounded scalar-terminator and Type 1 segment recovery. This does not provide general object reconstruction or arbitrary PostScript execution."
           ],
           "dependencies": [],
           "audit": "selected evidence reviewed; detailed audit pending",
@@ -189,10 +193,14 @@
           "evidence": [
             "docs/pdf-objects.md",
             "src/formats/pdf/pdf_xref.c",
-            "scripts/test_pdf_xref.py"
+            "scripts/test_pdf_xref.py",
+            "docs/pdf-font-stream-boundaries.md",
+            "scripts/test_pdf_font_boundaries.py",
+            "assets/pdf/recovered-font-streams.pdf"
           ],
           "limitations": [
-            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished."
+            "Version/extension rules, recovery and the remaining optional-entry audit are unfinished.",
+            "Selected damaged font wrappers have bounded scalar-terminator and Type 1 segment recovery. This does not provide general object reconstruction or arbitrary PostScript execution."
           ],
           "dependencies": [],
           "audit": "selected evidence reviewed; detailed audit pending",
@@ -435,10 +443,14 @@
           "evidence": [
             "docs/pdf-images.md",
             "src/formats/pdf/pdf_filters.c",
-            "tests/test_pdf_filters.c"
+            "tests/test_pdf_filters.c",
+            "docs/pdf-font-stream-boundaries.md",
+            "scripts/test_pdf_font_boundaries.py",
+            "assets/pdf/recovered-font-streams.pdf"
           ],
           "limitations": [
-            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished.",
+            "Selected damaged font wrappers have bounded scalar-terminator and Type 1 segment recovery. This does not provide general object reconstruction or arbitrary PostScript execution."
           ],
           "dependencies": [
             "1"
@@ -867,7 +879,10 @@
             "scripts/test_pdf_type1_scopes.py",
             "docs/pdf-type1-replacements.md",
             "scripts/test_pdf_type1_replacements.py",
-            "assets/pdf/type1-hint-replacements.pdf"
+            "assets/pdf/type1-hint-replacements.pdf",
+            "docs/pdf-font-stream-boundaries.md",
+            "scripts/test_pdf_font_boundaries.py",
+            "assets/pdf/recovered-font-streams.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
@@ -876,7 +891,8 @@
             "Standard OtherSubrs 12/13 counter-data blocks are decoded and retained. Designer counter priorities are not applied by the current fitting profile.",
             "Standard Type 1 flex calls retain reference points and apply the documented device-phase procedure. Embedded PaintType is ignored under ISO 32000-1 9.9; PDF text modes still select painting. Known unadjusted-curve reference differences are not counted as matches.",
             "Literal Type 1 declarations now preserve dictionary ownership and inherited aliases. Arbitrary computed programs and broader raster qualification remain unfinished.",
-            "Longer Type 1 hint traces retain map-overflow behavior instead of rejecting glyphs. The selected map profile uses unhinted mapping beyond its capacity; this does not establish full font fidelity."
+            "Longer Type 1 hint traces retain map-overflow behavior instead of rejecting glyphs. The selected map profile uses unhinted mapping beyond its capacity; this does not establish full font fidelity.",
+            "Selected damaged font wrappers have bounded scalar-terminator and Type 1 segment recovery. This does not provide general object reconstruction or arbitrary PostScript execution."
           ],
           "dependencies": [
             "1",

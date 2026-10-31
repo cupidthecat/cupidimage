@@ -72,8 +72,9 @@ The relevant rules are in [ISO 32000-1, sections 7.3.9–7.3.10 and
 and the [PDF 2.0 clause 7 errata](https://pdf-issues.pdfa.org/32000-2-2020/clause07.html).
 [RFC 7995](https://www.rfc-editor.org/info/rfc7995/) defines a particular PDF output
 profile for RFCs, not a replacement for the general object and rendering rules.
-Encryption, external stream files and general physical-object reconstruction
-remain outside this implementation. The narrow catalog-bound repair below uses
+Standard password handlers have their own [security rules and limits](pdf-security.md).
+External stream files and general physical-object reconstruction remain outside
+this implementation. The narrow catalog-bound repair below uses
 only explicitly indexed objects. See the [conformance tracker](format-conformance.md) for the
 remaining rendering work.
 
@@ -137,3 +138,11 @@ rows through 336. It now renders without changing the downloaded bytes. Its
 native output matches a control with only Size corrected to 337, byte-for-byte
 in the default and all-five-options profiles. This comparison qualifies the
 metadata repair, not all multiple-master font matching or raster fidelity.
+
+## Adjacent scalar terminators
+
+The indexed reader can recover a number immediately followed by `endobj` when
+the complete scalar and exact terminator are present. Stream lengths retain
+their type and boundary checks. Ordinary content tokens and keyword prefixes
+are unchanged. See [font stream boundary recovery](pdf-font-stream-boundaries.md)
+for the scope and owned regression cases.
