@@ -1079,6 +1079,10 @@
       "sha256": "1d3e27ee1fb6ab3665f875c5fe08bddb25022783cf1e03ed367e36bc66c044e0"
     },
     {
+      "path": "assets/pdf/standalone-catalog-size.pdf",
+      "sha256": "2ec3888859872e86a1f86dabea035964e14292d8566863471addefe3d9dd077a"
+    },
+    {
       "path": "assets/pdf/standard-extended-glyphs.pdf",
       "sha256": "b5d791d53e0eb0883cf6647d85d4993437d07f9232b2df3f35befa5270ee3bb2"
     },

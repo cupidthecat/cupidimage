@@ -131,6 +131,12 @@ companions exercise CP936, CP950 and CP949. They remain decoded-unverified visua
 assets. Regenerate them with
 scripts/generate_pdf_cjk_fixtures.py; paired embedded-program tests are separate.
 
+The standalone-catalog-size.pdf fixture has a deliberately undersized trailer
+bound but an explicitly indexed catalog. It has a literal red-page oracle for
+the narrow standalone recovery policy. Regenerate it with
+scripts/generate_pdf_catalog_size_fixture.py; see ../docs/pdf-objects.md for the
+revision and null-semantics guards.
+
 The post-aat4-names.pdf and post-high-index-names.pdf samples use owned glyph
 outlines with legacy character-code names and modern high custom-name indices.
 They remain decoded-unverified. Regenerate them with

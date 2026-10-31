@@ -735,6 +735,14 @@
       "height": 16,
       "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
       "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/standalone-catalog-size.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0,
+      "provenance": "Literal red page for an owned standalone table with an undersized catalog bound."
     }
   ]
 }

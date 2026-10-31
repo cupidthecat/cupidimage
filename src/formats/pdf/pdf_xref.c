@@ -198,6 +198,41 @@ static int xref_add(pdf_xref_builder *builder, size_t number, unsigned kind, uin
     return 1;
 }
 
+static void xref_recover_catalog_size(const pdf_xref_builder *builder, pdf_xref_trailer *trailer,
+                                      const pdf_xref_entry *entries, size_t count) {
+    /* Recovery is limited to a failed catalog bound in one standalone table.
+     * A usable catalog, revision chain or hybrid index keeps its declared bound. */
+    unsigned root = PDF_OBJECT_NUMBER(trailer->root);
+    if (builder->sections != 1 || trailer->has_previous || trailer->has_hybrid ||
+        root < trailer->size || !count)
+        return;
+    for (size_t i = 0; i < count; i++) {
+        const pdf_xref_entry *entry = entries + i;
+        if ((unsigned)entry->obj_num != root || entry->kind != 1 ||
+            (unsigned)entry->gen_num != PDF_OBJECT_GENERATION(trailer->root))
+            continue;
+        pdf_object_id object;
+        size_t body, end, pos;
+        if (!cupidimage_pdf_object_header(builder->data, builder->size, entry->offset, &object,
+                                          &body) ||
+            object != trailer->root)
+            return;
+        pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL};
+        pdf_object_view dictionary = {0};
+        char name[128];
+        if (!cupidimage_pdf_dictionary_view(&tail, 0, &dictionary, &end) ||
+            !cupidimage_pdf_page_value(&dictionary, "Type", &pos) ||
+            !cupidimage_pdf_read_name(&dictionary, &pos, name) || strcmp(name, "Catalog"))
+            return;
+        size_t after = body + end;
+        cupidimage_pdf_skip_ws_and_comments(builder->data, builder->size, &after);
+        if (!xref_word(builder->data, builder->size, after, "endobj"))
+            return;
+        trailer->size = (size_t)entries[count - 1].obj_num + 1;
+        return;
+    }
+}
+
 static int xref_table(pdf_xref_builder *builder, size_t offset, pdf_xref_trailer *trailer) {
     pdf_object_view view = {builder->data, builder->size, NULL, NULL, 0};
     size_t pos = offset + 4, first_entry = (size_t)builder->result->count;
@@ -240,12 +275,13 @@ static int xref_table(pdf_xref_builder *builder, size_t offset, pdf_xref_trailer
     pdf_xref_entry *entries = count ? builder->result->entries + first_entry : NULL;
     if (count > 1)
         qsort(entries, count, sizeof(*entries), xref_compare);
-    for (size_t i = 0; i < count; i++) {
-        if (i && entries[i].obj_num == entries[i - 1].obj_num)
+    for (size_t i = 1; i < count; i++)
+        if (entries[i].obj_num == entries[i - 1].obj_num)
             return 0;
+    xref_recover_catalog_size(builder, trailer, entries, count);
+    for (size_t i = 0; i < count; i++)
         if ((size_t)entries[i].obj_num >= trailer->size)
             entries[i].kind = 3;
-    }
     return 1;
 }
 

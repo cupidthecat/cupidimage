@@ -72,8 +72,9 @@ The relevant rules are in [ISO 32000-1, sections 7.3.9–7.3.10 and
 and the [PDF 2.0 clause 7 errata](https://pdf-issues.pdfa.org/32000-2-2020/clause07.html).
 [RFC 7995](https://www.rfc-editor.org/info/rfc7995/) defines a particular PDF output
 profile for RFCs, not a replacement for the general object and rendering rules.
-Encryption, external stream files and damaged-file reconstruction remain outside
-this implementation. See the [conformance tracker](format-conformance.md) for the
+Encryption, external stream files and general physical-object reconstruction
+remain outside this implementation. The narrow catalog-bound repair below uses
+only explicitly indexed objects. See the [conformance tracker](format-conformance.md) for the
 remaining rendering work.
 
 ## Flate stream endings
@@ -98,3 +99,41 @@ invalid. Resource keys, font selections, Type 3 glyph names and colorant names u
 these decoded values. A valid name token is not necessarily a valid value for a
 particular entry: Encoding and BaseEncoding still require a supported encoding.
 See ISO 32000-1 section 7.3.5 and Annex C.
+
+
+## Standalone catalog-bound recovery
+
+A damaged file can declare a trailer Size smaller than its explicitly indexed
+catalog object number. The reader can correct that bound only when all of these
+conditions hold:
+
+- The index is one classic table, without a Prev chain or XRefStm supplement.
+- Size is a valid positive direct integer, and the catalog lies outside it.
+- One explicit in-use entry matches the catalog's number and generation.
+- Its indexed offset contains the matching object header, a dictionary with a
+  direct Type/Catalog name, and an endobj immediately after the dictionary.
+
+The corrected bound is one greater than the highest object number in that table.
+No physical-object search, guessed generation or new row is involved. Existing
+row, memory and section limits still apply. This is a damaged-input compatibility
+rule, not a claim that the original Size conforms to ISO 32000.
+
+A usable catalog keeps its declared Size. Out-of-range objects still resolve to
+null in that case. Incremental revisions, hybrid indexes and cross-reference
+streams retain their original bounds; an older table cannot regain ignored
+objects through this repair. Free entries, missing catalog rows, duplicate rows,
+wrong headers, indirect Type values, stream catalogs and malformed Size values
+do not qualify.
+
+The cross-reference suite checks these boundaries, including a sparse maximum
+object number without a dense allocation. Positive ordinary recovery cases also
+match an independent renderer; strict null-semantics guards keep their analytic
+expectations instead of adopting broader repairs. The owned
+standalone-catalog-size.pdf asset has a literal red-page oracle. Regenerate it
+with scripts/generate_pdf_catalog_size_fixture.py.
+
+The pinned mmtype1.pdf corpus file declares Size 9 with Root 332 and explicit
+rows through 336. It now renders without changing the downloaded bytes. Its
+native output matches a control with only Size corrected to 337, byte-for-byte
+in the default and all-five-options profiles. This comparison qualifies the
+metadata repair, not all multiple-master font matching or raster fidelity.

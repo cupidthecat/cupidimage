@@ -312,6 +312,72 @@ def object_stream_cases():
     yield 'escaped-xref-filter', bytes(pdf.data).replace(b'/FlateDecode', b'/Fl#61teDecode'), (255, 0, 0), False
 
 
+def sparse_catalog(generation=0, root=41, catalog=b'/Catalog'):
+    pdf = PDF()
+    pdf.obj(root, b'<< /Type ' + catalog + f' /Pages 42 {generation} R >>'.encode(), generation)
+    pdf.obj(42, f'<< /Type /Pages /Kids [43 {generation} R] /Count 1 >>'.encode(), generation)
+    pdf.obj(43, f'<< /Type /Page /Parent 42 {generation} R /MediaBox [0 0 18 12] /Contents 44 {generation} R /Resources << >> >>'.encode(), generation)
+    pdf.obj(44, stream(RED), generation)
+    return pdf
+
+
+def catalog_size_cases():
+    for generation in (0, 7):
+        pdf = sparse_catalog(generation)
+        pdf.table(size=5, root=f'41 {generation} R')
+        yield f'recover-catalog-generation-{generation}', bytes(pdf.data), (255, 0, 0), False
+    pdf = sparse_catalog(catalog=b'/Cata#6cog')
+    pdf.table(size=5, root='41 0 R')
+    yield 'recover-escaped-catalog', bytes(pdf.data), (255, 0, 0), False
+    pdf = sparse_catalog(); pdf.table(size=5, root='41 0 R')
+    data = bytes(pdf.data).replace(b'/Size 5', b'/Size 5 /Prev null /XRefStm null')
+    yield 'recover-null-links', data, (255, 0, 0), False
+    pdf = sparse_catalog(root=2147483647)
+    pdf.table(size=5, root='2147483647 0 R')
+    yield 'recover-sparse-maximum', bytes(pdf.data), (255, 0, 0), False
+    # A usable catalog keeps Size authoritative, including null out-of-range content.
+    pdf = base(); pdf.table(size=4)
+    yield 'declared-bound-with-usable-catalog', bytes(pdf.data), (255, 255, 255), False
+    for error in ('free', 'missing', 'generation', 'header', 'offset', 'type', 'indirect-type', 'stream', 'extra-value'):
+        pdf = sparse_catalog(catalog=b'/Other' if error == 'type' else
+                             b'10 0 R' if error == 'indirect-type' else b'/Catalog')
+        if error == 'indirect-type':
+            pdf.obj(10, b'/Catalog')
+        if error == 'stream':
+            pdf.obj(41, stream(b'ignored', '/Type /Catalog /Pages 42 0 R'))
+        if error == 'extra-value':
+            pdf.obj(41, b'<< /Type /Catalog /Pages 42 0 R >> null')
+        entries = {0: (0, 0, 65535), **pdf.objects}
+        if error == 'free': entries[41] = (0, 0, 1)
+        if error == 'missing': del entries[41]
+        if error == 'generation': entries[41] = (1, entries[41][1], 1)
+        if error == 'header': entries[41] = entries[42]
+        if error == 'offset': entries[41] = (1, 999999, 0)
+        pdf.table(entries, size=5, root='41 0 R')
+        yield 'catalog-recovery-' + error, bytes(pdf.data), None, True
+    pdf = sparse_catalog(); offset = pdf.objects[41][1]; pdf.table(size=5, root='41 0 R')
+    duplicate = f'41 1\n{offset:010} 00000 n \n'.encode()
+    yield 'catalog-recovery-duplicate', bytes(pdf.data).replace(b'trailer\n', duplicate + b'trailer\n'), None, True
+    pdf = sparse_catalog(); pdf.table(size=5, root='41 0 R')
+    for value in (b'0', b'-1', b'5.0', b'null', b'9 0 R'):
+        yield 'catalog-recovery-size-' + value.decode(), bytes(pdf.data).replace(b'/Size 5', b'/Size ' + value), None, True
+    pdf = sparse_catalog(); previous = pdf.table(root='41 0 R')
+    pdf.table(size=5, root='41 0 R', prev=previous)
+    yield 'catalog-recovery-blocked-update', bytes(pdf.data), None, True
+    # An older damaged table must not regain rows through the new repair path.
+    pdf = sparse_catalog(); previous = pdf.table(size=5, root='41 0 R')
+    pdf.obj(1, b'<< /Type /Catalog /Pages 2 0 R >>')
+    pdf.obj(2, b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>')
+    pdf.obj(3, b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 18 12] /Contents 44 0 R >>')
+    pdf.table({number: pdf.objects[number] for number in (1, 2, 3)}, size=45, prev=previous)
+    yield 'older-understated-table-not-recovered', bytes(pdf.data), (255, 255, 255), False
+    pdf = sparse_catalog(); hybrid = pdf.xref(50, size=51, root='41 0 R', finish=False)
+    pdf.table(size=5, root='41 0 R', hybrid=hybrid)
+    yield 'catalog-recovery-blocked-hybrid', bytes(pdf.data), None, True
+    pdf = sparse_catalog(); pdf.xref(50, size=5, root='41 0 R', index=[41, 4, 50, 1])
+    yield 'catalog-recovery-blocked-stream', bytes(pdf.data), None, True
+
+
 def main():
     probe = str(Path(sys.argv[1]).resolve()); checks = 0
     positional = [arg for arg in sys.argv[2:] if not arg.startswith('--')]
@@ -319,11 +385,13 @@ def main():
     allocation_checks = references = 0
     analytic_only = {
         'free-content-is-null', 'future-entry-is-null',
+        'recover-sparse-maximum', 'declared-bound-with-usable-catalog',
+        'older-understated-table-not-recovered',
         'content-stream-filter-alias', 'object-stream-filter-alias',
         'contents-array-alias', 'contents-stream-alias', 'contents-array-stream-alias',
     }
     with tempfile.TemporaryDirectory(prefix='cupidimage-xref-') as tmp:
-        for name, data, color, reject in (*cases(), *extended_cases(), *parameter_cases(), *contents_cases(), *legacy_length_cases(), *object_stream_cases()):
+        for name, data, color, reject in (*cases(), *extended_cases(), *parameter_cases(), *contents_cases(), *legacy_length_cases(), *object_stream_cases(), *catalog_size_cases()):
             path = Path(tmp) / (name + '.pdf'); path.write_bytes(data)
             result = subprocess.run([probe, str(path), '0'], capture_output=True, timeout=30)
             assert result.returncode == (3 if reject else 0), (name, result.stderr)
