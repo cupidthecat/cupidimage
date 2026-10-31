@@ -361,11 +361,13 @@ test-pdf-cid: $(BINDIR)/test_pdf_pages
 $(BINDIR)/test_pdf_truetype: tests/test_pdf_truetype.c $(LIB)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
 
-test-pdf-truetype: $(BINDIR)/test_pdf_truetype $(BINDIR)/test_pdf_pages
+test-pdf-truetype: $(BINDIR)/test_pdf_truetype $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_truetype.py $(BINDIR)/test_pdf_truetype
 	python3 scripts/test_pdf_truetype_cmaps.py $(BINDIR)/test_pdf_truetype
 	python3 scripts/generate_pdf_post_names.py --check
 	python3 scripts/test_pdf_truetype_names.py $(BINDIR)/test_pdf_truetype
+	python3 scripts/generate_pdf_post_table_fixtures.py --check
+	python3 scripts/test_pdf_post_tables.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_embedded_fonts.py $(BINDIR)/test_pdf_pages
 
 $(BINDIR)/test_pdf_cmap: tests/test_pdf_cmap.c $(LIB)

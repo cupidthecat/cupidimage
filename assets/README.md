@@ -130,3 +130,9 @@ horizontal CIDFontType0 and vertical Unicode CIDFontType2 text. Their `-legacy.p
 companions exercise CP936, CP950 and CP949. They remain decoded-unverified visual
 assets. Regenerate them with
 scripts/generate_pdf_cjk_fixtures.py; paired embedded-program tests are separate.
+
+The post-aat4-names.pdf and post-high-index-names.pdf samples use owned glyph
+outlines with legacy character-code names and modern high custom-name indices.
+They remain decoded-unverified. Regenerate them with
+scripts/generate_pdf_post_table_fixtures.py; separate paired tests verify glyph
+selection and PDF widths.
