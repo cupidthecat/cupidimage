@@ -861,14 +861,18 @@
             "assets/pdf/type1-counter-hints.pdf",
             "src/formats/pdf/fonts/postscript/type1_flex.c",
             "scripts/test_pdf_type1_flex.py",
-            "scripts/compare_pdf_type1_flex.py"
+            "scripts/compare_pdf_type1_flex.py",
+            "docs/pdf-type1-scopes.md",
+            "src/formats/pdf/fonts/type1/syntax.c",
+            "scripts/test_pdf_type1_scopes.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "The bounded Type 1 lexer recognizes standard ASCII token boundaries and 32-bit radix integers. Arbitrary PostScript execution and computed font dictionaries remain unsupported.",
             "Literal private hint fields and ordered charstring hint traces feed an optional bounded page fitter. Computed parameters carry unresolved diagnostics; broader hinting and font-program qualification remain unfinished.",
             "Standard OtherSubrs 12/13 counter-data blocks are decoded and retained. Designer counter priorities are not applied by the current fitting profile.",
-            "Standard Type 1 flex calls retain reference points and apply the documented device-phase procedure. Embedded PaintType is ignored under ISO 32000-1 9.9; PDF text modes still select painting. Known unadjusted-curve reference differences are not counted as matches."
+            "Standard Type 1 flex calls retain reference points and apply the documented device-phase procedure. Embedded PaintType is ignored under ISO 32000-1 9.9; PDF text modes still select painting. Known unadjusted-curve reference differences are not counted as matches.",
+            "Literal Type 1 declarations now preserve dictionary ownership and inherited aliases. Arbitrary computed programs, larger hint replacement traces and broader raster qualification remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -885,10 +889,11 @@
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
             "scripts/test_pdf_embedded_fonts.py",
-            "scripts/test_pdf_type1_render.py"
+            "scripts/test_pdf_type1_render.py",
+            "docs/pdf-type1-scopes.md"
           ],
           "limitations": [
-            "Embedded MMType1 snapshots use the ordinary Type 1 path. Nonembedded instance matching remains incomplete. Live multiple-master programs are optional compatibility work, not conforming embedded snapshots."
+            "Compliant embedded MMType1 instances use ordinary Type 1 snapshots, not live multiple-master programs. Selected snapshot rendering is tested; the underlying Type 1 fidelity limits still apply."
           ],
           "dependencies": [
             "1",

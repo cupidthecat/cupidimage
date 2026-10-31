@@ -80,7 +80,7 @@ outlines and PDF widths are unchanged.
 
 ## Remaining scope and references
 
-Computed PostScript dictionaries, inherited definer aliases, broader OtherSubrs,
+Computed PostScript dictionaries, broader OtherSubrs,
 custom flex procedures, stem darkening, synthetic bold, fractional private parameters and
 larger fitting ranges still need work. These tests establish the selected profile,
 not complete Type 1 or PDF rendering conformance.

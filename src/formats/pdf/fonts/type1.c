@@ -2,16 +2,10 @@
 #include "encoding.h"
 #include "type1/hints.h"
 #include "type1/lexer.h"
+#include "type1/syntax.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef struct {
-    char readers[16][128];
-    unsigned reader_count;
-    char definers[16][128];
-    unsigned definer_count;
-} t1_syntax;
 
 static int t1_int(pdf_type1_token token, int low, int high, int *result) {
     if (token.type != PDF_T1_NUMBER || token.number < low || token.number > high ||
@@ -25,34 +19,19 @@ static int t1_word(pdf_type1_token token, const char *word) {
     return token.type == PDF_T1_WORD && !strcmp(token.text, word);
 }
 
-static int t1_reader(const t1_syntax *syntax, pdf_type1_token token) {
-    if (token.type != PDF_T1_WORD)
-        return 0;
-    for (unsigned i = 0; i < syntax->reader_count; i++)
-        if (!strcmp(token.text, syntax->readers[i]))
-            return 1;
-    return 0;
+static unsigned t1_dictionary_target(pdf_type1_token token) {
+    if (t1_word(token, "userdict"))
+        return PDF_T1_USER_DICTIONARY;
+    if (t1_word(token, "currentdict"))
+        return PDF_T1_CURRENT_DICTIONARY;
+    if (t1_word(token, "systemdict"))
+        return PDF_T1_SYSTEM_DICTIONARY;
+    return PDF_T1_NEW_DICTIONARY;
 }
 
-static int t1_reader_proc(pdf_type1_token token) {
-    static const char *const words[] = {"string", "currentfile", "exch", "readstring", "pop"};
-    if (token.type != PDF_T1_PROC)
-        return 0;
-    size_t pos = 0;
-    for (unsigned i = 0; i < 5; i++)
-        if (!t1_word(cupidimage_pdf_type1_lex(token.body, &pos, 0), words[i]))
-            return 0;
-    return cupidimage_pdf_type1_lex(token.body, &pos, 0).type == PDF_T1_EOF;
-}
-
-static int t1_definer_proc(pdf_type1_token token) {
-    if (token.type != PDF_T1_PROC)
-        return 0;
-    size_t pos = 0;
-    pdf_type1_token word = cupidimage_pdf_type1_lex(token.body, &pos, 0);
-    if (t1_word(word, "noaccess") || t1_word(word, "readonly"))
-        word = cupidimage_pdf_type1_lex(token.body, &pos, 0);
-    return t1_word(word, "def") && cupidimage_pdf_type1_lex(token.body, &pos, 0).type == PDF_T1_EOF;
+static int t1_reader(pdf_type1_syntax *syntax, pdf_type1_token token) {
+    return token.type == PDF_T1_WORD &&
+           (cupidimage_pdf_type1_syntax_lookup(syntax, token.text) & PDF_T1_READER);
 }
 
 static int t1_binary(pdf_cff_slice source, size_t *pos, int length, pdf_cff_slice *out) {
@@ -76,56 +55,99 @@ static void t1_decrypt(unsigned char *data, size_t length, unsigned seed) {
     }
 }
 
-static int t1_matrix(pdf_cff_slice source, size_t *pos, double matrix[6]) {
-    pdf_type1_token open = cupidimage_pdf_type1_lex(source, pos, 0);
-    if (open.type != PDF_T1_OTHER || open.text[0] != '[')
+static int t1_matrix(pdf_cff_slice source, size_t *position, double matrix[6]) {
+    pdf_type1_token open = cupidimage_pdf_type1_lex(source, position, 0);
+    int procedure = open.type == PDF_T1_PROC;
+    if (!procedure && (open.type != PDF_T1_OTHER || strcmp(open.text, "[")))
         return 0;
+    size_t inner = 0;
+    size_t *pos = procedure ? &inner : position;
+    pdf_cff_slice values = procedure ? open.body : source;
     for (unsigned i = 0; i < 6; i++) {
-        pdf_type1_token item = cupidimage_pdf_type1_lex(source, pos, 0);
-        if (item.type != PDF_T1_NUMBER || fabs(item.number) > 1e30)
+        pdf_type1_token value = cupidimage_pdf_type1_lex(values, pos, 0);
+        if (value.type != PDF_T1_NUMBER || !isfinite(value.number) || fabs(value.number) > 1e30)
             return 0;
-        matrix[i] = item.number;
+        matrix[i] = value.number;
     }
-    pdf_type1_token close = cupidimage_pdf_type1_lex(source, pos, 0);
-    return close.type == PDF_T1_OTHER && close.text[0] == ']';
+    pdf_type1_token close = cupidimage_pdf_type1_lex(values, pos, 0);
+    return procedure ? close.type == PDF_T1_EOF
+                     : close.type == PDF_T1_OTHER && !strcmp(close.text, "]");
 }
 
 static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][128], int plain,
-                    size_t *private_start) {
+                    size_t *private_start, pdf_type1_syntax *syntax) {
     size_t pos = 0;
-    int scope = 0, font_scope = 0, encoding = 0, found_type = 0, found_eexec = 0;
+    unsigned scope = syntax->depth, font_scope = 0, literal_depth = 0, dictionary_target = 0;
+    unsigned font_dictionary = cupidimage_pdf_type1_syntax_dictionary(syntax);
+    int encoding = 0, found_type = 0, found_eexec = 0, font_active = 1;
     while (pos < source.length) {
+        if (!cupidimage_pdf_type1_syntax_take(syntax, 1))
+            return 0;
         size_t token_start = pos;
         pdf_type1_token token = cupidimage_pdf_type1_lex(source, &pos, 0);
+        unsigned target = dictionary_target;
+        dictionary_target = t1_dictionary_target(token);
         if (token.type == PDF_T1_ERROR)
             return 0;
+        if (token.type == PDF_T1_OTHER) {
+            if (!strcmp(token.text, "[") || !strcmp(token.text, "<<")) {
+                if (++literal_depth > 64)
+                    return 0;
+            } else if ((!strcmp(token.text, "]") || !strcmp(token.text, ">>")) && literal_depth)
+                literal_depth--;
+            continue;
+        }
+        if (literal_depth)
+            continue;
+        if (target && token.type == PDF_T1_NAME) {
+            if (!cupidimage_pdf_type1_syntax_put_definition(syntax, token.text, source, &pos,
+                                                            target))
+                return 0;
+            continue;
+        }
         if (plain && token.type == PDF_T1_NAME && !strcmp(token.text, "Private") &&
-            (scope == font_scope || scope == 0)) {
+            ((font_active && scope == font_scope) || scope == 0)) {
             *private_start = token_start;
             return found_type;
         }
         if (t1_word(token, "begin")) {
-            if (++scope > 64)
+            if (!cupidimage_pdf_type1_syntax_begin_dictionary(syntax, target))
                 return 0;
-            if (!font_scope)
+            scope = syntax->depth;
+            if (!font_scope && !target) {
                 font_scope = scope;
+                font_dictionary = cupidimage_pdf_type1_syntax_dictionary(syntax);
+            }
         }
-        if (t1_word(token, "end") && scope)
-            scope--;
+        if (t1_word(token, "end") && scope) {
+            if (scope == font_scope)
+                font_active = 0;
+            if (!cupidimage_pdf_type1_syntax_end(syntax))
+                return 0;
+            scope = syntax->depth;
+        }
         if (t1_word(token, "eexec")) {
             found_eexec = 1;
             break;
         }
-        if (scope != font_scope)
+        if (!font_active || cupidimage_pdf_type1_syntax_dictionary(syntax) != font_dictionary) {
+            if (token.type == PDF_T1_NAME &&
+                !cupidimage_pdf_type1_syntax_definition(syntax, token.text, source, &pos))
+                return 0;
             continue;
+        }
         if (token.type == PDF_T1_NAME && !strcmp(token.text, "FontType")) {
             int type;
-            if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), 1, 1, &type))
+            if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), 1, 1, &type) ||
+                !cupidimage_pdf_type1_syntax_end_definition(syntax, source, &pos))
                 return 0;
             found_type = 1;
+            encoding = 0;
         } else if (token.type == PDF_T1_NAME && !strcmp(token.text, "FontMatrix")) {
-            if (!t1_matrix(source, &pos, font->matrix))
+            if (!t1_matrix(source, &pos, font->matrix) ||
+                !cupidimage_pdf_type1_syntax_end_definition(syntax, source, &pos))
                 return 0;
+            encoding = 0;
         } else if (token.type == PDF_T1_NAME && !strcmp(token.text, "Encoding")) {
             pdf_type1_token value = cupidimage_pdf_type1_lex(source, &pos, 0);
             if (t1_word(value, "StandardEncoding")) {
@@ -150,14 +172,23 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
                 strcpy(names[code], name.text);
             else
                 pos = saved;
-        } else if (t1_word(token, "def"))
+        } else if (token.type == PDF_T1_WORD &&
+                   (t1_word(token, "def") ||
+                    (cupidimage_pdf_type1_syntax_lookup(syntax, token.text) & PDF_T1_DEFINER)))
             encoding = 0;
+        else if (token.type == PDF_T1_NAME) {
+            size_t saved = pos;
+            if (!cupidimage_pdf_type1_syntax_definition(syntax, token.text, source, &pos))
+                return 0;
+            if (pos != saved)
+                encoding = 0;
+        }
     }
-    return found_type && found_eexec;
+    return found_type && found_eexec && !syntax->failed;
 }
 
 static int t1_subrs(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
-                    const t1_syntax *syntax) {
+                    pdf_type1_syntax *syntax) {
     int count;
     if (!t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 0, 65536, &count) ||
         !t1_word(cupidimage_pdf_type1_lex(source, pos, 0), "array"))
@@ -215,7 +246,7 @@ static int t1_add_glyph(pdf_type1_font *font, const char *name, pdf_cff_slice co
 }
 
 static int t1_charstrings(pdf_type1_font *font, pdf_cff_slice source, size_t *pos,
-                          const t1_syntax *syntax) {
+                          pdf_type1_syntax *syntax) {
     int count;
     if (!t1_int(cupidimage_pdf_type1_lex(source, pos, 0), 1, 65535, &count) ||
         !t1_word(cupidimage_pdf_type1_lex(source, pos, 0), "dict"))
@@ -246,16 +277,28 @@ static int t1_charstrings(pdf_type1_font *font, pdf_cff_slice source, size_t *po
     return 0;
 }
 
-static int t1_private(pdf_type1_font *font) {
+static int t1_discard_dictionary_value(pdf_cff_slice source, size_t *position,
+                                       pdf_type1_syntax *syntax, int charstrings) {
+    pdf_type1_font discarded = {0};
+    int ok = charstrings ? t1_charstrings(&discarded, source, position, syntax)
+                         : t1_subrs(&discarded, source, position, syntax);
+    free(discarded.glyphs);
+    free(discarded.subrs);
+    return ok;
+}
+
+static int t1_private(pdf_type1_font *font, pdf_type1_syntax *syntax) {
     pdf_cff_slice source = {font->private_data + 4, font->private_length - 4};
     size_t pos = 0;
-    t1_syntax syntax = {0};
-    strcpy(syntax.readers[0], "RD");
-    strcpy(syntax.readers[1], "-|");
-    syntax.reader_count = 2;
-    unsigned scope = 0, private_scope = 0, private_pending = 0, literal_depth = 0;
+    unsigned base_scope = syntax->depth, scope = base_scope;
+    unsigned private_scope = 0, private_pending = 0, literal_depth = 0, dictionary_target = 0;
+    unsigned private_dictionary = 0;
     while (pos < source.length) {
+        if (!cupidimage_pdf_type1_syntax_take(syntax, 1))
+            return 0;
         pdf_type1_token token = cupidimage_pdf_type1_lex(source, &pos, 0);
+        unsigned target = dictionary_target;
+        dictionary_target = t1_dictionary_target(token);
         if (token.type == PDF_T1_ERROR)
             return 0;
         if (token.type == PDF_T1_OTHER) {
@@ -266,77 +309,80 @@ static int t1_private(pdf_type1_font *font) {
                 literal_depth--;
         }
         if (!literal_depth && t1_word(token, "begin")) {
-            if (++scope > 64)
+            if (!cupidimage_pdf_type1_syntax_begin_dictionary(syntax, target))
                 return 0;
+            scope = syntax->depth;
             if (private_pending) {
                 private_scope = scope;
+                private_dictionary = cupidimage_pdf_type1_syntax_dictionary(syntax);
                 private_pending = 0;
                 cupidimage_pdf_ps_hints_init(&font->hints);
                 font->unresolved_hints = 0;
-                syntax.definer_count = 0;
+                font->len_iv = 4;
+                free(font->subrs);
+                font->subrs = NULL;
+                font->subr_count = 0;
             }
         } else if (!literal_depth && t1_word(token, "end") && scope) {
             if (scope == private_scope)
                 private_scope = 0;
-            scope--;
+            if (!cupidimage_pdf_type1_syntax_end(syntax))
+                return 0;
+            scope = syntax->depth;
         }
         if (token.type == PDF_T1_NAME && !literal_depth) {
+            if (target) {
+                if (!cupidimage_pdf_type1_syntax_put_definition(syntax, token.text, source, &pos,
+                                                                target))
+                    return 0;
+                continue;
+            }
             unsigned field = cupidimage_pdf_type1_hint_field(token.text);
-            if (!private_scope && !strcmp(token.text, "Private"))
+            int in_private = private_scope &&
+                             cupidimage_pdf_type1_syntax_dictionary(syntax) == private_dictionary;
+            if (!private_scope && scope == base_scope && !strcmp(token.text, "Private")) {
+                size_t look = pos;
+                int count;
+                if (!t1_int(cupidimage_pdf_type1_lex(source, &look, 0), 0, 65536, &count) ||
+                    !t1_word(cupidimage_pdf_type1_lex(source, &look, 0), "dict"))
+                    return 0;
                 private_pending = 1;
-            if (private_scope && scope == private_scope && field < PDF_PS_HINT_FIELDS) {
+                continue;
+            }
+            if (in_private && field < PDF_PS_HINT_FIELDS) {
                 cupidimage_pdf_type1_hint_read(&font->hints, &font->unresolved_hints, field, source,
-                                               &pos, syntax.definers, syntax.definer_count);
-            } else if (!strcmp(token.text, "lenIV")) {
-                if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), -1, 255, &font->len_iv))
+                                               &pos, syntax);
+            } else if (in_private && !strcmp(token.text, "lenIV")) {
+                if (!t1_int(cupidimage_pdf_type1_lex(source, &pos, 0), -1, 255, &font->len_iv) ||
+                    !cupidimage_pdf_type1_syntax_end_definition(syntax, source, &pos))
                     return 0;
-            } else if (!strcmp(token.text, "Subrs")) {
-                if (!t1_subrs(font, source, &pos, &syntax))
+            } else if (in_private && !strcmp(token.text, "Subrs")) {
+                if (!t1_subrs(font, source, &pos, syntax))
                     return 0;
-            } else if (!strcmp(token.text, "CharStrings")) {
-                if (!t1_charstrings(font, source, &pos, &syntax))
+            } else if ((in_private || scope == base_scope) && !strcmp(token.text, "CharStrings")) {
+                if (!t1_charstrings(font, source, &pos, syntax))
                     return 0;
             } else {
-                size_t saved = pos;
-                pdf_type1_token value = cupidimage_pdf_type1_lex(source, &pos, 0);
-                for (unsigned i = 0;
-                     private_scope && scope == private_scope && i < syntax.definer_count; i++)
-                    if (!strcmp(syntax.definers[i], token.text)) {
-                        memcpy(syntax.definers[i], syntax.definers[--syntax.definer_count], 128);
-                        break;
-                    }
-                if (t1_reader_proc(value)) {
-                    if (syntax.reader_count == 16)
+                /* Unrelated dictionaries may contain binary font-like arrays.
+                 * Consume their lengths without assigning them to this font. */
+                int subrs = !strcmp(token.text, "Subrs"),
+                    chars = !strcmp(token.text, "CharStrings");
+                size_t look = pos;
+                pdf_type1_token number = cupidimage_pdf_type1_lex(source, &look, 0);
+                pdf_type1_token constructor = cupidimage_pdf_type1_lex(source, &look, 0);
+                if ((subrs || chars) && number.type == PDF_T1_NUMBER &&
+                    t1_word(constructor, chars ? "dict" : "array")) {
+                    if (!t1_discard_dictionary_value(source, &pos, syntax, chars))
                         return 0;
-                    strcpy(syntax.readers[syntax.reader_count++], token.text);
-                } else {
-                    size_t after_value = pos;
-                    pdf_type1_token defined = cupidimage_pdf_type1_lex(source, &after_value, 0);
-                    for (unsigned i = 0;
-                         i < 3 &&
-                         (t1_word(defined, "executeonly") || t1_word(defined, "readonly") ||
-                          t1_word(defined, "noaccess") || t1_word(defined, "bind"));
-                         i++)
-                        defined = cupidimage_pdf_type1_lex(source, &after_value, 0);
-                    if (private_scope && scope == private_scope && t1_definer_proc(value) &&
-                        t1_word(defined, "def")) {
-                        unsigned i = 0;
-                        while (i < syntax.definer_count && strcmp(syntax.definers[i], token.text))
-                            i++;
-                        if (i == 16)
-                            return 0;
-                        strcpy(syntax.definers[i], token.text);
-                        if (i == syntax.definer_count)
-                            syntax.definer_count++;
-                    }
-                    pos = saved;
-                }
+                } else if (!cupidimage_pdf_type1_syntax_definition(syntax, token.text, source,
+                                                                   &pos))
+                    return 0;
             }
         }
-        if (t1_word(token, "closefile"))
+        if (!literal_depth && t1_word(token, "closefile"))
             break;
     }
-    return font->glyph_count != 0;
+    return font->glyph_count != 0 && !syntax->failed;
 }
 
 void cupidimage_pdf_type1_free(pdf_type1_font *font) {
@@ -398,8 +444,10 @@ int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, s
     for (unsigned i = 0; i < 256; i++)
         strcpy(names[i], cupidimage_pdf_encoding_name("StandardEncoding", i));
     size_t private_start = 0;
+    pdf_type1_syntax syntax;
+    cupidimage_pdf_type1_syntax_init(&syntax);
     if (!t1_clear(font, (pdf_cff_slice){data, clear_length}, names, !encrypted_length,
-                  &private_start))
+                  &private_start, &syntax))
         goto fail;
     font->private_length = encrypted_length ? encrypted_length : clear_length - private_start + 4;
     font->private_data = malloc(font->private_length);
@@ -412,7 +460,11 @@ int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, s
         memset(font->private_data, 0, 4);
         memcpy(font->private_data + 4, data + private_start, clear_length - private_start);
     }
-    if (!t1_private(font))
+    /* eexec executes with read-only systemdict above the caller's dictionaries. */
+    if (encrypted_length &&
+        !cupidimage_pdf_type1_syntax_begin_dictionary(&syntax, PDF_T1_SYSTEM_DICTIONARY))
+        goto fail;
+    if (!t1_private(font, &syntax))
         goto fail;
     qsort(font->glyphs, font->glyph_count, sizeof(*font->glyphs), t1_glyph_compare);
     unsigned unique = 0;

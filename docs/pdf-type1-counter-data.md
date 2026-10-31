@@ -59,5 +59,6 @@ decoded-unverified.
 The calling convention and data layout follow Adobe
 [Type 1 Font Format Supplement, Technical Note 5015, sections 2.2 through 2.4](https://adobe-type-tools.github.io/font-tech-notes/pdfs/5015.Type1_Supp.pdf).
 That document also describes compatibility behavior for rasterizers without
-direct support for the supplied counter hints. Multiple-master interpolation and
-custom OtherSubrs procedures remain unsupported.
+direct support for the supplied counter hints. Custom OtherSubrs procedures remain unsupported.
+Live multiple-master programs are separate from the ordinary Type 1 snapshots
+required for embedded MMType1 instances; see [Type 1 scopes](pdf-type1-scopes.md).

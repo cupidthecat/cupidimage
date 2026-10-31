@@ -1026,3 +1026,13 @@ The owned post-aat4-names.pdf and post-high-index-names.pdf samples remain
 decoded-unverified visual assets. Regenerate them with
 scripts/generate_pdf_post_table_fixtures.py. These checks cover name selection,
 not complete text raster fidelity or automatic variation-sequence shaping.
+
+
+## Type 1 declaration scopes
+
+The [Type 1 declaration reader](pdf-type1-scopes.md) separates the font and Private
+dictionaries from unrelated nested values. It resolves literal reader and definer
+aliases through their active dictionary scopes, including userdict and currentdict
+writes. Computed controls still need broader support; they are not read as their
+first literal value. MMType1 embedding uses ordinary Type 1 snapshots, as required
+by ISO 32000, rather than live multiple-master programs.

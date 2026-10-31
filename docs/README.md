@@ -16,6 +16,7 @@ image. For embedding the library, use the [API guide](api.md) and the compilable
 - [PDF clipping](pdf-clipping.md): geometric intersections, fractional coverage, state ownership and limits.
 - [CFF descendant binding](pdf-cff-bindings.md): direct glyph indices and CID-keyed charset selection.
 - [Embedded CID subset recovery](pdf-subset-fonts.md): bounded compatibility for damaged font locations and selectors.
+- [Type 1 dictionary scopes](pdf-type1-scopes.md): font controls, inherited aliases and bounded declarations.
 - [PDF fonts and text](pdf-fonts.md): glyph selection, outline support, tests and remaining gaps.
 - [PostScript flex hints](pdf-flex.md): Type 2 depth selection, Type 1 pixel-phase adjustment and comparison limits.
 - [TrueType instruction engine](pdf-truetype-vm.md): tested instructions, preparation state and remaining profile limits.

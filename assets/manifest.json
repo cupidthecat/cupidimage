@@ -1119,6 +1119,10 @@
       "sha256": "50cdb4bab6b1285d082794cb0c8ade32c477e74f31c4fe5697d1abb16d889f85"
     },
     {
+      "path": "assets/pdf/type1-dictionary-scopes.pdf",
+      "sha256": "24b9cc163bc078b41a46c1d1b74905c362d8686a69171ae9a129e686ab703e3a"
+    },
+    {
       "path": "assets/pdf/zlib.3.pdf",
       "sha256": "eb4f00b53c69ca487158c89e9214b8d1018946bf90756179437e9ffdf3863b25"
     },
