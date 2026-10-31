@@ -1036,3 +1036,10 @@ aliases through their active dictionary scopes, including userdict and currentdi
 writes. Computed controls still need broader support; they are not read as their
 first literal value. MMType1 embedding uses ordinary Type 1 snapshots, as required
 by ISO 32000, rather than live multiple-master programs.
+
+
+## Missing CID subset zone metadata
+
+The [CID subset compatibility path](pdf-subset-fonts.md#missing-truetype-zone-declaration)
+handles maxZones = 0 only when maxTwilightPoints is also zero. It preserves strict
+standalone hinting checks, instruction bounds and the original font bytes.

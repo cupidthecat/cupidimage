@@ -21,7 +21,9 @@ int cupidimage_pdf_tt_hint_init_xy(pdf_tt_hint *hint, const pdf_tt_font *font, i
     hint->glyph_budget = budget;
     if (font->head.length < 54 || !font->head.data || font->maxp.length < 32 ||
         tt_hint_u16(font->maxp.data) != 1 || tt_hint_u16(font->maxp.data + 2) ||
-        tt_hint_u16(font->maxp.data + 14) < 1 || tt_hint_u16(font->maxp.data + 14) > 2 ||
+        tt_hint_u16(font->maxp.data + 14) > 2 ||
+        (tt_hint_u16(font->maxp.data + 14) == 0 &&
+         (font->recovered_zero_zones != 1 || tt_hint_u16(font->maxp.data + 16) != 0)) ||
         font->cvt.length % 2 || font->cvt.length / 2 > 65535)
         return cupidimage_pdf_tt_vm_fail(&hint->vm, PDF_TT_VM_PROGRAM);
     if (x_pixels <= 0 || y_pixels <= 0 || x_pixels > 32767 * 64 || y_pixels > 32767 * 64)

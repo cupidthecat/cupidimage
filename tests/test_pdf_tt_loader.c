@@ -8,6 +8,7 @@
 #define realloc fault_realloc
 #define free fault_free
 #include "../src/formats/pdf/fonts/truetype.c"
+#include "../src/formats/pdf/fonts/truetype_subset.c"
 #include "pdf_tt_loader_sources.inc"
 #undef malloc
 #undef calloc
@@ -43,9 +44,11 @@ static void write16(unsigned char *p, unsigned value) {
 #include "pdf_tt_loader/composites.c"
 #include "pdf_tt_loader/simple.c"
 #include "pdf_tt_loader/size_xy.c"
+#include "pdf_tt_loader/subset_zones.c"
 #include "pdf_tt_loader/transform.c"
 
 int main(void) {
+    subset_zone_tests();
     simple_loader_tests();
     composite_loader_tests();
     nonuniform_loader_tests();

@@ -1,5 +1,6 @@
 /* Test-only native-loading and supplied-geometry instruction probes. */
 #include "formats/pdf/fonts/truetype.h"
+#include "formats/pdf/fonts/truetype_data.h"
 #include "formats/pdf/fonts/truetype_hint/hint.h"
 #include "formats/pdf/fonts/truetype_vm/vm.h"
 #include <errno.h>
@@ -47,7 +48,8 @@ static unsigned char *read_file(const char *path, size_t *length) {
 }
 
 static int native_probe(const char *path, const char *size, const char *y_size, const char *index,
-                        int grayscale, int factor, const int32_t *matrix, const int32_t *offset) {
+                        int grayscale, int factor, const int32_t *matrix, const int32_t *offset,
+                        int recover) {
     char *end;
     long ppem = strtol(size, &end, 10);
     if (!*size || *end || ppem < 1 || ppem > 96 * 64 / factor)
@@ -61,7 +63,9 @@ static int native_probe(const char *path, const char *size, const char *y_size, 
     size_t length;
     unsigned char *data = read_file(path, &length);
     pdf_tt_font font;
-    if (!data || !cupidimage_pdf_tt_init(&font, data, length)) {
+    uint32_t *ends = NULL;
+    if (!data || !(recover ? cupidimage_pdf_tt_init_subset(&font, data, length, &ends)
+                           : cupidimage_pdf_tt_init(&font, data, length))) {
         free(data);
         return 2;
     }
@@ -92,6 +96,7 @@ static int native_probe(const char *path, const char *size, const char *y_size, 
     }
     cupidimage_pdf_tt_hint_shape_free(&shape);
     cupidimage_pdf_tt_hint_free(&hint);
+    free(ends);
     free(data);
     return 0;
 }
@@ -109,16 +114,18 @@ int main(int argc, char **argv) {
             values[i] = (int32_t)value;
         }
         return native_probe(argv[1], argv[3], argv[4], argv[5],
-                            !strcmp(argv[2], "--native-matrix-gray"), 64, values, values + 4);
+                            !strcmp(argv[2], "--native-matrix-gray"), 64, values, values + 4, 0);
     }
     if (argc == 6 && (!strcmp(argv[2], "--native-xy") || !strcmp(argv[2], "--native-xy-gray") ||
                       !strcmp(argv[2], "--native-f26-xy")))
         return native_probe(argv[1], argv[3], argv[4], argv[5],
                             !strcmp(argv[2], "--native-xy-gray"),
-                            !strcmp(argv[2], "--native-f26-xy") ? 1 : 64, NULL, NULL);
-    if (argc == 5 && (!strcmp(argv[2], "--native") || !strcmp(argv[2], "--native-gray")))
-        return native_probe(argv[1], argv[3], argv[3], argv[4], !strcmp(argv[2], "--native-gray"),
-                            64, NULL, NULL);
+                            !strcmp(argv[2], "--native-f26-xy") ? 1 : 64, NULL, NULL, 0);
+    if (argc == 5 &&
+        (!strcmp(argv[2], "--native") || !strcmp(argv[2], "--native-gray") ||
+         !strcmp(argv[2], "--native-subset") || !strcmp(argv[2], "--native-subset-gray")))
+        return native_probe(argv[1], argv[3], argv[3], argv[4], strstr(argv[2], "gray") != NULL, 64,
+                            NULL, NULL, strstr(argv[2], "subset") != NULL);
     if (argc != 4)
         return 2;
     char *end;

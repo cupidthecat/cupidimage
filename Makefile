@@ -862,3 +862,9 @@ test: test-pdf-type1-replacements
 test-pdf-type1-replacements: $(BINDIR)/test_pdf_type1_gridfit $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/generate_pdf_type1_replacement_fixture.py --check
 	python3 scripts/test_pdf_type1_replacements.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+.PHONY: test-pdf-cid-zone-recovery
+test: test-pdf-cid-zone-recovery
+test-pdf-cid-zone-recovery: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_tt_glyphs
+	python3 scripts/generate_pdf_cid_zone_fixture.py --check
+	python3 scripts/test_pdf_cid_zone_recovery.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_tt_glyphs
