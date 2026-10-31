@@ -28,19 +28,8 @@ pdf_font_program *cupidimage_pdf_load_substitute_program(const char *name) {
     return NULL;
 }
 
-static const char *substitute_subset_name(const char *name) {
-    if (strlen(name) > 7 && name[6] == '+') {
-        unsigned i = 0;
-        while (i < 6 && name[i] >= 'A' && name[i] <= 'Z')
-            i++;
-        if (i == 6)
-            return name + 7;
-    }
-    return name;
-}
-
 static const char *substitute_face(const char *name) {
-    name = substitute_subset_name(name);
+    name = cupidimage_pdf_font_base_name(name);
 
     static const struct {
         const char *family, *face;
@@ -60,6 +49,12 @@ static const char *substitute_face(const char *name) {
         {"Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique"},
         {"Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic"},
         {"Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique"}};
+    /* Simple TrueType resources can use these PostScript names too. Type 1
+     * resources have already been handled by the standard-font loader. */
+    for (unsigned family = 0; family < 3; family++)
+        for (unsigned style = 0; style < 4; style++)
+            if (!strcmp(name, faces[family][style]))
+                return faces[family][style];
     for (size_t i = 0; i < sizeof(families) / sizeof(*families); i++) {
         size_t length = strlen(families[i].family);
         if (strncmp(name, families[i].family, length))

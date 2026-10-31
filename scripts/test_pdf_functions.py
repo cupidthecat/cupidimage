@@ -53,6 +53,16 @@ def main():
         check('last-bound-equals-domain',pair.replace('/Bounds [.5]','/Bounds [1]').replace('[7 0 R 7 0 R]','[7 0 R 8 0 R]'),
               lambda x,y,w,h:rgb((x+.5)/12)if x<12 else(0,255,0),extra={8:constant},
               shading=AXIAL.replace('[0 0 18 0]','[0 0 9 0]').replace('/Function','/Extend [true true] /Function'))
+        # ISO 32000-2's clarified first endpoint belongs to the degenerate
+        # first interval. The next interval is open on its left.
+        first='<< /FunctionType 3 /Domain [0 1] /Functions [7 0 R 8 0 R] /Bounds [0] /Encode [.25 .75 0 1] >>'
+        check('first-bound-equals-domain',first,lambda x,y,w,h:rgb(.25) if x<=12 else (0,255,0),
+              extra={8:constant},shading=AXIAL.replace('[0 0 18 0]','[9.375 0 18 0]').replace('/Function','/Extend [true true] /Function'))
+        both='<< /FunctionType 3 /Domain [0 1] /Functions [7 0 R 8 0 R 7 0 R] /Bounds [0 1] /Encode [.25 .75 0 1 .75 .25] >>'
+        check('both-degenerate-endpoints',both,lambda x,y,w,h:rgb(.25) if x<=8 else rgb(.75) if x>=16 else (0,255,0),
+              extra={8:constant},shading=AXIAL.replace('[0 0 18 0]','[6.375 0 12.375 0]').replace('/Function','/Extend [true true] /Function'))
+        check('repeated-first-bound',both.replace('/Bounds [0 1]','/Bounds [0 0]'),extra={8:constant},reject=True)
+        check('repeated-interior-bound',both.replace('/Bounds [0 1]','/Bounds [.5 .5]'),extra={8:constant},reject=True)
         check('zero-domain-single',STITCH.replace('/Domain [0 1]','/Domain [0 0]').replace('/Encode [0 1]','/Encode [.25 .75]'),
               lambda x,y,w,h:rgb(.25),shading=AXIAL.replace('/Function','/Domain [0 0] /Function'))
         check('zero-domain-exponential',LEAF.replace('/Domain [0 1]','/Domain [.25 .25]'),lambda x,y,w,h:rgb(.25),

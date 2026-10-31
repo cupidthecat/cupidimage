@@ -210,10 +210,12 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
     if (!work || !private_hints || !hints || !source || !size || source->count > 65536 ||
         hints->stem_count > 96 || hints->event_count > 65536)
         return 0;
+    pdf_ps_private_hints selected;
+    if (!cupidimage_pdf_ps_hint_profile(private_hints, &selected))
+        return 0;
     size_t admission = 5120 + source->count + hints->event_count + hints->stem_count +
                        (size_t)hints->stem_count * hints->stem_count * 16;
-    if (!ps_gridfit_charge(work, admission) ||
-        !ps_gridfit_validate(private_hints, hints, source, size))
+    if (!ps_gridfit_charge(work, admission) || !ps_gridfit_validate(&selected, hints, source, size))
         return 0;
     pdf_ps_gridfit_context *context = calloc(1, sizeof(*context));
     if (!context)
@@ -223,7 +225,7 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
     volatile int ok = 0;
     if (setjmp(context->failure))
         goto done;
-    ps_gridfit_begin(context, private_hints, hints, size, 0);
+    ps_gridfit_begin(context, &selected, hints, size, 0);
     struct CF2_FontRec_ *font = &context->font;
     unsigned event_index = 0;
     for (unsigned i = 0; i <= source->count; i++) {

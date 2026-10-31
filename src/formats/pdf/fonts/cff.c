@@ -341,7 +341,7 @@ static int cff_private(pdf_cff_font *font, const pdf_cff_dict *owner, pdf_cff_pr
     return 1;
 }
 
-static int cff_fdselect(pdf_cff_font *font) {
+static int cff_fdselect(pdf_cff_font *font, int subset) {
     size_t pos = font->top.fdselect;
     if (!pos || pos >= font->source.length)
         return 0;
@@ -367,9 +367,14 @@ static int cff_fdselect(pdf_cff_font *font) {
         unsigned first = cff_uint(font->source.data + pos, 2), fd = font->source.data[pos + 2],
                  next = cff_uint(font->source.data + pos + 3, 2);
         pos += 3;
-        if ((!i && first) || next <= first || next > glyphs || fd >= font->private_count ||
-            (i == ranges - 1 && next != glyphs))
+        /* A single Font DICT makes an omitted .notdef selector unambiguous.
+         * Other leading gaps and all ambiguous multi-dictionary cases fail. */
+        int missing_notdef = subset && first == 1 && font->private_count == 1;
+        if ((!i && first && !missing_notdef) || next <= first || next > glyphs ||
+            fd >= font->private_count || (i == ranges - 1 && next != glyphs))
             return 0;
+        if (!i && missing_notdef)
+            font->fdselect[0] = 0;
         memset(font->fdselect + first, fd, next - first);
     }
     return 1;
@@ -382,7 +387,7 @@ void cupidimage_pdf_cff_free(pdf_cff_font *font) {
     memset(font, 0, sizeof(*font));
 }
 
-int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_t length) {
+static int cff_init_font(pdf_cff_font *font, const unsigned char *data, size_t length, int subset) {
     memset(font, 0, sizeof(*font));
     if (length < 4 || length > 16u * 1024u * 1024u || data[0] != 1 || data[1] != 0 || data[2] < 4 ||
         data[2] > length || data[3] < 1 || data[3] > 4)
@@ -416,7 +421,7 @@ int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_
             goto fail;
         font->private_count = fds.count;
         font->fdselect = calloc(font->chars.count, 1);
-        if (!font->fdselect || !cff_fdselect(font))
+        if (!font->fdselect || !cff_fdselect(font, subset))
             goto fail;
     }
     font->private_dicts = calloc(font->private_count, sizeof(*font->private_dicts));
@@ -455,6 +460,14 @@ int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_
 fail:
     cupidimage_pdf_cff_free(font);
     return 0;
+}
+
+int cupidimage_pdf_cff_init(pdf_cff_font *font, const unsigned char *data, size_t length) {
+    return cff_init_font(font, data, length, 0);
+}
+
+int cupidimage_pdf_cff_init_subset(pdf_cff_font *font, const unsigned char *data, size_t length) {
+    return cff_init_font(font, data, length, 1);
 }
 
 unsigned cupidimage_pdf_cff_name(const pdf_cff_font *font, const char *name) {

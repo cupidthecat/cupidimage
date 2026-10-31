@@ -21,16 +21,16 @@ static outline_point outline_mid(outline_point a, outline_point b) {
 }
 
 static int outline_line(pdf_path *path, outline_point a, outline_point b, int first) {
-    if (path->seg_count == 4096)
+    if (!cupidimage_pdf_path_reserve(path, 1))
         return 0;
     if (!isfinite(a.x) || !isfinite(a.y) || !isfinite(b.x) || !isfinite(b.y) || fabs(a.x) > 1e30 ||
         fabs(a.y) > 1e30 || fabs(b.x) > 1e30 || fabs(b.y) > 1e30)
         return 0;
-    path->segs[path->seg_count++] = (pdf_seg){.x0 = (float)a.x,
-                                              .y0 = (float)a.y,
-                                              .x1 = (float)b.x,
-                                              .y1 = (float)b.y,
-                                              .starts_subpath = first};
+    cupidimage_pdf_path_mutable(path)[path->seg_count++] = (pdf_seg){.x0 = (float)a.x,
+                                                                     .y0 = (float)a.y,
+                                                                     .x1 = (float)b.x,
+                                                                     .y1 = (float)b.y,
+                                                                     .starts_subpath = first};
     return 1;
 }
 
@@ -72,6 +72,30 @@ static int outline_cubic(pdf_path *path, outline_point a, outline_point c1, outl
            outline_cubic(path, mid, right, cb, b, 0, depth + 1, flatness_squared);
 }
 
+static int outline_clip_edge(pdf_render_state *st, pdf_clip_mask *target, const outline_edge *edge,
+                             unsigned depth, double tolerance) {
+    if (!edge->quadratic ||
+        (outline_distance(edge->a, edge->b, edge->control) <= tolerance &&
+         (edge->quadratic != 2 || outline_distance(edge->a, edge->b, edge->control2) <= tolerance)))
+        return cupidimage_pdf_clip_append_edge_to(st, target, edge->a.x, edge->a.y, edge->b.x,
+                                                  edge->b.y);
+    if (depth == 16)
+        return 0;
+    outline_point ac = outline_mid(edge->a, edge->control);
+    if (edge->quadratic == 1) {
+        outline_point cb = outline_mid(edge->control, edge->b), mid = outline_mid(ac, cb);
+        outline_edge left = {edge->a, ac, mid, 1, {0, 0}}, right = {mid, cb, edge->b, 1, {0, 0}};
+        return outline_clip_edge(st, target, &left, depth + 1, tolerance) &&
+               outline_clip_edge(st, target, &right, depth + 1, tolerance);
+    }
+    outline_point cc = outline_mid(edge->control, edge->control2),
+                  cb = outline_mid(edge->control2, edge->b);
+    outline_point lc = outline_mid(ac, cc), rc = outline_mid(cc, cb), mid = outline_mid(lc, rc);
+    outline_edge left = {edge->a, ac, mid, 2, lc}, right = {mid, rc, edge->b, 2, cb};
+    return outline_clip_edge(st, target, &left, depth + 1, tolerance) &&
+           outline_clip_edge(st, target, &right, depth + 1, tolerance);
+}
+
 static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outline_edge *edges,
                             unsigned *count, const double m[6], double flatness_squared) {
     outline_point current = {0};
@@ -106,7 +130,7 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
                 return 0;
             current = p[0];
             if (path && segment->kind == PDF_CFF_CLOSE)
-                path->segs[path->seg_count - 1].closes_subpath = 1;
+                cupidimage_pdf_path_mutable(path)[path->seg_count - 1].closes_subpath = 1;
         }
         first = 0;
     }
@@ -171,7 +195,7 @@ static int outline_path(const pdf_tt_outline *outline, pdf_path *path, outline_e
         if (path && !outline_line(path, current, start, new_path))
             return 0;
         if (path)
-            path->segs[path->seg_count - 1].closes_subpath = 1;
+            cupidimage_pdf_path_mutable(path)[path->seg_count - 1].closes_subpath = 1;
         first = last + 1;
     }
     return 1;
@@ -302,7 +326,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                                            unsigned glyph) {
     program = cupidimage_pdf_font_program_select(program, &glyph);
     int zero_text_transform = st->gs.font_size_pts == 0 || st->gs.horizontal_scale == 0;
-    if (st->gs.text_mode == 3 || (zero_text_transform && st->gs.text_mode < 4))
+    if (st->gs.text_mode == 3 ||
+        ((zero_text_transform || st->optional_hidden) && st->gs.text_mode < 4))
         return 1;
     if (!st->form_budget->glyph_calls_left)
         return 0;
@@ -314,10 +339,14 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     pdf_path *path = NULL;
     outline_edge *edges = NULL;
     unsigned edge_count = 0;
-    int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
-    unsigned char *stroke = NULL, *fill = NULL;
+    int mode = st->optional_hidden ? 3 : st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
+    unsigned char *stroke = NULL, *stroke_aa = NULL, *fill = NULL;
+    int aa_stroke = st->text_antialias;
     int ok = 0, borrowed = 0;
     pdf_paint_group combined = {0};
+    pdf_clip_mask paint_geometry = {0};
+    int coverage_clipped = 0, fill_top_down = 0,
+        saved_coverage_clipped = st->paint_coverage_clipped;
     if (!cupidimage_pdf_font_outline(program, glyph, &outline, &cff_outline,
                                      &st->form_budget->outline_cache_bytes_left, &borrowed))
         goto done;
@@ -424,6 +453,10 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         ok = 1;
         goto done;
     }
+    if (clipping && cupidimage_pdf_clip_antialias(st))
+        for (unsigned i = 0; i < edge_count; i++)
+            if (!outline_clip_edge(st, st->text_clip, edges + i, 0, flatness_squared))
+                goto done;
     double x0 = st->img->width, y0 = st->img->height, x1 = 0, y1 = 0;
     for (unsigned i = 0; i < edge_count; i++) {
         const outline_edge *e = edges + i;
@@ -438,17 +471,19 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     }
     if ((mode == 1 || mode == 2) &&
         !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
-        size_t pixels = (size_t)st->img->width * st->img->height;
-        stroke = calloc((pixels + 7) / 8, 1);
-        if (!stroke)
-            goto done;
-        cupidimage_pdf_stroke_segments(st, path, stroke);
-        if (st->image_failed)
-            goto done;
-        double margin =
-            fmax(.5, st->gs.line_width_pts * ratio * .5 *
-                         fmax(hypot(c[0], c[2]), hypot(c[1], c[3])) * fmax(1, st->gs.miter_limit)) +
-            1;
+        if (!aa_stroke) {
+            size_t pixels = (size_t)st->img->width * st->img->height;
+            stroke = calloc((pixels + 7) / 8, 1);
+            if (!stroke)
+                goto done;
+            cupidimage_pdf_stroke_segments(st, path, stroke);
+            if (st->image_failed)
+                goto done;
+        }
+        double margin = fmax(.5, st->gs.line_width_pts * ratio * .5 *
+                                     fmax(hypot(c[0], c[2]), hypot(c[1], c[3])) *
+                                     fmax(st->gs.line_cap == 2 ? sqrt(2) : 1, st->gs.miter_limit)) +
+                        1;
         x0 -= margin;
         x1 += margin;
         y0 -= margin;
@@ -472,10 +507,41 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                                       program->is_cff || program->is_type1 ? m : draw_matrix, left,
                                       top, right, bottom, &st->clip_budget->tests_left, &fill))
         goto done;
+    coverage_clipped = st->text_antialias && pixels && mode != 3 && st->gs.clip &&
+                       st->gs.clip->coverage &&
+                       !cupidimage_pdf_clip_contains_crop(st, left, top, right, bottom);
+    if (coverage_clipped && fill) {
+        for (unsigned i = 0; i < edge_count; i++)
+            if (!outline_clip_edge(st, &paint_geometry, edges + i, 0, flatness_squared))
+                goto done;
+        unsigned char *mask = NULL;
+        if (!cupidimage_pdf_clip_intersect(st, paint_geometry.pending_edges,
+                                           paint_geometry.pending_count, 0, NULL, 0, NULL, left,
+                                           top, right, bottom, &mask))
+            goto done;
+        if (!cupidimage_pdf_clip_limit_mask(st, fill, 1, mask, left, top, right, bottom)) {
+            free(mask);
+            goto done;
+        }
+        free(fill);
+        fill = mask;
+        fill_top_down = 1;
+        cupidimage_pdf_clip_pending_clear(st, &paint_geometry);
+    }
+    if (aa_stroke && pixels && (mode == 1 || mode == 2) &&
+        !cupidimage_pdf_empty_color(&st->gs.stroke_space, st->gs.stroke_pattern)) {
+        if (!cupidimage_pdf_stroke_path_coverage(st, path, left, top, right, bottom,
+                                                 coverage_clipped, &stroke_aa)) {
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: unable to rasterize text stroke");
+            goto done;
+        }
+    }
     if (pixels && mode != 3 && !cupidimage_pdf_text_group_begin(st))
         goto done;
-    if (pixels && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined))
+    if (pixels && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined, aa_stroke))
         goto done;
+    st->paint_coverage_clipped = coverage_clipped;
     for (int y = top; y < bottom && !st->image_failed; y++)
         for (int x = left; x < right && !st->image_failed; x++) {
             int winding = need_winding ? outline_winding(edges, edge_count, x + .5, y + .5) : 0;
@@ -491,24 +557,34 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                 else
                     st->text_clip->bits[pixel / 8] &= (unsigned char)~bit;
             }
-            int stroked = stroke && (stroke[pixel / 8] & bit);
+            unsigned stroked =
+                aa_stroke
+                    ? (stroke_aa ? stroke_aa[(size_t)(y - top) * (right - left) + x - left] : 0)
+                    : (stroke && (stroke[pixel / 8] & bit) ? 255u : 0u);
             unsigned coverage =
                 st->text_antialias
-                    ? (fill ? fill[(size_t)(bottom - y - 1) * (right - left) + x - left] : 0)
+                    ? (fill ? fill[(size_t)(fill_top_down ? y - top : bottom - y - 1) *
+                                       (right - left) +
+                                   x - left]
+                            : 0)
                     : ((mode == 0 || mode == 2) && winding ? 255 : 0);
-            if (coverage && (!stroked || combined.surface.image.rgba))
+            if (coverage && (stroked < 255 || combined.surface.image.rgba))
                 cupidimage_pdf_paint_pixel(st, x, y, 0, coverage / 255.0);
             if (stroked)
-                cupidimage_pdf_paint_pixel(st, x, y, 1, 1);
+                cupidimage_pdf_paint_pixel(st, x, y, 1, stroked / 255.0);
         }
     ok = !st->image_failed;
 done:
     if (!cupidimage_pdf_fill_stroke_end(st, &combined, ok))
         ok = 0;
+    st->paint_coverage_clipped = saved_coverage_clipped;
+    cupidimage_pdf_clip_pending_clear(st, &paint_geometry);
     cupidimage_pdf_tt_hint_shape_free(&hinted);
     cupidimage_pdf_type2_free(&hinted_cff);
     free(fill);
     free(stroke);
+    free(stroke_aa);
+    cupidimage_pdf_path_clear(path);
     free(path);
     free(edges);
     if (!borrowed) {

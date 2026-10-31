@@ -195,8 +195,9 @@ oracles; their scan conversion still differs from the comparison raster.
 FontFile3 accepts Type1C, CIDFontType0C and OpenType programs containing a CFF
 version-1 table. The parser handles INDEX and DICT data, standard/custom strings,
 all three charset forms, standard/expert/custom encodings and supplemental
-encoding entries. CID fonts use charset CIDs, FDArray, FDSelect formats 0/3 and
-the selected Private DICT. PDF encoding overrides and Differences select names
+encoding entries. CID-keyed CFF programs use charset CIDs, FDArray, FDSelect
+formats 0/3 and the selected Private DICT. A [name-keyed CFF descendant](pdf-cff-bindings.md)
+uses PDF CIDs directly as CharStrings indices. PDF encoding overrides and Differences select names
 for simple fonts; ToUnicode does not replace those glyphs.
 
 Type 2 programs support line and cubic path operators, local/global subroutines,
@@ -275,7 +276,11 @@ Programs are limited to 16 MiB, 65,535 glyphs, 65,536 subroutines, 127-byte name
 per glyph. Glyph and subroutine strings are bounded to 65,535 encoded bytes.
 The decoded private section and lookup arrays count against retained font storage.
 Custom OtherSubrs, dynamically generated PostScript font data and synthetic or
-multiple-master programs remain unsupported.
+multiple-master programs remain unsupported as an optional compatibility extension.
+ISO 32000-1 and ISO 32000-2 section 9.6.2.3 require embedded multiple-master
+instances to be ordinary Type 1 snapshots, not live multiple-master programs.
+Interpolation of an external master font is a separate substitution capability;
+it is not a prerequisite for rendering a conforming embedded snapshot.
 
 ## Decoded outline cache
 
@@ -307,7 +312,7 @@ pattern and transparency regressions exercise the same renderer.
 Each retained font program is limited to 16 MiB, with 64 MiB of program storage
 per collected font table. A CIDToGIDMap is at most 131,072 bytes. Glyph decoding
 allows 65,536 points, 4,096 contours, 4,096 component calls and 16 nested component
-levels. Stroked outlines share the path's 4,096-segment bound. Pixel intersection
+levels. Stroked outlines share the path's 65,536-segment bound. Pixel intersection
 work and text clipping use the page's shared budgets.
 
 Programs, maps, component points, curve edges and stroke masks are released on
@@ -322,12 +327,13 @@ programs, widths or CID metrics.
 [Issue #50](https://github.com/cupidthecat/cupidimage/issues/50) tracks font and
 text fidelity in the current PDF work. The main gaps are:
 
-- Broader TrueType instruction and hinting-profile qualification, fractional text
-  clipping, stroke coverage and complete antialiased text composition.
-- CFF2, synthetic fonts, multiple-master interpolation, custom Type 1 procedures and variable-font data.
+- Broader TrueType instruction and hinting-profile qualification, broader text
+  clipping and stroke qualification and complete antialiased text composition.
+- Nonembedded multiple-master instance matching, synthetic fonts and custom Type 1 procedures.
+- CFF2 and variable-font applicability still needs a PDF-version-specific audit.
 - Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
-- Symbolic/script/CJK substitutes and broader missing-font matching.
+- Broader symbolic/script/CJK substitutes beyond the selected Japanese CID-keyed faces.
 
 The applicability of newer font formats and tables must be checked against the
 PDF version; this list is not a claim that every PDF version requires them.
@@ -676,7 +682,9 @@ analytic marker-position oracle. Neither asset qualifies hinting or antialiasing
 Nonembedded Type 1 and simple TrueType fonts with recognized Arial, Times New
 Roman or Courier New names use pinned Liberation vector programs instead of the
 bitmap fallback. The same resolver accepts the Liberation Sans, Serif and Mono
-PostScript family names. It selects regular, bold, italic or bold-italic faces
+PostScript family names. Simple TrueType resources can also use the twelve Latin
+standard PostScript face names, such as Helvetica-BoldOblique and Times-Italic.
+It selects regular, bold, italic or bold-italic faces
 without relying on installed fonts or a font configuration service.
 
 The resolver matches complete, case-sensitive names. Supported forms include
@@ -686,6 +694,13 @@ a hyphen or comma. A valid six-uppercase-letter subset tag followed by `+` is
 removed before matching those aliases, as described in ISO 32000-1 section 9.6.4.
 Narrow variants are not inferred from the name. Unknown names can use the
 descriptor policy below. CID fonts are not handled by this resolver.
+
+Nonembedded Type 1 resources with a valid subset prefix on any standard-14 name
+use the corresponding standard program, including Symbol and ZapfDingbats.
+Explicit Widths and MissingWidth still take precedence over fallback metrics.
+The subset prefix does not bypass a supplied embedded font: a supported program
+wins, and an unsupported supplied program is rejected rather than hidden behind
+the standard substitute.
 
 Type 1 substitutes start with StandardEncoding and apply the font's Encoding and
 Differences. Simple TrueType substitutes use the existing PDF TrueType encoding
@@ -712,6 +727,91 @@ programs explicitly embedded in PDFs. It tests both simple-font types, encodings
 PDF width overrides, all text modes, transformed text, embedded-program priority,
 invalid metadata and allocation recovery. The owned width-marker asset has an
 analytic reference; the visible family sample remains decoded-unverified.
+
+## CID-keyed Japanese substitutes
+
+Nonembedded CIDFontType0 resources can use bundled regular-weight Japanese
+outlines when CIDSystemInfo explicitly names Adobe-Japan1, supplement 0 through
+7. Harano Aji Gothic supplies the default sans-serif face; the Serif descriptor
+flag selects Harano Aji Mincho. The recognized names HeiseiMin-W3, Ryumin-Light,
+MS-Mincho and MSMincho also select Mincho, including valid subset prefixes.
+
+Glyph selection uses the font's CID charset. It does not reinterpret CIDs as
+Unicode or use ToUnicode to choose outlines. Predefined and embedded CMaps keep
+their existing character-code mapping, while W, DW, W2 and DW2 continue to govern
+PDF placement. Horizontal and vertical text use the same outline path, including
+text clipping, transforms and the native CFF hinting option.
+
+The original font files are preserved byte-for-byte in the compressed bundle.
+Each decoded face is shared within its font-resource table, even when resources
+have different widths or CMaps. Program ownership remains reference-counted and
+charged to the existing 64 MiB font-program budget. A supplied embedded program
+takes precedence; an unsupported supplied program is not hidden by substitution.
+
+This is limited substitution support, not complete CJK font coverage. Only two
+regular faces are bundled, source-font glyph coverage limits still apply, and
+style/stretch matching is incomplete. Other registries, collections and newer
+supplements keep the existing fallback. Collection identifiers longer than the
+bounded 1,024-byte parsing window are rejected rather than allocated without a
+limit.
+
+`make test-pdf-cid-substitution` checks the packed source bytes and compares
+substituted pages with the same programs embedded explicitly. It covers all text
+modes, horizontal/vertical metrics, transforms, predefined CMaps, direct and
+indirect collection identifiers, extraction metadata, resource reuse and
+allocation failures. These checks do not establish parity with every platform's
+installed-font substitution choices.
+
+### External Type 2 character selection
+
+Nonembedded CIDFontType2 resources in the same collection can use these faces
+with 90ms-RKSJ-H/V, UniJIS-UCS2-H/V and UniJIS-UTF16-H/V. The renderer translates
+the original character code to Unicode and selects a GID through the substitute
+font's OpenType cmap. It does not select the glyph from the CID or from ToUnicode.
+CIDToGIDMap is ignored for these nonembedded resources, as required by
+ISO 32000 section 9.7.4.2. The original CIDs still select all PDF metrics, including
+when the Unicode cmap has no glyph.
+
+Vertical text applies the pinned font's `vrt2` single-substitution lookup after
+Unicode selection. The generator extracts that lookup from the unchanged font
+and verifies that all of its script/language records agree. No kerning, text
+reflow, ligature shaping or font-derived advance replaces the PDF's positioning.
+
+CP932 uses the published, pinned Unicode mapping table, not a host codec.
+Undefined mappings, including byte A0, remain missing glyphs. Identity-H/V and
+embedded custom encoding CMaps do not describe a supported external Type 2
+character encoding here and retain the existing fallback. This is not complete
+nonembedded TrueType or CJK substitution coverage.
+
+The mapping probe checks all 7,915 published CP932 entries and the pinned fonts'
+Unicode cmap repertoire against a separately generated fontTools oracle,
+including vertical variants, supplementary UTF-16 characters and invalid input.
+Page tests cover each supported encoding, all text modes, PDF metric overrides,
+ignored CIDToGIDMap entries and mixed Type 0/Type 2 resource reuse. The oracle is
+checked in; fontTools is needed only to regenerate it.
+
+Independent complete-page raster comparison is separate:
+`python3 scripts/compare_pdf_cid_rasters.py bin/test_pdf_pages` records exact
+channel differences and exits unsuccessfully for any nonmatching page. It does
+not align, crop or tolerate differences. The current Japanese grayscale samples
+still differ from the independent renderer even with the same font bytes
+embedded; paired substitution checks are not independent pixel-parity claims.
+
+## Undefined TrueType encoding slots
+
+Named MacRomanEncoding and WinAnsiEncoding retain the undefined entries in
+ISO 32000-1 Annex D. They do not borrow unrelated glyph names from
+StandardEncoding. Encoding dictionaries keep the separate completion rule in
+section 9.6.6.4, and explicit Differences still select their named glyphs.
+This applies to embedded TrueType programs and the bundled simple-font
+substitutes. It does not change PDF advances or use ToUnicode for glyph selection.
+
+The selection tests exercise each undefined named slot that has a defined
+StandardEncoding counterpart, direct and indirect encoding values, and explicit
+Differences. Named cases also have independent raster comparisons. Dictionary
+cases use authored geometry because readers differ in base-table completion and
+some post-name selections. These checks establish glyph selection for these
+cases, not complete font-substitution fidelity.
 
 ## Font resource names
 
@@ -836,6 +936,14 @@ A bounded line/quadratic/cubic [coverage converter](pdf-coverage.md) now has
 analytic area, independent bitmap and allocation-failure tests. Page painting can
 use it for TrueType/CFF/Type 1 fills through `--pdf-text-aa` or the PDF options API.
 The default remains center-point coverage. Page glyphs remain unhinted unless
-`--pdf-tt-hinting` is also enabled for TrueType programs. Stroke/clip coverage is
-still binary. Standalone bitmap tests and page tests have separate qualification
+`--pdf-tt-hinting` is also enabled for TrueType programs. Text strokes use [analytic union coverage](pdf-stroke-outlines.md) with the
+same option; [text clip coverage](pdf-clipping.md) uses geometric intersections. Standalone bitmap tests and page tests have separate qualification
 scopes; neither establishes complete font fidelity.
+
+## Damaged embedded CID subsets
+
+The PDF CID loader has [bounded recovery](pdf-subset-fonts.md) for unordered
+TrueType locations and a missing CFF .notdef selector when exactly one font
+dictionary exists. It keeps the original glyph programs, identities and PDF
+metrics. Normal parser entry points remain unchanged, and the guide separates
+these compatibility cases from normative font requirements.

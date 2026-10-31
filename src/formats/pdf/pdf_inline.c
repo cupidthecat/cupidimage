@@ -344,6 +344,13 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
     if (!inline_text(&p, ">>"))
         goto done;
     pdf_object_view view = {(const unsigned char *)dictionary, p.used, NULL, st->xref};
+    char filter_names[8][32];
+    int filter_count = 0;
+    if (!cupidimage_pdf_stream_filter_names(&view, filter_names, &filter_count))
+        goto done;
+    for (int i = 0; i < filter_count; i++)
+        if (!strcmp(filter_names[i], "JPXDecode"))
+            goto done;
     size_t decoded_size;
     if (!inline_raw_size(st, &view, &decoded_size))
         goto done;
@@ -422,6 +429,11 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
          !cupidimage_pdf_is_delim(data[p.pos + 2])))
         goto done;
     p.pos += 2;
+    if (st->optional_hidden) {
+        *position = p.pos;
+        ok = 1;
+        goto done;
+    }
     p.used = dict_end;
     char suffix[80];
     int n = snprintf(suffix, sizeof(suffix), "/Length %zu >>\nstream\n", encoded_size);

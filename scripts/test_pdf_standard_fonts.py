@@ -56,6 +56,7 @@ def main():
             codes = b'AWi '
             width = sum(named[encoding[c]] for c in codes)
             same(path_afm.stem,codes,width)
+            same('ABCDEF+'+path_afm.stem,codes,width,reference=False)
             same(path_afm.stem,b'AV',sum(named[encoding[c]] for c in b'AV'))
             same(path_afm.stem,b'\0',0)
         same('Helvetica',b'ABC',3*667,encoding='/Encoding << /Differences [65 /A /A /A] >>')
@@ -73,6 +74,11 @@ def main():
         # A named encoding must not inspect an unrelated dictionary later in the font.
         same('Helvetica',b'A',667,encoding='/Encoding /WinAnsiEncoding',attributes='/Extra << /Differences [65 /W] >>')
         same('Helvetica',b'A',667,encoding='/Encoding null')
+        same('ABCDEF+Helvetica', b'AB', 800,
+             attributes='/FirstChar 65 /LastChar 65 /Widths [500] /FontDescriptor 10 0 R',
+             extra={10: b'<< /Type /FontDescriptor /FontName /ABCDEF+Helvetica /Flags 32 '
+                        b'/FontBBox [0 0 1000 1000] /ItalicAngle 0 /Ascent 800 /Descent -200 '
+                        b'/CapHeight 700 /StemV 80 /MissingWidth 300 >>'}, reference=False)
     print(f'Standard PDF font metrics: {checks} checks passed; {refs} independent comparisons')
 
 if __name__ == '__main__':

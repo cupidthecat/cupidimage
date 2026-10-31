@@ -482,12 +482,48 @@
       "sha256": "69b90bb3096e6b0a860d3198c35152d02400d8d0cf069c2d2a1874ae26c02798"
     },
     {
+      "path": "assets/pdf/bounded-shading-work.pdf",
+      "sha256": "3327d0f6f6a794506727d678fe8262b17e09414c1f4cb7f76c4ae67e6dce5115"
+    },
+    {
+      "path": "assets/pdf/cid-japanese-gothic.pdf",
+      "sha256": "36eeaa1fe9219a82cb9ed83e553a95377b499f51837772f2fed4957cde5ef8f6"
+    },
+    {
+      "path": "assets/pdf/cid-japanese-mincho-vertical.pdf",
+      "sha256": "6380d8d6e33d82309b79cc35c84ea7e122cc745f867d23d179c36ab3a446e08b"
+    },
+    {
+      "path": "assets/pdf/cid-japanese-truetype-vertical.pdf",
+      "sha256": "1e76e72fd79218a94c4c7982673317b53d45ddae53bd172b82bbcab42915a114"
+    },
+    {
+      "path": "assets/pdf/cid-japanese-truetype.pdf",
+      "sha256": "6e46e1d5a60807d20e7d07c052e3e56c2de991ac098c32672df681e4b6760c96"
+    },
+    {
+      "path": "assets/pdf/cie-blending.pdf",
+      "sha256": "de5b37f39b202ff29dcc2c32aabddd961371bbaae3b71803072df0b775d3aff5"
+    },
+    {
+      "path": "assets/pdf/clipped-shading-work.pdf",
+      "sha256": "8120b45ac251318dd73bbdd30cc46ffcd44110c84aad0b83af2a6fca5e371689"
+    },
+    {
+      "path": "assets/pdf/cmyk-blending.pdf",
+      "sha256": "880c52c64fd0569cf881e4a36469838f2578265340816489f6ec720415568d16"
+    },
+    {
       "path": "assets/pdf/colors.pdf",
       "sha256": "5b61ef578bc5311739b87921fa7185007d1447759aed7fae8d9232714511d3c8"
     },
     {
       "path": "assets/pdf/colors.tex",
       "sha256": "8fc562b2faafa02441894cdb82ca6cc1ca24f0fe8973dfc03e190d9a8ab21248"
+    },
+    {
+      "path": "assets/pdf/dense-vector-path.pdf",
+      "sha256": "057243fd3ea5f32888e8de7e4ea419e1ab5c8943fa5977f9011d73d927a3e1be"
     },
     {
       "path": "assets/pdf/descriptor-latin-families.pdf",
@@ -500,6 +536,26 @@
     {
       "path": "assets/pdf/edge_case.tex",
       "sha256": "c9ce5e462027e5b16d754776e9ea4c411127c9c4cad1b1df75f12c3bfc2ceb24"
+    },
+    {
+      "path": "assets/pdf/fractional-clipping.pdf",
+      "sha256": "2dddfc60515f32ca718de3e706847b234ae633d7f76a89ceabe7000e006107c5"
+    },
+    {
+      "path": "assets/pdf/graphics-coverage.pdf",
+      "sha256": "a692033a57b80a1194d2b0abaaaf408effd044dbea4e93543724bb82bf2b00c1"
+    },
+    {
+      "path": "assets/pdf/icc-destination-blending.pdf",
+      "sha256": "eef0eb72bd916c81253590f82aa03efe51fcbe78901ed72ae09ce7a9de6219dd"
+    },
+    {
+      "path": "assets/pdf/image-interpolation.pdf",
+      "sha256": "ca4c8823d58daa237b8954402ce3d2f2d6e1d19c67a46b5aa4a9942c04e8ee07"
+    },
+    {
+      "path": "assets/pdf/localized-clip-work.pdf",
+      "sha256": "0243f4f634733a14679f197ec74bb6b89fa2c2b1e63788c15b4a5e8e56f4877f"
     },
     {
       "path": "assets/pdf/minimal_xref.pdf",
@@ -531,8 +587,16 @@
       "negative_reason": "Legacy fixture declares a 44-byte content stream containing only 38 bytes and has stale object offsets."
     },
     {
+      "path": "assets/pdf/nested-mask-surfaces.pdf",
+      "sha256": "90f4a096fc9d09371bf33f7ade8fa434841857f9f94ff2e718da00ed58f13d8f"
+    },
+    {
       "path": "assets/pdf/nonembedded-latin-families.pdf",
       "sha256": "7c7392e7f2e1268d0e4f34aa6b95364b5057d87e3f9036d9ce376c72c1905e0e"
+    },
+    {
+      "path": "assets/pdf/optional-content-text.pdf",
+      "sha256": "408582b256bf91c79ebb444b99bcb69da574c368281ff08e9df242de37d3554b"
     },
     {
       "path": "assets/pdf/pdfjs/LICENSE-APACHE-2.0.txt",
@@ -563,6 +627,14 @@
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92"
     },
     {
+      "path": "assets/pdf/reference/annotation-appearance.pdf",
+      "sha256": "ee31ef37422d027bc741992199d953b061fc873576d17dbb5dbf85896d8b6972"
+    },
+    {
+      "path": "assets/pdf/reference/annotation-widget-state.pdf",
+      "sha256": "c82d2a0e00e877a097330dc2d6384698acc3b71a2af14336bbfeb8b77ea90f0c"
+    },
+    {
       "path": "assets/pdf/reference/ascii85-flate-predictor.pdf",
       "sha256": "612a11950ea1e7571a4549407ab2c98af33be629611839a1958dac302f89a160"
     },
@@ -585,6 +657,10 @@
     {
       "path": "assets/pdf/reference/calculator-gradient.pdf",
       "sha256": "5d84a7e46128159a7d136dcc2e853b788c3c5478adabd80632f80dfdea0c1af3"
+    },
+    {
+      "path": "assets/pdf/reference/cff-direct-cid.pdf",
+      "sha256": "a21cf07939ebc3e325ed9ef45e40e9340049e9ec136006a482e2ca4d27f34d71"
     },
     {
       "path": "assets/pdf/reference/color-key-mask.pdf",
@@ -783,6 +859,14 @@
       "sha256": "6ab42438827d98334dacb3e14166a3c6edbfcc1c9b31a2b9690937f2f9878b9e"
     },
     {
+      "path": "assets/pdf/reference/jpx-native-rgb.pdf",
+      "sha256": "38550d96174a415461fe7509942bac27f43963c944fb5d8d4b19ca82ee2fad63"
+    },
+    {
+      "path": "assets/pdf/reference/jpx-palette-opacity.pdf",
+      "sha256": "6543e3c192a1321e7b9cf4e6c97158658fb8383638971fbd4e49340557ddbb8c"
+    },
+    {
       "path": "assets/pdf/reference/knockout-opacity.pdf",
       "sha256": "62dc5350d77c6041311f3c713952ee338609f85ecbb5a3557ba1a38f51394518"
     },
@@ -821,6 +905,14 @@
     {
       "path": "assets/pdf/reference/nonisolated-backdrop-group.pdf",
       "sha256": "c7bd14a3fcd08d7688cb7b79c156a9cbeb672e6cbe6dd5bcaae4e64a154009dc"
+    },
+    {
+      "path": "assets/pdf/reference/opentype-cff-direct-cid.pdf",
+      "sha256": "ed5e9d56287c74a912a5f4dfd909b063af78fd30df587e8a837ac852e958cabf"
+    },
+    {
+      "path": "assets/pdf/reference/optional-content-state.pdf",
+      "sha256": "20ce840340739ead4513bf5d41f60e5a0d892c0d961f6a18f7ade74ae9516dcf"
     },
     {
       "path": "assets/pdf/reference/packed-gray-1bit.pdf",
@@ -891,6 +983,14 @@
       "sha256": "1dfb12fcaf2e030f5107e5108a2fb48a4e7f52cea9eff268497baf75834d56ff"
     },
     {
+      "path": "assets/pdf/reference/subset-cid-cff.pdf",
+      "sha256": "2654a16500180eb13649b32d247ea798d65e1efe16047e46827d697abd2008fc"
+    },
+    {
+      "path": "assets/pdf/reference/subset-cid-truetype.pdf",
+      "sha256": "b84ad27b301397e98934f183b5ace514b7549165f8c0b9c2a607f5efffb7014f"
+    },
+    {
       "path": "assets/pdf/reference/substitute-font-widths.pdf",
       "sha256": "552c44482e93f168ef0eef9c3ca614e1fdd5b3cfe670046fe8c4a3de5e6eb921"
     },
@@ -944,7 +1044,11 @@
     },
     {
       "path": "assets/pdf/text-coverage.pdf",
-      "sha256": "e1b32500626a5044fdcd4d8dc2d27502d448a656c901f6aacafcc49021937590"
+      "sha256": "f493d500ec563e7f36ab278007a9125729835cd6aed79792aef116f0419ec7a8"
+    },
+    {
+      "path": "assets/pdf/text-strokes.pdf",
+      "sha256": "3b5c6374a1b8bdc91618254d3556565c613ec8222fdb4f1989973510c302bce9"
     },
     {
       "path": "assets/pdf/type1-counter-hints.pdf",

@@ -12,18 +12,89 @@ LIBOBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LIBSRC))
 CLI_OBJ = $(OBJDIR)/cli/main.o
 LIB = $(BINDIR)/libcupidimage.a
 CLI = $(BINDIR)/cupidimage
-TEST_TARGETS = test-sixel-dither  test-pdf-type1-page-hinting test-pdf-type1-gridfit test-pdf-cff-page-hinting test-pdf-ps-gridfit test-pdf-page-hinting test-pdf-text-antialias test-pdf-coverage test-pdf-tt-loader test-pdf-tt-vm test-pdf-empty-glyphs test-pdf-combined-paint test-pdf-font-descriptors test-pdf-icc-mab test-pdf-intents test-pdf-icc-lut test-pdf-nchannel test-pdf-font-resources test-pdf-substitution test-pdf-devicen test-pdf-separation test-pdf-font-advances test-pdf-text-surfaces test-pdf-truetype-bearings test-pdf-default-colors test-pdf-icc test-pdf-lab test-pdf-calibrated test-pdf-flate-extent test-pdf-content-scopes test-pdf-flatness test-pdf-font-cache test-pdf-feature-matrix test-pdf-user-unit test-pdf-image-values test-pdf-dct-arithmetic test-pdf-jpeg-sampling test-jpeg-math test-pdf-dct test-pdf-truetype-selection test-pdf-type3-objects test-pdf-font-defaults test-pdf-xref test-pdf-shading-patterns test-pdf-pattern-colors test-pdf-pattern-backdrops test-pdf-device-color test-pdf-patch test-pdf-mesh test-pdf-content-syntax test-pdf-text-knockout test-pdf-knockout test-pdf-page-groups test-pdf-soft-masks test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
+TEST_TARGETS = test-pdf-jpx test-pdf-cff-bindings test-pdf-annotations test-pdf-subset-fonts test-pdf-optional-content test-pdf-shading-work test-pdf-dense-paths test-pdf-group-work test-pdf-cmyk-groups test-pdf-icc-reverse test-pdf-cie-groups test-pdf-image-interpolation test-pdf-graphics-antialias test-pdf-clip-regions test-sixel-dither test-pdf-stroke-union test-pdf-type1-page-hinting test-pdf-type1-gridfit test-pdf-cff-page-hinting test-pdf-ps-gridfit test-pdf-page-hinting test-pdf-text-antialias test-pdf-coverage test-pdf-tt-loader test-pdf-tt-vm test-pdf-empty-glyphs test-pdf-combined-paint test-pdf-font-descriptors test-pdf-icc-mab test-pdf-intents test-pdf-icc-lut test-pdf-nchannel test-pdf-font-resources test-pdf-substitution test-pdf-devicen test-pdf-separation test-pdf-font-advances test-pdf-text-surfaces test-pdf-truetype-bearings test-pdf-default-colors test-pdf-icc test-pdf-lab test-pdf-calibrated test-pdf-flate-extent test-pdf-content-scopes test-pdf-flatness test-pdf-font-cache test-pdf-feature-matrix test-pdf-user-unit test-pdf-image-values test-pdf-dct-arithmetic test-pdf-jpeg-sampling test-jpeg-math test-pdf-dct test-pdf-truetype-selection test-pdf-type3-objects test-pdf-font-defaults test-pdf-xref test-pdf-shading-patterns test-pdf-pattern-colors test-pdf-pattern-backdrops test-pdf-device-color test-pdf-patch test-pdf-mesh test-pdf-content-syntax test-pdf-text-knockout test-pdf-knockout test-pdf-page-groups test-pdf-soft-masks test-pdf-groups test-pdf-graphics-fonts test-pdf-standard-fonts test-pdf-type1 test-pdf-cff test-pdf-predefined-cmaps test-pdf-cmaps test-pdf-truetype test-pdf-cid test-pdf-strokes test-pdf-patterns test-pdf-type3 test-pdf-text-state test-pdf-inline test-pdf-ccitt test-pdf-calculator test-pdf-sampled-functions test-pdf-functions test-pdf-shading test-pdf-object-syntax test-pdf-font-maps test-pdf-transparency test-pdf-indexed test-pdf-lzw test-pdf-filters test-pdf-masks test-pdf-packed-images test-visual-review test-asset-corpus test-pdf-audit test-pdf-streams test-jpeg-reference test-format-pixels test-assets test-webp-pixels test-webp-container test-inflate test-png test-cli test-decoder-safety test-deflate-containers \
  test-pdf-graphics test-jpeg test-pdf-pages test-pdf-images test-sixel \
  test-gif-regressions test-terminal-regressions test-svg-regressions test-svg-safety test-webp test-pdf-safety test-pdf-forms \
  test-tiff-bounds test-svg-css-oom test-pdf-clipping test-pdf-clip-oom test-svg-numeric test-pdf-colors
-TEST_BINS = test_sixel_dither  test_pdf_type1_counter test_pdf_type1_gridfit test_pdf_type1_trace test_pdf_type1_lexer test_pdf_ps_gridfit test_pdf_page_hint test_pdf_coverage test_pdf_coverage_oom test_pdf_tt_loader test_pdf_tt_glyphs test_pdf_tt_vm test_pdf_icc_mab test_pdf_icc_lut test_pdf_flatness test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
+TEST_BINS = test_pdf_jpx test_pdf_jpx_file test_pdf_subset_fonts test_pdf_optional_content test_pdf_clip_work test_pdf_path_storage test_pdf_color_transfer test_pdf_icc_reverse test_pdf_icc_inverse test_pdf_image_sampling test_pdf_region test_pdf_clip_geometry test_sixel_dither test_pdf_stroke_union test_pdf_type1_counter test_pdf_type1_gridfit test_pdf_type1_trace test_pdf_type1_lexer test_pdf_ps_gridfit test_pdf_page_hint test_pdf_coverage test_pdf_coverage_oom test_pdf_tt_loader test_pdf_tt_glyphs test_pdf_tt_vm test_pdf_icc_mab test_pdf_icc_lut test_pdf_flatness test_pdf_font_cache test_jpeg_math test_jpeg_samples test_pdf_content_syntax test_pdf_standard test_pdf_type1 test_pdf_cff test_pdf_cmap test_pdf_truetype test_pdf_ccitt test_pdf_calculator test_pdf_filters test_asset_probe test_format_pixels test_webp_pixels test_webp_container test_inflate test_png test_decoder_safety test_deflate_containers test_pdf_graphics \
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
+
+TEST_TARGETS += test-pdf-cid-substitution
+TEST_BINS += test_pdf_cid_encoding
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
 lib: $(LIB)
 cli: $(CLI)
 test: $(TEST_TARGETS)
+
+$(BINDIR)/test_pdf_cid_encoding: tests/test_pdf_cid_encoding.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-cid-substitution: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_cid_encoding
+	python3 scripts/generate_pdf_cid_fonts.py --check
+	python3 scripts/generate_pdf_cp932.py --check
+	python3 scripts/test_pdf_cid_encoding.py $(BINDIR)/test_pdf_cid_encoding
+	python3 scripts/generate_pdf_cid_substitution_fixtures.py --check
+	python3 scripts/test_pdf_cid_substitution.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+$(BINDIR)/test_pdf_region: tests/test_pdf_region.c $(shell find $(SRCDIR)/formats/pdf/raster -name 'region*')
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_clip_geometry: tests/test_pdf_clip_geometry.c $(shell find $(SRCDIR)/formats/pdf/clipping -type f) $(SRCDIR)/formats/pdf/raster/region.h
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+
+$(BINDIR)/test_pdf_icc_inverse: tests/test_pdf_icc_inverse.c src/formats/pdf/pdf_icc_curve.c src/formats/pdf/pdf_icc_curve.h $(shell find src/formats/pdf/color -name '*inverse*' -o -name 'matrix*')
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+
+test-pdf-group-work: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_group_work_fixtures.py --check
+	python3 scripts/test_pdf_group_work.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-cmyk-groups: $(BINDIR)/test_pdf_color_transfer $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	$(BINDIR)/test_pdf_color_transfer
+	python3 scripts/generate_pdf_cmyk_blend_fixture.py --check
+	python3 scripts/test_pdf_cmyk_groups.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_color_transfer
+
+test-pdf-icc-reverse: $(BINDIR)/test_pdf_icc_reverse $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_icc_destination_fixture.py --check
+	python3 scripts/test_pdf_icc_reverse.py $(BINDIR)/test_pdf_icc_reverse
+	python3 scripts/test_pdf_icc_reverse_groups.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-cie-groups: $(BINDIR)/test_pdf_icc_inverse $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	$(BINDIR)/test_pdf_icc_inverse
+	python3 scripts/generate_pdf_cie_blend_fixture.py --check
+	python3 scripts/test_pdf_cie_groups.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+$(BINDIR)/test_pdf_image_sampling: tests/test_pdf_image_sampling.c src/formats/pdf/images/sample.c src/formats/pdf/images/sample.h
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+
+test-pdf-image-interpolation: $(BINDIR)/test_pdf_image_sampling $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	$(BINDIR)/test_pdf_image_sampling
+	python3 scripts/generate_pdf_image_interpolation_fixture.py --check
+	python3 scripts/test_pdf_image_interpolation.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-graphics-antialias: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
+	python3 scripts/generate_pdf_graphics_coverage_fixture.py --check
+	python3 scripts/test_pdf_graphics_antialias.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
+
+test-pdf-clip-regions: $(BINDIR)/test_pdf_region $(BINDIR)/test_pdf_clip_geometry $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_fractional_clip_fixture.py --check
+	$(BINDIR)/test_pdf_region
+	$(BINDIR)/test_pdf_clip_geometry
+	python3 scripts/test_pdf_fractional_clips.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+$(BINDIR)/test_pdf_stroke_union: tests/test_pdf_stroke_union.c src/formats/pdf/raster/stroke_union.c src/formats/pdf/raster/stroke_union.h
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
+
+test-pdf-stroke-union: $(BINDIR)/test_pdf_stroke_union $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
+	python3 scripts/generate_pdf_text_stroke_fixture.py --check
+	$(BINDIR)/test_pdf_stroke_union
+	python3 scripts/test_pdf_text_strokes.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(CLI)
 
 $(BINDIR)/test_sixel_dither: tests/test_sixel_dither.c src/output/sixel/cupidimage_sixel.c
 	@mkdir -p $(BINDIR)
@@ -133,6 +204,38 @@ test-pdf-sampled-functions: $(BINDIR)/test_pdf_pages
 
 test-pdf-functions: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_functions.py $<
+
+test-pdf-jpx: $(BINDIR)/test_pdf_jpx $(BINDIR)/test_pdf_jpx_file $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/check_pdf_jpx_vendor.py
+	python3 scripts/generate_pdf_jpx_fixtures.py --check
+	python3 scripts/test_pdf_jpx_samples.py $(BINDIR)/test_pdf_jpx
+	python3 scripts/test_pdf_jpx_containers.py $(BINDIR)/test_pdf_jpx_file
+	python3 scripts/test_pdf_jpx_images.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_jpx_colors.py $(BINDIR)/test_pdf_pages
+
+$(BINDIR)/test_pdf_jpx $(BINDIR)/test_pdf_jpx_file: tests/fault_alloc.h $(wildcard $(SRCDIR)/formats/pdf/images/jpx/*.c) $(wildcard $(SRCDIR)/formats/pdf/images/jpx/*.h)
+
+test-pdf-cff-bindings: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_font_cache
+	python3 scripts/generate_pdf_cff_binding_fixtures.py --check
+	python3 scripts/test_pdf_cff_bindings.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	$(BINDIR)/test_pdf_font_cache
+
+test-pdf-annotations: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_annotation_fixtures.py --check
+	python3 scripts/test_pdf_annotation_pages.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-subset-fonts: $(BINDIR)/test_pdf_subset_fonts $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_subset_fixtures.py --check
+	python3 scripts/test_pdf_subset_fonts.py $(BINDIR)/test_pdf_subset_fonts
+	python3 scripts/test_pdf_subset_font_pages.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-optional-content: $(BINDIR)/test_pdf_optional_content $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_optional_fixtures.py --check
+	python3 scripts/test_pdf_optional_content.py $(BINDIR)/test_pdf_optional_content
+	python3 scripts/test_pdf_optional_pages.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+
+test-pdf-shading-work: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_shading_work.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-shading: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_shading.py $<
@@ -417,6 +520,12 @@ test-pdf-font-cache: $(BINDIR)/test_pdf_font_cache
 	$(BINDIR)/test_pdf_font_cache
 
 $(BINDIR)/test_pdf_font_cache: tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(SRCDIR)/formats/pdf/fonts/program.h
+
+test-pdf-dense-paths: $(BINDIR)/test_pdf_clip_work $(BINDIR)/test_pdf_path_storage $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_dense_path_fixtures.py --check
+	$(BINDIR)/test_pdf_clip_work
+	$(BINDIR)/test_pdf_path_storage
+	python3 scripts/test_pdf_dense_paths.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-flatness: $(BINDIR)/test_pdf_flatness $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	$(BINDIR)/test_pdf_flatness

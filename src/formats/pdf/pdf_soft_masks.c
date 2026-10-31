@@ -71,6 +71,8 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     if (!temporary)
         goto done;
     *temporary = *st;
+    cupidimage_pdf_path_init(&temporary->path);
+    temporary->optional_hidden = 0;
     temporary->text_group = NULL;
     temporary->gs = *graphics;
     temporary->gs.clip = NULL;
@@ -89,24 +91,31 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
         temporary->resource_override = &form;
         temporary->page_object = object;
     }
-    gray = st->group ? st->group->gray : 0;
-    if (!cupidimage_pdf_group_space(temporary, &attributes, luminosity, &gray))
+    pdf_blend_space blend = *cupidimage_pdf_current_blend(st);
+    if (!cupidimage_pdf_group_space(temporary, &attributes, luminosity, &blend))
         goto done;
-    double background[3] = {0, 0, 0};
+    gray = blend.colors.components == 1;
+    int isolated = 0, knockout = 0;
+    if (!cupidimage_pdf_dictionary_boolean(temporary, &attributes, "I", &isolated) ||
+        !cupidimage_pdf_dictionary_boolean(temporary, &attributes, "K", &knockout))
+        goto done;
+    double background[4] = {0, 0, 0, 0};
+    if (!blend.colors.icc && blend.colors.components == 4)
+        background[3] = 1;
     if (luminosity && cupidimage_pdf_page_value(&dictionary, "BC", &pos)) {
         pdf_object_view bc = {0};
         int valid = cupidimage_pdf_dictionary_value(st->document, st->document_size, &dictionary,
                                                     "BC", &bc);
         if (valid && !mask_null(&bc))
             valid = cupidimage_pdf_function_array(temporary, &dictionary, "BC", background,
-                                                  gray ? 1 : 3);
+                                                  blend.colors.components);
         cupidimage_pdf_object_view_release(&bc);
         if (!valid)
             goto done;
     }
     if (gray)
         background[1] = background[2] = background[0];
-    for (unsigned i = 0; i < 3; i++)
+    for (unsigned i = 0; i < 4; i++)
         background[i] = fmax(0, fmin(1, background[i]));
     if (cupidimage_pdf_page_value(&dictionary, "TR", &pos)) {
         if (!cupidimage_pdf_dictionary_value(st->document, st->document_size, &dictionary, "TR",
@@ -121,9 +130,14 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
                 goto done;
         }
     }
-    if (!cupidimage_pdf_group_surface(st, &surface, 1, luminosity ? background : NULL))
+    if (!cupidimage_pdf_group_surface(st, &surface, 1, luminosity && !isolated ? background : NULL,
+                                      &blend))
         goto done;
     surface.gray = gray;
+    surface.blend = blend;
+    if (isolated)
+        surface.knockout = knockout;
+    temporary->mask_root_object = isolated ? object : 0;
     temporary->img = &surface.image;
     temporary->group = &surface;
     temporary->initial_gs = temporary->gs;
@@ -147,10 +161,29 @@ int cupidimage_pdf_load_soft_mask(pdf_render_state *st, const pdf_graphics_state
     st->form_budget->transparency_bytes_live += bytes;
     st->clip_budget->tests_left -= pixels;
     for (size_t pixel = 0; pixel < pixels; pixel++) {
-        const double *color = surface.color + pixel * 3;
-        double value = luminosity
-                           ? (gray ? color[0] : .3 * color[0] + .59 * color[1] + .11 * color[2])
-                           : surface.alpha[pixel];
+        const double *color = surface.color + pixel * surface.channels;
+        double composed[4] = {0};
+        double value = surface.alpha[pixel];
+        if (luminosity && isolated) {
+            double shape = surface.shape[pixel];
+            if (shape == 0)
+                color = background;
+            else if (shape != 1 || value != 1) {
+                /* Composite onto the opaque BC without retaining another page
+                 * surface. Keep the same shape/opacity arithmetic as a parent. */
+                double alpha = (1 - shape) + (shape - value) + value;
+                for (unsigned i = 0; i < surface.channels; i++)
+                    composed[i] =
+                        alpha > 0
+                            ? fmax(0, fmin(1, ((1 - shape) * background[i] +
+                                               (shape - value) * background[i] + value * color[i]) /
+                                                  alpha))
+                            : 0;
+                color = composed;
+            }
+        }
+        if (luminosity && !cupidimage_pdf_blend_luminosity(temporary, &blend, color, &value))
+            goto done;
         if (function) {
             double input[2] = {value, 0}, output[4];
             if (!cupidimage_pdf_evaluate_function(function, input, output,

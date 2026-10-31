@@ -10,6 +10,9 @@
 #include "../src/formats/jpeg/jpeg_arithmetic.c"
 #include "../src/formats/jpeg/jpeg_entropy.c"
 #include "../src/formats/jpeg/jpeg_output.c"
+#include "../src/formats/pdf/annotations/appearance.c"
+#include "../src/formats/pdf/annotations/render.c"
+#include "../src/formats/pdf/annotations/values.c"
 #include "../src/formats/pdf/cupidimage_pdf.c"
 #include "../src/formats/pdf/fonts/bitmap.c"
 #include "../src/formats/pdf/fonts/cff.c"
@@ -28,6 +31,7 @@
 #include "../src/formats/pdf/fonts/truetype.c"
 #include "../src/formats/pdf/fonts/truetype_cmap.c"
 #include "../src/formats/pdf/fonts/truetype_names.c"
+#include "../src/formats/pdf/fonts/truetype_subset.c"
 #include "../src/formats/pdf/fonts/type1.c"
 #include "../src/formats/pdf/fonts/type1/counter.c"
 #include "../src/formats/pdf/fonts/type1/hints.c"
@@ -43,6 +47,7 @@
 #include "../src/formats/pdf/pdf_font_cid.c"
 #include "../src/formats/pdf/pdf_font_encoding.c"
 #include "../src/formats/pdf/pdf_font_outline.c"
+#include "../src/formats/pdf/pdf_form_values.c"
 #include "pdf_tt_loader_sources.inc"
 static int test_outline_cache_enabled = 1;
 
@@ -55,6 +60,26 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #define cupidimage_pdf_font_outline test_font_outline
 #include "../src/formats/pdf/pdf_font_program.c"
 #undef cupidimage_pdf_font_outline
+#include "../src/formats/pdf/clipping/geometry.c"
+#include "../src/formats/pdf/color/black_generation.c"
+#include "../src/formats/pdf/color/blend.c"
+#include "../src/formats/pdf/color/curve_inverse.c"
+#include "../src/formats/pdf/color/matrix.c"
+#include "../src/formats/pdf/images/jpx/boxes.c"
+#include "../src/formats/pdf/images/jpx/budget.c"
+#include "../src/formats/pdf/images/jpx/channels.c"
+#include "../src/formats/pdf/images/jpx/color.c"
+#include "../src/formats/pdf/images/jpx/decode.c"
+#include "../src/formats/pdf/images/jpx/file.c"
+#include "../src/formats/pdf/images/jpx/header.c"
+#include "../src/formats/pdf/images/jpx/source.c"
+#include "../src/formats/pdf/images/sample.c"
+#include "../src/formats/pdf/optional_content/evaluate.c"
+#include "../src/formats/pdf/optional_content/render.c"
+#include "../src/formats/pdf/optional_content/state.c"
+#include "../src/formats/pdf/optional_content/values.c"
+#include "../src/formats/pdf/pdf_clip_regions.c"
+#include "../src/formats/pdf/pdf_font_cid_substitution.c"
 #include "../src/formats/pdf/pdf_font_substitution.c"
 #include "../src/formats/pdf/pdf_font_truetype.c"
 #include "../src/formats/pdf/pdf_font_type3.c"
@@ -74,6 +99,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_palettes.c"
 #include "../src/formats/pdf/pdf_patch.c"
 #include "../src/formats/pdf/pdf_path.c"
+#include "../src/formats/pdf/pdf_path_coverage.c"
 #include "../src/formats/pdf/pdf_pattern_render.c"
 #include "../src/formats/pdf/pdf_patterns.c"
 #include "../src/formats/pdf/pdf_render.c"
@@ -82,15 +108,18 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_soft_masks.c"
 #include "../src/formats/pdf/pdf_standard_font.c"
 #include "../src/formats/pdf/pdf_stroke.c"
+#include "../src/formats/pdf/pdf_stroke_geometry.c"
 #include "../src/formats/pdf/pdf_text.c"
 #include "../src/formats/pdf/pdf_tint.c"
+#include "../src/formats/pdf/raster/region.c"
+#include "../src/formats/pdf/raster/region_ellipse.c"
 static int test_text_lazy_enabled = 1;
 
 static int test_text_surface(const pdf_render_state *parent, pdf_transparency_group *group,
-                             int isolated, const double background[3]) {
+                             int isolated, const double *background, const pdf_blend_space *blend) {
     if (!test_text_lazy_enabled)
         group->lazy_backdrop = 0;
-    return cupidimage_pdf_group_surface(parent, group, isolated, background);
+    return cupidimage_pdf_group_surface(parent, group, isolated, background, blend);
 }
 
 #define cupidimage_pdf_group_surface test_text_surface
@@ -101,6 +130,7 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #include "../src/formats/pdf/pdf_text_outline.c"
 #include "../src/formats/pdf/raster/coverage.c"
 #include "../src/formats/pdf/raster/font_coverage.c"
+#include "../src/formats/pdf/raster/stroke_union.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/pdf_intents.c"
 #include "../src/formats/pdf/pdf_transparency.c"
@@ -114,7 +144,8 @@ static int test_text_surface(const pdf_render_state *parent, pdf_transparency_gr
 #undef free
 
 static int test_document_allocations(const char *path, int expected_failure, int antialias,
-                                     int hinting, int cff_hinting, int type1_hinting) {
+                                     int hinting, int cff_hinting, int type1_hinting,
+                                     int graphics) {
     FILE *file = fopen(path, "rb");
     if (!file || fseek(file, 0, SEEK_END))
         return 2;
@@ -130,7 +161,7 @@ static int test_document_allocations(const char *path, int expected_failure, int
         return 2;
     }
     fclose(file);
-    cupidimage_pdf_options options = {antialias, hinting, cff_hinting, type1_hinting};
+    cupidimage_pdf_options options = {antialias, hinting, cff_hinting, type1_hinting, graphics};
     size_t total = 0, checks = 0, failures = 0, expected_size = 0;
     unsigned char *expected = NULL;
     unsigned width = 0, height = 0;
@@ -193,10 +224,11 @@ static int test_document_allocations(const char *path, int expected_failure, int
 }
 
 int main(int argc, char **argv) {
-    if (argc >= 3 && argc <= 7)
+    if (argc >= 3 && argc <= 8)
         return test_document_allocations(
             argv[1], atoi(argv[2]), argc >= 4 ? atoi(argv[3]) : 0, argc >= 5 ? atoi(argv[4]) : 0,
-            argc >= 6 ? atoi(argv[5]) : 0, argc >= 7 ? atoi(argv[6]) : 0);
+            argc >= 6 ? atoi(argv[5]) : 0, argc >= 7 ? atoi(argv[6]) : 0,
+            argc >= 8 ? atoi(argv[7]) : 0);
 
     static const struct {
         const char *content;
@@ -417,7 +449,8 @@ int main(int argc, char **argv) {
         checks++;
         if (cupidimage_pdf_draw_shading(&state, "Sh") || budget.shade_evaluations_left != 3)
             failures++;
-        budget.shade_evaluations_left = 4;
+        /* Four scan positions plus four scalar function evaluations. */
+        budget.shade_evaluations_left = 8;
         checks++;
         if (!cupidimage_pdf_draw_shading(&state, "Sh") || budget.shade_evaluations_left ||
             pixels[0] != 64 || pixels[4] != 191)
@@ -684,9 +717,57 @@ int main(int argc, char **argv) {
                     }
             }
     }
+    /* A small paired workload proves clipping preserves the work limit without
+     * exhausting the full page budget through millions of color conversions. */
+    for (unsigned clipped = 0; clipped < 2; clipped++) {
+        const char *document =
+            "3 0 obj << /Resources << /Shading << /Sh 4 0 R >> >> >> endobj\n"
+            "4 0 obj << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 12 0] "
+            "/Function << /FunctionType 2 /Domain [0 1] /C0 [0] /C1 [0] /N 1 >> >> endobj\n";
+        uint8_t pixels[16 * 16 * 4];
+        memset(pixels, 255, sizeof(pixels));
+        cupidimage_image image = {.width = 16, .height = 16, .rgba = pixels};
+        pdf_form_budget budget = {0};
+        budget.calls_left = 256;
+        budget.shade_evaluations_left = 10000;
+        pdf_render_state state = {0};
+        state.img = &image;
+        state.document = (const unsigned char *)document;
+        state.document_size = strlen(document);
+        state.page_object = 3;
+        state.page_top_pts = 12;
+        state.gs.ctm[0] = state.gs.ctm[3] = 1;
+        state.gs.fill_alpha = 1;
+        state.form_budget = &budget;
+        fail_at = 0;
+        pdf_clip_mask *clip = fault_calloc(1, sizeof(*clip) + 32);
+        if (!clip)
+            return 1;
+        clip->bytes = 32;
+        clip->bits[0] = 1;
+        state.gs.clip = clipped ? clip : NULL;
+        unsigned completed = 0;
+        while (completed < 192 && cupidimage_pdf_draw_shading(&state, "Sh"))
+            completed++;
+        checks++;
+        if ((clipped && (completed != 192 || budget.shade_evaluations_left != 2128)) ||
+            (!clipped && completed >= 192))
+            failures++;
+        if (clipped)
+            for (size_t pixel = 0; pixel < 256; pixel++) {
+                unsigned char expected = pixel ? 255 : 0;
+                if (pixels[pixel * 4] != expected || pixels[pixel * 4 + 1] != expected ||
+                    pixels[pixel * 4 + 2] != expected || pixels[pixel * 4 + 3] != 255)
+                    failures++;
+            }
+        fault_free(clip);
+        if (live_count)
+            failures++;
+    }
     /* Page isolation preserves the caller's pixels until a complete render succeeds. */
-    for (unsigned variant = 0; variant < 4; variant++) {
-        const char *attribute = variant == 0 ? ""
+    for (unsigned variant = 0; variant < 5; variant++) {
+        const char *attribute = variant == 0   ? ""
+                                : variant == 4 ? "/Group << /S /Transparency /CS /Pattern >>"
                                 : variant == 3
                                     ? "/Group << /S /Transparency /CS /DeviceCMYK >>"
                                     : "/Group << /S /Transparency /CS /DeviceGray /I false >>";
@@ -713,8 +794,14 @@ int main(int argc, char **argv) {
             if (!failure)
                 total = allocation_count;
             checks++;
-            if ((!failure && ok != (variant < 2)) || live_count)
+            if ((!failure && ok != (variant < 2 || variant == 3)) || live_count)
                 failures++;
+            if (!failure && variant == 3 && ok)
+                for (size_t i = 0; i < sizeof(pixels); i++)
+                    if (pixels[i] != (i % 4 == 0 || i % 4 == 3 ? 255 : 0)) {
+                        failures++;
+                        break;
+                    }
             if (!ok)
                 for (size_t i = 0; i < sizeof(pixels); i++)
                     if (pixels[i] != 255) {
@@ -1433,7 +1520,8 @@ int main(int argc, char **argv) {
         for (int sample = 0; sample < 4; sample++) {
             pdf_transparency_group group = {0};
             group.lazy_backdrop = sample != 3;
-            int ok = cupidimage_pdf_group_surface(&state, &group, 0, sample == 3 ? red : NULL);
+            int ok =
+                cupidimage_pdf_group_surface(&state, &group, 0, sample == 3 ? red : NULL, NULL);
             if (ok && sample == 1)
                 cupidimage_pdf_group_paint(&group, 5 * 16 + 7, red, 0, 1, 0);
             if (ok && sample == 2) {

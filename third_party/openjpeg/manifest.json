@@ -1,0 +1,555 @@
+{
+  "repository": "https://github.com/uclouvain/openjpeg",
+  "tag": "v2.5.4",
+  "revision": "6c4a29b00211eb0430fa0e5e890f1ce5c80f409f",
+  "files": [
+    {
+      "upstream": "src/lib/openjp2/thread.c",
+      "file": "thread.inc",
+      "upstream_sha256": "a801cc656c232ed6f3d3d8be0bae21b3c89389d0bf03613b5de483c692916b01",
+      "sha256": "a801cc656c232ed6f3d3d8be0bae21b3c89389d0bf03613b5de483c692916b01"
+    },
+    {
+      "upstream": "src/lib/openjp2/bio.c",
+      "file": "bio.inc",
+      "upstream_sha256": "eab2df6d857ce33b73b9dde04c18e4b5906fa50064a1511b370104583f23e110",
+      "sha256": "eab2df6d857ce33b73b9dde04c18e4b5906fa50064a1511b370104583f23e110"
+    },
+    {
+      "upstream": "src/lib/openjp2/cio.c",
+      "file": "cio.inc",
+      "upstream_sha256": "5a70f55f8b655f06af55f4750a69a41d12cd813dffd9a6d3f103c28b4dc63b3e",
+      "sha256": "5a70f55f8b655f06af55f4750a69a41d12cd813dffd9a6d3f103c28b4dc63b3e"
+    },
+    {
+      "upstream": "src/lib/openjp2/dwt.c",
+      "file": "dwt.inc",
+      "upstream_sha256": "2aaea513c0c84922e7488f3556525e6f6538f5ca9e6cf77d8db525768559aef8",
+      "sha256": "2aaea513c0c84922e7488f3556525e6f6538f5ca9e6cf77d8db525768559aef8"
+    },
+    {
+      "upstream": "src/lib/openjp2/event.c",
+      "file": "event.inc",
+      "upstream_sha256": "6af6dad4e683c22d7ba67159a4e644fee029aea4ec1aa4c4dca754f1b950378e",
+      "sha256": "6af6dad4e683c22d7ba67159a4e644fee029aea4ec1aa4c4dca754f1b950378e"
+    },
+    {
+      "upstream": "src/lib/openjp2/ht_dec.c",
+      "file": "ht_dec.inc",
+      "upstream_sha256": "7a5c66ddd5c9c159368230397c9e762d75bff399df6d59022b1a30ea9671c4e1",
+      "patches": [
+        {
+          "before": "OPJ_BOOL opj_t1_ht_decode_cblk(opj_t1_t *t1,\n                               opj_tcd_cblk_dec_t* cblk,\n                               OPJ_UINT32 orient,\n                               OPJ_UINT32 roishift,\n                               OPJ_UINT32 cblksty,\n                               opj_event_mgr_t *p_manager,\n                               opj_mutex_t* p_manager_mutex,\n                               OPJ_BOOL check_pterm)\n{",
+          "after": "OPJ_BOOL opj_t1_ht_decode_cblk(opj_t1_t *t1,\n                               opj_tcd_cblk_dec_t* cblk,\n                               OPJ_UINT32 orient,\n                               OPJ_UINT32 roishift,\n                               OPJ_UINT32 cblksty,\n                               opj_event_mgr_t *p_manager,\n                               opj_mutex_t* p_manager_mutex,\n                               OPJ_BOOL check_pterm)\n{\n    if (!cupidimage_jpx_codec_block_work(cblk->x0, cblk->y0, cblk->x1, cblk->y1, cblk->numbps, roishift)) {\n        return OPJ_FALSE;\n    }\n"
+        }
+      ],
+      "sha256": "660168b17b2ac3af54a926cf156120bcc8bda1e48bafa8547dfb427be4742463"
+    },
+    {
+      "upstream": "src/lib/openjp2/image.c",
+      "file": "image.inc",
+      "upstream_sha256": "d8cc7e7dd380aa39e8aeebea8bee62790d0fe4f02472eb7cc0e0617fc657ecd9",
+      "sha256": "d8cc7e7dd380aa39e8aeebea8bee62790d0fe4f02472eb7cc0e0617fc657ecd9"
+    },
+    {
+      "upstream": "src/lib/openjp2/invert.c",
+      "file": "invert.inc",
+      "upstream_sha256": "387fd5e2b3446b6caf3e29cec51713c0f698c086dca695b67a432e774930197a",
+      "sha256": "387fd5e2b3446b6caf3e29cec51713c0f698c086dca695b67a432e774930197a"
+    },
+    {
+      "upstream": "src/lib/openjp2/j2k.c",
+      "file": "j2k.inc",
+      "upstream_sha256": "a6ad86347e52b0108f4a3dedf5f844f274c35a61a08dafc4d15af0b4413f3194",
+      "sha256": "cbf76b68e9fdf63f2e87a05f0edc9db04f9fa237c6d125a64523eb8f14df51c8",
+      "patches": [
+        {
+          "before": "        if (!p_j2k->m_specific_param.m_decoder.m_tlm.m_is_invalid) {\n            /* do nothing */\n        } else if (l_num_parts != 0) {",
+          "after": "        if (!p_j2k->m_specific_param.m_decoder.m_tlm.m_is_invalid) {\n            if (l_current_part >=\n                    p_j2k->cstr_index->tile_index[p_j2k->m_current_tile_number].nb_tps) {\n                opj_event_msg(p_manager, EVT_ERROR,\n                              \"Tile-part index exceeds the TLM declaration.\\n\");\n                return OPJ_FALSE;\n            }\n        } else if (l_num_parts != 0) {"
+        },
+        {
+          "before": "        OPJ_UINT32 l_current_tile_part =\n            l_cstr_index->tile_index[p_j2k->m_current_tile_number].current_tpsno;\n        l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index[l_current_tile_part].end_header",
+          "after": "        OPJ_UINT32 l_current_tile_part =\n            l_cstr_index->tile_index[p_j2k->m_current_tile_number].current_tpsno;\n        if (!l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index ||\n                l_current_tile_part >=\n                l_cstr_index->tile_index[p_j2k->m_current_tile_number].current_nb_tps) {\n            opj_event_msg(p_manager, EVT_ERROR, \"Tile-part index exceeds its allocation.\\n\");\n            return OPJ_FALSE;\n        }\n        l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index[l_current_tile_part].end_header"
+        }
+      ]
+    },
+    {
+      "upstream": "src/lib/openjp2/jp2.c",
+      "file": "jp2.inc",
+      "upstream_sha256": "45211ee54d24e05f857acc960712fc3acd1655963e6ae12062a2de1075a6777e",
+      "sha256": "45211ee54d24e05f857acc960712fc3acd1655963e6ae12062a2de1075a6777e"
+    },
+    {
+      "upstream": "src/lib/openjp2/mct.c",
+      "file": "mct.inc",
+      "upstream_sha256": "d19ec7420ffa852d3ce823a36349979348b2287d3e5fd66ff74cffa12960a3bf",
+      "sha256": "d19ec7420ffa852d3ce823a36349979348b2287d3e5fd66ff74cffa12960a3bf"
+    },
+    {
+      "upstream": "src/lib/openjp2/mqc.c",
+      "file": "mqc.inc",
+      "upstream_sha256": "2880968a3ff002bf591a0e6ec89383b5523b011d6bb50f34ee07cbb79a46504e",
+      "sha256": "2880968a3ff002bf591a0e6ec89383b5523b011d6bb50f34ee07cbb79a46504e"
+    },
+    {
+      "upstream": "src/lib/openjp2/openjpeg.c",
+      "file": "openjpeg.inc",
+      "upstream_sha256": "88e5154fbd83966adaa430ab51af989095d96bf862f1d56f04b65399d3dc522a",
+      "sha256": "5e0fd193c56712aa18e4ff9060407b92f8f9abc208d00c2ac8ffb90a55d794e9",
+      "patches": [
+        {
+          "before": "l_codec->opj_dump_codec = (void (*)(void*, OPJ_INT32, FILE*)) j2k_dump;",
+          "after": "l_codec->opj_dump_codec = cupidimage_jpx_dispatch_j2k_dump;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_info = (opj_codestream_info_v2_t* (*)(\n                                           void*)) j2k_get_cstr_info;",
+          "after": "l_codec->opj_get_codec_info = cupidimage_jpx_dispatch_j2k_get_cstr_info;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_index = (opj_codestream_index_t* (*)(\n                                            void*)) j2k_get_cstr_index;",
+          "after": "l_codec->opj_get_codec_index = cupidimage_jpx_dispatch_j2k_get_cstr_index;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         opj_image_t*, struct opj_event_mgr *)) opj_j2k_decode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode =\n            cupidimage_jpx_dispatch_j2k_decode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_j2k_end_decompress;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            cupidimage_jpx_dispatch_j2k_end_decompress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            (OPJ_BOOL(*)(struct opj_stream_private *,\n                         void *,\n                         opj_image_t **,\n                         struct opj_event_mgr *)) opj_j2k_read_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            cupidimage_jpx_dispatch_j2k_read_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_destroy =\n            (void (*)(void *))opj_j2k_destroy;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_destroy =\n            cupidimage_jpx_dispatch_j2k_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            (void (*)(void *, opj_dparameters_t *)) opj_j2k_setup_decoder;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            cupidimage_jpx_dispatch_j2k_setup_decoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            (void (*)(void *, OPJ_BOOL)) opj_j2k_decoder_set_strict_mode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            cupidimage_jpx_dispatch_j2k_decoder_set_strict_mode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32*,\n                         OPJ_UINT32*,\n                         OPJ_INT32*, OPJ_INT32*,\n                         OPJ_INT32*, OPJ_INT32*,\n                         OPJ_UINT32*,\n                         OPJ_BOOL*,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_j2k_read_tile_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            cupidimage_jpx_dispatch_j2k_read_tile_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32,\n                         OPJ_BYTE*,\n                         OPJ_UINT32,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_j2k_decode_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            cupidimage_jpx_dispatch_j2k_decode_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            (OPJ_BOOL(*)(void *,\n                         opj_image_t*,\n                         OPJ_INT32, OPJ_INT32, OPJ_INT32, OPJ_INT32,\n                         struct opj_event_mgr *)) opj_j2k_set_decode_area;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            cupidimage_jpx_dispatch_j2k_set_decode_area;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            (OPJ_BOOL(*)(void *p_codec,\n                         opj_stream_private_t *p_cio,\n                         opj_image_t *p_image,\n                         struct opj_event_mgr * p_manager,\n                         OPJ_UINT32 tile_index)) opj_j2k_get_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            cupidimage_jpx_dispatch_j2k_get_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 res_factor,\n                         struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_resolution_factor;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            cupidimage_jpx_dispatch_j2k_set_decoded_resolution_factor;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 numcomps,\n                         const OPJ_UINT32 * comps_indices,\n                         struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_components;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            cupidimage_jpx_dispatch_j2k_set_decoded_components;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_decompress();",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_decompress();"
+        },
+        {
+          "before": "l_codec->opj_dump_codec = (void (*)(void*, OPJ_INT32, FILE*)) jp2_dump;",
+          "after": "l_codec->opj_dump_codec = cupidimage_jpx_dispatch_jp2_dump;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_info = (opj_codestream_info_v2_t* (*)(\n                                           void*)) jp2_get_cstr_info;",
+          "after": "l_codec->opj_get_codec_info = cupidimage_jpx_dispatch_jp2_get_cstr_info;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_index = (opj_codestream_index_t* (*)(\n                                            void*)) jp2_get_cstr_index;",
+          "after": "l_codec->opj_get_codec_index = cupidimage_jpx_dispatch_jp2_get_cstr_index;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         opj_image_t*,\n                         struct opj_event_mgr *)) opj_jp2_decode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode =\n            cupidimage_jpx_dispatch_jp2_decode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_jp2_end_decompress;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            cupidimage_jpx_dispatch_jp2_end_decompress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            (OPJ_BOOL(*)(struct opj_stream_private *,\n                         void *,\n                         opj_image_t **,\n                         struct opj_event_mgr *)) opj_jp2_read_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            cupidimage_jpx_dispatch_jp2_read_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32*,\n                         OPJ_UINT32*,\n                         OPJ_INT32*,\n                         OPJ_INT32*,\n                         OPJ_INT32 *,\n                         OPJ_INT32 *,\n                         OPJ_UINT32 *,\n                         OPJ_BOOL *,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_jp2_read_tile_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            cupidimage_jpx_dispatch_jp2_read_tile_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32, OPJ_BYTE*, OPJ_UINT32,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_jp2_decode_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            cupidimage_jpx_dispatch_jp2_decode_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_destroy = (void (*)(\n                    void *))opj_jp2_destroy;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_destroy = cupidimage_jpx_dispatch_jp2_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            (void (*)(void *, opj_dparameters_t *)) opj_jp2_setup_decoder;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            cupidimage_jpx_dispatch_jp2_setup_decoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            (void (*)(void *, OPJ_BOOL)) opj_jp2_decoder_set_strict_mode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            cupidimage_jpx_dispatch_jp2_decoder_set_strict_mode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            (OPJ_BOOL(*)(void *,\n                         opj_image_t*,\n                         OPJ_INT32, OPJ_INT32, OPJ_INT32, OPJ_INT32,\n                         struct opj_event_mgr *)) opj_jp2_set_decode_area;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            cupidimage_jpx_dispatch_jp2_set_decode_area;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            (OPJ_BOOL(*)(void *p_codec,\n                         opj_stream_private_t *p_cio,\n                         opj_image_t *p_image,\n                         struct opj_event_mgr * p_manager,\n                         OPJ_UINT32 tile_index)) opj_jp2_get_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            cupidimage_jpx_dispatch_jp2_get_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 res_factor,\n                         opj_event_mgr_t * p_manager)) opj_jp2_set_decoded_resolution_factor;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            cupidimage_jpx_dispatch_jp2_set_decoded_resolution_factor;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 numcomps,\n                         const OPJ_UINT32 * comps_indices,\n                         struct opj_event_mgr * p_manager)) opj_jp2_set_decoded_components;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            cupidimage_jpx_dispatch_jp2_set_decoded_components;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_TRUE);",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_TRUE);"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encode = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_j2k_encode;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encode = cupidimage_jpx_dispatch_j2k_encode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_end_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_j2k_end_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_end_compress = cupidimage_jpx_dispatch_j2k_end_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_start_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_image *,\n                struct opj_event_mgr *)) opj_j2k_start_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_start_compress = cupidimage_jpx_dispatch_j2k_start_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_write_tile = (OPJ_BOOL(*)(void *,\n                OPJ_UINT32,\n                OPJ_BYTE*,\n                OPJ_UINT32,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_j2k_write_tile;",
+          "after": "l_codec->m_codec_data.m_compression.opj_write_tile = cupidimage_jpx_dispatch_j2k_write_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_destroy = (void (*)(\n                    void *)) opj_j2k_destroy;",
+          "after": "l_codec->m_codec_data.m_compression.opj_destroy = cupidimage_jpx_dispatch_j2k_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL(*)(void *,\n                opj_cparameters_t *,\n                struct opj_image *,\n                struct opj_event_mgr *)) opj_j2k_setup_encoder;",
+          "after": "l_codec->m_codec_data.m_compression.opj_setup_encoder = cupidimage_jpx_dispatch_j2k_setup_encoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = (OPJ_BOOL(\n                    *)(void *,\n                       const char* const*,\n                       struct opj_event_mgr *)) opj_j2k_encoder_set_extra_options;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = cupidimage_jpx_dispatch_j2k_encoder_set_extra_options;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_compress();",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_compress();"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encode = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_jp2_encode;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encode = cupidimage_jpx_dispatch_jp2_encode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_end_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_jp2_end_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_end_compress = cupidimage_jpx_dispatch_jp2_end_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_start_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_image *,\n                struct opj_event_mgr *))  opj_jp2_start_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_start_compress = cupidimage_jpx_dispatch_jp2_start_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_write_tile = (OPJ_BOOL(*)(void *,\n                OPJ_UINT32,\n                OPJ_BYTE*,\n                OPJ_UINT32,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_jp2_write_tile;",
+          "after": "l_codec->m_codec_data.m_compression.opj_write_tile = cupidimage_jpx_dispatch_jp2_write_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_destroy = (void (*)(\n                    void *)) opj_jp2_destroy;",
+          "after": "l_codec->m_codec_data.m_compression.opj_destroy = cupidimage_jpx_dispatch_jp2_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL(*)(void *,\n                opj_cparameters_t *,\n                struct opj_image *,\n                struct opj_event_mgr *)) opj_jp2_setup_encoder;",
+          "after": "l_codec->m_codec_data.m_compression.opj_setup_encoder = cupidimage_jpx_dispatch_jp2_setup_encoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = (OPJ_BOOL(\n                    *)(void *,\n                       const char* const*,\n                       struct opj_event_mgr *)) opj_jp2_encoder_set_extra_options;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = cupidimage_jpx_dispatch_jp2_encoder_set_extra_options;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_FALSE);",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_FALSE);"
+        }
+      ]
+    },
+    {
+      "upstream": "src/lib/openjp2/pi.c",
+      "file": "pi.inc",
+      "upstream_sha256": "02eb5d074e1621b5077c5d5f0c6c2c626f519ff5a275559b3529d0e1974c6496",
+      "sha256": "02eb5d074e1621b5077c5d5f0c6c2c626f519ff5a275559b3529d0e1974c6496"
+    },
+    {
+      "upstream": "src/lib/openjp2/t1.c",
+      "file": "t1.inc",
+      "upstream_sha256": "69781f19af1c905fa0c0ae245803145c0047fcb1432e370a52d0e0b0e5b2d7b0",
+      "patches": [
+        {
+          "before": "static OPJ_BOOL opj_t1_decode_cblk(opj_t1_t *t1,\n                                   opj_tcd_cblk_dec_t* cblk,\n                                   OPJ_UINT32 orient,\n                                   OPJ_UINT32 roishift,\n                                   OPJ_UINT32 cblksty,\n                                   opj_event_mgr_t *p_manager,\n                                   opj_mutex_t* p_manager_mutex,\n                                   OPJ_BOOL check_pterm)\n{",
+          "after": "static OPJ_BOOL opj_t1_decode_cblk(opj_t1_t *t1,\n                                   opj_tcd_cblk_dec_t* cblk,\n                                   OPJ_UINT32 orient,\n                                   OPJ_UINT32 roishift,\n                                   OPJ_UINT32 cblksty,\n                                   opj_event_mgr_t *p_manager,\n                                   opj_mutex_t* p_manager_mutex,\n                                   OPJ_BOOL check_pterm)\n{\n    if (!cupidimage_jpx_codec_block_work(cblk->x0, cblk->y0, cblk->x1, cblk->y1, cblk->numbps, roishift)) {\n        return OPJ_FALSE;\n    }\n"
+        }
+      ],
+      "sha256": "cf2c5fd417b64be4c3670ae64e9066f02f6fda12e1e8e219669a2e2e834c56ff"
+    },
+    {
+      "upstream": "src/lib/openjp2/t2.c",
+      "file": "t2.inc",
+      "upstream_sha256": "2469cd3cf8231a0cab8c1cfedd761fe65fc215d890eef52ff19b3e3819b188bd",
+      "patches": [
+        {
+          "before": "static OPJ_BOOL opj_t2_decode_packet(opj_t2_t* p_t2,\n                                     opj_tcd_tile_t *p_tile,\n                                     opj_tcp_t *p_tcp,\n                                     opj_pi_iterator_t *p_pi,\n                                     OPJ_BYTE *p_src,\n                                     OPJ_UINT32 * p_data_read,\n                                     OPJ_UINT32 p_max_length,\n                                     opj_packet_info_t *p_pack_info,\n                                     opj_event_mgr_t *p_manager)\n{",
+          "after": "static OPJ_BOOL opj_t2_decode_packet(opj_t2_t* p_t2,\n                                     opj_tcd_tile_t *p_tile,\n                                     opj_tcp_t *p_tcp,\n                                     opj_pi_iterator_t *p_pi,\n                                     OPJ_BYTE *p_src,\n                                     OPJ_UINT32 * p_data_read,\n                                     OPJ_UINT32 p_max_length,\n                                     opj_packet_info_t *p_pack_info,\n                                     opj_event_mgr_t *p_manager)\n{\n    if (!cupidimage_jpx_codec_work(64)) {\n        return OPJ_FALSE;\n    }\n"
+        },
+        {
+          "before": "static OPJ_BOOL opj_t2_skip_packet(opj_t2_t* p_t2,\n                                   opj_tcd_tile_t *p_tile,\n                                   opj_tcp_t *p_tcp,\n                                   opj_pi_iterator_t *p_pi,\n                                   OPJ_BYTE *p_src,\n                                   OPJ_UINT32 * p_data_read,\n                                   OPJ_UINT32 p_max_length,\n                                   opj_packet_info_t *p_pack_info,\n                                   opj_event_mgr_t *p_manager)\n{",
+          "after": "static OPJ_BOOL opj_t2_skip_packet(opj_t2_t* p_t2,\n                                   opj_tcd_tile_t *p_tile,\n                                   opj_tcp_t *p_tcp,\n                                   opj_pi_iterator_t *p_pi,\n                                   OPJ_BYTE *p_src,\n                                   OPJ_UINT32 * p_data_read,\n                                   OPJ_UINT32 p_max_length,\n                                   opj_packet_info_t *p_pack_info,\n                                   opj_event_mgr_t *p_manager)\n{\n    if (!cupidimage_jpx_codec_work(64)) {\n        return OPJ_FALSE;\n    }\n"
+        }
+      ],
+      "sha256": "ad05d977a672c1bdfdde2efb9b222d4299a927b0b5bc4a7c64d3e0e45372a0cd"
+    },
+    {
+      "upstream": "src/lib/openjp2/tcd.c",
+      "file": "tcd.inc",
+      "upstream_sha256": "3cacb9dbb6b4d00ae61a9dda2b63e6b89a64120b523356869045d0b788e37348",
+      "sha256": "3cacb9dbb6b4d00ae61a9dda2b63e6b89a64120b523356869045d0b788e37348"
+    },
+    {
+      "upstream": "src/lib/openjp2/tgt.c",
+      "file": "tgt.inc",
+      "upstream_sha256": "df13b7632362da3e096f5f4103d92a4a92e6ba602f020f0d8ad10918bfcd8ec7",
+      "sha256": "df13b7632362da3e096f5f4103d92a4a92e6ba602f020f0d8ad10918bfcd8ec7"
+    },
+    {
+      "upstream": "src/lib/openjp2/function_list.c",
+      "file": "function_list.inc",
+      "upstream_sha256": "4e1888dd7c21911b2baf954ad9cab498433ac37e4cb1ce39220904ae80455869",
+      "sha256": "4e1888dd7c21911b2baf954ad9cab498433ac37e4cb1ce39220904ae80455869"
+    },
+    {
+      "upstream": "src/lib/openjp2/sparse_array.c",
+      "file": "sparse_array.inc",
+      "upstream_sha256": "5159bf88dd47abcf73425b478821431183241557c92ce870809e95cb37697a13",
+      "sha256": "5159bf88dd47abcf73425b478821431183241557c92ce870809e95cb37697a13"
+    },
+    {
+      "upstream": "src/lib/openjp2/bio.h",
+      "file": "bio.h",
+      "upstream_sha256": "25a12f4ad6b8cb68819094d0d671f431a34843e34d6358c495b18c9ee3b786a9",
+      "sha256": "25a12f4ad6b8cb68819094d0d671f431a34843e34d6358c495b18c9ee3b786a9"
+    },
+    {
+      "upstream": "src/lib/openjp2/cidx_manager.h",
+      "file": "cidx_manager.h",
+      "upstream_sha256": "a042f133118342cab678f32d1fabc855033b52495e463c8f300940e7ddaaaf14",
+      "sha256": "a042f133118342cab678f32d1fabc855033b52495e463c8f300940e7ddaaaf14"
+    },
+    {
+      "upstream": "src/lib/openjp2/cio.h",
+      "file": "cio.h",
+      "upstream_sha256": "91c84cc511735466e880b30b06c1d5c858e136e876c34fc325be39cc6457c5d7",
+      "sha256": "91c84cc511735466e880b30b06c1d5c858e136e876c34fc325be39cc6457c5d7"
+    },
+    {
+      "upstream": "src/lib/openjp2/dwt.h",
+      "file": "dwt.h",
+      "upstream_sha256": "5b2efbadc57042cf9c1865d87f0d2c46712003bb67bb059f41ed073fc8e9407c",
+      "sha256": "5b2efbadc57042cf9c1865d87f0d2c46712003bb67bb059f41ed073fc8e9407c"
+    },
+    {
+      "upstream": "src/lib/openjp2/event.h",
+      "file": "event.h",
+      "upstream_sha256": "3e451c164a8ad9b4bc58b1f0cf321388764b494c66c4ed20d7d196247a397c26",
+      "sha256": "3e451c164a8ad9b4bc58b1f0cf321388764b494c66c4ed20d7d196247a397c26"
+    },
+    {
+      "upstream": "src/lib/openjp2/function_list.h",
+      "file": "function_list.h",
+      "upstream_sha256": "df25ddfab444d485eabd9da4fdd6843b6b6d5f61b7513438c6d497a4b1e5817b",
+      "sha256": "df25ddfab444d485eabd9da4fdd6843b6b6d5f61b7513438c6d497a4b1e5817b"
+    },
+    {
+      "upstream": "src/lib/openjp2/image.h",
+      "file": "image.h",
+      "upstream_sha256": "3890c9fa361ebee6e276b56e25b80f44145516b6d15fa1655d8588b1da4fad1e",
+      "sha256": "3890c9fa361ebee6e276b56e25b80f44145516b6d15fa1655d8588b1da4fad1e"
+    },
+    {
+      "upstream": "src/lib/openjp2/indexbox_manager.h",
+      "file": "indexbox_manager.h",
+      "upstream_sha256": "c85cfa0feca00d01bb0bc2619199917a08717c5536d581724f4560a403b8a137",
+      "sha256": "c85cfa0feca00d01bb0bc2619199917a08717c5536d581724f4560a403b8a137"
+    },
+    {
+      "upstream": "src/lib/openjp2/invert.h",
+      "file": "invert.h",
+      "upstream_sha256": "52980bf14becaf7189e367e87c87f9f7c4bc0ddcc7bf4939237788332aca9830",
+      "sha256": "52980bf14becaf7189e367e87c87f9f7c4bc0ddcc7bf4939237788332aca9830"
+    },
+    {
+      "upstream": "src/lib/openjp2/j2k.h",
+      "file": "j2k.h",
+      "upstream_sha256": "9fc3343f01f6ce7998c001b44a324230a20664e9d27709bc1582d1aa6eddc5c0",
+      "sha256": "9fc3343f01f6ce7998c001b44a324230a20664e9d27709bc1582d1aa6eddc5c0"
+    },
+    {
+      "upstream": "src/lib/openjp2/jp2.h",
+      "file": "jp2.h",
+      "upstream_sha256": "7ba31d730591a7a6465ced2d62f5b50a2abca4cefc4077be248ec875d67e7bda",
+      "sha256": "7ba31d730591a7a6465ced2d62f5b50a2abca4cefc4077be248ec875d67e7bda"
+    },
+    {
+      "upstream": "src/lib/openjp2/mct.h",
+      "file": "mct.h",
+      "upstream_sha256": "274ba52a3638998b1714fac81b8e2238199bffd5bb1d2604f6b8f1ab8ec6e1a2",
+      "sha256": "274ba52a3638998b1714fac81b8e2238199bffd5bb1d2604f6b8f1ab8ec6e1a2"
+    },
+    {
+      "upstream": "src/lib/openjp2/mqc.h",
+      "file": "mqc.h",
+      "upstream_sha256": "564c073098ba0d036d8af9d1c0ac1bebb2e63423b01c18fb63046dec0ee64a3d",
+      "sha256": "564c073098ba0d036d8af9d1c0ac1bebb2e63423b01c18fb63046dec0ee64a3d"
+    },
+    {
+      "upstream": "src/lib/openjp2/mqc_inl.h",
+      "file": "mqc_inl.h",
+      "upstream_sha256": "4d94976da5d5063b96c86bf40c51a81d9ddc1746cd397e670c38def4d4ae5d0f",
+      "sha256": "4d94976da5d5063b96c86bf40c51a81d9ddc1746cd397e670c38def4d4ae5d0f"
+    },
+    {
+      "upstream": "src/lib/openjp2/openjpeg.h",
+      "file": "openjpeg.h",
+      "upstream_sha256": "25a71f3c7eee8e090650b151cc7fcf5b967075d3a93596796fe941f7f222103e",
+      "sha256": "25a71f3c7eee8e090650b151cc7fcf5b967075d3a93596796fe941f7f222103e"
+    },
+    {
+      "upstream": "src/lib/openjp2/opj_clock.h",
+      "file": "opj_clock.h",
+      "upstream_sha256": "43ac54b84019c391d14b29f1a22e4ca095b3451a6e27a4b897231d391371e9b9",
+      "sha256": "43ac54b84019c391d14b29f1a22e4ca095b3451a6e27a4b897231d391371e9b9"
+    },
+    {
+      "upstream": "src/lib/openjp2/opj_codec.h",
+      "file": "opj_codec.h",
+      "upstream_sha256": "f5451538219c6f2fcef7ff817c802f57eb64e7e409ff4dc56876316e31cf5d38",
+      "sha256": "f5451538219c6f2fcef7ff817c802f57eb64e7e409ff4dc56876316e31cf5d38"
+    },
+    {
+      "upstream": "src/lib/openjp2/opj_common.h",
+      "file": "opj_common.h",
+      "upstream_sha256": "1b2b8fb706888c37bbef7d3854fad71321c1e2d12701f318aca8892bc36bcbcc",
+      "sha256": "1b2b8fb706888c37bbef7d3854fad71321c1e2d12701f318aca8892bc36bcbcc"
+    },
+    {
+      "upstream": "src/lib/openjp2/opj_includes.h",
+      "file": "opj_includes.h",
+      "upstream_sha256": "5800ff257eb62e0f5100b915b7e1ececc42702f270b3dfd1c138080ef124bca0",
+      "sha256": "5800ff257eb62e0f5100b915b7e1ececc42702f270b3dfd1c138080ef124bca0"
+    },
+    {
+      "upstream": "src/lib/openjp2/opj_intmath.h",
+      "file": "opj_intmath.h",
+      "upstream_sha256": "d8fe3e8b08059835705941dcf9cf763ca55fbae9178421f36ea1214ee3b4eebb",
+      "sha256": "d8fe3e8b08059835705941dcf9cf763ca55fbae9178421f36ea1214ee3b4eebb"
+    },
+    {
+      "upstream": "src/lib/openjp2/opj_malloc.h",
+      "file": "opj_malloc.h",
+      "upstream_sha256": "0f376f3c19215395416d25548f212f03abe56a7362cd9461e7200826ab84aa41",
+      "sha256": "0f376f3c19215395416d25548f212f03abe56a7362cd9461e7200826ab84aa41"
+    },
+    {
+      "upstream": "src/lib/openjp2/pi.h",
+      "file": "pi.h",
+      "upstream_sha256": "d6fb17dafb0ed68fa9f771df3f7ba45d741a82cdeb6e67c2d00398fd75ab5286",
+      "sha256": "d6fb17dafb0ed68fa9f771df3f7ba45d741a82cdeb6e67c2d00398fd75ab5286"
+    },
+    {
+      "upstream": "src/lib/openjp2/sparse_array.h",
+      "file": "sparse_array.h",
+      "upstream_sha256": "14a2b65c50e9bf1a2e0dbe821edcc1c7a3129021897160485f30d261f02eb3ff",
+      "sha256": "14a2b65c50e9bf1a2e0dbe821edcc1c7a3129021897160485f30d261f02eb3ff"
+    },
+    {
+      "upstream": "src/lib/openjp2/t1.h",
+      "file": "t1.h",
+      "upstream_sha256": "e4e7ad9ffc4c1334526c44384947dd01a7cb4d7e4cb63837e0fcc776c8c29f88",
+      "sha256": "e4e7ad9ffc4c1334526c44384947dd01a7cb4d7e4cb63837e0fcc776c8c29f88"
+    },
+    {
+      "upstream": "src/lib/openjp2/t1_ht_luts.h",
+      "file": "t1_ht_luts.h",
+      "upstream_sha256": "5988bb6f3da45c4db3f233db782b24b18951f37e38b326c83beb350587e7928e",
+      "sha256": "5988bb6f3da45c4db3f233db782b24b18951f37e38b326c83beb350587e7928e"
+    },
+    {
+      "upstream": "src/lib/openjp2/t1_luts.h",
+      "file": "t1_luts.h",
+      "upstream_sha256": "1c6cd64611fc56641e7f48ae0575808e0ed135b845cd4806f6e7f47d7bbf7c79",
+      "sha256": "1c6cd64611fc56641e7f48ae0575808e0ed135b845cd4806f6e7f47d7bbf7c79"
+    },
+    {
+      "upstream": "src/lib/openjp2/t2.h",
+      "file": "t2.h",
+      "upstream_sha256": "3f9937680969cbb406373061246cf45e045ec81028b4f4db7e000fb3b54c0663",
+      "sha256": "3f9937680969cbb406373061246cf45e045ec81028b4f4db7e000fb3b54c0663"
+    },
+    {
+      "upstream": "src/lib/openjp2/tcd.h",
+      "file": "tcd.h",
+      "upstream_sha256": "b694dd954f7f14f5f98323144ca486b450d51248010b6432d88a30d997c3df45",
+      "sha256": "b694dd954f7f14f5f98323144ca486b450d51248010b6432d88a30d997c3df45"
+    },
+    {
+      "upstream": "src/lib/openjp2/tgt.h",
+      "file": "tgt.h",
+      "upstream_sha256": "24ecd11aa6a66a0e0b57c1ecb73229a5b05fab3c9199350a394d903e921907e7",
+      "sha256": "24ecd11aa6a66a0e0b57c1ecb73229a5b05fab3c9199350a394d903e921907e7"
+    },
+    {
+      "upstream": "src/lib/openjp2/thread.h",
+      "file": "thread.h",
+      "upstream_sha256": "cce16c74c4906d3fdf4422f27484b580cf7e80ade7c1ec67db0eccf1ff3944c7",
+      "sha256": "cce16c74c4906d3fdf4422f27484b580cf7e80ade7c1ec67db0eccf1ff3944c7"
+    },
+    {
+      "upstream": "src/lib/openjp2/tls_keys.h",
+      "file": "tls_keys.h",
+      "upstream_sha256": "95d63265be9028bd394ca4188d31373a4c1fb611f6db53ca28d956a15b527054",
+      "sha256": "95d63265be9028bd394ca4188d31373a4c1fb611f6db53ca28d956a15b527054"
+    },
+    {
+      "file": "LICENSE",
+      "sha256": "a6af136f3e15038a666b61f376612a07d9a4e48cb7c01adbf3e33b3f14ab49b6"
+    },
+    {
+      "file": "prefix.h",
+      "sha256": "5e99a9a4f1dbd716be328f2174af7fa65611b8a43e84d953d2a202372eb833eb"
+    },
+    {
+      "file": "opj_config.h",
+      "sha256": "5d7cf915faf10edcde78b15d984dba28727a726eb5f49296f2c2874149d89bd1"
+    },
+    {
+      "file": "opj_config_private.h",
+      "sha256": "45c9c597a12b44327c6721c33f4ff5f4f962a071d21f251bfe5d4c43b308370d"
+    }
+  ]
+}

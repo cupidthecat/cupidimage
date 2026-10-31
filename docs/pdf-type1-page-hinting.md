@@ -31,8 +31,7 @@ required by ISO 32000-1 section 9.9.
 Each draw owns its fitted outline. It does not cache device-space geometry in
 the font-space cache. Fills, strokes and deferred text clipping share the same
 fitted path. Open contours remain open for stroking, and logical charstring
-current-point records do not create painted segments. Stroke and clip coverage
-remain binary. Forms inherit the option, including those with local fonts.
+current-point records do not create painted segments. Stroke and clip coverage follow `--pdf-text-aa`. Forms inherit the option, including those with local fonts.
 
 ## Bounds and errors
 
@@ -55,7 +54,7 @@ text spacing, FontMatrix equivalences, fractional placement, all text modes,
 stroke styles, deferred clipping, Form-local fonts, invalid options and Sixel
 output. It also checks normal, mixed-case and extensionless filenames.
 
-The focused suite has 153 page/API/CLI checks and 729 allocation/cache checks.
+The focused suite has 153 page/API/CLI checks and 732 allocation/cache checks.
 With the optional comparison engine available, it adds 30 independent grayscale
 page matches. A local run with 75 installed PFB fonts increased the totals to
 1,613 page/API/CLI checks and 1,490 independent grayscale page matches. Two fonts

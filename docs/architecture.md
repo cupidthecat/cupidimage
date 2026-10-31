@@ -38,13 +38,18 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   lookup lives in `pdf_resources.c`. Pattern validation and the bounded
   per-page cell/gradient cache live in `pdf_patterns.c`. Pattern stream execution
   and per-object backdrop evaluation live in `pdf_pattern_render.c`. Device-space path construction and deferred curve subdivision live in
-  `pdf_path.c`. Stroke geometry, dash
-  expansion and bounded union coverage live in `pdf_stroke.c`. CID
+  `pdf_path.c`. Stroke-state and dash-array parsing live in `pdf_stroke.c`;
+  geometry expansion and dash placement live in
+  `pdf_stroke_geometry.c`. `raster/` owns coverage, stroke unions and region
+  intersections. `clipping/geometry.c` retains immutable device-space clip regions,
+  while `pdf_clip_regions.c` connects them to page state and coverage caches. CID
   horizontal/vertical metrics are parsed in `pdf_font_cid.c`, separately from
   Unicode maps and glyph rasterization. `fonts/` holds binary font tables,
   encoding data, the bounded PDF encoding CMap parser and the bitmap fallback. `pdf_font_program.c` connects embedded
   programs to PDF resources; `pdf_font_substitution.c` owns pinned substitute loading
-  and recognized nonembedded-family selection. `pdf_font_truetype.c` handles PDF encoding selection
+  and recognized nonembedded-family selection. `pdf_font_cid_substitution.c` selects
+  collection-matched Japanese CID outlines from `fonts/substitute/` and shares
+  decoded programs within a resource table. `pdf_font_truetype.c` handles PDF encoding selection
   and glyph-name fallback for embedded TrueType programs. `pdf_text_outline.c` handles quadratic/cubic glyph
   coverage and text clipping. `fonts/cff.c` reads compact font data, and
   `fonts/type2.c` interprets its bounded charstrings. `fonts/type1.c` reads and

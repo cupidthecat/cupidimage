@@ -62,6 +62,7 @@ typedef struct pdf_cmap pdf_cmap;
 typedef struct {
     pdf_cmap *encoding;
     int vertical;
+    unsigned substitute_encoding;
     double default_width, default_advance_y, default_origin_y;
     pdf_cid_metric *metrics;
 } pdf_cid_font;
@@ -194,8 +195,11 @@ typedef struct {
     int width, height, components, bits;
     const unsigned char *document;
     size_t document_size;
+    int preserve_jpx;
 } pdf_image_stream_profile;
 
+int cupidimage_pdf_image_filters(const pdf_object_view *, const pdf_image_stream_profile *,
+                                 char[8][32], int *);
 int cupidimage_pdf_filter_parameter_applies(const char *filter, const char *key);
 int cupidimage_pdf_stream_filter_names(const pdf_object_view *view, char filters[8][32],
                                        int *total);
@@ -233,6 +237,9 @@ size_t cupidimage_pdf_cid_font_bytes(const pdf_cid_font *font);
 void cupidimage_pdf_cid_metrics(const pdf_cid_font *font, unsigned cid, double *width,
                                 double *advance_y, double *origin_x, double *origin_y);
 
+/* Canonical object lookup: 1 found, 0 deleted/missing, -1 invalid or exhausted. */
+int cupidimage_pdf_resolve_object(const pdf_xref *, const unsigned char *, size_t, pdf_object_id,
+                                  pdf_object_view *, pdf_object_id *, size_t *);
 int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
                                  const pdf_object_view *view, size_t pos, pdf_object_view *out,
                                  unsigned depth);
@@ -270,6 +277,8 @@ int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
                                        size_t *budget);
 int cupidimage_pdf_parse_substitute_font(const unsigned char *, size_t, const pdf_object_view *,
                                          pdf_font_map *, size_t *);
+int cupidimage_pdf_parse_cid_substitute(const unsigned char *, size_t, const pdf_object_view *,
+                                        pdf_font_map *, pdf_font_table *);
 int cupidimage_pdf_truetype_encoding(const unsigned char *data, size_t size,
                                      const pdf_object_view *view, const pdf_object_view *descriptor,
                                      pdf_font_program *program);

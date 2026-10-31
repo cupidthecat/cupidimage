@@ -220,7 +220,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -238,7 +238,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -256,7 +256,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -274,7 +274,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -292,7 +292,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -329,7 +329,7 @@
             "scripts/test_pdf_jpeg_sampling.py"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -343,18 +343,28 @@
         {
           "id": "2.8",
           "requirement": "JPXDecode (JPEG 2000 codestreams/containers permitted in PDF).",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-jpeg2000.md",
+            "src/formats/pdf/images/jpx/source.c",
+            "src/formats/pdf/images/jpx/color.c",
+            "scripts/test_pdf_jpx_samples.py",
+            "scripts/test_pdf_jpx_containers.py",
+            "scripts/test_pdf_jpx_images.py",
+            "scripts/test_pdf_jpx_colors.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Native codestreams, selected JP2/JPX containers, palettes, masks and color spaces have focused tests. e-sRGB/e-sYCC, extended component transforms, full 38-bit codestreams, registration and complete independent rendering qualification remain open."
           ],
           "dependencies": [
             "1"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "selected sample, container, color, mask and failure paths reviewed; full baseline/extension audit pending",
+          "standard_clauses": [
+            "ISO 32000-2:2020 7.4.9, 8.9.5, 11.6.4.3, 11.6.5.2",
+            "ITU-T T.800 (2002), Annexes A-I",
+            "ITU-T T.801 (2002), Annex M"
+          ]
         },
         {
           "id": "2.9",
@@ -382,7 +392,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -400,7 +410,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -418,7 +428,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -436,7 +446,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX, JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
           ],
           "dependencies": [
             "1"
@@ -716,7 +726,7 @@
             "docs/pdf-content.md"
           ],
           "limitations": [
-            "Marked-content metadata does not yet implement optional-content visibility, tagged extraction or accessibility."
+            "Marked-content scopes now apply default optional-content visibility. Interactive layer state, tagged extraction and accessibility remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -860,17 +870,21 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "scripts/test_pdf_type1_render.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Embedded MMType1 snapshots use the ordinary Type 1 path. Nonembedded instance matching remains incomplete. Live multiple-master programs are optional compatibility work, not conforming embedded snapshots."
           ],
           "dependencies": [
             "1",
             "2"
           ],
           "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 9.6.2.3",
+            "ISO 32000-2:2020 9.6.2.3"
+          ]
         },
         {
           "id": "5.3",
@@ -901,11 +915,16 @@
             "scripts/test_pdf_tt_transform_reference.py",
             "docs/pdf-page-hinting.md",
             "src/formats/pdf/fonts/page_hint.c",
-            "scripts/test_pdf_page_hinting.py"
+            "scripts/test_pdf_page_hinting.py",
+            "docs/pdf-subset-fonts.md",
+            "src/formats/pdf/fonts/truetype_subset.c",
+            "scripts/test_pdf_subset_fonts.py",
+            "scripts/test_pdf_subset_font_pages.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options.",
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
           ],
           "dependencies": [
             "1",
@@ -921,10 +940,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "Opt-in graphics coverage now includes Type 3 paths. Image/shading coverage and wider Type 3 color/transparency interactions remain incomplete."
           ],
           "dependencies": [
             "1",
@@ -940,10 +963,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-subset-fonts.md",
+            "src/formats/pdf/fonts/truetype_subset.c",
+            "scripts/test_pdf_subset_fonts.py",
+            "scripts/test_pdf_subset_font_pages.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
           ],
           "dependencies": [
             "1",
@@ -973,11 +1001,21 @@
             "src/formats/pdf/fonts/postscript/page.c",
             "src/formats/pdf/fonts/postscript/cff_shape.c",
             "src/formats/pdf/fonts/postscript/transform.c",
-            "scripts/test_pdf_cff_page_hinting.py"
+            "scripts/test_pdf_cff_page_hinting.py",
+            "docs/pdf-subset-fonts.md",
+            "src/formats/pdf/fonts/truetype_subset.c",
+            "scripts/test_pdf_subset_fonts.py",
+            "scripts/test_pdf_subset_font_pages.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option.",
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -993,10 +1031,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_font_program.c",
-            "scripts/test_pdf_embedded_fonts.py"
+            "scripts/test_pdf_embedded_fonts.py",
+            "docs/pdf-subset-fonts.md",
+            "src/formats/pdf/fonts/truetype_subset.c",
+            "scripts/test_pdf_subset_fonts.py",
+            "scripts/test_pdf_subset_font_pages.py"
           ],
           "limitations": [
-            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete."
+            "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
           ],
           "dependencies": [
             "1",
@@ -1060,12 +1103,17 @@
             "src/formats/pdf/fonts/postscript/page.c",
             "src/formats/pdf/fonts/postscript/cff_shape.c",
             "src/formats/pdf/fonts/postscript/transform.c",
-            "scripts/test_pdf_cff_page_hinting.py"
+            "scripts/test_pdf_cff_page_hinting.py",
+            "docs/pdf-subset-fonts.md",
+            "src/formats/pdf/fonts/truetype_subset.c",
+            "scripts/test_pdf_subset_fonts.py",
+            "scripts/test_pdf_subset_font_pages.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
-            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles, CFF/Type 1 grid fitting and wider font fidelity remain unfinished.",
-            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Type 1 fitting, flex policy and broader font fidelity remain unfinished."
+            "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options.",
+            "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option.",
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
           ],
           "dependencies": [
             "1",
@@ -1120,10 +1168,15 @@
             "tests/test_pdf_clip_oom.c",
             "src/formats/pdf/fonts/page_hint.c",
             "tests/test_pdf_page_hint.c",
-            "scripts/test_pdf_page_hinting.py"
+            "scripts/test_pdf_page_hinting.py",
+            "docs/pdf-subset-fonts.md",
+            "src/formats/pdf/fonts/truetype_subset.c",
+            "scripts/test_pdf_subset_fonts.py",
+            "scripts/test_pdf_subset_font_pages.py"
           ],
           "limitations": [
-            "Unhinted TT/Type1/CFF outlines have per-program glyph caching. A single page-owned prepared TrueType instance is keyed by retained program, ppem, physical point size and grayscale profile. Hinted/rasterized glyph-result caches and Type 3 drawing need further state-sensitive treatment."
+            "Unhinted TT/Type1/CFF outlines have per-program glyph caching. A single page-owned prepared TrueType instance is keyed by retained program, ppem, physical point size and grayscale profile. Hinted/rasterized glyph-result caches and Type 3 drawing need further state-sensitive treatment.",
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
           ],
           "dependencies": [
             "1",
@@ -1214,10 +1267,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/fonts/cmap.c",
-            "scripts/test_pdf_cmaps.py"
+            "scripts/test_pdf_cmaps.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
-            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -1234,10 +1292,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/fonts/cmap.c",
-            "scripts/test_pdf_cmaps.py"
+            "scripts/test_pdf_cmaps.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
-            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -1254,10 +1317,15 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/fonts/cmap.c",
-            "scripts/test_pdf_cmaps.py"
+            "scripts/test_pdf_cmaps.py",
+            "docs/pdf-cff-bindings.md",
+            "scripts/test_pdf_cff_bindings.py",
+            "assets/pdf/reference/cff-direct-cid.pdf",
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
           ],
           "limitations": [
-            "Mapping tests do not establish complete glyph coverage or all script/font combinations."
+            "Mapping tests do not establish complete glyph coverage or all script/font combinations.",
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
           ],
           "dependencies": [
             "1",
@@ -1477,7 +1545,11 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
             "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
@@ -1498,10 +1570,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Opt-in fractional text clipping is tested with geometric intersections, deferred application and saved state. Wider font/profile, color and transparency combinations remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -1519,10 +1595,21 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Full raster fidelity, remaining group color models and all cross-feature interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -1530,7 +1617,7 @@
             "5",
             "6"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -1540,10 +1627,14 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete.",
+            "Opt-in graphics coverage now includes Type 3 paths. Image/shading coverage and wider Type 3 color/transparency interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -1599,10 +1690,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1618,10 +1712,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1637,10 +1734,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1656,10 +1756,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1675,10 +1778,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1694,10 +1800,17 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1713,10 +1826,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1732,10 +1848,13 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_stroke.c",
-            "scripts/test_pdf_strokes.py"
+            "scripts/test_pdf_strokes.py",
+            "docs/pdf-graphics-coverage.md",
+            "src/formats/pdf/pdf_path_coverage.c",
+            "scripts/test_pdf_graphics_antialias.py"
           ],
           "limitations": [
-            "Antialiasing and automatic stroke adjustment are unfinished."
+            "Opt-in vector coverage and fractional clipping have focused area, composition and ownership checks. Automatic stroke adjustment, broader curve/profile qualification and complete cross-feature fidelity remain unfinished."
           ],
           "dependencies": [
             "3",
@@ -1850,10 +1969,16 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_render.c",
-            "scripts/test_pdf_forms.py"
+            "scripts/test_pdf_forms.py",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "Annotation appearance dispatch and external-reference behavior are not complete."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "1",
@@ -1861,8 +1986,11 @@
             "3",
             "4"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "9.6",
@@ -1931,7 +2059,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -1952,7 +2080,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -1970,10 +2098,14 @@
           "evidence": [
             "docs/pdf-images.md",
             "src/formats/pdf/pdf_images.c",
-            "scripts/test_pdf_image_values.py"
+            "scripts/test_pdf_image_values.py",
+            "docs/pdf-image-interpolation.md",
+            "src/formats/pdf/images/sample.c",
+            "scripts/test_pdf_image_interpolation.py",
+            "tests/test_pdf_image_sampling.c"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Dictionary-controlled bilinear sampling has focused component, mask, Matte and affine tests. Minification area filtering, image-boundary coverage, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain unfinished. Independent interpolation profiles still differ."
           ],
           "dependencies": [
             "1",
@@ -1991,10 +2123,12 @@
           "evidence": [
             "docs/pdf-images.md",
             "src/formats/pdf/pdf_images.c",
-            "scripts/test_pdf_image_values.py"
+            "scripts/test_pdf_image_values.py",
+            "docs/pdf-image-interpolation.md",
+            "scripts/test_pdf_image_interpolation.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Area resampling, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2015,7 +2149,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2036,7 +2170,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2055,10 +2189,12 @@
             "docs/pdf-images.md",
             "src/formats/pdf/pdf_images.c",
             "scripts/test_pdf_image_values.py",
-            "scripts/test_pdf_masks.py"
+            "scripts/test_pdf_masks.py",
+            "docs/pdf-jpeg2000.md",
+            "scripts/test_pdf_jpx_images.py"
           ],
           "limitations": [
-            "Explicit and soft masks and indirect/null metadata have focused tests. JPX SMaskInData is not implemented; color-managed masking remains incomplete."
+            "Explicit and soft masks and indirect/null metadata have focused tests. JPX SMaskInData 0/1/2 have native sample and allocation tests; wider color-managed masking remains incomplete."
           ],
           "dependencies": [
             "1",
@@ -2081,7 +2217,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2121,7 +2257,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, JPX/JBIG2 and optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2209,22 +2345,34 @@
             "scripts/test_pdf_intents.py",
             "src/formats/pdf/pdf_icc_curve.c",
             "src/formats/pdf/pdf_icc_mab.c",
-            "scripts/test_pdf_icc_mab.py"
+            "scripts/test_pdf_icc_mab.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Reverse mBA, multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and ICC blending remain incomplete."
+            "Supported matrix/TRC, 8/16-bit tables and version 4 mAB stages cover gray/RGB/CMYK sources with unit ranges and selected per-intent transforms. Multiprocess profiles, unusual ranges, alternate fallback, complete intent handling, black-point compensation, output profiles and additional ICC blending models remain incomplete."
           ],
           "dependencies": [
             "1",
             "4",
             "12"
           ],
-          "audit": "Selected native source-profile parsing, curve equations and ownership paths tested; full ICC audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 8.6.5.5",
             "ICC.1:2022 10.6, 10.18 and Annex F",
             "ICC.1:2022 8.10, 10.10 and 10.11",
-            "ICC.1:2022 10.12"
+            "ICC.1:2022 10.12",
+            "ICC.1:2022 10.13"
           ]
         },
         {
@@ -2296,7 +2444,7 @@
             "scripts/test_pdf_icc_lut.py"
           ],
           "limitations": [
-            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. Unsupported ICC models, NChannel spot mixtures and calibrated/ICC blending spaces remain unfinished.",
+            "Supported calibrated, ICC, single-colorant and legacy DeviceN replacements are tested. Unsupported ICC models, NChannel spot mixtures and additional calibrated/ICC blending models remain unfinished.",
             "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
           ],
           "dependencies": [
@@ -2375,7 +2523,7 @@
             "scripts/test_pdf_icc_lut.py"
           ],
           "limitations": [
-            "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and calibrated/ICC blending spaces remain unfinished.",
+            "Supported device, calibrated, ICC and alternate tint source colors share painting paths. General color management, physical spot planes and additional calibrated/ICC blending models remain unfinished.",
             "Process-only NChannel definitions are implemented for supported process spaces. Mixed/spot NChannel and physical ink blending remain unfinished."
           ],
           "dependencies": [
@@ -2449,7 +2597,8 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_functions.c",
-            "scripts/test_pdf_functions.py"
+            "scripts/test_pdf_functions.py",
+            "docs/pdf-group-work.md"
           ],
           "limitations": [
             "Cubic sampled interpolation and full color/transfer-function integration are unfinished."
@@ -2458,8 +2607,11 @@
             "1",
             "2"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
-          "standard_clauses": []
+          "audit": "First/last degenerate endpoints, interior ordering, Encode mapping, component arrays and tree bounds tested; full integration audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.10.4",
+            "ISO 32000-2:2020 7.10.4"
+          ]
         },
         {
           "id": "12.4",
@@ -2821,10 +2973,21 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2832,7 +2995,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2842,10 +3005,23 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2853,7 +3029,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2865,10 +3041,23 @@
             "src/formats/pdf/pdf_transparency.c",
             "scripts/test_pdf_transparency.py",
             "src/formats/pdf/pdf_paint_groups.c",
-            "scripts/test_pdf_combined_paint.py"
+            "scripts/test_pdf_combined_paint.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2876,7 +3065,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4"
           ]
@@ -2891,10 +3080,21 @@
             "scripts/test_pdf_transparency.py",
             "src/formats/pdf/pdf_paint_groups.c",
             "scripts/test_pdf_combined_paint.py",
-            "scripts/test_pdf_empty_glyphs.py"
+            "scripts/test_pdf_empty_glyphs.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2902,7 +3102,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": [
             "ISO 32000-1:2008 11.7.4.4",
             "ISO 32000-1/2 9.3.6"
@@ -2915,10 +3115,23 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2926,7 +3139,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2936,10 +3149,21 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2947,7 +3171,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         },
         {
@@ -2957,10 +3181,23 @@
           "evidence": [
             "docs/pdf-transparency.md",
             "src/formats/pdf/pdf_transparency.c",
-            "scripts/test_pdf_transparency.py"
+            "scripts/test_pdf_transparency.py",
+            "docs/pdf-blending-colors.md",
+            "src/formats/pdf/color/blend.c",
+            "scripts/test_pdf_cie_groups.py",
+            "tests/test_pdf_icc_inverse.c",
+            "scripts/test_pdf_icc_reverse.py",
+            "scripts/test_pdf_icc_reverse_groups.py",
+            "tests/test_pdf_icc_reverse.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c",
+            "docs/pdf-group-work.md",
+            "scripts/test_pdf_group_work.py"
           ],
           "limitations": [
-            "CMYK/CIE/ICC blending spaces, color management and all annotation interactions remain incomplete."
+            "ICC multiprocess destination transforms, complete color management and all annotation interactions remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -2968,7 +3205,7 @@
             "8",
             "11"
           ],
-          "audit": "selected evidence reviewed; detailed audit pending",
+          "audit": "Selected calibrated/ICC/CMYK groups, four-channel modes, BG/UCR state, CIE luminosity, cache growth and failure paths tested; full audit pending",
           "standard_clauses": []
         }
       ],
@@ -2991,87 +3228,142 @@
         {
           "id": "15.1",
           "requirement": "Optional Content Groups (OCGs) and Membership Dictionaries (OCMDs).",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf",
+            "docs/pdf-annotations.md",
+            "scripts/test_pdf_annotation_pages.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Supplied annotation appearances share these states. Alternate configuration selection and interactive usage adjustments remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.2",
           "requirement": "Default/alternate configurations, initial on/off states, base states.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf",
+            "docs/pdf-annotations.md",
+            "scripts/test_pdf_annotation_pages.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Supplied annotation appearances share these states. Alternate configuration selection and interactive usage adjustments remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.3",
           "requirement": "Membership policies, visibility expressions, and usage-based visibility.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf",
+            "docs/pdf-annotations.md",
+            "scripts/test_pdf_annotation_pages.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Supplied annotation appearances share these states. Alternate configuration selection and interactive usage adjustments remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.4",
           "requirement": "View/print/export intents where relevant; nested marked optional content.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf",
+            "docs/pdf-annotations.md",
+            "scripts/test_pdf_annotation_pages.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Supplied annotation appearances share these states. Alternate configuration selection and interactive usage adjustments remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.5",
           "requirement": "Layers containing graphics, text, images, forms, and annotations.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf",
+            "docs/pdf-annotations.md",
+            "scripts/test_pdf_annotation_pages.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Supplied annotation appearances share these states. Alternate configuration selection and interactive usage adjustments remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         },
         {
           "id": "15.6",
@@ -3093,19 +3385,30 @@
         {
           "id": "15.7",
           "requirement": "Do not erroneously render mutually exclusive/hidden optional content.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-optional-content.md",
+            "src/formats/pdf/optional_content/state.c",
+            "src/formats/pdf/optional_content/evaluate.c",
+            "src/formats/pdf/optional_content/render.c",
+            "scripts/test_pdf_optional_content.py",
+            "scripts/test_pdf_optional_pages.py",
+            "assets/pdf/reference/optional-content-state.pdf",
+            "docs/pdf-annotations.md",
+            "scripts/test_pdf_annotation_pages.py"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Default configuration states, intent matching, membership policies, visibility expressions and nested painting scopes are implemented. Supplied annotation appearances share these states. Alternate configuration selection and interactive usage adjustments remain incomplete."
           ],
           "dependencies": [
             "1",
             "4"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "static default-configuration implementation and focused evidence reviewed; broader context audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 8.11",
+            "ISO 32000-2:2020 6.3.2.2 and 8.11"
+          ]
         }
       ],
       "dependencies": [
@@ -3123,12 +3426,18 @@
         {
           "id": "16.1",
           "requirement": "Text, FreeText, Popup, Highlight, Underline, Squiggly, StrikeOut, Caret, and Ink annotations.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3142,18 +3451,27 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.2",
           "requirement": "Line, Square, Circle, Polygon, PolyLine, Stamp, Watermark annotations.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3167,18 +3485,27 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.3",
           "requirement": "Link and Widget annotations.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3192,18 +3519,27 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.4",
           "requirement": "FileAttachment, Redact, PrinterMark, TrapNet, Screen, Sound, Movie, RichMedia, 3D, Projection, and any applicable extension subtypes.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3217,18 +3553,27 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.5",
           "requirement": "Annotation dictionaries, Rect/QuadPoints, appearance streams and states, AP/AS selection (normal, rollover, down), appearance matrices and BBox.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3242,8 +3587,11 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.6",
@@ -3273,12 +3621,18 @@
         {
           "id": "16.7",
           "requirement": "Flags: Hidden, Invisible, NoView, Print, NoZoom, NoRotate, etc., applied consistently with the chosen display/print intent.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3292,8 +3646,11 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.8",
@@ -3323,12 +3680,18 @@
         {
           "id": "16.9",
           "requirement": "Existing annotation appearances composited over the page in correct order.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "3",
@@ -3342,18 +3705,27 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "16.10",
           "requirement": "Distinguish a visible redaction marker from applying secure redaction; distinguish a visible digital signature from cryptographic validation.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Stored appearances are visual only. No secure redaction or cryptographic signature validation is performed."
           ],
           "dependencies": [
             "3",
@@ -3367,8 +3739,11 @@
             "14",
             "15"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         }
       ],
       "dependencies": [
@@ -3394,12 +3769,18 @@
         {
           "id": "17.1",
           "requirement": "Text fields, checkboxes, radio buttons, push buttons, list boxes, combo boxes, and signature fields.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "5",
@@ -3408,8 +3789,11 @@
             "9",
             "16"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "17.2",
@@ -3434,12 +3818,18 @@
         {
           "id": "17.3",
           "requirement": "Existing appearance streams and when appearance generation is necessary.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "5",
@@ -3448,8 +3838,11 @@
             "9",
             "16"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "17.4",
@@ -3494,12 +3887,18 @@
         {
           "id": "17.6",
           "requirement": "Correct selected/unchecked/on/off states and multi-select behavior.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "5",
@@ -3508,8 +3907,11 @@
             "9",
             "16"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         },
         {
           "id": "17.7",
@@ -3534,12 +3936,18 @@
         {
           "id": "17.8",
           "requirement": "Separate form editing, submission, calculations, and saving from simply rendering the static current field appearance.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-annotations.md",
+            "src/formats/pdf/annotations/appearance.c",
+            "src/formats/pdf/annotations/render.c",
+            "scripts/test_pdf_annotation_pages.py",
+            "assets/pdf/reference/annotation-appearance.pdf",
+            "assets/pdf/reference/annotation-widget-state.pdf"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Only supplied AP/N streams and AS-named states render. Missing appearance generation, field-driven regeneration, interactive states and broader rendering fidelity remain incomplete. Popup windows are not rendered."
           ],
           "dependencies": [
             "5",
@@ -3548,8 +3956,11 @@
             "9",
             "16"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "supplied normal appearances implemented with focused placement, state, transparency and failure tests; broader annotation and form audit pending",
+          "standard_clauses": [
+            "ISO 32000-1:2008 12.5.2, 12.5.3 and 12.5.5",
+            "ISO 32000-2:2020 12.5"
+          ]
         }
       ],
       "dependencies": [
@@ -3720,20 +4131,26 @@
         {
           "id": "19.2",
           "requirement": "Transfer functions, black generation, undercolor removal where applicable.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/format-conformance.md",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "BG/BG2 and UCR/UCR2 are implemented for DeviceRGB-to-DeviceCMYK conversion. Output transfer functions TR/TR2 and complete device-specific behavior remain unfinished."
           ],
           "dependencies": [
             "11",
             "12",
             "14"
           ],
-          "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "audit": "Black-generation and undercolor-removal state, formulas, native function types and allocation failures tested; output transfer functions remain unimplemented",
+          "standard_clauses": [
+            "ISO 32000-1:2008 Table 58; 10.3.4; 11.7.5.3"
+          ]
         },
         {
           "id": "19.3",
@@ -4351,10 +4768,17 @@
             "scripts/test_pdf_text_antialias.py",
             "docs/pdf-page-hinting.md",
             "src/formats/pdf/fonts/page_hint.c",
-            "scripts/test_pdf_page_hinting.py"
+            "scripts/test_pdf_page_hinting.py",
+            "docs/pdf-stroke-outlines.md",
+            "scripts/test_pdf_text_strokes.py",
+            "tests/test_pdf_stroke_union.c",
+            "docs/pdf-clipping.md",
+            "scripts/test_pdf_fractional_clips.py",
+            "tests/test_pdf_region.c",
+            "tests/test_pdf_clip_geometry.c"
           ],
           "limitations": [
-            "Opt-in outline fill coverage and a selected native legacy TrueType page profile are tested. Defaults retain unhinted center-point fill. Modern/subpixel profiles, variation behavior, CFF/Type 1 hinting, fractional clipping, stroke coverage, image resampling and wider raster fidelity remain incomplete."
+            "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete."
           ],
           "dependencies": [
             "3",
@@ -4675,7 +5099,11 @@
             "tests/test_pdf_flatness.c",
             "scripts/test_pdf_flatness.py",
             "docs/pdf-content.md",
-            "src/formats/pdf/pdf_path.c"
+            "src/formats/pdf/pdf_path.c",
+            "docs/pdf-cmyk-blending.md",
+            "src/formats/pdf/color/black_generation.c",
+            "scripts/test_pdf_cmyk_groups.py",
+            "tests/test_pdf_color_transfer.c"
           ],
           "limitations": [
             "The remaining operator and ExtGState inventory needs a complete version-specific audit."

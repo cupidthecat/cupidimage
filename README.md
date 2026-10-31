@@ -10,17 +10,25 @@ implemented, and color-managed output is incomplete. See the
 [format guide](docs/formats.md) and [conformance tracker](docs/format-conformance.md)
 for the exact boundaries. HEIC/HEIF is deferred.
 
-PDF previews include packed, indexed, fax- and JPEG-compressed images, inline
-images, image masks, filter chains, opacity and RGB blending. Text supports matrices,
+PDF previews include packed, indexed, fax-, JPEG- and [JPEG 2000](docs/pdf-jpeg2000.md)-compressed images, inline
+images, image masks, filter chains, opacity and transparency blending. Image dictionaries can
+request [bilinear sampling](docs/pdf-image-interpolation.md). Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
-metrics, standard and Latin vector font substitutes, and unhinted embedded
-TrueType, CFF and Type 1 outlines. Optional grayscale fills and selected
+metrics, standard and Latin vector font substitutes, selected Japanese CID-keyed
+substitutes, and unhinted embedded
+TrueType, CFF and Type 1 outlines. Optional grayscale [text and clipping edges](docs/pdf-clipping.md),
+[vector paths](docs/pdf-graphics-coverage.md), plus selected
 [TrueType](docs/pdf-page-hinting.md), [CFF](docs/pdf-cff-page-hinting.md) and
 [Type 1](docs/pdf-type1-page-hinting.md) hinting
 profiles have separate controls and limits.
-Tiling/shading patterns, styled dashed strokes, RGB/gray transparency
-groups and graphics-state soft masks are also supported. Full font fidelity,
-additional transparency spaces, color management and annotations still need work.
+[Default layer visibility](docs/pdf-optional-content.md) controls painting while
+preserving text advances and clipping. Existing [annotation and widget appearances](docs/pdf-annotations.md)
+render over the page, including their selected states and transparency.
+Tiling/shading patterns, styled dashed strokes and graphics-state soft masks are
+also supported. Transparency groups can use device colors, including
+[CMYK](docs/pdf-cmyk-blending.md), and selected
+[calibrated and ICC spaces](docs/pdf-blending-colors.md). Full font fidelity,
+additional transparency spaces, color management and appearance generation still need work.
 See the [shading guide](docs/pdf-shading.md) and [font guide](docs/pdf-fonts.md)
 for the current boundaries; decoding a page does not mean it is drawn correctly.
 
@@ -38,6 +46,8 @@ make -j2
 ./bin/cupidimage --ansi assets/jpeg/cat.jpeg 120 60
 ./bin/cupidimage --pdf-page 2 assets/pdf/pdfjs/basicapi.pdf
 ./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-coverage.pdf
+./bin/cupidimage --pdf-text-aa --sixel assets/pdf/text-strokes.pdf
+./bin/cupidimage --pdf-graphics-aa --sixel assets/pdf/graphics-coverage.pdf
 ./bin/cupidimage --pdf-text-aa --pdf-tt-hinting --pdf-cff-hinting --pdf-type1-hinting \
   --sixel assets/pdf/native-cff-hinting.pdf
 ./bin/cupidimage --sixel assets/webp/reference/quadrants.webp

@@ -214,6 +214,44 @@ int main(int argc, char **argv) {
     hints.events = NULL;
     hints.event_count = 0;
     hints.stem_count = 0;
+    /* Only fields consumed by this fitting profile can invalidate its map. */
+    {
+        pdf_cff_outline baseline = {0};
+        size_t budget = 1000000;
+        CHECK(cupidimage_pdf_ps_gridfit(&priv, &hints, &source, &size, &baseline, &budget));
+        for (unsigned field = 0; field < PDF_PS_HINT_FIELDS; field++) {
+            int used = field < PDF_PS_STEM_SNAP_H ||
+                       (field >= PDF_PS_BLUE_SCALE && field <= PDF_PS_BLUE_FUZZ) ||
+                       field == PDF_PS_LANGUAGE_GROUP;
+            pdf_ps_private_hints changed = priv;
+            changed.invalid |= 1u << field;
+            if (field < PDF_PS_BLUE_SCALE) {
+                changed.counts[field] = 14;
+                changed.arrays[field][0] = NAN;
+            } else
+                changed.scalars[field - PDF_PS_BLUE_SCALE] = NAN;
+            pdf_cff_outline actual = {0};
+            budget = 1000000;
+            CHECK(cupidimage_pdf_ps_gridfit(&changed, &hints, &source, &size, &actual, &budget) ==
+                  !used);
+            if (used)
+                CHECK(!actual.segments && !actual.count);
+            else {
+                CHECK(actual.count == baseline.count && actual.width == baseline.width);
+                for (unsigned i = 0; i < actual.count && i < baseline.count; i++) {
+                    CHECK(actual.segments[i].kind == baseline.segments[i].kind);
+                    for (unsigned j = 0; j < 6; j++)
+                        CHECK(actual.segments[i].points[j] == baseline.segments[i].points[j]);
+                }
+            }
+            cupidimage_pdf_type2_free(&actual);
+        }
+        cupidimage_pdf_type2_free(&baseline);
+        CHECK(!live_count);
+        pdf_ps_private_hints selected;
+        CHECK(!cupidimage_pdf_ps_hint_profile(NULL, &selected));
+        CHECK(!cupidimage_pdf_ps_hint_profile(&priv, NULL));
+    }
     for (unsigned field = 0; field < 10; field++) {
         pdf_ps_private_hints p = priv;
         pdf_ps_hint_program h = hints;

@@ -31,6 +31,14 @@ captured outline positions, including changes just before a contour closes.
 Counter masks establish shared stem positions without replacing the active
 mask. Empty and zero-length contours follow the component's path rules.
 
+Both CFF and Type 1 select only the private fields consumed by this profile:
+the four blue-zone arrays, BlueScale, BlueShift, BlueFuzz and LanguageGroup.
+Invalid values in those fields still reject fitting. Unused stem widths, stem-snap
+arrays, ForceBold and ExpansionFactor remain retained by the parser, but do not
+disable this fitter. A negative unused standard stem width therefore cannot
+discard otherwise usable blue-zone hints. The selection does not change the
+original font metadata or substitute guessed values for a parameter in use.
+
 ## Type 1 profile
 
 Type 1 builds its initial map from all stem declarations, then replays declarations
@@ -82,20 +90,21 @@ applied before fitting; checked affine transforms follow it.
 
 ## Verification
 
-`make test-pdf-ps-gridfit` runs 190,754 authored checks covering ownership,
+`make test-pdf-ps-gridfit` runs 191,038 authored checks covering ownership,
 allocation failure, budget boundaries, malformed input, repeated contours and
 2,000 bounded parameter/geometry stress cases. Input geometry must remain
 unchanged. A 96-stem case exercises mask handling and buffer growth.
 
-Optional independent checks use 22 pinned fonts and 23 authored CFF programs:
+Optional independent checks use 22 pinned fonts and 27 authored CFF programs:
 
-- 19,692 complete outline matches at six uniform sizes.
-- 19,692 complete outline matches at six unequal-axis sizes.
-- 6,564 exact grayscale glyph bitmap matches at two sizes, using the native
+- 19,740 complete outline matches at six uniform sizes.
+- 19,740 complete outline matches at six unequal-axis sizes.
+- 6,580 exact grayscale glyph bitmap matches at two sizes, using the native
   coverage converter after fitting.
 
 The authored programs cover blue/family/other zones, overshoot controls, ghost
-and zero-width stems, changing masks, counter masks and LanguageGroup behavior.
+and zero-width stems, changing masks, counter masks, LanguageGroup behavior and
+unused private metadata. Each consumed field also has an explicit rejection test.
 The test also verifies that compact and 32-bit DICT integer encodings produce
 the same native result.
 

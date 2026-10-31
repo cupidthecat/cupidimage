@@ -112,6 +112,12 @@ int cupidimage_pdf_calibrated_space(const pdf_render_state *st, const pdf_object
 
 void cupidimage_pdf_color_range(const pdf_image_colors *space, int component, double *minimum,
                                 double *maximum) {
+    if ((space->encoded_transfer == 3 || space->encoded_transfer == 4) && component >= 0 &&
+        component < 3) {
+        *minimum = space->source_range[2 * component];
+        *maximum = space->source_range[2 * component + 1];
+        return;
+    }
     *minimum = 0;
     *maximum = 1;
     if (space->calibrated != 3)
@@ -146,6 +152,21 @@ static double calibrated_encode(double value) {
     return value <= .0031308 ? 12.92 * value : 1.055 * pow(value, 1 / 2.4) - .055;
 }
 
+static double calibrated_source_transfer(const pdf_image_colors *space, double value,
+                                         unsigned component) {
+    if (space->encoded_transfer == 4) {
+        double magnitude = fabs(value);
+        return magnitude <= .04045 ? value / 12.92
+                                   : copysign(pow((magnitude + .055) / 1.055, 2.4), value);
+    }
+    value = fmax(0, fmin(1, value));
+    if (space->encoded_transfer == 1)
+        return value <= .04045 ? value / 12.92 : pow((value + .055) / 1.055, 2.4);
+    if (space->encoded_transfer == 2)
+        return value < 1.0 / 32 ? value / 16 : pow(value, 1.8);
+    return pow(value, space->gamma[component]);
+}
+
 void cupidimage_pdf_calibrated_xyz(const pdf_image_colors *space, const double values[4],
                                    double source[3]) {
     if (space->calibrated == 3) {
@@ -157,13 +178,19 @@ void cupidimage_pdf_calibrated_xyz(const pdf_image_colors *space, const double v
         source[1] = calibrated_lab_inverse(m);
         source[2] = space->white[2] * calibrated_lab_inverse(m - b / 200);
     } else if (space->components == 1) {
-        double value = pow(fmax(0, fmin(1, values[0])), space->gamma[0]);
+        double value = calibrated_source_transfer(space, values[0], 0);
         for (unsigned i = 0; i < 3; i++)
             source[i] = space->white[i] * value;
     } else {
-        double value[3];
+        double value[3], encoded[3];
+        if (space->encoded_transfer == 4) {
+            for (unsigned i = 0; i < 3; i++)
+                value[i] = cupidimage_pdf_color_component(space, (int)i, values[i]);
+            calibrated_multiply(space->source_matrix, value, encoded);
+        } else
+            memcpy(encoded, values, sizeof(encoded));
         for (unsigned i = 0; i < 3; i++)
-            value[i] = pow(fmax(0, fmin(1, values[i])), space->gamma[i]);
+            value[i] = calibrated_source_transfer(space, encoded[i], i);
         /* PDF Matrix is [XA YA ZA XB YB ZB XC YC ZC]. */
         for (unsigned i = 0; i < 3; i++)
             source[i] = space->matrix[i] * value[0] + space->matrix[3 + i] * value[1] +

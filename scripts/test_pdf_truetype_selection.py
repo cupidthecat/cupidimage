@@ -71,6 +71,41 @@ def documents():
             yield name + '-' + form, font, encoding, extra, expected, compare
 
 
+def undefined_encoding_documents():
+    encodings = json.loads(Path('tests/fixtures/pdf-encodings.json').read_text())
+    for encoding in ('MacRomanEncoding', 'WinAnsiEncoding'):
+        for code, name in enumerate(encodings[encoding]):
+            standard = encodings['StandardEncoding'][code]
+            if name != '.notdef' or standard == '.notdef':
+                continue
+            # The post table makes the otherwise unrelated StandardEncoding
+            # glyph visible. Glyph zero in the authored font has no outline.
+            font = replace_tables(FONT, {b'cmap': cmap([(3, 1, 65, 2)]),
+                                         b'post': post(standard, 1)})
+            for form, value, extra, visible in (
+                ('named', '/' + encoding, {}, False),
+                ('indirect-name', '40 0 R', {40: ('/' + encoding).encode()}, False),
+                ('dictionary', '<< /BaseEncoding /' + encoding + ' >>', {}, True),
+                ('indirect-base', '<< /BaseEncoding 40 0 R >>',
+                 {40: ('/' + encoding).encode()}, True),
+                ('explicit-notdef', '<< /BaseEncoding /' + encoding +
+                 f' /Differences [{code} /.notdef] >>', {}, False),
+                ('explicit-name', '<< /BaseEncoding /' + encoding +
+                 f' /Differences [{code} /{standard}] >>', {}, True),
+            ):
+                label = f'{encoding}-{code}-{form}'
+                content = f'BT /F 30 Tf 20 30 Td <{code:02x}> Tj ET'
+                options = dict(font_data=font, encoding=value, extra=extra,
+                               metrics=f'/FirstChar {code} /LastChar {code} /Widths [1000]')
+                actual = fixture(content, **options)
+                expected = fixture('20 30 12 18 re f' if visible else '', **options)
+                # Compare named encodings independently. Dictionary cases use
+                # explicit geometry: readers differ in completion and in some
+                # post-name selections (including the breve slot at 197).
+                compare = form in ('named', 'indirect-name')
+                yield label, actual, expected, compare
+
+
 def main():
     probe = str(Path(sys.argv[1]).resolve())
     positional = [arg for arg in sys.argv[2:] if not arg.startswith('--')]
@@ -78,6 +113,32 @@ def main():
     checks = references = allocations = 0
     with tempfile.TemporaryDirectory(prefix='cupidimage-tt-selection-') as tmp:
         path = Path(tmp) / 'case.pdf'
+        for name, actual, expected, compare in undefined_encoding_documents():
+            pixels = []
+            for data in (actual, expected):
+                path.write_bytes(data)
+                run = subprocess.run([probe, str(path), '0'], capture_output=True, timeout=30)
+                assert run.returncode == 0, (name, run.stderr)
+                pixels.append(run.stdout)
+            assert pixels[0] == pixels[1], (name, 'undefined encoding slot selected a glyph')
+            path.write_bytes(actual)
+            if '--reference' in sys.argv and compare:
+                prefix = Path(tmp) / 'reference'
+                ref = subprocess.run(['pdftoppm', '-r', '96', '-aa', 'no', '-aaVector', 'no',
+                                      '-singlefile', str(path), str(prefix)], capture_output=True,
+                                     timeout=30)
+                assert ref.returncode == 0, (name, ref.stderr)
+                w, h, rgb = read_ppm(prefix.with_suffix('.ppm'))
+                rgba = pixels[0][12:]
+                assert (w, h) == (160, 120) and rgb == bytes(
+                    v for i, v in enumerate(rgba) if i % 4 != 3), name
+                references += 1
+            if oom:
+                faults = subprocess.run([oom, str(path), '0'], capture_output=True,
+                                        text=True, timeout=60)
+                assert faults.returncode == 0, (name, faults.stdout, faults.stderr)
+                allocations += int(faults.stdout.split(': ')[1].split()[0])
+            checks += 1
         for name, font, encoding, extra, expected, compare in documents():
             pixels = []
             for content in ('20 30 12 18 re f', 'BT /F 30 Tf 20 30 Td (A) Tj ET'):

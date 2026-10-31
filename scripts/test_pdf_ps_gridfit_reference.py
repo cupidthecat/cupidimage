@@ -29,6 +29,14 @@ def authored_fonts(wide=False):
                           ('em-box', entry(0, [-250, 0, 1350, 0]) + entry(12, [1])),
                           ('overshoot', zones + entry(6, [.01]) + entry(7, [10]) + entry(8, [2]))]:
         programs.append((name, private, stems + move + shape))
+    # Unused private stem/darkening metadata must not discard valid blue hints.
+    for name, private in (
+        ('unused-negative-standard-stems', entry(9, [-32768]) + entry(10, [-32768])),
+        ('unused-large-standard-stems', entry(9, [5000]) + entry(10, [5000])),
+        ('unused-stem-snaps', entry(4, [5000]) + entry(5, [5000])),
+        ('unused-expansion', entry(13, [5000])),
+    ):
+        programs.append((name, zones + private, stems + move + shape))
     for width in (-20, -21, 0, 20):
         programs.append((f'edge-{width}', zones, command([700, width], 18) + move + shape))
     programs += [

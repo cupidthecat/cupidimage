@@ -43,6 +43,13 @@ is hidden here: these RGB files have no subsampling. Regenerate them with
 
 ## PDF samples
 
+`cid-japanese-gothic.pdf`, `cid-japanese-mincho-vertical.pdf` and the two
+`cid-japanese-truetype*.pdf` files are owned, nonembedded Japanese CID text samples.
+They include character-code selection and vertical variants. Regenerate them with
+`scripts/generate_pdf_cid_substitution_fixtures.py`. The asset audit treats their
+visible glyphs as decoded-unverified; the separate CID-substitution suite compares
+substituted pages with pinned, explicitly embedded font programs.
+
 `assets/pdf/pypdf/minimal-document.pdf` is an unchanged copy of
 [001-trivial/minimal-document.pdf](https://github.com/py-pdf/sample-files/blob/02b8203bf416db3dbdb03438bc8278dfcb0555f3/001-trivial/minimal-document.pdf)
 from **py-pdf/sample-files**, contributed by that project's contributors.
@@ -115,3 +122,9 @@ PNG prediction, 16-bit TIFF prediction, stencil masks, and color-key transparenc
 Their full expected pixels are in `tests/fixtures/pdf-image-reference.json` and
 are checked by the all-asset runner. Regenerate them with
 `scripts/generate_pdf_image_reference.py`, which needs only Python's standard library.
+
+The nested-mask-surfaces.pdf reference is literal opaque red after four isolated
+luminosity masks, independently matched at 96 DPI. Its compressed RGBA oracle is
+in the PDF reference inventory. The clipped-shading-work.pdf fixture still has a
+known independent device-CMYK conversion difference; its focused native pixel
+checks do not promote it to a full-raster match.

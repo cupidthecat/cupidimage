@@ -13,7 +13,7 @@ int cupidimage_pdf_text_group_begin(pdf_render_state *st) {
     /* Text usually touches a small part of the page. Initialize its backdrop
      * only where a glyph contributes shape, retaining the same group equations. */
     group->lazy_backdrop = 1;
-    if (!cupidimage_pdf_group_surface(st, group, 0, NULL)) {
+    if (!cupidimage_pdf_group_surface(st, group, 0, NULL, NULL)) {
         free(group);
         goto fail;
     }

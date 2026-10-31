@@ -59,6 +59,15 @@ def main():
             assert render(automatic, aa) == render(explicit, aa), 'hinting changed PDF advances'
             path.write_bytes(pdf(automatic))
             allocation_check(aa)
+        for name in ('unused-negative-standard-stems', 'unused-large-standard-stems',
+                     'unused-stem-snaps', 'unused-expansion'):
+            for aa, mode in itertools.product((0,1),range(8)):
+                content=f'BT /F 18 Tf 20.1875 30.1875 Td {mode} Tr (!) Tj ET'
+                if mode>=4:content+=' 1 0 0 rg 0 0 120 90 re f'
+                kwargs={'encoding':'/StandardEncoding','metrics':'/FirstChar 33 /LastChar 33 /Widths [600]'}
+                assert render(content,aa,font=FONTS_AUTHORED[name],**kwargs)==render(content,aa,font=FONTS_AUTHORED['blues'],**kwargs),(name,aa,mode)
+            render('BT /F 18 Tf 20 30 Td (!) Tj ET',font=FONTS_AUTHORED[name],**kwargs)
+            allocation_check()
         for aa, vertical in itertools.product((0, 1), (False, True)):
             metrics = '/DW 600 /W [1 [400 700]] /W2 [1 [-1100 200 900 -800 350 950]]'
             automatic = 'BT /F 18 Tf 60 70 Td <00010002> Tj ET'
@@ -247,7 +256,7 @@ def main():
                 geometry = ' '.join(commands)
                 glyph = f'BT /F 18 Tf MODE Tr 20.1875 30.1875 Td ({char}) Tj ET'
                 for style in ('1 w', '1 w 1 J 1 j', '1 w 2 J 2 j [2 1] .5 d'):
-                    assert render(style + ' ' + glyph.replace('MODE', '1')) == render(style + ' ' + geometry + ' S'), 'hinted stroke device outline'
+                    assert render(style + ' ' + glyph.replace('MODE', '1'), aa=0) == render(style + ' ' + geometry + ' S', aa=0), 'binary hinted stroke device outline'
                 paint = '1 0 0 rg 0 0 120 90 re f'
                 assert render(glyph.replace('MODE', '7') + ' ' + paint) == render(geometry + ' W n ' + paint), 'hinted clip device outline'
             for name, stem in FONTS.items():

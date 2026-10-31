@@ -55,8 +55,9 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     if (opts && ((opts->text_antialias != 0 && opts->text_antialias != 1) ||
                  (opts->truetype_hinting != 0 && opts->truetype_hinting != 1) ||
                  (opts->cff_hinting != 0 && opts->cff_hinting != 1) ||
-                 (opts->type1_hinting != 0 && opts->type1_hinting != 1))) {
-        cupidimage_set_err(err, errcap, "pdf: invalid text rendering option");
+                 (opts->type1_hinting != 0 && opts->type1_hinting != 1) ||
+                 (opts->graphics_antialias != 0 && opts->graphics_antialias != 1))) {
+        cupidimage_set_err(err, errcap, "pdf: invalid rendering option");
         return 0;
     }
     if (!cupidimage_pdf_check_header(data, size)) {

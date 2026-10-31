@@ -25,7 +25,7 @@ static uint32_t cff_sfnt_uint(const unsigned char *p) {
     return (uint32_t)p[0] * 16777216u + (uint32_t)p[1] * 65536u + (unsigned)p[2] * 256u + p[3];
 }
 
-static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table) {
+int cupidimage_pdf_cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slice *table) {
     if (length < 12 || memcmp(data, "OTTO", 4))
         return 0;
     unsigned count = (unsigned)data[4] * 256 + data[5];
@@ -47,6 +47,9 @@ static int cff_sfnt_table(const unsigned char *data, size_t length, pdf_cff_slic
 size_t cupidimage_pdf_font_program_bytes(const pdf_font_program *program) {
     return program
                ? sizeof(*program) + program->length + program->gid_length +
+                     (program->recovered_glyph_ends
+                          ? (size_t)program->font.glyphs * sizeof(uint32_t)
+                          : 0) +
                      cupidimage_pdf_font_program_bytes(program->extended) +
                      (program->is_cff ? 65536 * sizeof(uint16_t) +
                                             program->cff.private_count * sizeof(pdf_cff_private) +
@@ -81,6 +84,7 @@ void cupidimage_pdf_font_program_free(pdf_font_program *program) {
         cupidimage_pdf_type1_free(&program->type1);
         free(program->bytes);
         free(program->gid_map);
+        free(program->recovered_glyph_ends);
         free(program);
     }
 }
@@ -96,8 +100,13 @@ pdf_font_program *cupidimage_pdf_font_program_select(pdf_font_program *program, 
 unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsigned code) {
     if (!program->cid)
         return code < 256 ? program->glyphs[code] : 0;
-    if (program->is_cff)
+    if (program->is_cff) {
+        /* ISO 32000-1 9.7.4.2: a name-keyed CFF descendant uses CID as GID,
+         * not as a charset SID or an encoded character code. */
+        if (!program->cff.top.cid)
+            return code < program->cff.chars.count ? code : 0;
         return code < 65536 ? program->cff.selectors[code] : 0;
+    }
     unsigned glyph = code;
     if (program->gid_map)
         glyph = (size_t)code * 2 + 1 < program->gid_length
@@ -109,6 +118,8 @@ unsigned cupidimage_pdf_font_program_glyph(const pdf_font_program *program, unsi
 int cupidimage_pdf_font_program_has_glyph(const pdf_font_program *program, unsigned code) {
     if (program->is_type1)
         return code < 256 && program->glyphs[code] < program->type1.glyph_count;
+    if (program->is_cff && program->cid && !program->cff.top.cid)
+        return code < program->cff.chars.count;
     if (program->is_cff)
         return !code || (program->cid ? code < 65536 && program->cff.selectors[code] != 0
                                       : code < 256 && program->glyphs[code] != 0);
@@ -278,13 +289,18 @@ int cupidimage_pdf_parse_font_program(const unsigned char *data, size_t size,
                                        parts[1]) ||
             !ps_pdf_encoding(data, size, view, program))
             goto done;
-    } else if (cff_stream || cff_sfnt_table(program->bytes, program->length, &cff)) {
+    } else if (cff_stream || cupidimage_pdf_cff_sfnt_table(program->bytes, program->length, &cff)) {
         program->is_cff = 1;
-        if (!cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length) ||
-            program->cff.top.cid != (unsigned)program->cid ||
+        if (!(program->cid ? cupidimage_pdf_cff_init_subset(&program->cff, cff.data, cff.length)
+                           : cupidimage_pdf_cff_init(&program->cff, cff.data, cff.length)) ||
+            (program->cff.top.cid && !program->cid) ||
             (!program->cid && !ps_pdf_encoding(data, size, view, program)))
             goto done;
-    } else if (!cupidimage_pdf_tt_init(&program->font, program->bytes, program->length))
+    } else if (!(program->cid
+                     ? cupidimage_pdf_tt_init_subset(&program->font, program->bytes,
+                                                     program->length,
+                                                     &program->recovered_glyph_ends)
+                     : cupidimage_pdf_tt_init(&program->font, program->bytes, program->length)))
         goto done;
     if (program->cid && !program->is_cff && !program->is_type1) {
         present = cupidimage_pdf_optional_value(data, size, owner, "CIDToGIDMap", &map);

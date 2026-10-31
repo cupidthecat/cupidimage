@@ -227,7 +227,7 @@ def main():
                         path_commands.append('h');first=True
                 geometry=' '.join(path_commands)
                 glyph=f'BT /F 18 Tf MODE Tr 20.1875 30.1875 Td ({char}) Tj ET'
-                assert render('1 w '+glyph.replace('MODE','1'))==render('1 w '+geometry+' S'),'hinted stroke outline differs'
+                assert render('1 w '+glyph.replace('MODE','1'),aa=0)==render('1 w '+geometry+' S',aa=0),'binary hinted stroke outline differs'
                 fill='1 0 0 rg 0 0 120 90 re f'
                 assert render(glyph.replace('MODE','7')+' '+fill)==render(geometry+' W n '+fill),'hinted clip outline differs'
             if freetype.version() >= (2,13,3):

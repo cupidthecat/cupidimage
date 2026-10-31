@@ -19,7 +19,8 @@ nonzero status.
 | `--sixel-dither MODE` | `none`, `floyd-steinberg`, `atkinson`, or `ordered`; default Floyd–Steinberg. |
 | `--svg-time seconds` | Render a sampled SVG animation time instead of autoplay. |
 | `--pdf-page number` | Render one PDF page, numbered from 1. |
-| `--pdf-text-aa` | Enable grayscale outline text fills. Stroke and clip coverage remain binary; hinting is unchanged. |
+| `--pdf-graphics-aa` | Enable grayscale vector fills and strokes, Type 3 paths and geometric clipping edges. |
+| `--pdf-text-aa` | Enable grayscale outline text fills, strokes and geometric clipping edges. Hinting is unchanged. |
 | `--pdf-tt-hinting` | Execute the native legacy TrueType instruction profile. Off by default. |
 | `--pdf-cff-hinting` | Enable bounded CFF outline hinting without stem darkening. Off by default; applies only to CFF programs. |
 | `--pdf-type1-hinting` | Enable bounded Type 1 outline hinting without stem darkening. Off by default. |

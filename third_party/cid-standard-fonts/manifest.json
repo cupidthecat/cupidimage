@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/trueroad/HaranoAjiFonts",
+  "revision": "f0f692c1e39593751a4796082fa5232185d91ecd",
+  "files": [
+    {
+      "face": "gothic",
+      "file": "HaranoAjiGothic-Regular.otf",
+      "size": 4759400,
+      "sha256": "fb846296a5af628d5eaa5ac28838723a099b421c9b4f0d871413d2ad41893518",
+      "registry": "Adobe",
+      "ordering": "Japan1",
+      "supplement": 7,
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'."
+    },
+    {
+      "face": "mincho",
+      "file": "HaranoAjiMincho-Regular.otf",
+      "size": 6422896,
+      "sha256": "66ef3270e68690612e8bf982acfad0e8b40212ce64661cce2bb6d3a98ac84717",
+      "registry": "Adobe",
+      "ordering": "Japan1",
+      "supplement": 7,
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'."
+    }
+  ]
+}

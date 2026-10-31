@@ -3,10 +3,11 @@
 import json
 
 OPTIONS = (
-    ('--pdf-text-aa', 'text_antialias', 'Enable grayscale PDF outline text fills'),
+    ('--pdf-text-aa', 'text_antialias', 'Enable grayscale PDF outline text and clipping edges'),
     ('--pdf-tt-hinting', 'truetype_hinting', 'Enable the native TrueType hinting profile'),
     ('--pdf-cff-hinting', 'cff_hinting', 'Enable the bounded CFF hinting profile'),
     ('--pdf-type1-hinting', 'type1_hinting', 'Enable the bounded Type 1 hinting profile'),
+    ('--pdf-graphics-aa', 'graphics_antialias', 'Enable grayscale PDF vector painting and clipping edges'),
 )
 
 
@@ -18,7 +19,7 @@ def add_pdf_options(parser):
 def pdf_option_key_values(values):
     # Keep earlier report profiles compatible when the new option is off.
     return {key: bool(value) for key, value in values.items()
-            if key != 'type1_hinting' or value}
+            if key not in ('type1_hinting', 'graphics_antialias') or value}
 
 
 def pdf_option_values(args):

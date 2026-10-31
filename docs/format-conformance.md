@@ -59,7 +59,7 @@ with per-item status and evidence. It is not a completed standards audit.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, tiling patterns, seven shading types, RGB/gray groups and text knockout | Font fidelity/substitution, image interpolation, color management, further transparency spaces, annotations, optional content, JPX/JBIG2 and full-document qualification |
+| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, stored annotation appearances, default layer visibility, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, appearance generation, interactive layer configuration, remaining JPX modes, JBIG2 and full-document qualification |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -157,7 +157,7 @@ nested decoys. A narrow compatibility repair accepts generation 65536 only on
 the unused object-zero free-list sentinel; live entries and other generation
 overflows remain errors. The normative free-list generation is still 65535.
 
-These changes follow [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf), especially object syntax, stream boundaries, cross-reference tables, and marked-content property lists. They do not implement optional-content visibility, complete fonts, or all image filters.
+These changes follow [ISO 32000-1](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf), especially object syntax, stream boundaries, cross-reference tables, and marked-content property lists. Parsing alone does not establish rendering support. [Default optional-content visibility](pdf-optional-content.md) now has separate implementation and tests; complete fonts and all image filters remain unfinished.
 
 In a targeted all-page run on the same 225 cached corpus files, document errors
 fell from 114 to 8 and rendered pages increased from 70 to 103. Additional image
@@ -189,8 +189,9 @@ prediction. LZW tests cover both EarlyChange values, all code widths, table
 saturation, resets, and the next-code special case. Chained predictor tests cover
 1/2/4/8/16-bit gray, RGB, and CMYK samples. CCITT fax decoding adds Group 3, mixed
 Group 3, and Group 4 one-bit images, including bounded damaged-row recovery.
-JPX, JBIG2, fax uncompressed extension modes, and indirect parameter objects in
-general chains remain separate work.
+JPX image streams have [bounded native sample, container, color and mask support](pdf-jpeg2000.md).
+Full JPX coverage, JBIG2 and fax uncompressed extension modes remain separate work.
+Image filter names and applicable parameter dictionaries can be indirect.
 
 ## Graphics-state opacity and blend modes
 
@@ -380,12 +381,15 @@ Binary Type 1 font streams now use their decoded outlines instead of bitmap
 fallback glyphs. The font parser and charstring interpreter are separate modules.
 The tests cover encryption, readstring boundaries, encoding overrides, flex and
 accent composition. MacExpertEncoding is included for Type 1 and CFF fonts.
-Hinting, custom OtherSubrs and general PostScript font-program execution remain
-open; the current implementation does not claim complete Type 1 fidelity.
+Bounded native hinting is available through its explicit option. Custom OtherSubrs
+and general PostScript font-program execution remain open; the implementation
+does not claim complete Type 1 fidelity.
 
-A space-only clipping regression was confirmed against an independent renderer.
-The text object now retains an empty glyph clip and intersects it at ET. Type 3
-fonts retain their separate text-rendering-mode behavior.
+Glyphs without outlines do not change the clipping path. A nonempty outline
+that collapses under its transform can still create an empty clip. Selected
+outline geometry, not a character-code shortcut, decides which case applies.
+Type 3 fonts retain their separate text-rendering-mode behavior. Opt-in
+[fractional clipping](pdf-clipping.md) has its own geometry and ownership tests.
 
 ## Standard PDF font advances
 
@@ -687,3 +691,61 @@ Decode, color-key and Matte arrays accept indirect numeric members. Shared
 dictionary lookup preserves both the document index and shading stream bodies.
 The former undefined-soft-mask rejection fixture now checks the required null
 semantics instead. The remaining optional-value audit is still tracked in #48.
+
+## Calibrated and ICC group conversion
+
+CalGray, CalRGB and bidirectional one-/three-component ICC matrix/TRC and lookup profiles now
+retain native components through transparency groups. Tests cover inverse curves,
+wide-gamut transport, pattern cache encodings, Type 3 glyphs, intent state and CIE
+luminosity masks. ICC multiprocess destination pipelines, output profiles and
+black-point compensation remain unfinished. See [blending colors](pdf-blending-colors.md)
+for the exact limits and focused evidence. The owned fixture is decoded-unverified.
+
+Antialiased axis-aligned Form bounding boxes are cropped to the canvas before
+clip geometry admission. This preserves visible fractional edges without raising
+the geometry coordinate limit. Rotated or sheared oversized boundaries are not
+covered by that optimization. Three new cases bring the fractional clipping
+suite to 85 page checks and 664 allocation-failure checks.
+
+## Four-component groups and ink conversion
+
+DeviceCMYK and supported bidirectional ICC CMYK groups retain K through all 16
+blend modes, group opacity, text, images and patterns. BG/BG2 and UCR/UCR2 now
+use the native PDF function engine for DeviceRGB-to-DeviceCMYK conversion,
+including precedence, page-default reset and state restoration. Gray/RGB surfaces
+retain their previous memory cost; four-component groups and cache growth have
+separate allocation checks. See [CMYK blending](pdf-cmyk-blending.md).
+
+The owned CMYK fixture remains decoded-unverified. Native component equations
+and selected page interactions have focused evidence; output transfer functions,
+overprint, physical device profiles and full-document parity remain unfinished.
+The feature inventory now records BG/UCR as partial support for its combined
+transfer-function requirement, rather than treating that entire row as missing.
+
+## Embedded CID subset compatibility
+
+The CID loader now has bounded recovery for unordered TrueType locations and a
+missing glyph-zero CFF selector in a single-dictionary font. Existing strict
+entry points still reject those nonconforming structures. Owned fixtures retain
+exact glyph geometry and pixel expectations, including cache ownership and
+allocation failures. The two original pages render but still differ from the
+independent rasters. This is compatibility work, not proof of complete font
+conformance. See [subset-font recovery](pdf-subset-fonts.md).
+
+## Supplied annotation appearances
+
+Normal appearance streams and AS-selected widget states now render after page
+content. BBox/Matrix mapping, screen visibility, default layer state, NoRotate and
+appearance transparency have focused tests. Each appearance starts from the
+initial graphics state and shares page resource budgets. Missing appearances are
+not generated. See [annotation appearances](pdf-annotations.md) for remaining form,
+interaction and rendering gaps. A visible redaction or signature appearance does
+not apply redaction or validate a signature.
+
+## Name-keyed CFF descendants
+
+Type 0 PDF fonts now accept name-keyed CFF descendants and use CIDs directly as
+CharStrings indices, as required by ISO 32000-1/2, 9.7.4.2. CID-keyed programs
+continue to use their charset mapping. PDF metrics, notdef handling and optional
+extraction metadata remain separate from glyph selection. See [CFF binding](pdf-cff-bindings.md)
+for the focused tests and the remaining pixel differences in sampled documents.

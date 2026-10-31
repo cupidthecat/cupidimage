@@ -9,7 +9,8 @@ placement, gaps, overlaps, clipping and transparency. Shading patterns reuse the
 Normal-blended cells can be rendered once and repeated. Colored cells and shading
 patterns keep double-precision color, shape and alpha, with a byte image mirror.
 Their definitions and initial state are retained so a cache can be rebuilt when
-painting moves between RGB and grayscale groups. Source CMYK values are converted
+painting moves between different group color encodings, including gray spaces
+with different transfer curves. Source CMYK values are converted
 directly into the destination space during that rebuild. Uncolored cells use the
 caller's native device color when the cache is painted. Color-setting operators
 and ordinary color images are not permitted in an uncolored definition.
@@ -44,7 +45,8 @@ must not be applied twice where the shading covers its background.
 ## Bounds and remaining work
 
 Pattern definitions, cached cells and per-object results share the 64 MiB pattern
-cache budget. Colored caches and per-object surfaces use 44 bytes per pixel plus
+cache budget. Colored caches and per-object surfaces use 44 bytes per pixel for gray/RGB or
+52 for CMYK, plus
 their descriptors; uncolored caches use 20 bytes per pixel. A per-object surface
 also consumes the shared transparency budget while it is being evaluated.
 The per-object surface is released when that paint operation ends.

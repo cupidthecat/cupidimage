@@ -150,8 +150,9 @@ now renders unmodified. It still differs from the primary rasterizer in 7.664% o
 color channels, with mean absolute error 0.26949. Its valid single-element Pattern
 color-space array is also covered by the generated tests.
 
-The original `bug1703683_page2_reduced.pdf` remains blocked by its unsupported
-CMYK page group. Its DeviceN content has not been requalified as a complete page. Diagnostic wrappers
+The original `bug1703683_page2_reduced.pdf` now passes CMYK group admission
+and its earlier color-function failures, but a compound vector path exceeds the
+current segment limit. It has not been qualified as a complete page. Diagnostic wrappers
 around its two DeviceCMYK tensor objects render, with differing-channel fractions
 of 5.29% and 0.212%. Those isolated checks are not passes for the original page.
 
@@ -179,3 +180,16 @@ ranges before interpolation, as triangle meshes do. Lab lookup bytes therefore
 retain signed a/b ranges rather than being treated as normalized device values.
 The DeviceN tests compare both patch families against direct Lab colors; the owned
 Indexed Lab patch asset also has an analytic neutral-gray reference.
+
+## Visible color work
+
+Clipped shading samples no longer evaluate color or tint functions that cannot
+affect the output. The scan is restricted to conservative clip bounds. Each
+scanned pixel still consumes a work unit; visible
+samples retain the existing function and calculator costs. Other painting paths
+also skip color conversion when the compositor will discard the pixel.
+The memory and work budgets are unchanged. See [group work](pdf-group-work.md)
+for retained-limit and pixel regressions.
+
+See [bounded rendering work](pdf-dense-paths.md) for clip-bound scans, retained
+limits and the repeated-shading fixture.

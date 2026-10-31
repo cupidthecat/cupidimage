@@ -64,8 +64,8 @@ typedef struct cupidimage_tga_metadata {
 } cupidimage_tga_metadata;
 
 typedef struct cupidimage_pdf_options {
-    /* 0 retains center-point text fill; 1 enables grayscale outline coverage.
-     * Stroke and clip coverage remain binary. Font hinting is separate. */
+    /* 0 retains binary text coverage; 1 enables grayscale outline fills/strokes.
+     * Geometric clips use fractional coverage. Font hinting is separate. */
     int text_antialias;
     /* 1 enables the bounded native legacy TrueType instruction profile. */
     int truetype_hinting;
@@ -73,6 +73,8 @@ typedef struct cupidimage_pdf_options {
     int cff_hinting;
     /* 1 enables bounded Type 1 blue-zone/stem hinting without stem darkening. */
     int type1_hinting;
+    /* 1 enables grayscale path fills/strokes, including Type 3 glyph graphics. */
+    int graphics_antialias;
 } cupidimage_pdf_options;
 
 typedef struct cupidimage_svg_options {

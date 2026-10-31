@@ -76,8 +76,10 @@ color-mapped/RGB/grayscale; TGA 2.0 metadata + thumbnail + gamma/color correctio
 
 PDF pages support text positioning and clipping, unhinted TrueType/CFF/Type 1
 outlines, Type 3 glyph programs, standard-font substitutes and horizontal/vertical
-CID metrics. `--pdf-text-aa` enables grayscale outline fills; stroke and clip
-coverage remain binary. `--pdf-tt-hinting` separately enables the native legacy
+CID metrics. `--pdf-text-aa` enables grayscale outline fills, strokes and
+[geometric clipping edges](pdf-clipping.md). `--pdf-graphics-aa` enables
+[vector fills and strokes](pdf-graphics-coverage.md), including Type 3 paths.
+`--pdf-tt-hinting` separately enables the native legacy
 TrueType profile. Paths, styled strokes, forms, tiling patterns and all seven shading
 geometries share the graphics pipeline. RGB/gray transparency groups, text
 knockout and graphics-state soft masks are implemented within the limits below.
@@ -87,9 +89,10 @@ DCT streams, filter chains, Decode arrays, explicit masks and soft masks. Image
 placement uses the current affine transform. Pages honor inherited MediaBox and
 CropBox rectangles, nonzero origins and quarter-turn rotation.
 
-Complete font fidelity, image interpolation, color management, additional
-transparency spaces, annotations, optional-content visibility and several image
-filters remain unfinished. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
+Complete font fidelity, wider image resampling, color management, additional
+transparency spaces, annotation appearance generation, interactive layer controls
+and several image filters remain unfinished. Stored [annotation appearances](pdf-annotations.md)
+and [default layer visibility](pdf-optional-content.md) are implemented. The [PDF font](pdf-fonts.md), [image](pdf-images.md),
 [shading](pdf-shading.md), [pattern](pdf-patterns.md), [object](pdf-objects.md) and
 [transparency](pdf-transparency.md) guides describe the implemented paths and gaps.
 
@@ -114,7 +117,7 @@ Run the generated PDF page regressions with Python 3:
     make test-pdf-pages
 
 PDF image XObjects use the page's Resources dictionary, including inherited and
-indirect resource dictionaries. Images use nearest-neighbor sampling. Flate
+indirect resource dictionaries. Images default to nearest-neighbor sampling and honor Interpolate with bilinear sampling. Flate
 images accept predictor 1 (none), 2 (TIFF), and 10-15 (PNG), with 1/2/4/8/16-bit samples.
 Prediction follows each filter stage's declared row layout and defaults.
 The decoded sample data is limited to 64 MiB per image.
@@ -127,7 +130,9 @@ packed/16-bit prediction; each filter reads only its own parameters. The current
 DCT path supports 8-bit Huffman baseline/extended sequential/progressive frames
 and arithmetic sequential/progressive frames. Sampling factors run from one
 through four, with separate or mixed sequential component scans. Remaining DCT
-applicability questions, JPX and JBIG2 remain open. See [PDF images](pdf-images.md) for the pipeline,
+applicability questions and JBIG2 remain open. [JPXDecode](pdf-jpeg2000.md) now
+paints native JPEG 2000 samples, palettes, embedded alpha and selected color spaces;
+its remaining baseline and extension gaps are documented separately. See [PDF images](pdf-images.md) for the pipeline,
 checks and limits.
 Drawing an invalid or unsupported XObject returns a load error.
 
@@ -140,8 +145,9 @@ Supported embedded TrueType, CFF and Type 1 programs use their outlines. See [PD
 
 Forms are limited to 16 nesting levels, 4096 combined form/shading invocations, and 64 MiB of combined
 decoded form content per page, counting repeated invocations. Recursive and
-external-reference forms are rejected. Isolated and non-isolated, RGB/gray transparency
-groups are supported; other group configurations remain unsupported. See
+external-reference forms are rejected. Supported isolated and non-isolated
+transparency groups include device gray/RGB/CMYK, calibrated gray/RGB and
+bidirectional ICC spaces. See
 [PDF transparency](pdf-transparency.md) for compositing and memory limits.
 
 Run the generated form checks with Python 3:
@@ -152,9 +158,11 @@ Path clipping supports `W` (nonzero winding) and `W*` (even-odd). The clip takes
 effect after the path's painting operator, including `n`, and intersects the
 current clip. It applies to paths, text, images, and nested forms. `q` and `Q`
 save and restore the clip. Path coordinates retain their placement when the
-transformation matrix changes. Clipping samples pixel centers without antialiasing.
+transformation matrix changes. The default profile samples pixel centers. The
+text or graphics antialiasing option enables geometric fractional clipping; see
+[dense paths and clipping work](pdf-dense-paths.md).
 
-Each page allows 4096 clip operations, 4096 segments per clipping path, 32 saved
+Each page allows 4096 clip operations, 65,536 segments per clipping path, 32 saved
 graphics states, and 64 MiB of live clipping masks. A shared budget limits clipping
 to 268,435,456 pixel-edge tests per page. Documents exceeding these limits return
 a load error.
@@ -210,7 +218,9 @@ Explicit Mask image streams support one-bit stencils. DeviceGray SMask images
 support 1/2/4/8/16-bit samples, Decode arrays, raw/Flate streams, and supported
 predictors. Masks can have different dimensions from the parent image and are
 sampled independently over its unit square. Image sampling remains nearest-neighbor;
-Interpolate is not implemented.
+`Interpolate true` selects the [bilinear image profile](pdf-image-interpolation.md);
+nearest sampling remains the default. Minification area filters and image-boundary
+antialiasing remain unfinished.
 
 SMask takes precedence over Mask. A Matte array removes preblending in the parent
 color space before color conversion. Matte masks must have the same dimensions as
@@ -263,9 +273,12 @@ The tests compare analytic pixels and independent raster output, including blend
 endpoint cases, state restoration, and mask/opacity combinations.
 
 Pages render as isolated transparency groups and composite onto white only
-after their content finishes. Their Group dictionary selects DeviceRGB or
-DeviceGray; RGB is the default. Form groups also support these spaces. Knockout and non-knockout groups and graphics-state Alpha/Luminosity masks are
-supported. CMYK/CIE/ICC group spaces and overprinting remain incomplete. Text objects
+after their content finishes. Their Group dictionary selects device RGB, gray or CMYK, calibrated
+spaces, or supported bidirectional ICC profiles; RGB is the default. Form groups
+use the same spaces. Knockout and non-knockout groups and graphics-state
+Alpha/Luminosity masks are supported.
+ICC multiprocess destination transforms and overprinting remain incomplete.
+See [blending colors](pdf-blending-colors.md). Text objects
 honor TK, with true as the default. See [PDF transparency](pdf-transparency.md)
 for mask precedence and group limits. Stroke styling is described below.
 
@@ -324,9 +337,12 @@ renderer applies shading Domain and Extend values, BBox, the current transform,
 path/form clipping, opacity, and blend mode. Numeric arrays and exponents may
 be indirect objects. Gray functions can use the default C0/C1 values.
 
-Each page has a shared budget of 128 million color-function evaluations, including
-nested forms and stitched/component functions. Function trees are limited to
-64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting. Unknown shading or function types return an error rather than
+Each page has 134,217,728 function-work units, shared by nested forms and
+stitched/component functions. Function trees are limited to
+64 nodes, 32 pieces per stitch, and 16 levels of reference/structure nesting.
+The first and last stitching intervals may collapse to their domain endpoints;
+selection and Encode mapping follow ISO 32000-2 section 7.10.4. Interior bounds
+still increase strictly. Unknown shading or function types return an error rather than
 silently leaving a blank area. Cubic sampled interpolation and color-managed
 shading spaces remain unsupported.
 
@@ -401,7 +417,8 @@ transforms and compositing. Device and named resource colour spaces are
 supported, as are Indexed palettes and Decode arrays. Dictionary parsing is
 limited to 64 KiB, 128 entries and 16 nested containers; image data is bounded
 at 64 MiB. Unknown inline keys are ignored as required by ISO 32000-1 section
-8.9.7. This does not add image interpolation or the remaining colour spaces.
+8.9.7. Image interpolation has a separate [sampling profile](pdf-image-interpolation.md);
+the remaining colour spaces are still incomplete.
 
 ## PDF text state and positioning
 
@@ -578,3 +595,12 @@ per collected font table. Allocations are released on metadata failure and after
 rendering.
 
 Embedded program details, limits and tests are in [PDF fonts and text](pdf-fonts.md).
+
+## PDF optional content
+
+The document's default optional-content configuration controls text, path, image
+and Form painting. Hidden sections retain graphics-state changes, clipping and
+text advances. OCG identity, OCMD policies and nested visibility expressions have
+bounded native implementations. Interactive layer controls and automatic usage
+adjustments remain separate work. See [optional content](pdf-optional-content.md)
+for the static rendering profile, limits and verification.

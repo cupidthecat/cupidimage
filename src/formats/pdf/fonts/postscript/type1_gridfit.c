@@ -15,20 +15,8 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
         trace->count > 65536 || (trace->count && !trace->events) ||
         (trace->diagnostics & ~(PDF_T1_HINT_BAD_WIDTH | PDF_T1_HINT_COUNTER_DATA)))
         return 0;
-    /* This profile uses blue zones, shift/fuzz/scale and LanguageGroup. It does
-     * not infer values for unused or unresolved stem-snap/darkening fields. */
-    const unsigned fields = (1u << PDF_PS_BLUE_VALUES) | (1u << PDF_PS_OTHER_BLUES) |
-                            (1u << PDF_PS_FAMILY_BLUES) | (1u << PDF_PS_FAMILY_OTHER_BLUES) |
-                            (1u << PDF_PS_BLUE_SCALE) | (1u << PDF_PS_BLUE_SHIFT) |
-                            (1u << PDF_PS_BLUE_FUZZ) | (1u << PDF_PS_LANGUAGE_GROUP);
-    if (private_hints->invalid & fields)
+    if (!cupidimage_pdf_ps_hint_profile(private_hints, selected))
         return 0;
-    *selected = *private_hints;
-    selected->invalid = 0;
-    selected->counts[4] = selected->counts[5] = 0;
-    memset(selected->arrays[4], 0, sizeof(selected->arrays[4]));
-    memset(selected->arrays[5], 0, sizeof(selected->arrays[5]));
-    selected->scalars[3] = selected->scalars[4] = selected->scalars[5] = selected->scalars[7] = 0;
     double origin[2] = {size->origin_x / 65536.0, size->origin_y / 65536.0};
     *stem_count = 0;
     for (unsigned i = 0; i < trace->count; i++) {

@@ -82,10 +82,17 @@ def main():
             assert render(data,'1') != render(data,'0')
             render(data,'2',3)
             render(data,'-1',3)
-            # Stroke-only, invisible and clip-only modes do not gain fill coverage.
-            for mode in (1,3,5,7):
+            # Invisible and clip-only modes do not gain painted coverage.
+            for mode in (3,7):
                 data=MAKERS[kind](f'BT /F 30 Tf {mode} Tr 20 30 Td (A) Tj ET')
                 assert render(data,'1') == render(data,'0')
+            # Stroke modes gain fractional edges without filling the glyph interior.
+            for mode in (1,5):
+                data=MAKERS[kind](f'BT /F 30 Tf {mode} Tr 20 30 Td (A) Tj ET')
+                aa=render(data,'1')
+                assert aa != render(data,'0')
+                center=(68*WIDTH+36)*4
+                assert aa[center:center+3] == b'\xff'*3
             for mode in (0,2):
                 a=MAKERS[kind](f'1 0 0 rg BT /F 30 Tf {mode} Tr 20 30 Td (A) Tj ET')
                 b=MAKERS[kind](f'1 0 0 rg BT /F 30 Tf {mode+4} Tr 20 30 Td (A) Tj ET')
@@ -155,7 +162,7 @@ def main():
                 assert actual==expected,(kind,size,matrix,sum(a!=b for a,b in zip(actual,expected)))
                 references+=1
     print(f'PDF text antialias: {checks} page checks; {allocations} allocation/cache checks; '
-          f'{references} independent curve bitmaps; stroke and clip coverage remain binary')
+          f'{references} independent curve bitmaps; fractional clipping has separate geometry tests')
 
 
 if __name__=='__main__':

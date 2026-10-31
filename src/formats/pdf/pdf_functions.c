@@ -266,7 +266,8 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
             return -1;
         double previous = node->domain[0];
         for (int i = 0; i < node->count - 1; i++) {
-            if (node->bounds[i] <= previous || node->bounds[i] > node->domain[1] ||
+            if (node->bounds[i] < previous || (i && node->bounds[i] == previous) ||
+                node->bounds[i] > node->domain[1] ||
                 (node->bounds[i] == node->domain[1] && i != node->count - 2))
                 return -1;
             previous = node->bounds[i];
@@ -414,8 +415,10 @@ static int pdf_function_evaluate_node(const pdf_function_tree *tree, int index, 
             out[i] = node->c0[i] + power * (node->c1[i] - node->c0[i]);
     } else {
         int part = 0;
-        while (part < node->count - 1 && x[0] >= node->bounds[part])
-            part++;
+        /* ISO 32000-2 7.10.4 closes a degenerate first interval at both ends. */
+        if (!(node->count > 1 && node->bounds[0] == node->domain[0] && x[0] == node->domain[0]))
+            while (part < node->count - 1 && x[0] >= node->bounds[part])
+                part++;
         double low = part ? node->bounds[part - 1] : node->domain[0];
         double high = part < node->count - 1 ? node->bounds[part] : node->domain[1];
         double mapped = high == low ? node->encode[part * 2]

@@ -1,4 +1,5 @@
 #include "fonts/cmap.h"
+#include "fonts/substitute/cid_encoding.h"
 #include "pdf_render_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -47,9 +48,10 @@ void cupidimage_pdf_text_advance(pdf_render_state *st, double distance) {
 /* The fallback glyph remains an 8x8 bitmap. Positioning and text-state
    transforms are applied independently of that temporary glyph representation. */
 static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
-    if (!st->img || !st->img->rgba || st->gs.text_mode == 3)
+    if (!st->img || !st->img->rgba || st->gs.text_mode == 3 ||
+        (st->optional_hidden && st->gs.text_mode < 4))
         return;
-    int mode = st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
+    int mode = st->optional_hidden ? 3 : st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     const uint8_t *glyph = cupidimage_pdf_font8x8_basic[c < 128 ? c : '?'];
     unsigned ink = 0;
     for (int row = 0; row < 8; row++)
@@ -92,6 +94,31 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     }
     if (det == 0)
         return;
+    if (clipping && cupidimage_pdf_clip_antialias(st)) {
+        for (int row = 0; row < 8; row++)
+            for (int first = 0; first < 8;) {
+                if (!(glyph[row] & (1u << first))) {
+                    first++;
+                    continue;
+                }
+                int end = first + 1;
+                while (end < 8 && (glyph[row] & (1u << end)))
+                    end++;
+                double gx[4] = {first, end, end, first}, gy[4] = {row, row, row + 1, row + 1},
+                       px[4], py[4];
+                for (unsigned i = 0; i < 4; i++) {
+                    px[i] = (m[0] * gx[i] + m[2] * gy[i] + m[4] - st->page_x0_pts) * ratio;
+                    py[i] = (st->page_top_pts - m[1] * gx[i] - m[3] * gy[i] - m[5]) * ratio;
+                }
+                for (unsigned i = 0; i < 4; i++)
+                    if (!cupidimage_pdf_clip_append_edge(st, px[i], py[i], px[(i + 1) % 4],
+                                                         py[(i + 1) % 4])) {
+                        st->image_failed = 1;
+                        return;
+                    }
+                first = end;
+            }
+    }
     double min_x = st->img->width, max_x = 0, min_y = st->img->height, max_y = 0;
     for (int corner = 0; corner < 4; corner++) {
         double gx = (corner & 1) ? 8 : 0, gy = (corner & 2) ? 8 : 0;
@@ -171,7 +198,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
         return;
     }
     pdf_paint_group combined = {0};
-    if (area && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined)) {
+    if (area && mode == 2 && !cupidimage_pdf_fill_stroke_begin(st, &combined, 0)) {
         free(stroke);
         return;
     }
@@ -326,6 +353,7 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         double width, advance_y = 0, origin_x = 0, origin_y = 0;
         uint32_t cp;
         unsigned encoded = bytes[before], glyph = 0;
+        int selected_glyph = 0;
         if (font && font->cid) {
             size_t used;
             uint32_t source;
@@ -338,7 +366,15 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
                 cupidimage_set_err(st->error, st->error_capacity, "pdf: CMap work limit exceeded");
                 break;
             }
-            if (font->program && !cupidimage_pdf_font_program_has_glyph(font->program, cid)) {
+            if (font->program && font->cid->substitute_encoding) {
+                glyph = valid
+                            ? cupidimage_pdf_cid_substitute_glyph(font->program,
+                                                                  font->cid->substitute_encoding,
+                                                                  source, used, font->cid->vertical)
+                            : 0;
+                selected_glyph = 1;
+            } else if (font->program &&
+                       !cupidimage_pdf_font_program_has_glyph(font->program, cid)) {
                 cid = notdef;
                 if (!cupidimage_pdf_font_program_has_glyph(font->program, cid))
                     cid = 0;
@@ -369,7 +405,8 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
             }
         }
         if (font && font->program) {
-            glyph = cupidimage_pdf_font_program_glyph(font->program, encoded);
+            if (!selected_glyph)
+                glyph = cupidimage_pdf_font_program_glyph(font->program, encoded);
             if (!font->cid && !font->has_widths && !font->has_missing_width) {
                 if (!st->form_budget->glyph_calls_left ||
                     !cupidimage_pdf_font_program_advance(
@@ -384,8 +421,9 @@ void cupidimage_pdf_render_text_string(pdf_render_state *st, const char *text, s
         }
         unsigned char draw = pdf_codepoint_to_ascii(cp);
         if (font && font->type3) {
-            int paints = st->gs.text_mode != 3 && st->gs.font_size_pts != 0 &&
-                         st->gs.horizontal_scale != 0 && font->type3->glyphs[bytes[before]];
+            int paints = !st->optional_hidden && st->gs.text_mode != 3 &&
+                         st->gs.font_size_pts != 0 && st->gs.horizontal_scale != 0 &&
+                         font->type3->glyphs[bytes[before]];
             if ((paints && !cupidimage_pdf_text_group_begin(st)) ||
                 !cupidimage_pdf_draw_type3_glyph(st, font, bytes[before]))
                 st->image_failed = 1;
