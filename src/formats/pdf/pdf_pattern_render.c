@@ -99,7 +99,7 @@ static int pdf_pattern_capture_surface(pdf_render_state *parent, pdf_pattern *pa
                                        pdf_transparency_group *group) {
     const size_t limit = 64u * 1024u * 1024u;
     size_t pixels = (size_t)group->image.width * group->image.height;
-    size_t bytes = group->bytes + sizeof(*group);
+    size_t bytes = group->bytes + group->storage.bytes + sizeof(*group);
     if (pixels > parent->clip_budget->tests_left || parent->patterns->bytes_used > limit ||
         bytes > limit - parent->patterns->bytes_used)
         return 0;
@@ -107,10 +107,16 @@ static int pdf_pattern_capture_surface(pdf_render_state *parent, pdf_pattern *pa
     for (size_t pixel = 0; pixel < pixels; pixel++) {
         double color[4] = {0}, alpha, shape;
         cupidimage_pdf_group_source(group, pixel, color, &alpha, &shape);
-        memcpy(group->color + pixel * group->channels, color, group->channels * sizeof(*color));
+        if (alpha > 0 || shape > 0) {
+            double *sample = cupidimage_pdf_group_storage_write(&group->storage, pixel);
+            if (!sample)
+                return 0;
+            memcpy(sample + 2, color, group->channels * sizeof(*color));
+        }
     }
     parent->patterns->bytes_used += bytes;
     parent->form_budget->transparency_bytes_live -= group->bytes;
+    cupidimage_pdf_group_storage_detach(&group->storage);
     pattern->surface_bytes = bytes;
     pattern->surface = group;
     group->parent = NULL;
@@ -123,8 +129,10 @@ static int pdf_pattern_shading_surface(pdf_render_state *parent, pdf_pattern *pa
     pdf_transparency_group *group = calloc(1, sizeof(*group));
     pdf_render_state *context = malloc(sizeof(*context));
     int ok = group && context;
-    if (ok)
+    if (ok) {
+        group->lazy_backdrop = 1;
         ok = cupidimage_pdf_group_surface(parent, group, 0, NULL, NULL);
+    }
     if (ok) {
         group->knockout = 1;
         *context = *parent;
@@ -154,10 +162,7 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
     size_t pixels = (size_t)parent->img->width * parent->img->height;
     if (parent->patterns->bytes_used > cache_limit ||
         cache_limit - parent->patterns->bytes_used < sizeof(pdf_transparency_group) ||
-        pixels >
-            (cache_limit - parent->patterns->bytes_used - sizeof(pdf_transparency_group)) /
-                (4 + (2 + (cupidimage_pdf_current_blend(parent)->colors.components == 4 ? 4 : 3)) *
-                         sizeof(double)))
+        pixels > (cache_limit - parent->patterns->bytes_used - sizeof(pdf_transparency_group)) / 4)
         return 0;
     if (pattern->shading)
         return pdf_pattern_shading_surface(parent, pattern);
@@ -191,8 +196,10 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
     pdf_font_table fonts;
     cupidimage_pdf_font_table_init(&fonts);
     int ok = group && child;
-    if (ok)
+    if (ok) {
+        group->lazy_backdrop = 1;
         ok = cupidimage_pdf_group_surface(parent, group, 0, NULL, NULL);
+    }
     if (ok)
         ok = cupidimage_pdf_collect_resource_fonts(parent->document, parent->document_size,
                                                    &pattern->definition, &fonts, parent->error,

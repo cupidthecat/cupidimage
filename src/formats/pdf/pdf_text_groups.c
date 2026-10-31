@@ -74,7 +74,7 @@ int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transpar
     st->clip_budget->tests_left -= pixels;
     for (unsigned y = group->top; y < group->bottom; y++)
         for (unsigned x = group->left; x < group->right; x++) {
-            double shape = group->shape[(size_t)y * group->image.width + x];
+            double shape = cupidimage_pdf_group_shape(group, (size_t)y * group->image.width + x);
             if (shape > 0)
                 cupidimage_pdf_paint_pixel(st, (int)x, (int)y, 0, shape);
         }

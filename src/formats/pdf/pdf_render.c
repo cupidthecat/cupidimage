@@ -121,7 +121,12 @@ void cupidimage_pdf_composite_pixel(pdf_render_state *st, int x, int y, uint8_t 
             st->image_failed = 1;
             return;
         }
-        cupidimage_pdf_group_paint(st->group, pixel, converted, alpha, shape, st->gs.blend_mode);
+        if (!cupidimage_pdf_group_paint(st->group, pixel, converted, alpha, shape,
+                                        st->gs.blend_mode)) {
+            st->image_failed = 1;
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: transparency sample storage exceeds limits");
+        }
         return;
     }
     if (st->shape_plane)
@@ -194,7 +199,12 @@ void cupidimage_pdf_composite_color(pdf_render_state *st, int x, int y, const do
             return;
     }
     if (st->group) {
-        cupidimage_pdf_group_paint(st->group, pixel, source, alpha, shape, st->gs.blend_mode);
+        if (!cupidimage_pdf_group_paint(st->group, pixel, source, alpha, shape,
+                                        st->gs.blend_mode)) {
+            st->image_failed = 1;
+            cupidimage_set_err(st->error, st->error_capacity,
+                               "pdf: transparency sample storage exceeds limits");
+        }
         return;
     }
     if (st->shape_plane)
@@ -1289,10 +1299,12 @@ int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stre
             }
             if (!strcmp(opbuf, "BI")) {
                 int ok = op_count == 0 && (!st->glyph_active || st->glyph_seen_metrics) &&
-                         cupidimage_pdf_draw_inline_image(st, stream, stream_len, &pos);
+                         cupidimage_pdf_draw_inline_image(st, stream, stream_len, &pos) &&
+                         !st->image_failed;
                 pdf_clear_operands(ops, &op_count);
                 if (!ok) {
-                    cupidimage_set_err(err, errcap, "pdf: invalid or unsupported inline image");
+                    if (err && errcap && !err[0])
+                        cupidimage_set_err(err, errcap, "pdf: invalid or unsupported inline image");
                     return 0;
                 }
                 continue;
@@ -1413,6 +1425,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     child->initial_gs = child->gs;
     child->initial_gs.soft_mask = NULL;
     child->initial_gs.clip = NULL;
+    glyph_group.lazy_backdrop = 1;
     if (!cupidimage_pdf_group_surface(st, &glyph_group, 0, NULL, NULL))
         goto done;
     child->group = &glyph_group;

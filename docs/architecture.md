@@ -173,10 +173,17 @@ Raw font metrics remain separate from component-inherited metrics and PDF overri
 storage operations, fixed-point arithmetic/rounding, graphics-state setters and
 axis-size preparation and projection-dependent CVT access, vector normalization, point zones, original design coordinates, movement/interpolation operators, exact line intersections, curve flags and
 prepared-state lifetimes. Instances own their mutable state but borrow immutable program
-bodies. This foundation is currently exercised by tests, not the page renderer;
-see [its scope and ownership rules](pdf-truetype-vm.md) before integrating hinting.
+bodies. The selected legacy profile is connected to PDF rendering through an
+explicit option; see [its scope and ownership rules](pdf-truetype-vm.md).
 `fonts/truetype_hint` connects the shared outline/component decoders to size preparation,
 phantom construction, bounded composite assembly and glyph execution. Its owned VM borrows the checked font's
 backing bytes; [the loader guide](pdf-truetype-loader.md) describes that lifetime and
 component state sharing. Its final affine adapter returns owned device-pixel
 points without altering the instruction state or PDF advances.
+
+## Transparency sample storage
+
+`src/formats/pdf/transparency/` owns bounded native sample blocks and their shared
+memory accounting. Rendering groups retain the page-sized RGBA view and composition
+rules. Accessors also support borrowed pattern-tile planes; deferred pattern
+surfaces transfer their storage charge when captured by the cache.

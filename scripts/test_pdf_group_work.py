@@ -34,8 +34,11 @@ def main():
             small=mask_page(size=(18,12),space=space)
             assert render(small)[2]==bytes((255,0,0,255))*(24*16)
             fault(small)
-        # Keeping the same memory limit still rejects a deeper CMYK stack.
-        render(mask_page(depth=6,space='/DeviceCMYK'),True)
+        # Untouched parent samples no longer reserve dense native planes.
+        w,h,pixels=render(mask_page(depth=6,space='/DeviceCMYK'))
+        assert pixels==bytes((255,0,0,255))*(w*h)
+        # Painting each ancestor before descending still exhausts the same cap.
+        render(mask_page(depth=6,space='/DeviceCMYK',materialize=True),True)
         for image,aa in itertools.product((False,True),(False,True)):
             data=clipped_color_page(image=image)
             w,h,pixels=render(data,aa=aa)
