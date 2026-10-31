@@ -53,11 +53,19 @@ typedef struct {
 } pdf_ps_hint_event;
 
 typedef struct {
+    unsigned segment; /* First of the two adjacent cubic segments. */
+    double depth;     /* Threshold in hundredths of a device pixel. */
+} pdf_ps_flex;
+
+typedef struct {
     pdf_ps_stem stems[96];
     unsigned stem_count, diagnostics;
     pdf_ps_hint_event *events;
     unsigned event_count, event_capacity;
+    pdf_ps_flex *flexes;
+    unsigned flex_count, flex_capacity;
 } pdf_ps_hint_program;
 
+int cupidimage_pdf_ps_flex_append(pdf_ps_hint_program *program, unsigned segment, double depth);
 void cupidimage_pdf_ps_hint_program_free(pdf_ps_hint_program *program);
 #endif

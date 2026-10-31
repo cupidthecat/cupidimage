@@ -28,6 +28,8 @@ static unsigned checks, failures;
         }                                                                                          \
     } while (0)
 
+#include "pdf_type1_flex_cases.inc"
+
 static int font_probe(int argc, char **argv) {
     if ((argc != 6 && argc != 7) || (argc == 7 && strcmp(argv[6], "--bitmaps")))
         return 1;
@@ -416,6 +418,7 @@ int main(int argc, char **argv) {
     work = 1000000;
     CHECK(!cupidimage_pdf_type1_page_shape(&font, 1, text_matrix, &work, &out, &fitted));
     CHECK(!fitted && !out.segments && !out.count && !live_count);
+    type1_flex_ownership();
     printf("Type 1 grid fitting: %u checks, %u failures\n", checks, failures);
     return failures != 0;
 }

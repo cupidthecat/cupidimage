@@ -73,7 +73,23 @@ void cupidimage_pdf_ps_hint_set(pdf_ps_private_hints *hints, unsigned field, con
         hints->invalid |= bit;
 }
 
+int cupidimage_pdf_ps_flex_append(pdf_ps_hint_program *program, unsigned segment, double depth) {
+    if (!program || !isfinite(depth) || fabs(depth) > 1e30 || program->flex_count == 32768)
+        return 0;
+    if (program->flex_count == program->flex_capacity) {
+        unsigned capacity = program->flex_capacity ? program->flex_capacity * 2 : 16;
+        pdf_ps_flex *next = realloc(program->flexes, (size_t)capacity * sizeof(*next));
+        if (!next)
+            return 0;
+        program->flexes = next;
+        program->flex_capacity = capacity;
+    }
+    program->flexes[program->flex_count++] = (pdf_ps_flex){segment, depth};
+    return 1;
+}
+
 void cupidimage_pdf_ps_hint_program_free(pdf_ps_hint_program *program) {
     free(program->events);
+    free(program->flexes);
     memset(program, 0, sizeof(*program));
 }

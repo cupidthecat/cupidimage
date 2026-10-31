@@ -15,9 +15,9 @@ def encrypt(data,key):
     return bytes(result)
 
 
-def fixture(glyphs=None,subrs=(b'\x0b',),len_iv=4,reader='RD',encoding='StandardEncoding',matrix='[.001 0 0 .001 0 0]',extra=b'',separator=b' ',iv_first=0,outer_encrypted=True):
+def fixture(glyphs=None,subrs=(b'\x0b',),len_iv=4,reader='RD',encoding='StandardEncoding',matrix='[.001 0 0 .001 0 0]',extra=b'',separator=b' ',iv_first=0,outer_encrypted=True,paint_type=0):
     if glyphs is None:glyphs=[('.notdef',b'\x8b\xf8\xec\x0d\x0e'),('A',b'\x8b\xf8\xec\x0d\x8b\x8b\x15\x0e')]
-    clear=('%!PS-AdobeFont-1.0: CupidShapes\n11 dict begin\n/FontName /CupidShapes def\n/FontType 1 def\n/PaintType 0 def\n/FontBBox [0 -200 1000 1000] readonly def\n/FontMatrix '+matrix+' readonly def\n/Encoding '+encoding+' def\ncurrentdict end\ncurrentfile eexec\n').encode()
+    clear=('%!PS-AdobeFont-1.0: CupidShapes\n11 dict begin\n/FontName /CupidShapes def\n/FontType 1 def\n/PaintType '+str(paint_type)+' def\n/FontBBox [0 -200 1000 1000] readonly def\n/FontMatrix '+matrix+' readonly def\n/Encoding '+encoding+' def\ncurrentdict end\ncurrentfile eexec\n').encode()
     body=b'dup /Private 10 dict dup begin\n/'+reader.encode()+b' {string currentfile exch readstring pop} executeonly def\n/ND {noaccess def} executeonly def\n/NP {noaccess put} executeonly def\n/password 5839 def\n/MinFeature {16 16} def\n/lenIV '+str(len_iv).encode()+b' def\n'+extra
     def encrypted(program):return program if len_iv<0 else encrypt((bytes([iv_first])+bytes(range(1,len_iv)) if len_iv else b'')+program,4330)
     body+=b'/Subrs '+str(len(subrs)).encode()+b' array\n'

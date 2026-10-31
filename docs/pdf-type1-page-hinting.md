@@ -74,10 +74,14 @@ The standalone core has separate complete-outline and glyph-bitmap comparisons.
 decoded-unverified. The comparison tools accept `--pdf-type1-hinting` and keep
 hinted ratings separate from unhinted ratings.
 
+Standard [flex calls](pdf-flex.md#type-1-flex) now retain their reference points
+and use the separate Type 1 selection and pixel-phase procedure. Unhinted
+outlines and PDF widths are unchanged.
+
 ## Remaining scope and references
 
 Computed PostScript dictionaries, inherited definer aliases, broader OtherSubrs,
-flex policy, stem darkening, synthetic bold, fractional private parameters and
+custom flex procedures, stem darkening, synthetic bold, fractional private parameters and
 larger fitting ranges still need work. These tests establish the selected profile,
 not complete Type 1 or PDF rendering conformance.
 
