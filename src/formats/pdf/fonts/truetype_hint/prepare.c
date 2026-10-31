@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "policy.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,6 +17,14 @@ int cupidimage_pdf_tt_hint_init(pdf_tt_hint *hint, const pdf_tt_font *font, int3
 int cupidimage_pdf_tt_hint_init_xy(pdf_tt_hint *hint, const pdf_tt_font *font, int32_t x_pixels,
                                    int32_t y_pixels, int32_t points, int grayscale,
                                    unsigned transform_flags, size_t budget) {
+    return cupidimage_pdf_tt_hint_init_profile(hint, font, x_pixels, y_pixels, points, grayscale,
+                                               transform_flags, PDF_TT_PROFILE_LEGACY, budget);
+}
+
+int cupidimage_pdf_tt_hint_init_profile(pdf_tt_hint *hint, const pdf_tt_font *font,
+                                        int32_t x_pixels, int32_t y_pixels, int32_t points,
+                                        int grayscale, unsigned transform_flags, unsigned profile,
+                                        size_t budget) {
     memset(hint, 0, sizeof(*hint));
     hint->font = *font;
     hint->glyph_budget = budget;
@@ -32,6 +41,10 @@ int cupidimage_pdf_tt_hint_init_xy(pdf_tt_hint *hint, const pdf_tt_font *font, i
         x_pixels = (x_pixels + 32) / 64 * 64;
         y_pixels = (y_pixels + 32) / 64 * 64;
     }
+    int full_hinting = 0;
+    if (profile == PDF_TT_PROFILE_MODERN &&
+        !cupidimage_pdf_tt_full_hinting(font, &budget, &full_hinting))
+        return cupidimage_pdf_tt_vm_fail(&hint->vm, PDF_TT_VM_BUDGET);
     unsigned count = (unsigned)(font->cvt.length / 2);
     int32_t *cvt = count ? malloc((size_t)count * sizeof(*cvt)) : NULL;
     if (count && !cvt)
@@ -41,6 +54,8 @@ int cupidimage_pdf_tt_hint_init_xy(pdf_tt_hint *hint, const pdf_tt_font *font, i
     int ok = cupidimage_pdf_tt_vm_init(
         &hint->vm, tt_hint_u16(font->maxp.data + 24), tt_hint_u16(font->maxp.data + 18), cvt, count,
         tt_hint_u16(font->maxp.data + 20), tt_hint_u16(font->maxp.data + 22));
+    if (ok)
+        ok = cupidimage_pdf_tt_vm_set_profile(&hint->vm, profile, full_hinting);
     if (ok)
         ok = cupidimage_pdf_tt_vm_run(&hint->vm, font->fpgm.data, font->fpgm.length, PDF_TT_VM_FONT,
                                       budget);

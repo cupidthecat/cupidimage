@@ -82,6 +82,7 @@ static int tt_hint_offset(pdf_tt_hint *hint, const pdf_tt_component *record, int
             return cupidimage_pdf_tt_vm_fail(&hint->vm, PDF_TT_VM_ARITHMETIC);
         result[axis] = (int32_t)value;
         if ((record->flags & 4) && !(hint->vm.prepared_graphics.instruction_control & 1) &&
+            (axis != 0 || !hint->vm.compatibility) &&
             !cupidimage_pdf_tt_hint_round(hint, result[axis], &result[axis]))
             return 0;
     }
@@ -182,10 +183,15 @@ int cupidimage_pdf_tt_hint_composite(pdf_tt_hint *hint, unsigned glyph, const pd
                                               &points[i].current[axis]);
         }
     }
+    hint->vm.composite = 1;
     if (ok)
         ok = cupidimage_pdf_tt_vm_begin_component(&hint->vm, points, total + 4, total) &&
              cupidimage_pdf_tt_vm_run(&hint->vm, program.data, program.length, PDF_TT_VM_GLYPH,
                                       *work);
+    if (ok && hint->vm.compatibility)
+        for (unsigned i = 0; i < 4; i++)
+            memcpy(hint->vm.zones[1].points[total + i].current, points[total + i].original,
+                   sizeof(points[total + i].original));
     if (ok && total && program.length && !(hint->vm.prepared_graphics.instruction_control & 1)) {
         unsigned mode = hint->vm.graphics.scan_control ? hint->vm.graphics.scan_type : 2;
         hint->vm.zones[1].points[0].scan = (unsigned char)(mode + 1);

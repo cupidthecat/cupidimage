@@ -9,7 +9,8 @@ typedef struct {
 } pdf_tt_table;
 
 typedef struct {
-    pdf_tt_table head, maxp, loca, glyf, hhea, hmtx, cmap, post, cvt, fpgm, prep, os2, vhea, vmtx;
+    pdf_tt_table head, maxp, loca, glyf, hhea, hmtx, cmap, post, cvt, fpgm, prep, os2, vhea, vmtx,
+        name;
     unsigned units, glyphs, location_size, hmetrics;
     unsigned recovered_zero_zones; /* PDF CID subset compatibility only. */
     const uint32_t *glyph_ends;    /* Optional borrowed PDF subset-recovery index. */

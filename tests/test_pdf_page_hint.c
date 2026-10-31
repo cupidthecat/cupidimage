@@ -39,6 +39,33 @@ int main(void) {
         cupidimage_pdf_tt_hint_shape_free(&shape);
         checks++;
     }
+    /* A profile switch must prepare a fresh instance, not reuse legacy state. */
+    for (unsigned pass = 0; pass < 6; pass++) {
+        unsigned profile = pass & 1;
+        pdf_page_hint *fresh = NULL;
+        pdf_tt_hint_shape expected = {0}, actual = {0};
+        size_t cold = 1000000, switched = 1000000, warm = 1000000;
+        assert(cupidimage_pdf_page_hint_shape_profile(&fresh, program, 1, matrix, 1, profile, &cold,
+                                                      &expected));
+        cupidimage_pdf_page_hint_free(&fresh);
+        assert(cupidimage_pdf_page_hint_shape_profile(&cache, program, 1, matrix, 1, profile,
+                                                      &switched, &actual));
+        assert(cold == switched && actual.count == expected.count);
+        for (unsigned i = 0; i < actual.count; i++)
+            assert(actual.points[i].x == expected.points[i].x &&
+                   actual.points[i].y == expected.points[i].y &&
+                   actual.points[i].on == expected.points[i].on &&
+                   actual.points[i].end == expected.points[i].end);
+        cupidimage_pdf_tt_hint_shape_free(&actual);
+        assert(cupidimage_pdf_page_hint_shape_profile(&cache, program, 1, matrix, 1, profile, &warm,
+                                                      &actual));
+        assert(warm > cold && program->references == 2);
+        cupidimage_pdf_tt_hint_shape_free(&actual);
+        cupidimage_pdf_tt_hint_shape_free(&expected);
+        checks += 3;
+    }
+    cupidimage_pdf_page_hint_free(&cache);
+    assert(program->references == 1);
     const double bad[][6] = {{NAN, 0, 0, -.024, 20, 80},    {1, 0, 0, INFINITY, 20, 80},
                              {.024, 0, 0, -32.768, 20, 80}, {1e20, 0, 0, -.024, 20, 80},
                              {.024, 0, 0, -.024, 1e20, 80}, {.024, 0, 0, -.024, 20, -1e20}};

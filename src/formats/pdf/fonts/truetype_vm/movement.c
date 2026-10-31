@@ -76,6 +76,10 @@ static int vm_delta_point(pdf_tt_vm *vm, unsigned band) {
             return 0;
         uint64_t target = (uint64_t)vm->graphics.delta_base + band * 16 + (argument >> 4);
         if (target == ppem) {
+            if (vm->compatibility &&
+                (vm->compatibility == 7 ||
+                 !((vm->composite && vm->graphics.freedom[1]) || (point->touched & 2))))
+                continue;
             int step = (int)(argument & 15) - 8;
             if (step >= 0)
                 step++;
@@ -104,7 +108,14 @@ static int vm_shpix(pdf_tt_vm *vm) {
         if (vm->stage == PDF_TT_VM_PREP && zone == 1)
             continue;
         pdf_tt_vm_point *point = cupidimage_pdf_tt_vm_get_point(vm, zone, index);
-        if (!point || !cupidimage_pdf_tt_vm_shift(vm, point, x, y))
+        if (!point)
+            return 0;
+        int twilight = !vm->graphics.zone[0] || !vm->graphics.zone[1] || !vm->graphics.zone[2];
+        if (vm->compatibility && !twilight &&
+            (vm->compatibility == 7 ||
+             !((vm->composite && vm->graphics.freedom[1]) || (point->touched & 2))))
+            continue;
+        if (!cupidimage_pdf_tt_vm_shift(vm, point, x, y))
             return 0;
     }
     vm->graphics.loop = 1;

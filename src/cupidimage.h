@@ -70,11 +70,17 @@ typedef struct cupidimage_pdf_password {
     int legacy_bytes;
 } cupidimage_pdf_password;
 
+enum {
+    CUPIDIMAGE_PDF_TT_HINT_OFF = 0,
+    CUPIDIMAGE_PDF_TT_HINT_LEGACY = 1,
+    CUPIDIMAGE_PDF_TT_HINT_MODERN = 2
+};
+
 typedef struct cupidimage_pdf_options {
     /* 0 retains binary text coverage; 1 enables grayscale outline fills/strokes.
      * Geometric clips use fractional coverage. Font hinting is separate. */
     int text_antialias;
-    /* 1 enables the bounded native legacy TrueType instruction profile. */
+    /* 0 disables hinting; 1 selects legacy; 2 selects modern. Coverage is separate. */
     int truetype_hinting;
     /* 1 enables bounded CFF blue-zone/stem hinting without stem darkening. */
     int cff_hinting;

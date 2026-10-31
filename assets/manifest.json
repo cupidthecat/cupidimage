@@ -590,6 +590,10 @@
       "sha256": "4df8cc51695b7fddeeb98f8f5ae4cd9b059e92c4bd70959fab53bfb675b860e9"
     },
     {
+      "path": "assets/pdf/modern-truetype-hinting.pdf",
+      "sha256": "193dbb979bfaa4907540cd3c05720ba98098f4b8891d3b5afa9b890afc3ddb09"
+    },
+    {
       "path": "assets/pdf/multiline.pdf",
       "sha256": "67ea471d676656dd8482f27930f1b07ccd176cefa4092842692f5f7abe1e15b4"
     },

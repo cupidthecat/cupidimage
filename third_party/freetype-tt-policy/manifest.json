@@ -1,0 +1,20 @@
+{
+  "source": "https://github.com/freetype/freetype/blob/VER-2-14-3/src/truetype/ttobjs.c",
+  "source_sha256": "c381554e81a00f9d5c430e7c51e1d6c289958867426b021a6165eb12b451922d",
+  "family_count": 20,
+  "program_triplets": 31,
+  "files": [
+    {
+      "path": "LICENSE.TXT",
+      "sha256": "08c135755dd589039470f1fdbb400daaabaaa50d0b366d19cebff4d22986baa1"
+    },
+    {
+      "path": "family-names.inc",
+      "sha256": "f55fc1a6dd0c3aa90577d1d6295b7d58adfb2e4ab20ca186bb8aa736a9883750"
+    },
+    {
+      "path": "program-ids.inc",
+      "sha256": "f4911e53607590a38b5838dcbf14d3deaab9449667ab38307150093a97a35345"
+    }
+  ]
+}

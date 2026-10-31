@@ -177,6 +177,7 @@ static int font_program(const char *path, unsigned ppem, int show_cvt, int grays
 #include "pdf_tt_vm/lifecycle.c"
 #include "pdf_tt_vm/movement.c"
 #include "pdf_tt_vm/points.c"
+#include "pdf_tt_vm/profile.c"
 #include "pdf_tt_vm/relative.c"
 #include "pdf_tt_vm/size.c"
 #include "pdf_tt_vm/size_xy.c"
@@ -513,6 +514,7 @@ int main(int argc, char **argv) {
     error(absent_cvt, sizeof(absent_cvt), PDF_TT_VM_STORAGE, 100);
     numeric_tests();
     graphics_tests();
+    profile_tests();
     size_tests();
     size_xy_tests();
     point_tests();

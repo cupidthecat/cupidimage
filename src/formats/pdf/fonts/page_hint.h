@@ -8,4 +8,7 @@ void cupidimage_pdf_page_hint_free(pdf_page_hint **cache);
 int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, struct pdf_font_program *program,
                                    unsigned glyph, const double matrix[6], int grayscale,
                                    size_t *work_left, pdf_tt_hint_shape *shape);
+int cupidimage_pdf_page_hint_shape_profile(pdf_page_hint **, struct pdf_font_program *, unsigned,
+                                           const double[6], int, unsigned, size_t *,
+                                           pdf_tt_hint_shape *);
 #endif

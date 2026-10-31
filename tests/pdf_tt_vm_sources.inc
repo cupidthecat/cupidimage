@@ -10,6 +10,7 @@
 #include "../src/formats/pdf/fonts/truetype_vm/movement.c"
 #include "../src/formats/pdf/fonts/truetype_vm/numeric.c"
 #include "../src/formats/pdf/fonts/truetype_vm/points.c"
+#include "../src/formats/pdf/fonts/truetype_vm/profile.c"
 #include "../src/formats/pdf/fonts/truetype_vm/relative.c"
 #include "../src/formats/pdf/fonts/truetype_vm/size.c"
 #include "../src/formats/pdf/fonts/truetype_vm/stack.c"

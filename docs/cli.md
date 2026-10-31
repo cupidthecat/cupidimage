@@ -24,6 +24,7 @@ nonzero status.
 | `--pdf-graphics-aa` | Enable grayscale vector fills and strokes, Type 3 paths and geometric clipping edges. |
 | `--pdf-text-aa` | Enable grayscale outline text fills, strokes and geometric clipping edges. Hinting is unchanged. |
 | `--pdf-tt-hinting` | Execute the native legacy TrueType instruction profile. Off by default. |
+| `--pdf-tt-modern-hinting` | Select modern TrueType fitting. Combine with `--pdf-text-aa` for grayscale behavior. Cannot be combined with `--pdf-tt-hinting`. |
 | `--pdf-cff-hinting` | Enable bounded CFF outline hinting without stem darkening. Off by default; applies only to CFF programs. |
 | `--pdf-type1-hinting` | Enable bounded Type 1 outline hinting without stem darkening. Off by default. |
 

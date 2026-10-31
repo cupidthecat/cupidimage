@@ -583,3 +583,15 @@ The arithmetic-state and standard Huffman table data in
 Apache License, Version 2.0. The original license and attribution are retained
 in that directory's `LICENSE.txt` and `NOTICE.txt`. Its `manifest.json` records
 the source revision, source URLs, and file hashes.
+
+## FreeType full-hinting identifiers
+
+This software is based in part on the work of the FreeType Team.
+
+Copyright (C) 1996-2026 by David Turner, Robert Wilhelm, and Werner Lemberg.
+
+The full-hinting family substrings and table-signature triplets are adapted from
+FreeType 2.14.3 under the FreeType Project License. Original headers, the unchanged
+license, source hash and modification record are in `third_party/freetype-tt-policy`.
+Include this notice and that license with binary distributions. The identifiers
+contain no font outlines or programs and add no runtime font-library dependency.

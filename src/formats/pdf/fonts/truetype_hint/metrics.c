@@ -8,6 +8,8 @@ int cupidimage_pdf_tt_hint_phantoms(pdf_tt_hint *hint, unsigned glyph, const pdf
     result[0][0] = xmin - cupidimage_pdf_tt_left_bearing(font, glyph);
     result[1][0] = result[0][0] + (int32_t)cupidimage_pdf_tt_advance(font, glyph);
     result[0][1] = result[1][1] = result[2][0] = result[3][0] = 0;
+    if (hint->vm.profile == PDF_TT_PROFILE_MODERN && hint->vm.size.grayscale)
+        result[2][0] = result[3][0] = (int32_t)cupidimage_pdf_tt_advance(font, glyph) / 2;
     if (font->vhea.data || font->vmtx.data) {
         if (font->vhea.length < 36 || !font->vmtx.data || tt_hint_u16(font->vhea.data) != 1 ||
             (tt_hint_u16(font->vhea.data + 2) != 0 && tt_hint_u16(font->vhea.data + 2) != 0x1000))

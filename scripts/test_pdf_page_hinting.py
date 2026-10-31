@@ -163,7 +163,7 @@ def main():
             allocations+=int(result.stdout.split('checks')[0].split()[-1])
         data=fixture('BT /F 18 Tf 20 30 Td (A) Tj ET')
         path.write_bytes(data)
-        for value in (-1,2):
+        for value in (-1,3):
             result=subprocess.run([probe,str(path),'0','1',str(value)],capture_output=True)
             assert result.returncode==3 and not result.stdout
             checks+=1

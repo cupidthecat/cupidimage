@@ -63,6 +63,8 @@ typedef struct {
     int32_t design_scale, design_scale_y;
 } pdf_tt_vm_zone;
 
+enum { PDF_TT_PROFILE_LEGACY = 0, PDF_TT_PROFILE_MODERN = 1 };
+
 typedef struct {
     int32_t *stack, *storage, *cvt;
     int32_t *prepared_storage, *prepared_cvt;
@@ -71,6 +73,7 @@ typedef struct {
     unsigned stack_size, stack_limit, storage_count, cvt_count, function_count;
     pdf_tt_vm_graphics graphics, prepared_graphics;
     int prepared;
+    unsigned profile, full_hinting, compatibility, composite;
     pdf_tt_vm_size_state size;
     pdf_tt_vm_stage stage;
     pdf_tt_vm_zone zones[2];
@@ -85,6 +88,7 @@ typedef struct {
 int cupidimage_pdf_tt_vm_init(pdf_tt_vm *, unsigned, unsigned, const int32_t *, unsigned, unsigned,
                               unsigned);
 void cupidimage_pdf_tt_vm_free(pdf_tt_vm *);
+int cupidimage_pdf_tt_vm_set_profile(pdf_tt_vm *, unsigned, int);
 int cupidimage_pdf_tt_vm_run(pdf_tt_vm *, const unsigned char *, size_t, pdf_tt_vm_stage, size_t);
 
 enum { PDF_TT_VM_ROTATED = 1, PDF_TT_VM_STRETCHED = 2 };

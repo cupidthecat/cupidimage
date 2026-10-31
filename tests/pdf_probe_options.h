@@ -6,7 +6,8 @@
 
 static int pdf_probe_capabilities(void) {
     return fputs("{\"schema\":1,\"pdf_options\":[\"--pdf-text-aa\",\"--pdf-tt-hinting\","
-                 "\"--pdf-cff-hinting\",\"--pdf-type1-hinting\",\"--pdf-graphics-aa\"]}\n",
+                 "\"--pdf-tt-modern-hinting\",\"--pdf-cff-hinting\",\"--pdf-type1-hinting\",\"--"
+                 "pdf-graphics-aa\"]}\n",
                  stdout) >= 0;
 }
 
@@ -14,9 +15,15 @@ static int pdf_probe_options(int argc, char **argv, int first, cupidimage_pdf_op
     for (int i = first; i < argc; i++) {
         if (!strcmp(argv[i], "--pdf-text-aa"))
             options->text_antialias = 1;
-        else if (!strcmp(argv[i], "--pdf-tt-hinting"))
-            options->truetype_hinting = 1;
-        else if (!strcmp(argv[i], "--pdf-cff-hinting"))
+        else if (!strcmp(argv[i], "--pdf-tt-hinting")) {
+            if (options->truetype_hinting == CUPIDIMAGE_PDF_TT_HINT_MODERN)
+                return 0;
+            options->truetype_hinting = CUPIDIMAGE_PDF_TT_HINT_LEGACY;
+        } else if (!strcmp(argv[i], "--pdf-tt-modern-hinting")) {
+            if (options->truetype_hinting == CUPIDIMAGE_PDF_TT_HINT_LEGACY)
+                return 0;
+            options->truetype_hinting = CUPIDIMAGE_PDF_TT_HINT_MODERN;
+        } else if (!strcmp(argv[i], "--pdf-cff-hinting"))
             options->cff_hinting = 1;
         else if (!strcmp(argv[i], "--pdf-type1-hinting"))
             options->type1_hinting = 1;
