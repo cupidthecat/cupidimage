@@ -11,6 +11,7 @@
 #define opj_t1_allocate_buffers cupidimage_jpx_ht_allocate_buffers
 #include "third_party/openjpeg/ht_dec.inc"
 #undef opj_t1_allocate_buffers
+#include "dispatch.h"
 #include "third_party/openjpeg/function_list.inc"
 #include "third_party/openjpeg/image.inc"
 #include "third_party/openjpeg/invert.inc"

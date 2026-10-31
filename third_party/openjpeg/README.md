@@ -32,6 +32,14 @@ Two additional checks reject tile-part indices beyond a TLM declaration or its
 allocated index storage before accessing that storage. Their exact patches are
 also recorded in the manifest.
 
+The codec factories assign typed adapter functions to their generic callback
+slots. These adapters convert the codec object pointer inside an ordinary C call
+instead of calling a typed function through an incompatible function pointer.
+All 48 factory assignments are recorded as reversible patches; the 44 shared
+adapters live in `src/formats/pdf/images/jpx/codec/dispatch.h`. This covers both
+decoder factories and the retained internal encoder factories without disabling
+function-type sanitizer checks.
+
 Run python3 scripts/check_pdf_jpx_vendor.py to check every pinned component and
 reverse the recorded patches in memory to verify the original source hashes.
 The upstream encoder and file-stream entry points remain internal implementation

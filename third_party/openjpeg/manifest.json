@@ -95,7 +95,201 @@
       "upstream": "src/lib/openjp2/openjpeg.c",
       "file": "openjpeg.inc",
       "upstream_sha256": "88e5154fbd83966adaa430ab51af989095d96bf862f1d56f04b65399d3dc522a",
-      "sha256": "88e5154fbd83966adaa430ab51af989095d96bf862f1d56f04b65399d3dc522a"
+      "sha256": "5e0fd193c56712aa18e4ff9060407b92f8f9abc208d00c2ac8ffb90a55d794e9",
+      "patches": [
+        {
+          "before": "l_codec->opj_dump_codec = (void (*)(void*, OPJ_INT32, FILE*)) j2k_dump;",
+          "after": "l_codec->opj_dump_codec = cupidimage_jpx_dispatch_j2k_dump;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_info = (opj_codestream_info_v2_t* (*)(\n                                           void*)) j2k_get_cstr_info;",
+          "after": "l_codec->opj_get_codec_info = cupidimage_jpx_dispatch_j2k_get_cstr_info;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_index = (opj_codestream_index_t* (*)(\n                                            void*)) j2k_get_cstr_index;",
+          "after": "l_codec->opj_get_codec_index = cupidimage_jpx_dispatch_j2k_get_cstr_index;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         opj_image_t*, struct opj_event_mgr *)) opj_j2k_decode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode =\n            cupidimage_jpx_dispatch_j2k_decode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_j2k_end_decompress;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            cupidimage_jpx_dispatch_j2k_end_decompress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            (OPJ_BOOL(*)(struct opj_stream_private *,\n                         void *,\n                         opj_image_t **,\n                         struct opj_event_mgr *)) opj_j2k_read_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            cupidimage_jpx_dispatch_j2k_read_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_destroy =\n            (void (*)(void *))opj_j2k_destroy;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_destroy =\n            cupidimage_jpx_dispatch_j2k_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            (void (*)(void *, opj_dparameters_t *)) opj_j2k_setup_decoder;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            cupidimage_jpx_dispatch_j2k_setup_decoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            (void (*)(void *, OPJ_BOOL)) opj_j2k_decoder_set_strict_mode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            cupidimage_jpx_dispatch_j2k_decoder_set_strict_mode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32*,\n                         OPJ_UINT32*,\n                         OPJ_INT32*, OPJ_INT32*,\n                         OPJ_INT32*, OPJ_INT32*,\n                         OPJ_UINT32*,\n                         OPJ_BOOL*,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_j2k_read_tile_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            cupidimage_jpx_dispatch_j2k_read_tile_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32,\n                         OPJ_BYTE*,\n                         OPJ_UINT32,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_j2k_decode_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            cupidimage_jpx_dispatch_j2k_decode_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            (OPJ_BOOL(*)(void *,\n                         opj_image_t*,\n                         OPJ_INT32, OPJ_INT32, OPJ_INT32, OPJ_INT32,\n                         struct opj_event_mgr *)) opj_j2k_set_decode_area;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            cupidimage_jpx_dispatch_j2k_set_decode_area;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            (OPJ_BOOL(*)(void *p_codec,\n                         opj_stream_private_t *p_cio,\n                         opj_image_t *p_image,\n                         struct opj_event_mgr * p_manager,\n                         OPJ_UINT32 tile_index)) opj_j2k_get_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            cupidimage_jpx_dispatch_j2k_get_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 res_factor,\n                         struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_resolution_factor;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            cupidimage_jpx_dispatch_j2k_set_decoded_resolution_factor;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 numcomps,\n                         const OPJ_UINT32 * comps_indices,\n                         struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_components;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            cupidimage_jpx_dispatch_j2k_set_decoded_components;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_decompress();",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_decompress();"
+        },
+        {
+          "before": "l_codec->opj_dump_codec = (void (*)(void*, OPJ_INT32, FILE*)) jp2_dump;",
+          "after": "l_codec->opj_dump_codec = cupidimage_jpx_dispatch_jp2_dump;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_info = (opj_codestream_info_v2_t* (*)(\n                                           void*)) jp2_get_cstr_info;",
+          "after": "l_codec->opj_get_codec_info = cupidimage_jpx_dispatch_jp2_get_cstr_info;"
+        },
+        {
+          "before": "l_codec->opj_get_codec_index = (opj_codestream_index_t* (*)(\n                                            void*)) jp2_get_cstr_index;",
+          "after": "l_codec->opj_get_codec_index = cupidimage_jpx_dispatch_jp2_get_cstr_index;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         opj_image_t*,\n                         struct opj_event_mgr *)) opj_jp2_decode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode =\n            cupidimage_jpx_dispatch_jp2_decode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            (OPJ_BOOL(*)(void *,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_jp2_end_decompress;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_end_decompress =\n            cupidimage_jpx_dispatch_jp2_end_decompress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            (OPJ_BOOL(*)(struct opj_stream_private *,\n                         void *,\n                         opj_image_t **,\n                         struct opj_event_mgr *)) opj_jp2_read_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_header =\n            cupidimage_jpx_dispatch_jp2_read_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32*,\n                         OPJ_UINT32*,\n                         OPJ_INT32*,\n                         OPJ_INT32*,\n                         OPJ_INT32 *,\n                         OPJ_INT32 *,\n                         OPJ_UINT32 *,\n                         OPJ_BOOL *,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_jp2_read_tile_header;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_read_tile_header =\n            cupidimage_jpx_dispatch_jp2_read_tile_header;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            (OPJ_BOOL(*)(void *,\n                         OPJ_UINT32, OPJ_BYTE*, OPJ_UINT32,\n                         struct opj_stream_private *,\n                         struct opj_event_mgr *)) opj_jp2_decode_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decode_tile_data =\n            cupidimage_jpx_dispatch_jp2_decode_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_destroy = (void (*)(\n                    void *))opj_jp2_destroy;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_destroy = cupidimage_jpx_dispatch_jp2_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            (void (*)(void *, opj_dparameters_t *)) opj_jp2_setup_decoder;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_setup_decoder =\n            cupidimage_jpx_dispatch_jp2_setup_decoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            (void (*)(void *, OPJ_BOOL)) opj_jp2_decoder_set_strict_mode;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =\n            cupidimage_jpx_dispatch_jp2_decoder_set_strict_mode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            (OPJ_BOOL(*)(void *,\n                         opj_image_t*,\n                         OPJ_INT32, OPJ_INT32, OPJ_INT32, OPJ_INT32,\n                         struct opj_event_mgr *)) opj_jp2_set_decode_area;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decode_area =\n            cupidimage_jpx_dispatch_jp2_set_decode_area;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            (OPJ_BOOL(*)(void *p_codec,\n                         opj_stream_private_t *p_cio,\n                         opj_image_t *p_image,\n                         struct opj_event_mgr * p_manager,\n                         OPJ_UINT32 tile_index)) opj_jp2_get_tile;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =\n            cupidimage_jpx_dispatch_jp2_get_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 res_factor,\n                         opj_event_mgr_t * p_manager)) opj_jp2_set_decoded_resolution_factor;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =\n            cupidimage_jpx_dispatch_jp2_set_decoded_resolution_factor;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            (OPJ_BOOL(*)(void * p_codec,\n                         OPJ_UINT32 numcomps,\n                         const OPJ_UINT32 * comps_indices,\n                         struct opj_event_mgr * p_manager)) opj_jp2_set_decoded_components;",
+          "after": "l_codec->m_codec_data.m_decompression.opj_set_decoded_components =\n            cupidimage_jpx_dispatch_jp2_set_decoded_components;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_TRUE);",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_TRUE);"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encode = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_j2k_encode;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encode = cupidimage_jpx_dispatch_j2k_encode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_end_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_j2k_end_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_end_compress = cupidimage_jpx_dispatch_j2k_end_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_start_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_image *,\n                struct opj_event_mgr *)) opj_j2k_start_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_start_compress = cupidimage_jpx_dispatch_j2k_start_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_write_tile = (OPJ_BOOL(*)(void *,\n                OPJ_UINT32,\n                OPJ_BYTE*,\n                OPJ_UINT32,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_j2k_write_tile;",
+          "after": "l_codec->m_codec_data.m_compression.opj_write_tile = cupidimage_jpx_dispatch_j2k_write_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_destroy = (void (*)(\n                    void *)) opj_j2k_destroy;",
+          "after": "l_codec->m_codec_data.m_compression.opj_destroy = cupidimage_jpx_dispatch_j2k_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL(*)(void *,\n                opj_cparameters_t *,\n                struct opj_image *,\n                struct opj_event_mgr *)) opj_j2k_setup_encoder;",
+          "after": "l_codec->m_codec_data.m_compression.opj_setup_encoder = cupidimage_jpx_dispatch_j2k_setup_encoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = (OPJ_BOOL(\n                    *)(void *,\n                       const char* const*,\n                       struct opj_event_mgr *)) opj_j2k_encoder_set_extra_options;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = cupidimage_jpx_dispatch_j2k_encoder_set_extra_options;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_compress();",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_j2k_set_threads;\n\n        l_codec->m_codec = opj_j2k_create_compress();"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encode = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_jp2_encode;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encode = cupidimage_jpx_dispatch_jp2_encode;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_end_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_jp2_end_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_end_compress = cupidimage_jpx_dispatch_jp2_end_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_start_compress = (OPJ_BOOL(*)(void *,\n                struct opj_stream_private *,\n                struct opj_image *,\n                struct opj_event_mgr *))  opj_jp2_start_compress;",
+          "after": "l_codec->m_codec_data.m_compression.opj_start_compress = cupidimage_jpx_dispatch_jp2_start_compress;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_write_tile = (OPJ_BOOL(*)(void *,\n                OPJ_UINT32,\n                OPJ_BYTE*,\n                OPJ_UINT32,\n                struct opj_stream_private *,\n                struct opj_event_mgr *)) opj_jp2_write_tile;",
+          "after": "l_codec->m_codec_data.m_compression.opj_write_tile = cupidimage_jpx_dispatch_jp2_write_tile;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_destroy = (void (*)(\n                    void *)) opj_jp2_destroy;",
+          "after": "l_codec->m_codec_data.m_compression.opj_destroy = cupidimage_jpx_dispatch_jp2_destroy;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL(*)(void *,\n                opj_cparameters_t *,\n                struct opj_image *,\n                struct opj_event_mgr *)) opj_jp2_setup_encoder;",
+          "after": "l_codec->m_codec_data.m_compression.opj_setup_encoder = cupidimage_jpx_dispatch_jp2_setup_encoder;"
+        },
+        {
+          "before": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = (OPJ_BOOL(\n                    *)(void *,\n                       const char* const*,\n                       struct opj_event_mgr *)) opj_jp2_encoder_set_extra_options;",
+          "after": "l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = cupidimage_jpx_dispatch_jp2_encoder_set_extra_options;"
+        },
+        {
+          "before": "l_codec->opj_set_threads =\n            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_FALSE);",
+          "after": "l_codec->opj_set_threads =\n            cupidimage_jpx_dispatch_jp2_set_threads;\n\n        l_codec->m_codec = opj_jp2_create(OPJ_FALSE);"
+        }
+      ]
     },
     {
       "upstream": "src/lib/openjp2/pi.c",

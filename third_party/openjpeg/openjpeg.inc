@@ -194,85 +194,51 @@ opj_codec_t* OPJ_CALLCONV opj_create_decompress(OPJ_CODEC_FORMAT p_format)
 
     switch (p_format) {
     case OPJ_CODEC_J2K:
-        l_codec->opj_dump_codec = (void (*)(void*, OPJ_INT32, FILE*)) j2k_dump;
+        l_codec->opj_dump_codec = cupidimage_jpx_dispatch_j2k_dump;
 
-        l_codec->opj_get_codec_info = (opj_codestream_info_v2_t* (*)(
-                                           void*)) j2k_get_cstr_info;
+        l_codec->opj_get_codec_info = cupidimage_jpx_dispatch_j2k_get_cstr_info;
 
-        l_codec->opj_get_codec_index = (opj_codestream_index_t* (*)(
-                                            void*)) j2k_get_cstr_index;
+        l_codec->opj_get_codec_index = cupidimage_jpx_dispatch_j2k_get_cstr_index;
 
         l_codec->m_codec_data.m_decompression.opj_decode =
-            (OPJ_BOOL(*)(void *,
-                         struct opj_stream_private *,
-                         opj_image_t*, struct opj_event_mgr *)) opj_j2k_decode;
+            cupidimage_jpx_dispatch_j2k_decode;
 
         l_codec->m_codec_data.m_decompression.opj_end_decompress =
-            (OPJ_BOOL(*)(void *,
-                         struct opj_stream_private *,
-                         struct opj_event_mgr *)) opj_j2k_end_decompress;
+            cupidimage_jpx_dispatch_j2k_end_decompress;
 
         l_codec->m_codec_data.m_decompression.opj_read_header =
-            (OPJ_BOOL(*)(struct opj_stream_private *,
-                         void *,
-                         opj_image_t **,
-                         struct opj_event_mgr *)) opj_j2k_read_header;
+            cupidimage_jpx_dispatch_j2k_read_header;
 
         l_codec->m_codec_data.m_decompression.opj_destroy =
-            (void (*)(void *))opj_j2k_destroy;
+            cupidimage_jpx_dispatch_j2k_destroy;
 
         l_codec->m_codec_data.m_decompression.opj_setup_decoder =
-            (void (*)(void *, opj_dparameters_t *)) opj_j2k_setup_decoder;
+            cupidimage_jpx_dispatch_j2k_setup_decoder;
 
         l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =
-            (void (*)(void *, OPJ_BOOL)) opj_j2k_decoder_set_strict_mode;
+            cupidimage_jpx_dispatch_j2k_decoder_set_strict_mode;
 
 
         l_codec->m_codec_data.m_decompression.opj_read_tile_header =
-            (OPJ_BOOL(*)(void *,
-                         OPJ_UINT32*,
-                         OPJ_UINT32*,
-                         OPJ_INT32*, OPJ_INT32*,
-                         OPJ_INT32*, OPJ_INT32*,
-                         OPJ_UINT32*,
-                         OPJ_BOOL*,
-                         struct opj_stream_private *,
-                         struct opj_event_mgr *)) opj_j2k_read_tile_header;
+            cupidimage_jpx_dispatch_j2k_read_tile_header;
 
         l_codec->m_codec_data.m_decompression.opj_decode_tile_data =
-            (OPJ_BOOL(*)(void *,
-                         OPJ_UINT32,
-                         OPJ_BYTE*,
-                         OPJ_UINT32,
-                         struct opj_stream_private *,
-                         struct opj_event_mgr *)) opj_j2k_decode_tile;
+            cupidimage_jpx_dispatch_j2k_decode_tile;
 
         l_codec->m_codec_data.m_decompression.opj_set_decode_area =
-            (OPJ_BOOL(*)(void *,
-                         opj_image_t*,
-                         OPJ_INT32, OPJ_INT32, OPJ_INT32, OPJ_INT32,
-                         struct opj_event_mgr *)) opj_j2k_set_decode_area;
+            cupidimage_jpx_dispatch_j2k_set_decode_area;
 
         l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =
-            (OPJ_BOOL(*)(void *p_codec,
-                         opj_stream_private_t *p_cio,
-                         opj_image_t *p_image,
-                         struct opj_event_mgr * p_manager,
-                         OPJ_UINT32 tile_index)) opj_j2k_get_tile;
+            cupidimage_jpx_dispatch_j2k_get_tile;
 
         l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =
-            (OPJ_BOOL(*)(void * p_codec,
-                         OPJ_UINT32 res_factor,
-                         struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_resolution_factor;
+            cupidimage_jpx_dispatch_j2k_set_decoded_resolution_factor;
 
         l_codec->m_codec_data.m_decompression.opj_set_decoded_components =
-            (OPJ_BOOL(*)(void * p_codec,
-                         OPJ_UINT32 numcomps,
-                         const OPJ_UINT32 * comps_indices,
-                         struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_components;
+            cupidimage_jpx_dispatch_j2k_set_decoded_components;
 
         l_codec->opj_set_threads =
-            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_j2k_set_threads;
+            cupidimage_jpx_dispatch_j2k_set_threads;
 
         l_codec->m_codec = opj_j2k_create_decompress();
 
@@ -285,85 +251,49 @@ opj_codec_t* OPJ_CALLCONV opj_create_decompress(OPJ_CODEC_FORMAT p_format)
 
     case OPJ_CODEC_JP2:
         /* get a JP2 decoder handle */
-        l_codec->opj_dump_codec = (void (*)(void*, OPJ_INT32, FILE*)) jp2_dump;
+        l_codec->opj_dump_codec = cupidimage_jpx_dispatch_jp2_dump;
 
-        l_codec->opj_get_codec_info = (opj_codestream_info_v2_t* (*)(
-                                           void*)) jp2_get_cstr_info;
+        l_codec->opj_get_codec_info = cupidimage_jpx_dispatch_jp2_get_cstr_info;
 
-        l_codec->opj_get_codec_index = (opj_codestream_index_t* (*)(
-                                            void*)) jp2_get_cstr_index;
+        l_codec->opj_get_codec_index = cupidimage_jpx_dispatch_jp2_get_cstr_index;
 
         l_codec->m_codec_data.m_decompression.opj_decode =
-            (OPJ_BOOL(*)(void *,
-                         struct opj_stream_private *,
-                         opj_image_t*,
-                         struct opj_event_mgr *)) opj_jp2_decode;
+            cupidimage_jpx_dispatch_jp2_decode;
 
         l_codec->m_codec_data.m_decompression.opj_end_decompress =
-            (OPJ_BOOL(*)(void *,
-                         struct opj_stream_private *,
-                         struct opj_event_mgr *)) opj_jp2_end_decompress;
+            cupidimage_jpx_dispatch_jp2_end_decompress;
 
         l_codec->m_codec_data.m_decompression.opj_read_header =
-            (OPJ_BOOL(*)(struct opj_stream_private *,
-                         void *,
-                         opj_image_t **,
-                         struct opj_event_mgr *)) opj_jp2_read_header;
+            cupidimage_jpx_dispatch_jp2_read_header;
 
         l_codec->m_codec_data.m_decompression.opj_read_tile_header =
-            (OPJ_BOOL(*)(void *,
-                         OPJ_UINT32*,
-                         OPJ_UINT32*,
-                         OPJ_INT32*,
-                         OPJ_INT32*,
-                         OPJ_INT32 *,
-                         OPJ_INT32 *,
-                         OPJ_UINT32 *,
-                         OPJ_BOOL *,
-                         struct opj_stream_private *,
-                         struct opj_event_mgr *)) opj_jp2_read_tile_header;
+            cupidimage_jpx_dispatch_jp2_read_tile_header;
 
         l_codec->m_codec_data.m_decompression.opj_decode_tile_data =
-            (OPJ_BOOL(*)(void *,
-                         OPJ_UINT32, OPJ_BYTE*, OPJ_UINT32,
-                         struct opj_stream_private *,
-                         struct opj_event_mgr *)) opj_jp2_decode_tile;
+            cupidimage_jpx_dispatch_jp2_decode_tile;
 
-        l_codec->m_codec_data.m_decompression.opj_destroy = (void (*)(
-                    void *))opj_jp2_destroy;
+        l_codec->m_codec_data.m_decompression.opj_destroy = cupidimage_jpx_dispatch_jp2_destroy;
 
         l_codec->m_codec_data.m_decompression.opj_setup_decoder =
-            (void (*)(void *, opj_dparameters_t *)) opj_jp2_setup_decoder;
+            cupidimage_jpx_dispatch_jp2_setup_decoder;
 
         l_codec->m_codec_data.m_decompression.opj_decoder_set_strict_mode =
-            (void (*)(void *, OPJ_BOOL)) opj_jp2_decoder_set_strict_mode;
+            cupidimage_jpx_dispatch_jp2_decoder_set_strict_mode;
 
         l_codec->m_codec_data.m_decompression.opj_set_decode_area =
-            (OPJ_BOOL(*)(void *,
-                         opj_image_t*,
-                         OPJ_INT32, OPJ_INT32, OPJ_INT32, OPJ_INT32,
-                         struct opj_event_mgr *)) opj_jp2_set_decode_area;
+            cupidimage_jpx_dispatch_jp2_set_decode_area;
 
         l_codec->m_codec_data.m_decompression.opj_get_decoded_tile =
-            (OPJ_BOOL(*)(void *p_codec,
-                         opj_stream_private_t *p_cio,
-                         opj_image_t *p_image,
-                         struct opj_event_mgr * p_manager,
-                         OPJ_UINT32 tile_index)) opj_jp2_get_tile;
+            cupidimage_jpx_dispatch_jp2_get_tile;
 
         l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor =
-            (OPJ_BOOL(*)(void * p_codec,
-                         OPJ_UINT32 res_factor,
-                         opj_event_mgr_t * p_manager)) opj_jp2_set_decoded_resolution_factor;
+            cupidimage_jpx_dispatch_jp2_set_decoded_resolution_factor;
 
         l_codec->m_codec_data.m_decompression.opj_set_decoded_components =
-            (OPJ_BOOL(*)(void * p_codec,
-                         OPJ_UINT32 numcomps,
-                         const OPJ_UINT32 * comps_indices,
-                         struct opj_event_mgr * p_manager)) opj_jp2_set_decoded_components;
+            cupidimage_jpx_dispatch_jp2_set_decoded_components;
 
         l_codec->opj_set_threads =
-            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_jp2_set_threads;
+            cupidimage_jpx_dispatch_jp2_set_threads;
 
         l_codec->m_codec = opj_jp2_create(OPJ_TRUE);
 
@@ -667,41 +597,22 @@ opj_codec_t* OPJ_CALLCONV opj_create_compress(OPJ_CODEC_FORMAT p_format)
 
     switch (p_format) {
     case OPJ_CODEC_J2K:
-        l_codec->m_codec_data.m_compression.opj_encode = (OPJ_BOOL(*)(void *,
-                struct opj_stream_private *,
-                struct opj_event_mgr *)) opj_j2k_encode;
+        l_codec->m_codec_data.m_compression.opj_encode = cupidimage_jpx_dispatch_j2k_encode;
 
-        l_codec->m_codec_data.m_compression.opj_end_compress = (OPJ_BOOL(*)(void *,
-                struct opj_stream_private *,
-                struct opj_event_mgr *)) opj_j2k_end_compress;
+        l_codec->m_codec_data.m_compression.opj_end_compress = cupidimage_jpx_dispatch_j2k_end_compress;
 
-        l_codec->m_codec_data.m_compression.opj_start_compress = (OPJ_BOOL(*)(void *,
-                struct opj_stream_private *,
-                struct opj_image *,
-                struct opj_event_mgr *)) opj_j2k_start_compress;
+        l_codec->m_codec_data.m_compression.opj_start_compress = cupidimage_jpx_dispatch_j2k_start_compress;
 
-        l_codec->m_codec_data.m_compression.opj_write_tile = (OPJ_BOOL(*)(void *,
-                OPJ_UINT32,
-                OPJ_BYTE*,
-                OPJ_UINT32,
-                struct opj_stream_private *,
-                struct opj_event_mgr *)) opj_j2k_write_tile;
+        l_codec->m_codec_data.m_compression.opj_write_tile = cupidimage_jpx_dispatch_j2k_write_tile;
 
-        l_codec->m_codec_data.m_compression.opj_destroy = (void (*)(
-                    void *)) opj_j2k_destroy;
+        l_codec->m_codec_data.m_compression.opj_destroy = cupidimage_jpx_dispatch_j2k_destroy;
 
-        l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL(*)(void *,
-                opj_cparameters_t *,
-                struct opj_image *,
-                struct opj_event_mgr *)) opj_j2k_setup_encoder;
+        l_codec->m_codec_data.m_compression.opj_setup_encoder = cupidimage_jpx_dispatch_j2k_setup_encoder;
 
-        l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = (OPJ_BOOL(
-                    *)(void *,
-                       const char* const*,
-                       struct opj_event_mgr *)) opj_j2k_encoder_set_extra_options;
+        l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = cupidimage_jpx_dispatch_j2k_encoder_set_extra_options;
 
         l_codec->opj_set_threads =
-            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_j2k_set_threads;
+            cupidimage_jpx_dispatch_j2k_set_threads;
 
         l_codec->m_codec = opj_j2k_create_compress();
         if (! l_codec->m_codec) {
@@ -713,41 +624,22 @@ opj_codec_t* OPJ_CALLCONV opj_create_compress(OPJ_CODEC_FORMAT p_format)
 
     case OPJ_CODEC_JP2:
         /* get a JP2 decoder handle */
-        l_codec->m_codec_data.m_compression.opj_encode = (OPJ_BOOL(*)(void *,
-                struct opj_stream_private *,
-                struct opj_event_mgr *)) opj_jp2_encode;
+        l_codec->m_codec_data.m_compression.opj_encode = cupidimage_jpx_dispatch_jp2_encode;
 
-        l_codec->m_codec_data.m_compression.opj_end_compress = (OPJ_BOOL(*)(void *,
-                struct opj_stream_private *,
-                struct opj_event_mgr *)) opj_jp2_end_compress;
+        l_codec->m_codec_data.m_compression.opj_end_compress = cupidimage_jpx_dispatch_jp2_end_compress;
 
-        l_codec->m_codec_data.m_compression.opj_start_compress = (OPJ_BOOL(*)(void *,
-                struct opj_stream_private *,
-                struct opj_image *,
-                struct opj_event_mgr *))  opj_jp2_start_compress;
+        l_codec->m_codec_data.m_compression.opj_start_compress = cupidimage_jpx_dispatch_jp2_start_compress;
 
-        l_codec->m_codec_data.m_compression.opj_write_tile = (OPJ_BOOL(*)(void *,
-                OPJ_UINT32,
-                OPJ_BYTE*,
-                OPJ_UINT32,
-                struct opj_stream_private *,
-                struct opj_event_mgr *)) opj_jp2_write_tile;
+        l_codec->m_codec_data.m_compression.opj_write_tile = cupidimage_jpx_dispatch_jp2_write_tile;
 
-        l_codec->m_codec_data.m_compression.opj_destroy = (void (*)(
-                    void *)) opj_jp2_destroy;
+        l_codec->m_codec_data.m_compression.opj_destroy = cupidimage_jpx_dispatch_jp2_destroy;
 
-        l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL(*)(void *,
-                opj_cparameters_t *,
-                struct opj_image *,
-                struct opj_event_mgr *)) opj_jp2_setup_encoder;
+        l_codec->m_codec_data.m_compression.opj_setup_encoder = cupidimage_jpx_dispatch_jp2_setup_encoder;
 
-        l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = (OPJ_BOOL(
-                    *)(void *,
-                       const char* const*,
-                       struct opj_event_mgr *)) opj_jp2_encoder_set_extra_options;
+        l_codec->m_codec_data.m_compression.opj_encoder_set_extra_options = cupidimage_jpx_dispatch_jp2_encoder_set_extra_options;
 
         l_codec->opj_set_threads =
-            (OPJ_BOOL(*)(void * p_codec, OPJ_UINT32 num_threads)) opj_jp2_set_threads;
+            cupidimage_jpx_dispatch_jp2_set_threads;
 
         l_codec->m_codec = opj_jp2_create(OPJ_FALSE);
         if (! l_codec->m_codec) {
