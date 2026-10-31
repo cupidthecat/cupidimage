@@ -115,7 +115,8 @@ def main():
         check('extended-path', '0 0 m ' + '0 1 l 1 0 l ' * 2050 + 'W n', lambda x, y: GRAY)
         check('path-overflow', '0 0 m ' + '0 1 l 1 0 l ' * 32769 + 'W n', reject=True)
         check('clip-count-limit', 'W n ' * 4097, reject=True)
-        check('clip-work-limit', '0 0 600 600 re ' * 500 + 'W n', box='0 0 600 600', reject=True)
+        check('dense-repeated-clip', '0 0 600 600 re ' * 500 + 'W n 1 0 0 rg 0 0 600 600 re f',
+              box='0 0 600 600', dimensions=(800, 800), expected=lambda x, y: RED)
         check('malformed-after-clip', LEFT + ' W n q (unterminated', reject=True)
         check('recursive-form-after-clip', LEFT + ' W n /F0 Do', reject=True,
               attrs=resources, extra={5: form('/F0 Do')})

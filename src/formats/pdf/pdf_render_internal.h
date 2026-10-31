@@ -60,6 +60,7 @@ typedef struct {
     unsigned char *coverage;
     size_t coverage_bytes;
     unsigned captured_form_depth;
+    int bounds_known, bounds[4];
     pdf_region_edge *pending_edges;
     unsigned pending_count, pending_capacity;
     unsigned char bits[];
@@ -123,6 +124,7 @@ typedef struct pdf_pattern {
     unsigned channels;
     double inverse[6], xstep, ystep;
     int shading, uncolored, deferred, gray;
+    unsigned canvas_width, canvas_height, cache_top;
     pdf_blend_space blend;
     pdf_object_id resource_object;
     pdf_object_view definition;
@@ -204,6 +206,7 @@ typedef struct {
     int optional_hidden;
     pdf_optional_content *optional_content;
     int paint_coverage_clipped;
+    unsigned shading_row_offset;
     int text_antialias, truetype_hinting, cff_hinting, type1_hinting, graphics_antialias;
     char *error;
     size_t error_capacity;
@@ -403,6 +406,7 @@ int cupidimage_pdf_draw_inline_image(pdf_render_state *st, const unsigned char *
 int cupidimage_pdf_text_clip_prepare(pdf_render_state *st);
 void cupidimage_pdf_clip_retain(pdf_clip_mask *);
 void cupidimage_pdf_clip_release(pdf_render_state *, pdf_clip_mask *);
+int cupidimage_pdf_clip_covers_canvas(pdf_render_state *);
 int cupidimage_pdf_clip_capture_forms(pdf_render_state *);
 int cupidimage_pdf_clip_limit_mask(pdf_render_state *, const unsigned char *, int, unsigned char *,
                                    int, int, int, int);

@@ -5,7 +5,7 @@
 typedef struct pdf_clip_geometry {
     struct pdf_clip_geometry *parent;
     size_t bytes;
-    unsigned references, count, total_edges, depth, even_odd, rectangle;
+    unsigned references, count, total_edges, depth, even_odd, rectangle, contours;
     double bounds[4];
     pdf_region_edge edges[];
 } pdf_clip_geometry;
@@ -21,4 +21,8 @@ void cupidimage_pdf_clip_geometry_release(pdf_clip_geometry *, size_t *);
  * the output allocation. Failure clears output and output_count. */
 int cupidimage_pdf_clip_geometry_collect(const pdf_clip_geometry *, unsigned, unsigned char[64],
                                          pdf_region_edge **, unsigned *, size_t *);
+/* Whole closed contours whose bounds miss the crop cannot affect its winding. */
+int cupidimage_pdf_clip_geometry_collect_crop(const pdf_clip_geometry *, unsigned,
+                                              unsigned char[64], pdf_region_edge **, unsigned *,
+                                              size_t *, int, int, int, int);
 #endif
