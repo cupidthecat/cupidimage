@@ -4,6 +4,17 @@
 #include <stddef.h>
 #include <string.h>
 
+const char *cupidimage_pdf_font_base_name(const char *name) {
+    if (strlen(name) > 7 && name[6] == '+') {
+        unsigned i = 0;
+        while (i < 6 && name[i] >= 'A' && name[i] <= 'Z')
+            i++;
+        if (i == 6)
+            return name + 7;
+    }
+    return name;
+}
+
 static int encoding_hex(char c) {
     return c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
 }

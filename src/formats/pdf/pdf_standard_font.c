@@ -34,6 +34,21 @@ static int standard_extended(pdf_font_program *program, const char *name) {
     return program->extended != NULL;
 }
 
+static int standard_unembedded(const unsigned char *data, size_t size,
+                               const pdf_object_view *view) {
+    pdf_object_view descriptor = {0};
+    int ok =
+        cupidimage_pdf_optional_dictionary(data, size, view, "FontDescriptor", &descriptor) >= 0;
+    const char *keys[] = {"FontFile", "FontFile2", "FontFile3"};
+    for (unsigned i = 0; ok && i < 3; i++) {
+        pdf_object_view value = {0};
+        ok = cupidimage_pdf_optional_value(data, size, &descriptor, keys[i], &value) == 0;
+        cupidimage_pdf_object_view_release(&value);
+    }
+    cupidimage_pdf_object_view_release(&descriptor);
+    return ok;
+}
+
 int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
                                        const pdf_object_view *view, pdf_font_map *font,
                                        size_t *budget) {
@@ -51,15 +66,19 @@ int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
     cupidimage_pdf_object_view_release(&value);
     if (!ok)
         return 0;
-    const pdf_standard_font *standard = cupidimage_pdf_standard_font(name);
+    const char *base_name = cupidimage_pdf_font_base_name(name);
+    const pdf_standard_font *standard = cupidimage_pdf_standard_font(base_name);
     if (!standard)
         return 1;
+    /* Do not conceal an unsupported embedded program with a standard face. */
+    if (!standard_unembedded(data, size, view))
+        return 0;
     unsigned glyphs[256];
     memcpy(glyphs, standard->encoding, sizeof(glyphs));
     if (!cupidimage_pdf_simple_encoding(data, size, view, glyphs, standard,
                                         cupidimage_pdf_standard_glyph))
         return 0;
-    const pdf_standard_outline *outline = cupidimage_pdf_standard_outline(name);
+    const pdf_standard_outline *outline = cupidimage_pdf_standard_outline(base_name);
     if (!outline)
         return 0;
     pdf_font_program *program = standard_cff(outline);
@@ -69,7 +88,7 @@ int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
         const char *glyph_name = standard->metrics[glyphs[i]].name;
         program->glyphs[i] = cupidimage_pdf_cff_name(&program->cff, glyph_name);
         if (!program->glyphs[i] && strcmp(glyph_name, ".notdef")) {
-            if (!standard_extended(program, name))
+            if (!standard_extended(program, base_name))
                 goto fail;
             const pdf_tt_font *fallback = &program->extended->font;
             unsigned glyph = cupidimage_pdf_tt_name(fallback, glyph_name);
@@ -81,7 +100,8 @@ int cupidimage_pdf_parse_standard_font(const unsigned char *data, size_t size,
             else if (!strcmp(glyph_name, "commaaccent")) {
                 /* The spacing glyph's upstream name is space_uni0326. */
                 if (!program->extended->extended) {
-                    program->extended->extended = standard_cff(cupidimage_pdf_standard_mark(name));
+                    program->extended->extended =
+                        standard_cff(cupidimage_pdf_standard_mark(base_name));
                     if (!program->extended->extended)
                         goto fail;
                 }

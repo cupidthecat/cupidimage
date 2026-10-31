@@ -682,7 +682,9 @@ analytic marker-position oracle. Neither asset qualifies hinting or antialiasing
 Nonembedded Type 1 and simple TrueType fonts with recognized Arial, Times New
 Roman or Courier New names use pinned Liberation vector programs instead of the
 bitmap fallback. The same resolver accepts the Liberation Sans, Serif and Mono
-PostScript family names. It selects regular, bold, italic or bold-italic faces
+PostScript family names. Simple TrueType resources can also use the twelve Latin
+standard PostScript face names, such as Helvetica-BoldOblique and Times-Italic.
+It selects regular, bold, italic or bold-italic faces
 without relying on installed fonts or a font configuration service.
 
 The resolver matches complete, case-sensitive names. Supported forms include
@@ -692,6 +694,13 @@ a hyphen or comma. A valid six-uppercase-letter subset tag followed by `+` is
 removed before matching those aliases, as described in ISO 32000-1 section 9.6.4.
 Narrow variants are not inferred from the name. Unknown names can use the
 descriptor policy below. CID fonts are not handled by this resolver.
+
+Nonembedded Type 1 resources with a valid subset prefix on any standard-14 name
+use the corresponding standard program, including Symbol and ZapfDingbats.
+Explicit Widths and MissingWidth still take precedence over fallback metrics.
+The subset prefix does not bypass a supplied embedded font: a supported program
+wins, and an unsupported supplied program is rejected rather than hidden behind
+the standard substitute.
 
 Type 1 substitutes start with StandardEncoding and apply the font's Encoding and
 Differences. Simple TrueType substitutes use the existing PDF TrueType encoding
@@ -718,6 +727,22 @@ programs explicitly embedded in PDFs. It tests both simple-font types, encodings
 PDF width overrides, all text modes, transformed text, embedded-program priority,
 invalid metadata and allocation recovery. The owned width-marker asset has an
 analytic reference; the visible family sample remains decoded-unverified.
+
+## Undefined TrueType encoding slots
+
+Named MacRomanEncoding and WinAnsiEncoding retain the undefined entries in
+ISO 32000-1 Annex D. They do not borrow unrelated glyph names from
+StandardEncoding. Encoding dictionaries keep the separate completion rule in
+section 9.6.6.4, and explicit Differences still select their named glyphs.
+This applies to embedded TrueType programs and the bundled simple-font
+substitutes. It does not change PDF advances or use ToUnicode for glyph selection.
+
+The selection tests exercise each undefined named slot that has a defined
+StandardEncoding counterpart, direct and indirect encoding values, and explicit
+Differences. Named cases also have independent raster comparisons. Dictionary
+cases use authored geometry because readers differ in base-table completion and
+some post-name selections. These checks establish glyph selection for these
+cases, not complete font-substitution fidelity.
 
 ## Font resource names
 

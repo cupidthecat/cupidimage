@@ -22,8 +22,9 @@ def main():
             embedded={5:('<< /Type /Font /Subtype /Type1 /BaseFont /CupidStandardTest /FontDescriptor 10 0 R /FirstChar 0 /LastChar 255 /Widths ['+widths+'] /Encoding << /Differences [0 '+differences+'] >> >>').encode(),
                       10:b'<< /Type /FontDescriptor /FontName /CupidStandardTest /Flags 32 /FontBBox [-1000 -1000 2000 2000] /ItalicAngle 0 /Ascent 1000 /Descent -300 /CapHeight 700 /StemV 80 /FontFile3 11 0 R >>',
                       11:stream(font_bytes(stem),'/Subtype /Type1C')}
-            def render(content,extra=None,encoding_value=''):
-                path.write_bytes(fixture(content,name,encoding_value,extra=extra))
+            def render(content,extra=None,encoding_value='',subset=False):
+                base_name = 'ABCDEF+' + name if subset else name
+                path.write_bytes(fixture(content,base_name,encoding_value,extra=extra))
                 result=subprocess.run([probe,str(path),'0'],capture_output=True,timeout=20)
                 assert result.returncode==0,(name,result.stderr)
                 return result.stdout
@@ -32,12 +33,14 @@ def main():
                 if mode>=4:content+=' 1 0 0 rg 0 0 120 90 re f'
                 actual=render(content)
                 assert actual==render(content,embedded),(name,mode,'embedded substitute differs')
+                assert actual==render(content,subset=True),(name,mode,'subset face differs')
                 assert mode==3 or any(c!=255 for c in actual[12:]),(name,mode,'unexpected empty rendering')
-                checks+=1
+                checks+=2
             for matrix in ('0 1 -1 0 60 10','1 .25 .3 1 10 20','-1 0 0 1 100 30'):
                 content=f'BT /F 20 Tf {matrix} Tm (AWi) Tj ET'
                 assert render(content)==render(content,embedded),(name,matrix)
-                checks+=1
+                assert render(content)==render(content,subset=True),(name,matrix,'subset transform')
+                checks+=2
             # ToUnicode maps extraction text, not the outline to paint.
             content='BT /F 22 Tf 20 30 Td (A) Tj ET'
             altered={12:stream(b'1 begincodespacerange <00> <FF> endcodespacerange 1 beginbfchar <41> <0057> endbfchar'),

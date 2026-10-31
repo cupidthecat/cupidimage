@@ -92,7 +92,10 @@ int cupidimage_pdf_truetype_encoding(const unsigned char *data, size_t size,
                 glyph = cupidimage_pdf_tt_map(&program->font, code, 3, 1);
         } else {
             const char *name = cupidimage_pdf_encoding_name(base, code);
-            if (!strcmp(name, ".notdef"))
+            /* Only an encoding dictionary fills undefined base entries from
+             * StandardEncoding (ISO 32000-1, 9.6.6.4). Named encodings retain
+             * their undefined slots instead of selecting unrelated glyphs. */
+            if (encoding_dictionary && !strcmp(name, ".notdef"))
                 name = cupidimage_pdf_encoding_name("StandardEncoding", code);
             glyph = tt_named_glyph(&program->font, name);
         }

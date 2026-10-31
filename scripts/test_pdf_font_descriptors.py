@@ -101,6 +101,20 @@ def main():
             assert render(fixture(name=name,flags=34))==render(fixture(flags=34,embedded=fonts['Times-Roman']))
         # Existing embedded programs win, including their own glyph identities.
         assert render(fixture(embedded=FONT))==render(fixture(name='CupidEmbedded',embedded=FONT))
+        for faces in FACES:
+            for face in faces:
+                for name in (face, 'ABCDEF+' + face):
+                    # Canonical PostScript names retain their style in simple
+                    # TrueType resources, even without useful descriptor flags.
+                    assert render(fixture(name=name, flags=0)) == render(
+                        fixture(embedded=fonts[face], flags=0))
+                    for subtype in ('TrueType', 'Type1'):
+                        assert render(fixture(name=name, subtype=subtype, embedded=FONT)) == render(
+                            fixture(name='CupidEmbedded', subtype=subtype, embedded=FONT))
+                    for key in ('FontFile', 'FontFile2', 'FontFile3'):
+                        render(fixture(name=name, subtype='Type1', descriptor='/' + key + ' 8 0 R',
+                                       extra={8: stream('broken', '/Subtype /Unsupported')}), reject=True)
+                    fault(fixture(name=name))
         for key in ('FontFile','FontFile2','FontFile3'):
             render(fixture(descriptor='/'+key+' 8 0 R',extra={8:stream('broken','/Subtype /Unsupported')}),reject=True)
         # PDF metrics, spacing and transforms are identical to the chosen embedded program.
