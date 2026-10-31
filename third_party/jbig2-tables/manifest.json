@@ -1,0 +1,35 @@
+{
+  "commit": "68dff3095d58e6ad7410fae98b5ee46279c5061e",
+  "sources": [
+    {
+      "path": "src/main/java/org/apache/pdfbox/jbig2/decoder/arithmetic/ArithmeticDecoder.java",
+      "sha256": "10a66dc7de3b616363348fcc788d6d24681dca3a3b726499bdb0829ef6ace837",
+      "url": "https://github.com/apache/pdfbox-jbig2/blob/68dff3095d58e6ad7410fae98b5ee46279c5061e/src/main/java/org/apache/pdfbox/jbig2/decoder/arithmetic/ArithmeticDecoder.java"
+    },
+    {
+      "path": "src/main/java/org/apache/pdfbox/jbig2/decoder/huffman/StandardTables.java",
+      "sha256": "54d564a56fa16c70780b51be3a32e0659b6a2e4ac0e3db57298537075bdbf881",
+      "url": "https://github.com/apache/pdfbox-jbig2/blob/68dff3095d58e6ad7410fae98b5ee46279c5061e/src/main/java/org/apache/pdfbox/jbig2/decoder/huffman/StandardTables.java"
+    }
+  ],
+  "generated": [
+    {
+      "file": "arithmetic.inc",
+      "sha256": "f497d9297f888e826bccc5f5217c093d1822029a7b333121094968599255c203"
+    },
+    {
+      "file": "huffman.inc",
+      "sha256": "642d5316aaf8444ea759d8c93717830aaaef2ae379a39e73c4fbb98f14d1d6e0"
+    }
+  ],
+  "notices": [
+    {
+      "file": "LICENSE.txt",
+      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+    },
+    {
+      "file": "NOTICE.txt",
+      "sha256": "011898ae372d35c9ba85a8ee6da778cbe2f8ed95d55552982d4a1ab89ee53b87"
+    }
+  ]
+}

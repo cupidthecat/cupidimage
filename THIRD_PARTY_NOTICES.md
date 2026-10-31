@@ -574,3 +574,12 @@ TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
 BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
 HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
 MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+
+## JBIG2 coding tables
+
+The arithmetic-state and standard Huffman table data in
+`third_party/jbig2-tables/` are adapted from Apache PDFBox JBIG2 under the
+Apache License, Version 2.0. The original license and attribution are retained
+in that directory's `LICENSE.txt` and `NOTICE.txt`. Its `manifest.json` records
+the source revision, source URLs, and file hashes.

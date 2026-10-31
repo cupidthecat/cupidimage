@@ -1,4 +1,5 @@
 #include "compression/ccitt.h"
+#include "images/jbig2/filter.h"
 #include "pdf_internal.h"
 #include "security/security.h"
 #include <limits.h>
@@ -137,6 +138,7 @@ typedef struct {
     int predictor, colors, columns, bits, early, color_transform;
     cupidimage_ccitt_options fax;
     char crypt_name[128];
+    pdf_object_id jbig2_globals;
 } pdf_filter_params;
 
 static int pdf_filter_lzw(const unsigned char *data, size_t length, int early,
@@ -282,6 +284,8 @@ static int pdf_filter_null(const pdf_object_view *view, size_t *pos) {
 }
 
 int cupidimage_pdf_filter_parameter_applies(const char *filter, const char *key) {
+    if (!strcmp(key, "JBIG2Globals"))
+        return !strcmp(filter, "JBIG2Decode");
     if (!strcmp(key, "Name") || !strcmp(key, "Type"))
         return !strcmp(filter, "Crypt");
     int lzw = !strcmp(filter, "LZWDecode") || !strcmp(filter, "LZW");
@@ -308,6 +312,14 @@ static int pdf_filter_parameters(const pdf_object_view *view, size_t *pos,
     size_t end;
     if (!cupidimage_pdf_dictionary_view(view, *pos, &dictionary, &end))
         return 0;
+    if (!strcmp(filter, "JBIG2Decode")) {
+        size_t value;
+        *pos = end;
+        if (!cupidimage_pdf_page_value(&dictionary, "JBIG2Globals", &value) ||
+            pdf_filter_null(&dictionary, &value))
+            return 1;
+        return cupidimage_pdf_parse_reference(&dictionary, &value, &params->jbig2_globals);
+    }
     if (!strcmp(filter, "Crypt")) {
         size_t value;
         char type[128];
@@ -436,7 +448,8 @@ static int pdf_decode_filters(const pdf_object_view *original, const pdf_object_
     char filters[8][32];
     pdf_filter_params params[8];
     for (int i = 0; i < 8; i++)
-        params[i] = (pdf_filter_params){1, 1, 1, 8, 1, -1, {0, 1728, 0, 0, 0, 1, 0, 0}, "Identity"};
+        params[i] =
+            (pdf_filter_params){1, 1, 1, 8, 1, -1, {0, 1728, 0, 0, 0, 1, 0, 0}, "Identity", 0};
     int count = 0;
     size_t pos;
     *decoded = NULL;
@@ -489,6 +502,9 @@ static int pdf_decode_filters(const pdf_object_view *original, const pdf_object_
             ok = pdf_filter_ascii85(data, length, &out);
         else if (!strcmp(name, "CCITTFaxDecode") || !strcmp(name, "CCF"))
             ok = cupidimage_ccitt_decode(data, length, &params[i].fax, &out.data, &out.used);
+        else if (profile && !strcmp(name, "JBIG2Decode"))
+            ok = cupidimage_pdf_jbig2_filter(original, profile, params[i].jbig2_globals, data,
+                                             length, &out.data, &out.used);
         else if (!strcmp(name, "RunLengthDecode") || !strcmp(name, "RL"))
             ok = pdf_filter_runlength(data, length, &out);
         else if (profile && profile->preserve_jpx && !strcmp(name, "JPXDecode") && i + 1 == count) {

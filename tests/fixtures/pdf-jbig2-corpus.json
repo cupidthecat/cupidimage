@@ -1,0 +1,996 @@
+{
+  "revision": "67667f1e449378a2675f4095cded012b7ce5f37b",
+  "description": "Focused PDF.js JBIG2 corpus. Decoded one-bit samples were compared exactly with an independent implementation; PDF row padding is white=1. Documents are downloaded separately and are not redistributed here.",
+  "files": [
+    {
+      "name": "jbig2_symbol_offset.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/jbig2_symbol_offset.pdf",
+      "sha256": "305b71c67829ef0bb8bddab9fa3ee763dcecd173f5fd996740d17212888fa97d",
+      "object": 6,
+      "generation": 0,
+      "width": 132,
+      "height": 14,
+      "samples_sha256": "10eb26651db10a1269df9235ecdabffdd8bde06c457418408747dffcfa279754"
+    },
+    {
+      "name": "bitmap-composite-and-xnor-halftone.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-and-xnor-halftone.pdf",
+      "sha256": "a88d42b10bd7c860abd3bf16432378d23a9fcf267a7008be047b608e1a332f4e",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-and-xnor-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-and-xnor-refine.pdf",
+      "sha256": "c2046037b2617ffdde875d523bf56a428339d7a6f753c25f4f957317bc9ecc9a",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-and-xnor-text.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-and-xnor-text.pdf",
+      "sha256": "aba6249b83158532ad87ccf47ba69737c9ba2b787c2f815767d239e910564235",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-and-xnor.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-and-xnor.pdf",
+      "sha256": "4432b73b7efcae8eb960b409de37af218f366bd548709d74773dae4ac7c257ef",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-or-xor-replace-halftone.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-or-xor-replace-halftone.pdf",
+      "sha256": "3ffb92c8a77140d06ea628514a1d44c116a5067d40e3cd3887455b8d40918202",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-or-xor-replace-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-or-xor-replace-refine.pdf",
+      "sha256": "cc9510f5b113c8a2053fbc3891e0c8275bf0f59e1ca44522832e77d6a26cc145",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-or-xor-replace-text.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-or-xor-replace-text.pdf",
+      "sha256": "f4fb077e7e541f01ce21983f7822bd2b43d98f8554bf9cb421a03c7daa6442a5",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-composite-or-xor-replace.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-composite-or-xor-replace.pdf",
+      "sha256": "ba8dfa7f3879d2c851287769c0503cf84441e871a93e312e46253e9238dca737",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-customat-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-customat-tpgdon.pdf",
+      "sha256": "91b35c6963b8135dde1f509b424d3cfe5b02d9cc023c802c412916c6b76cc938",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-customat.pdf",
+      "sha256": "9be6eb11af2e4078eb209cbf680bb415960f2275f7e120660d22e7edc09e2ede",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-10bpp-mmr.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-10bpp-mmr.pdf",
+      "sha256": "c164623c7745aa431f59fa4a088e5adf3ff640687469576c64c5b044102ddae0",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-10bpp.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-10bpp.pdf",
+      "sha256": "8a4577a1cdbdf342e2a61e18a239423452355c13733075af76fcd008f12eac5f",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-composite.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-composite.pdf",
+      "sha256": "e52ea26a9cadf0a1fbcd58c3ae411cf2bf14b05f172966283a6254296c4825a0",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-grid.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-grid.pdf",
+      "sha256": "5ba3f0ca836c6df256415b2ddd61286b819f5b6a3f5598e146601839302c0158",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-refine.pdf",
+      "sha256": "f2efff25bcf1ee5d8ee87e3b7c54c7b75e8a1ad33c9e5be22386ed35648dfd7d",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-skip-dummy.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-skip-dummy.pdf",
+      "sha256": "6cdcfefd9200ddfbd37a15ce66ef50421d2fbcc9b396b2a9714b316f7c0a0ff4",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-skip-grid-template1.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-skip-grid-template1.pdf",
+      "sha256": "bafb6edc883b156dbc337b74b0230fbcc5c45f48e08123f3040872edb1c1ec69",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-skip-grid-template2.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-skip-grid-template2.pdf",
+      "sha256": "4aedf60701a9b35e17766e4c26a7326adb0b618c87fb487e7cdde8c909efdd11",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-skip-grid-template3.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-skip-grid-template3.pdf",
+      "sha256": "ad156587b727404d16794dafcc738319b8a2a601374895634b0d5ee8d8b34f1b",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-skip-grid.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-skip-grid.pdf",
+      "sha256": "cfd77f057c98bb1af01fc108c5a9e0b09b438e0e4f1a31aa8b07ce7b275cc348",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-template1.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-template1.pdf",
+      "sha256": "f509758d869cc08a1b45b0fcee33794ae1f45887105ba6fa5a2c8f52598518fc",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-template2.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-template2.pdf",
+      "sha256": "6c3d7bdc9e1012cce3c80b27592fdcc7864734c628184e1b55245b678d0ec47f",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone-template3.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone-template3.pdf",
+      "sha256": "4f249e0d12ad232b96de05592c250498dd3fc661607a8fcbd721bdb5a79eb425",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-halftone.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-halftone.pdf",
+      "sha256": "c276d6cbc7d0709af448b532232c9f8b92424859974b38feaef0d8983bd6d7c0",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-initially-unknown-size.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-initially-unknown-size.pdf",
+      "sha256": "97c0fe6757d24bc2469a8b3a1fab346550ae5e7289f6855e21ebc2ce421dbe6f",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-mmr.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-mmr.pdf",
+      "sha256": "32b70aeb63ca60f60c25c2d797b8f5af16043d66dce1bcb0b0f08a78acee95ed",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-p32-eof.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-p32-eof.pdf",
+      "sha256": "6c959401b0a43e94b4abc580d95b8373adcea87cb13612a3b9eece18767de576",
+      "object": 6,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-randomaccess.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-randomaccess.pdf",
+      "sha256": "82079253a8c5af9683e5dc341e7416d8eb5901c48d6af850a79413e6f11711ec",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-customat-tpgron.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-customat-tpgron.pdf",
+      "sha256": "7a17d8f6d26061f3110efd54f297a7e0e8d4652e3086cc99e3c171d31fd0810f",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-customat.pdf",
+      "sha256": "161d25d77c9bf788515dd0fc1aaaf6e35e1c23495acffe9cf99a98d567d1c5de",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-lossless.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-lossless.pdf",
+      "sha256": "f30056cb8e30203e3c16f00ffe28bc90bdb6af8aa72d58c14f19e71ec9c7cecf",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-page-subrect.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-page-subrect.pdf",
+      "sha256": "74114e6f3925faf7145c0738168ecd3041c45c0ea69b2a91e7f105cdf7045bd0",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-page.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-page.pdf",
+      "sha256": "7dbeb64018e183c77333996eeb5c2b9bcc90caaca8381ad42fb98a64c14025eb",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-refine.pdf",
+      "sha256": "2ebb942ac5be0e066ab4ce204384a39b61692ca75fab0a4df4f36dae925e1f4d",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-template1-tpgron.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-template1-tpgron.pdf",
+      "sha256": "921c1eab4ece655029bb524eb22136d21f305d13779f86fbe81086b62a22d4b3",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-template1.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-template1.pdf",
+      "sha256": "019b26e3de36cbdd829e2faef67866f4140abb17040cd0b626e5bceab272b68c",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine-tpgron.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine-tpgron.pdf",
+      "sha256": "6b17840d81375faafbe48e2150706f1a70271865ec18b9f2e6700e06dadbe86c",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-refine.pdf",
+      "sha256": "ec9e2f9601167ccb00f961e33dec5cc46a23bf08e132f9dce5d3aecb3f1cd9f9",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-stripe-initially-unknown-height.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-stripe-initially-unknown-height.pdf",
+      "sha256": "fc2a20fc1cb5b4fd780e68be7b7ed95e63aa9b58ef290d7501b97212c206ff0f",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-stripe-last-implicit.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-stripe-last-implicit.pdf",
+      "sha256": "ff3b3a2465c764fd1705db05edfb3f11336e6a93535bad956e5d5aaebaecf4ae",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-stripe-single-no-end-of-stripe.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-stripe-single-no-end-of-stripe.pdf",
+      "sha256": "8bf3bbb2a48b0bc689b920fece52080582b15415eef3615e811ffb2cc8932966",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-stripe-single.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-stripe-single.pdf",
+      "sha256": "b6d9b0b9348e9f4c33ba192a32c913ecc446d212dc3df0108ed732cc399b5482",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-stripe.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-stripe.pdf",
+      "sha256": "b1e3c558a34537aeace4334cbcea6c42f82f4b815c8232df462ee8956e6faf82",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-big-segmentid.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-big-segmentid.pdf",
+      "sha256": "2fb59d0fbb8396bc812d5ed9af8bc6b2b8a69051519b8449b360cb304ea4e0b8",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-context-reuse.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-context-reuse.pdf",
+      "sha256": "a6f05b48046b132054efe967c68ad5292b6835f78cce14bf2a613c9bce39b2c1",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-empty.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-empty.pdf",
+      "sha256": "adf661486871b31773fc85750372dbd3051db664b17128791e1bf667becde7e2",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "issue20439.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/issue20439.pdf",
+      "sha256": "83141bcca434c38c3ae8f634b9f06fe17847b2380cdd64168949077f88c79f85",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-negative-sbdsoffset.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-negative-sbdsoffset.pdf",
+      "sha256": "5aa48933bc980565e1c0ea93d91c4fe5370e96d4a461198481aa86af908793e5",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-refine.pdf",
+      "sha256": "5e2ae6875ea8d0f1d2aecfaeff6aeac6acb8ff76eadef42e5f0fa7fc76c818b0",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symbolrefine-textrefine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symbolrefine-textrefine.pdf",
+      "sha256": "2902534243c382770456f958fe7ba835f1916ea85f6219a3ba2b122f63db34c6",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symbolrefineone-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symbolrefineone-customat.pdf",
+      "sha256": "cd8792e011e41f56b07dd0ba14df10b89c36d4492937032c60656177f5d27da5",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symbolrefineone-template1.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symbolrefineone-template1.pdf",
+      "sha256": "f175b6edddc6d40cbacc447b46a628c164a9a5ea0185b20f09f48bedbe7516c3",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symbolrefineone.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symbolrefineone.pdf",
+      "sha256": "670053e1dbd980602b44f052bc9c0ffa7e7835521fc0ee324261a4143b52f66c",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symbolrefineseveral.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symbolrefineseveral.pdf",
+      "sha256": "705133ec80d7e755ca206be508ad92840f11555520a5c117a3fe2886c30e2435",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuff-texthuff.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuff-texthuff.pdf",
+      "sha256": "af8f3c70dbe1c0f0da090c829cea6da5015ed9978dd13fd2d0b9b44ac715db2b",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuff-texthuffB10B13.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuff-texthuffB10B13.pdf",
+      "sha256": "1e0ad39f563c79b7e650347265dafebb1ccbfb20c9fbce62fc64575af9a13aa9",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuffB5B3-texthuffB7B9B12.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuffB5B3-texthuffB7B9B12.pdf",
+      "sha256": "7777647082ccdde57b94bbdbcf1e0a743537adb02faabd662414634c92815d57",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuffcustom-texthuffcustom.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuffcustom-texthuffcustom.pdf",
+      "sha256": "c0799af446d978d843ee0788a6dddb8c572a5e2b57414de4e7b2a742ec2d34a2",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuffrefine-textrefine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuffrefine-textrefine.pdf",
+      "sha256": "3e4eecb287e59b630d9799bf00d2085f890d23bbc6ae2bebfb86b10c00b8a6a3",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuffrefineone.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuffrefineone.pdf",
+      "sha256": "a38677054cb800d0a8b1bac32d21f9ad9e6102bcd650fc3735015d05e1778cc9",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuffrefineseveral.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuffrefineseveral.pdf",
+      "sha256": "6d3050b223ce7bda0c948635c9bf67c04eac6c21b6e214d988cda9e1599e257a",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-symhuffuncompressed-texthuff.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-symhuffuncompressed-texthuff.pdf",
+      "sha256": "347a83cce9504ff8414fe028d8db2b311ebe800cab0116469c90456dd889218b",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textbottomleft.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textbottomleft.pdf",
+      "sha256": "0bc02085b750d0413fa3360825cc23b5e5a449b2e3f08fa084c3b00b64e03683",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textbottomlefttranspose.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textbottomlefttranspose.pdf",
+      "sha256": "a9c552ce38b76935843861f8491bcb2df3af3833baa354e035e2026c286b7f98",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textbottomright.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textbottomright.pdf",
+      "sha256": "e50632eb44e2dc3dc411e4265844ccf6fdd146b496b8c84e3d81a5c9adf858a5",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textbottomrighttranspose.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textbottomrighttranspose.pdf",
+      "sha256": "27b036ccba3f9e068677ef8bf203cf66bc6fef1eb091188119a1b7f474344d26",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textcomposite.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textcomposite.pdf",
+      "sha256": "a3f3985d4adcff6f5fbd2df7fad5382f43ac1dd2f4f868cb854a7a067bdeaf86",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefine.pdf",
+      "sha256": "945dc0c5ad52ff055c857baa35bfb83e1283ec5ac8f9a031d81e320d41f47a89",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefineB15.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefineB15.pdf",
+      "sha256": "0668b10ff9061f028185a8b2c014184ceaa3c23cddaf058c91f2d068b2e20def",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefinecustom.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefinecustom.pdf",
+      "sha256": "d150d22c02ae175c031e77aea704813cce57c33c4dd6ed3f22fa7494bb29e453",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefinecustomdims.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefinecustomdims.pdf",
+      "sha256": "fef10e63ce72c3285a804767499a0a814a75d24f919659e8e69596cd2095114f",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefinecustompos.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefinecustompos.pdf",
+      "sha256": "03b17dfc51931f8f9f35a2fabfe98e36bb61fc7e604e455c6c6d6fca3d6e6603",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefinecustomposdims.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefinecustomposdims.pdf",
+      "sha256": "342d06ad5f3d6843ea77d9a03117f5a3df663d22375a68e50a71109eaea6c4c1",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texthuffrefinecustomsize.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texthuffrefinecustomsize.pdf",
+      "sha256": "1a2a7861127869e6c779b65b898ec41e5045f1107242923aa8109c8c412cdec1",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textrefine-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textrefine-customat.pdf",
+      "sha256": "2c86c9cde4e623f2ba3c94d6b9e067298b25adeebd96ab704cbe908c22de5c8b",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textrefine-negative-delta-width.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textrefine-negative-delta-width.pdf",
+      "sha256": "53fa2b3ccef2999986369ea19c245dbada17c17f959e0c0d98f926e2fdf2fb1a",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-textrefine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-textrefine.pdf",
+      "sha256": "c6dc6a57d164c86c8aa59e6136f8b166a4697213ef6d5669bed6a7f6227bed0b",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texttopright.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texttopright.pdf",
+      "sha256": "e5b6eb678be01e99db7a6316fa99070bebf29489ae61054bdde04c9c26c6b9dd",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texttoprighttranspose.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texttoprighttranspose.pdf",
+      "sha256": "2e6522bf6fbbf01fbd8c05b00915b9f5c2783cbdf1815b53b027f49fb91cdad7",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol-texttranspose.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol-texttranspose.pdf",
+      "sha256": "926887bcb2397304842c777a703219296d9b396d924922d492103327ab99a661",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-symbol.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-symbol.pdf",
+      "sha256": "39bf73b128947979f9a6080791ad03e206ea5756f4b4d37b6609e154d4f875b2",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template1-customat-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template1-customat-tpgdon.pdf",
+      "sha256": "071fd70fdad79ea30a2bfbaafcee63f7da0e2b723ffeef5949d583bae39ffd58",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template1-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template1-customat.pdf",
+      "sha256": "9fbdff065b72818b2e8cef051586b4807afefc3f68773117a0d7fca217c7eb42",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template1-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template1-tpgdon.pdf",
+      "sha256": "e8e715223bceac2b95b186e7220594793a57333c8d0da64cde2060027b9e91d4",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template1.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template1.pdf",
+      "sha256": "25ab482ef6ba07335fd4927ac3ab22b231044345b48e024b5ed2399b048bc677",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template2-customat-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template2-customat-tpgdon.pdf",
+      "sha256": "f062d3e4f6bed408216ed042a113aca71ff30cb859b314c26b3d7259cfa5ca07",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template2-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template2-customat.pdf",
+      "sha256": "389e2719d8432f7a4d0a579e49f2fba3a6e085a007c046023666e66432105554",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template2-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template2-tpgdon.pdf",
+      "sha256": "f54b9f8a913f7f9389ea3fbe6ff3afd148753be651d5f6ed8caebd67acbc6271",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template2.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template2.pdf",
+      "sha256": "f37d525a05dfbfc5936b56c0fb7b7af382d0fa2da56a1a305c99850d5982912b",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template3-customat-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template3-customat-tpgdon.pdf",
+      "sha256": "a536e4f1dbe09f27f5e355bfad252e96d223cce761a9f58cf47fcfb507133f4d",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template3-customat.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template3-customat.pdf",
+      "sha256": "8db3cd4ebd4d75a0a45c685ce243af13855bb6a3642b3a3810b0e7ce29786389",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template3-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template3-tpgdon.pdf",
+      "sha256": "1d8514a3c8664ac84b1434ccac539f30fec3a02dccbd1da612a7925394cb2a48",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-template3.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-template3.pdf",
+      "sha256": "98b5e78016e3415990e9f3c99b5ed2940ed869826d9ddf04385f8abdf543cf13",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-tpgdon.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-tpgdon.pdf",
+      "sha256": "7d9c22dcee6a357e6290de04b57a19ffc42a6fd5d802d62a4cbd75a59b078924",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-trailing-7fff-stripped-harder-refine.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-trailing-7fff-stripped-harder-refine.pdf",
+      "sha256": "17e08dc35c1fe2c6a9ce5db25ee53805248ccb9a8ae528a339d37d764f29dc9a",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-trailing-7fff-stripped-harder.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-trailing-7fff-stripped-harder.pdf",
+      "sha256": "47fa9873c6250a75552b60771fed2494f14eb4a20bdacf558ee00f9136835be9",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "bitmap-trailing-7fff-stripped.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/bitmap-trailing-7fff-stripped.pdf",
+      "sha256": "1fb303a7eaa11933f3f1e5c3b554375649ea4a5f1226efa97a7534cac768b8fb",
+      "object": 5,
+      "generation": 0,
+      "width": 399,
+      "height": 400,
+      "samples_sha256": "f195624b2fc5505fdbbd3473c58eaf6b22b4f376b57ced779a4357d8bd12bc4f"
+    },
+    {
+      "name": "jbig2_file_header.pdf",
+      "url": "https://raw.githubusercontent.com/mozilla/pdf.js/67667f1e449378a2675f4095cded012b7ce5f37b/test/pdfs/jbig2_file_header.pdf",
+      "sha256": "5edb6045fc86ee5fa8e837685a35a57014764d1f72518e136e5e8f13fcf92c8d",
+      "object": 4,
+      "generation": 0,
+      "width": 128,
+      "height": 96,
+      "samples_sha256": "e774b45e142bc9dd40db2cee035428ce009133e6b2bcb50e9d49185a2f0872dc"
+    }
+  ]
+}

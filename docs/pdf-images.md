@@ -4,7 +4,7 @@ Image XObjects and inline images pass decoded samples through PDF color and mask
 processing before compositing. A file loading successfully does not establish
 complete image fidelity. Images have an opt-in dictionary-controlled
 [bilinear interpolation profile](pdf-image-interpolation.md). Wider resampling,
-color management and several compression formats remain unfinished.
+color management and remaining codec profiles still need work.
 
 ## Sample and filter pipeline
 
@@ -14,7 +14,9 @@ See [PDF colors](pdf-colors.md) for conversion order and remaining limits.
 Flate, LZW, ASCIIHex, ASCII85, RunLength and CCITT byte filters share the stream
 pipeline. DCTDecode can follow those filters instead of requiring a standalone
 JPEG stream. [JPXDecode](pdf-jpeg2000.md) retains JPEG 2000 component planes,
-palettes and encoded alpha until image painting. Filter arrays may contain up to eight stages.
+palettes and encoded alpha until image painting. [JBIG2Decode](pdf-jbig2.md)
+expands bitonal regions, symbols and halftones, including shared global segments.
+JBIG2 and JPX are not accepted in inline images. Filter arrays may contain up to eight stages.
 
 Filter names, DecodeParms arrays/dictionaries and their controls can be indirect.
 Null parameters retain their defaults. Each stage reads only its own controls;

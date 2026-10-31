@@ -52,3 +52,14 @@ the supplied files.
 This set is not exhaustive. Codec, font, color-management, archival,
 accessibility and other specialized requirements still need the authoritative
 references applicable to their particular features.
+
+
+## JBIG2 bitonal images
+
+The image decoder uses [ITU-T T.88 (08/2018)](https://www.itu.int/rec/T-REC-T.88-201808-I/en),
+corresponding to ISO/IEC 14492:2019, together with the embedding rules in
+ISO 32000-1 and ISO 32000-2 section 7.4.7. T.88 clauses 6 and 7 define the
+bitmap procedures and segments; Annexes A through E define integer coding,
+Huffman tables, Gray-coded planes, stream organizations and arithmetic coding.
+The PDF filter is one bit per pixel, so T.88 colour extensions do not apply.
+See [JBIG2 images](pdf-jbig2.md) for implementation evidence and resource bounds.
