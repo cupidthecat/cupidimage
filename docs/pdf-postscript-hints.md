@@ -31,14 +31,14 @@ BlueScale and zone height are not yet qualified for grid fitting.
 Type 1 fonts retain the same fourteen fields from literal private-dictionary
 definitions. Unlike CFF, their arrays contain absolute values, StdHW/StdVW are
 single-element arrays, and ForceBold uses a PostScript boolean. The reader accepts
-literal array/procedure objects and verified local aliases for `def`. Nested
+literal array/procedure objects and [verified scoped aliases](pdf-type1-scopes.md)
+for `def`, including inherited definitions. Nested
 unrelated dictionaries and procedure bodies do not supply font hints.
 
 Computed expressions are marked unresolved and invalid rather than taking the
 first literal as their result. A later literal definition clears those flags.
 For example, a conditional StemSnap array remains unresolved. The unhinted
-outline path stays available. Arbitrary PostScript evaluation, inherited definer
-aliases remain unfinished. The standalone [Type 1 fitting core](pdf-postscript-gridfit.md)
+outline path stays available. Arbitrary PostScript evaluation and computed dictionaries remain unfinished. The standalone [Type 1 fitting core](pdf-postscript-gridfit.md)
 uses the resolved fields required by its selected profile.
 
 ## Type 2 capture

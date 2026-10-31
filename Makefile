@@ -744,3 +744,18 @@ test-pdf-type1-flex: $(BINDIR)/test_pdf_type1_flex $(BINDIR)/test_pdf_type1_grid
 	python3 scripts/test_pdf_type1_flex.py $(BINDIR)/test_pdf_type1_gridfit $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 $(BINDIR)/test_pdf_type1_gridfit: tests/pdf_type1_flex_cases.inc
+
+TEST_BINS += test_pdf_type1_syntax
+.PHONY: test-pdf-type1-scopes
+test: test-pdf-type1-scopes
+test-pdf-type1-scopes: $(BINDIR)/test_pdf_type1_syntax $(BINDIR)/test_pdf_type1_scope_oom $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_type1_scopes_fixture.py --check
+	$(BINDIR)/test_pdf_type1_syntax
+	python3 scripts/test_pdf_type1_scopes.py $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom --font-allocator $(BINDIR)/test_pdf_type1_scope_oom
+$(BINDIR)/test_pdf_type1_syntax: tests/test_pdf_type1_syntax.c $(wildcard $(SRCDIR)/formats/pdf/fonts/type1/syntax.*) $(wildcard $(SRCDIR)/formats/pdf/fonts/type1/lexer.*)
+	@mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(SRCDIR)/formats/pdf/fonts/type1/syntax.c $(SRCDIR)/formats/pdf/fonts/type1/lexer.c -o $@ $(LDLIBS)
+
+TEST_BINS += test_pdf_type1_scope_oom
+$(BINDIR)/test_pdf_type1_scope_oom: tests/test_pdf_type1_scope_oom.c tests/fault_alloc.h $(SRCDIR)/formats/pdf/fonts/type1.c $(wildcard $(SRCDIR)/formats/pdf/fonts/type1/*) $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)

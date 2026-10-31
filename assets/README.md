@@ -159,3 +159,10 @@ and independent generation procedure are described in ../docs/pdf-security.md.
 at four sizes. Enable `--pdf-cff-hinting` to apply depth-dependent selection.
 The complete sample is decoded-unverified; focused outline and page comparisons
 are described in [Type 2 flex hints](../docs/pdf-flex.md).
+
+
+`pdf/type1-dictionary-scopes.pdf` pairs ordinary Type 1 declarations with nested
+controls and inherited reader/definer aliases. The owned rectangle glyphs must
+have identical geometry in both columns. The generated sample has a complete
+complete-page control comparison and allocation-failure checks; see
+[Type 1 dictionary scopes](../docs/pdf-type1-scopes.md).

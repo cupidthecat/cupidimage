@@ -36,7 +36,7 @@ static int t1_hint_array(pdf_cff_slice source, size_t *position, int procedure, 
 
 void cupidimage_pdf_type1_hint_read(pdf_ps_private_hints *hints, unsigned *unresolved,
                                     unsigned field, pdf_cff_slice source, size_t *position,
-                                    const char definers[16][128], unsigned definer_count) {
+                                    pdf_type1_syntax *syntax) {
     if (field >= PDF_PS_HINT_FIELDS)
         return;
     size_t pos = *position;
@@ -74,8 +74,8 @@ void cupidimage_pdf_type1_hint_read(pdf_ps_private_hints *hints, unsigned *unres
          i++)
         end = cupidimage_pdf_type1_lex(source, &pos, 0);
     int defined = t1_hint_word(end, "def");
-    for (unsigned i = 0; i < definer_count && i < 16; i++)
-        defined |= t1_hint_word(end, definers[i]);
+    if (!defined && end.type == PDF_T1_WORD)
+        defined = (cupidimage_pdf_type1_syntax_lookup(syntax, end.text) & PDF_T1_DEFINER) != 0;
     known &= defined;
     /* Type 1 blue zones, stem widths and shift/fuzz values are integers. */
     if (field != PDF_PS_BLUE_SCALE && field != PDF_PS_EXPANSION_FACTOR)
