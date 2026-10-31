@@ -20,7 +20,7 @@ TEST_BINS = test_pdf_jpx test_pdf_jpx_file test_pdf_subset_fonts test_pdf_option
  test_jpeg_decoder test_pdf_pages test_sixel test_svg_safety test_webp_lossless test_tiff_bounds test_svg_css_oom test_pdf_clip_oom test_svg_numeric
 
 TEST_TARGETS += test-pdf-cid-substitution
-TEST_BINS += test_pdf_cid_encoding
+TEST_BINS += test_pdf_cid_encoding test_pdf_scanline test_pdf_clip_crop
 
 .PHONY: all lib cli test test-pdf-corpus $(TEST_TARGETS) test-svg test-pdf clean
 all: lib cli
@@ -238,6 +238,7 @@ test-pdf-optional-content: $(BINDIR)/test_pdf_optional_content $(BINDIR)/test_pd
 
 test-pdf-shading-work: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/test_pdf_shading_work.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_shading_bands.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-shading: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_shading.py $<
@@ -523,9 +524,11 @@ test-pdf-font-cache: $(BINDIR)/test_pdf_font_cache
 
 $(BINDIR)/test_pdf_font_cache: tests/fixtures/pdf-truetype.inc tests/fixtures/pdf-cff.inc tests/fixtures/pdf-type1.inc $(SRCDIR)/formats/pdf/fonts/program.h
 
-test-pdf-dense-paths: $(BINDIR)/test_pdf_clip_work $(BINDIR)/test_pdf_path_storage $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+test-pdf-dense-paths: $(BINDIR)/test_pdf_clip_crop $(BINDIR)/test_pdf_scanline $(BINDIR)/test_pdf_clip_work $(BINDIR)/test_pdf_path_storage $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 	python3 scripts/generate_pdf_dense_path_fixtures.py --check
 	$(BINDIR)/test_pdf_clip_work
+	$(BINDIR)/test_pdf_scanline
+	$(BINDIR)/test_pdf_clip_crop
 	$(BINDIR)/test_pdf_path_storage
 	python3 scripts/test_pdf_dense_paths.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
 

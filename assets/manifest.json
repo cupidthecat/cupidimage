@@ -1047,6 +1047,10 @@
       "sha256": "fe51b134b47f8eefc4d110764be9e89af3d6721dae26634948b2c839248c1829"
     },
     {
+      "path": "assets/pdf/repeated-page-clips.pdf",
+      "sha256": "148dfa1730a7c5cc0c248599aa5e08e53596d53013267e91062e2ababf8ab9df"
+    },
+    {
       "path": "assets/pdf/shapes.pdf",
       "sha256": "6a13ebcf7ad613bc357e497af6fc1a17dce530f62ea137c5d60fc3a9743a832c"
     },

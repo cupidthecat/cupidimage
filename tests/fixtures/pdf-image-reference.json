@@ -706,6 +706,14 @@
       "rgba_zlib": "eNpraGj434AHMzT8x4sbCOhvGDV/1PxBbD4h/aN4FA9nDACv172u",
       "tolerance": 0,
       "provenance": "Authored lossless JPEG 2000 samples, expanded with literal RGB and opacity values."
+    },
+    {
+      "asset": "assets/pdf/repeated-page-clips.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eNr7/38UjIIRDBgYSMOj5o+aP4zMBwDQoDsM",
+      "tolerance": 0,
+      "provenance": "Literal expected pixels for owned opaque geometry on integer device boundaries."
     }
   ]
 }

@@ -95,6 +95,10 @@ static int pdf_shading_visible_bounds(const pdf_render_state *st, int bounds[4],
         bounds[3] = (int)fmax(0, fmin(height, ceil(b[3])));
         return 1;
     }
+    if (clip->bounds_known) {
+        memcpy(bounds, clip->bounds, sizeof(clip->bounds));
+        return 1;
+    }
     size_t pixels = (size_t)width * height, bytes = (pixels + 7) / 8;
     if (clip->bytes != bytes || bytes > *work)
         return 0;
@@ -199,7 +203,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
             if (!cupidimage_pdf_pixel_visible(st, x, y))
                 continue;
             double tx = st->page_x0_pts + (x + .5) * (72.0 / 96.0) - m[4];
-            double ty = st->page_top_pts - (y + .5) * (72.0 / 96.0) - m[5];
+            double ty = st->page_top_pts - (y + st->shading_row_offset + .5) * (72.0 / 96.0) - m[5];
             double ux = (m[3] * tx - m[2] * ty) / det, uy = (m[0] * ty - m[1] * tx) / det;
             if (has_box && (ux < box[0] || ux >= box[2] || uy < box[1] || uy >= box[3]))
                 continue;
