@@ -4,32 +4,27 @@
 import argparse
 from pathlib import Path
 import random
-import stringprep
 import subprocess
-import unicodedata
+from pdf_unicode32 import load_data, SOURCE
 
-UCD = unicodedata.ucd_3_2_0
-PROHIBITED = [
-    getattr(stringprep, "in_table_" + key)
-    for key in ("a1", "c12", "c21", "c22", "c3", "c4", "c5", "c6", "c7", "c8", "c9")
-]
+UCD = load_data()
+
+
+def finish(text):
+    flags = [UCD.flags(ord(char)) for char in text]
+    if any(value & 6 for value in flags):
+        return "invalid"
+    if any(value & 8 for value in flags):
+        if any(value & 16 for value in flags) or not flags[0] & 8 or not flags[-1] & 8:
+            return "invalid"
+    return text.encode("utf-8")[:127].hex()
 
 
 def reference(text):
     text = "".join(
-        " " if stringprep.in_table_c12(c) else c for c in text if not stringprep.in_table_b1(c)
+        " " if UCD.contains("C.1.2", ord(c)) else c for c in text if not UCD.contains("B.1", ord(c))
     )
-    text = UCD.normalize("NFKC", text)
-    if any(test(c) for c in text for test in PROHIBITED):
-        return "invalid"
-    if any(stringprep.in_table_d1(c) for c in text):
-        if (
-            any(stringprep.in_table_d2(c) for c in text)
-            or not stringprep.in_table_d1(text[0])
-            or not stringprep.in_table_d1(text[-1])
-        ):
-            return "invalid"
-    return text.encode("utf-8")[:127].hex()
+    return finish(UCD.normalize(text))
 
 
 def main():
@@ -51,8 +46,8 @@ def main():
         if (
             args.exhaustive
             or scalar < 256
-            or UCD.normalize("NFKC", char) != char
-            or UCD.combining(char)
+            or UCD.normalize(char) != char
+            or UCD.ccc.get(scalar, 0)
             or scalar % 251 == 0
         ):
             scalars.append(char)
@@ -78,6 +73,26 @@ def main():
         "\u0221",
         "\U0001f600",
     ]
+    # These expectations come directly from the published normalization suite,
+    # not from the generator or this module's reference implementation.
+    normative = 0
+    for line in (SOURCE / "NormalizationTest-3.2.0.txt").read_text(encoding="utf-8").splitlines():
+        body = line.split("#", 1)[0].strip()
+        if not body or body.startswith("@"):
+            continue
+        columns = [
+            "".join(chr(int(value, 16)) for value in part.split()) for part in body.split(";")[:5]
+        ]
+        assert len(columns) == 5
+        expected_normal = columns[3]
+        for text in columns:
+            assert UCD.normalize(text) == expected_normal, body
+            # SASLprep mapping precedes normalization; the Unicode vectors
+            # themselves do not specify that separate mapping step.
+            if any(UCD.flags(ord(c)) & 3 for c in text):
+                continue
+            add(text.encode("utf-8"), finish(expected_normal))
+            normative += 1
     rng = random.Random(4013)
     for _ in range(1200):
         samples.append("".join(rng.choice(scalars) for _ in range(rng.randrange(1, 20))))
@@ -120,7 +135,9 @@ def main():
     assert len(actual) == len(expected), (len(actual), len(expected), run.stderr)
     for index, (value, want) in enumerate(zip(actual, expected)):
         assert value == want, (index, requests[index], value, want)
-    print(f"PDF password preparation: {len(expected)} Unicode/profile checks")
+    print(
+        f"PDF password preparation: {len(expected)} Unicode/profile checks; {normative} published normalization vectors"
+    )
 
 
 if __name__ == "__main__":

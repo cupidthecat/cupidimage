@@ -24,7 +24,9 @@ specified characters, maps non-ASCII spaces, performs complete NFKC normalizatio
 checks prohibited/unassigned characters and applies the bidirectional rules before
 truncating the UTF-8 result to 127 bytes. Normalization includes canonical ordering,
 composition exclusions and algorithmic Hangul decomposition/composition. It does
-not use the host's current Unicode database at runtime.
+not use the host's Unicode database during generation, testing or runtime.
+The source UnicodeData, composition exclusions and normalization vectors are
+pinned to the official 3.2.0 files. RFC 3454 code-point tables are pinned separately.
 
 Legacy UTF-8 input converts to the defined PDFDocEncoding characters. A separate
 internal byte-input path preserves already encoded legacy passwords, including
@@ -49,7 +51,8 @@ is constant-time. It does not expose a network authentication endpoint.
 cryptographic vectors, owner/user authentication and password preparation. Fixed
 cipher vectors come from RFC 6229 and NIST SP 800-38A. Larger stored fixtures were
 generated independently with cryptography and pypdf; routine tests need neither
-package. Hash checks use Python's hashlib. All credentials are synthetic test data.
+package. Hash checks use Python's hashlib. The password suite also checks the published
+Unicode 3.2 normalization vectors directly. All credentials are synthetic test data.
 
 An optional exhaustive Unicode scalar pass is available with:
 

@@ -2,46 +2,31 @@
 """Generate the Unicode 3.2 normalization and RFC 3454 profile data."""
 
 from pathlib import Path
-import stringprep
 import sys
-import unicodedata
+from pdf_unicode32 import load_data
 
 ROOT = Path(__file__).resolve().parents[1]
-UCD = unicodedata.ucd_3_2_0
+UCD = load_data()
 
 
 def generate():
-    assert UCD.unidata_version == "3.2.0"
     decompositions, values, combining, compositions, ranges = [], [], [], [], []
-    prohibited = [
-        getattr(stringprep, "in_table_" + table)
-        for table in ("c21", "c22", "c3", "c4", "c5", "c6", "c7", "c8", "c9")
-    ]
     for code in range(0x110000):
-        char = chr(code)
-        flags = 1 if stringprep.in_table_b1(char) else 0
-        flags |= 2 if stringprep.in_table_c12(char) else 0
-        flags |= 4 if stringprep.in_table_a1(char) or any(fn(char) for fn in prohibited) else 0
-        flags |= 8 if stringprep.in_table_d1(char) else 0
-        flags |= 16 if stringprep.in_table_d2(char) else 0
+        flags = UCD.flags(code)
         if flags:
             if ranges and ranges[-1][1] == code - 1 and ranges[-1][2] == flags:
                 ranges[-1][1] = code
             else:
                 ranges.append([code, code, flags])
-        ccc = UCD.combining(char)
+        ccc = UCD.ccc.get(code, 0)
         if ccc:
             combining.append((code, ccc))
-        normal = UCD.normalize("NFKD", char)
+        normal = UCD.decomposition(code)
         assert len(normal) <= 18
-        if normal != char and not 0xAC00 <= code < 0xD7A4:
+        if normal != (code,) and not 0xAC00 <= code < 0xD7A4:
             decompositions.append((code, len(values), len(normal)))
-            values.extend(map(ord, normal))
-        canonical = UCD.decomposition(char)
-        if canonical and not canonical.startswith("<"):
-            seq = [int(value, 16) for value in canonical.split()]
-            if len(seq) == 2 and UCD.normalize("NFC", "".join(map(chr, seq))) == char:
-                compositions.append((*seq, code))
+            values.extend(normal)
+    compositions = [(first, second, code) for (first, second), code in UCD.compositions.items()]
     rows = [
         "/* Generated Unicode 3.2 data for RFC 3454/4013.",
         " * Unicode License V3: third_party/unicode-codepages/LICENSE. */",

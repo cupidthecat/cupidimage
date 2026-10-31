@@ -508,8 +508,9 @@ in third_party/bearssl/manifest.json. Only the selected hash functions,
 constant-time AES-CBC implementation and byte codecs are compiled.
 
 The password-preparation tables derive from Unicode 3.2 character data and the
-RFC 3454/4013 tables, using Python's pinned Unicode 3.2 database. The Unicode
-License V3 is retained in third_party/unicode-codepages/LICENSE.
+RFC 3454/4013 tables. The pinned source data and normalization vectors are in
+third_party/unicode32, with Unicode License V3 and the RFC 3454 copyright notice.
+Generation does not depend on a host Unicode library.
 
 BearSSL license text:
 
@@ -534,3 +535,31 @@ BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
 ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## RFC 3454 data notice
+
+Copyright (C) The Internet Society (2002).  All Rights Reserved.
+
+This document and translations of it may be copied and furnished to
+others, and derivative works that comment on or otherwise explain it
+or assist in its implementation may be prepared, copied, published
+and distributed, in whole or in part, without restriction of any
+kind, provided that the above copyright notice and this paragraph are
+included on all such copies and derivative works.  However, this
+document itself may not be modified in any way, such as by removing
+the copyright notice or references to the Internet Society or other
+Internet organizations, except as needed for the purpose of
+developing Internet standards in which case the procedures for
+copyrights defined in the Internet Standards process must be
+followed, or as required to translate it into languages other than
+English.
+
+The limited permissions granted above are perpetual and will not be
+revoked by the Internet Society or its successors or assigns.
+
+This document and the information contained herein is provided on an
+"AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.

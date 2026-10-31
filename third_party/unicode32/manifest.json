@@ -1,0 +1,31 @@
+{
+  "version": "3.2.0",
+  "files": [
+    {
+      "file": "UnicodeData-3.2.0.txt",
+      "sha256": "5e444028b6e76d96f9dc509609c5e3222bf609056f35e5fcde7e6fb8a58cd446",
+      "source": "https://www.unicode.org/Public/3.2-Update/UnicodeData-3.2.0.txt"
+    },
+    {
+      "file": "CompositionExclusions-3.2.0.txt",
+      "sha256": "1d3a450d0f39902710df4972ac4a60ec31fbcb54ffd4d53cd812fc1200c732cb",
+      "source": "https://www.unicode.org/Public/3.2-Update/CompositionExclusions-3.2.0.txt"
+    },
+    {
+      "file": "NormalizationTest-3.2.0.txt",
+      "sha256": "c4513869bb7098d19838be4a1fd5d760843c5804bfe03bd6bbb20623ceb6e57d",
+      "source": "https://www.unicode.org/Public/3.2-Update/NormalizationTest-3.2.0.txt"
+    },
+    {
+      "file": "stringprep-tables.json",
+      "sha256": "653f6a7347771c1db2d8a620c4fc6c5796299397cff6cccd066eacc7b7ee5256",
+      "source": "https://www.rfc-editor.org/rfc/rfc3454.txt"
+    },
+    {
+      "file": "RFC3454-NOTICE.txt",
+      "sha256": "cc849fd03a0fbba20be84162320d99cc5432aefd16158755c9e00405281650f9",
+      "source": "https://www.rfc-editor.org/rfc/rfc3454.txt"
+    }
+  ],
+  "rfc3454_source_sha256": "eb722fa698fb7e8823b835d9fd263e4cdb8f1c7b0d234edf7f0e3bd2ccbb2c79"
+}
