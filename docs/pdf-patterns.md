@@ -89,3 +89,24 @@ backgrounds, deferred validation, irrelevant graphics-state entries and compress
 indirect parameter values. Focused probes of two independent renderers left the
 shading pattern's own opacity and blend settings unapplied. These tests therefore
 remain analytic evidence, not a claim of reference pixel parity.
+
+## Bounded shading bands
+
+Function-based, axial and radial shading patterns without an `ExtGState` keep
+exact samples for up to 64 rows at a time. Sampling another band rebuilds those
+rows from the retained definition and initial graphics state. The cache retains
+its original page coordinates, so a band does not round a shifted page origin.
+The final band evaluates only rows that belong to the page.
+
+This lets multiple CMYK shading patterns share the existing 64 MiB cache budget
+without retaining a full-page color, alpha and shape buffer for each pattern.
+Samples remain doubles; this is not downsampling or a lower-precision cache.
+Mesh patterns and patterns with their own graphics state retain the previous
+full-surface path, including backdrop-dependent composition. Their existing
+memory limits still apply.
+
+`make test-pdf-shading-work` includes paired banded/full-surface comparisons for
+all three function shading types, RGB/CMYK/gray groups, translated and sheared
+matrices, fractional and negative page origins, saved states, band revisits and
+all five PDF rendering options. A two-pattern letter-sized CMYK page has a
+literal red pixel oracle. Allocation failures are checked across band changes.

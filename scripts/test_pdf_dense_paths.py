@@ -103,6 +103,19 @@ def main():
                 return document('/MediaBox [0 0 612 792]',
                     stream=('q '+shape+' W n Q ')*repeats+shape+' W n 0 g 0 0 12 12 re f')
             assert render(clipped(400),aa=True)==render(clipped(0),aa=True)
+        # A compound clip may contain thousands of disjoint contours. Drawing
+        # one small shape must not copy every unrelated contour into each crop.
+        shapes=[]
+        for row in range(48):
+            for column in range(64):
+                x=column*3+.1875; y=row*3+.1875
+                shapes.append(f'{x} {y} 1.125 1.125 re ')
+        large_box='/MediaBox [0 0 192 144]'
+        compound=document(large_box,stream=''.join(shapes)+'W n 1 0 0 rg '+
+                          ''.join(shape+'f ' for shape in shapes))
+        independent=document(large_box,stream='1 0 0 rg '+
+                             ''.join('q '+shape+'W n '+shape+'f Q ' for shape in shapes))
+        assert render(compound,aa=True)==render(independent,aa=True)
         # An empty clip still allocates and clears its bounded bitmap safely.
         data=page('40 40 1 1 re W n 0 0 18 12 re f',small=True)
         assert render(data,aa=True)==bytes((255,255,255,255))

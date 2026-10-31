@@ -143,21 +143,28 @@ int cupidimage_pdf_pattern_sample(pdf_render_state *st, pdf_pattern *pattern, do
         return 1;
     }
     const pdf_blend_space *blend = cupidimage_pdf_current_blend(st);
-    if (pattern->color && !cupidimage_pdf_blend_equal(&pattern->blend, blend) &&
-        !cupidimage_pdf_refresh_pattern_cache(st, pattern))
-        return 0;
+    int refresh = pattern->color && !cupidimage_pdf_blend_equal(&pattern->blend, blend);
     if (pattern->shading) {
         double sx = floor((x - pattern->page_x0) * (96.0 / 72.0));
         double sy = floor((pattern->page_top - y) * (96.0 / 72.0));
         if (!isfinite(sx) || !isfinite(sy))
             return 0;
-        if (sx < 0 || sy < 0 || sx >= pattern->tile.width || sy >= pattern->tile.height) {
+        if (sx < 0 || sy < 0 || sx >= pattern->canvas_width || sy >= pattern->canvas_height) {
             memset(rgb, 0, 4 * sizeof(double));
             *shape = *alpha = 0;
             return 1;
         }
-        pixel = (size_t)sy * pattern->tile.width + (size_t)sx;
+        unsigned row = (unsigned)sy;
+        if (row < pattern->cache_top || row >= pattern->cache_top + pattern->tile.height) {
+            pattern->cache_top = row / pattern->tile.height * pattern->tile.height;
+            refresh = 1;
+        }
+        if (refresh && !cupidimage_pdf_refresh_pattern_cache(st, pattern))
+            return 0;
+        pixel = (size_t)(row - pattern->cache_top) * pattern->tile.width + (size_t)sx;
     } else {
+        if (refresh && !cupidimage_pdf_refresh_pattern_cache(st, pattern))
+            return 0;
         const double *m = pattern->inverse;
         double u = m[0] * x + m[2] * y + m[4], v = m[1] * x + m[3] * y + m[5];
         if (!isfinite(u) || !isfinite(v))
@@ -199,8 +206,8 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
                 cached->initial->rendering_intent == st->initial_gs.rendering_intent &&
                 cached->initial->black_generation == st->initial_gs.black_generation &&
                 cached->initial->undercolor_removal == st->initial_gs.undercolor_removal &&
-                cached->resource_object == object && cached->tile.width == st->img->width &&
-                cached->tile.height == st->img->height && cached->page_x0 == st->page_x0_pts &&
+                cached->resource_object == object && cached->canvas_width == st->img->width &&
+                cached->canvas_height == st->img->height && cached->page_x0 == st->page_x0_pts &&
                 cached->page_top == st->page_top_pts &&
                 !memcmp(cached->initial_ctm, st->initial_gs.ctm, sizeof(cached->initial_ctm))) {
                 if (stroke)
@@ -215,7 +222,22 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
     if (!pattern_array(st, view, "Matrix", matrix, 6, 0))
         return 0;
     unsigned channels = cupidimage_pdf_current_blend(st)->colors.components == 4 ? 4 : 3;
-    size_t pixels = (size_t)st->img->width * st->img->height;
+    /* Keep exact shading samples in a bounded row band. Retaining a complete
+     * page for every distinct shading would exhaust the shared pattern cache. */
+    unsigned rows = st->img->height;
+    size_t state_pos;
+    if (!cupidimage_pdf_page_value(view, "ExtGState", &state_pos)) {
+        pdf_object_view shading = {0};
+        int type = 0;
+        int ok = cupidimage_pdf_image_dictionary(st, view, "Shading", &shading) &&
+                 cupidimage_pdf_image_integer(st, &shading, "ShadingType", &type);
+        cupidimage_pdf_object_view_release(&shading);
+        if (!ok)
+            return 0;
+        if (type >= 1 && type <= 3 && rows > 64)
+            rows = 64;
+    }
+    size_t pixels = (size_t)st->img->width * rows;
     size_t available = PATTERN_BYTES - st->patterns->bytes_used;
     if (available < sizeof(pdf_pattern) ||
         pixels > (available - sizeof(pdf_pattern)) / (4 + (2 + channels) * sizeof(double)))
@@ -224,8 +246,13 @@ static int pattern_select_shading(pdf_render_state *st, const pdf_object_view *v
     pdf_pattern *pattern = calloc(1, sizeof(*pattern));
     if (!pattern)
         return 0;
+    pattern->shading = 1;
+    pattern->canvas_width = st->img->width;
+    pattern->canvas_height = st->img->height;
+    pattern->page_x0 = st->page_x0_pts;
+    pattern->page_top = st->page_top_pts;
     pattern->tile.width = st->img->width;
-    pattern->tile.height = st->img->height;
+    pattern->tile.height = rows;
     pattern->tile.rgba = calloc(pixels, 4);
     pattern->shape = calloc(pixels, (2 + channels) * sizeof(double));
     pattern->alpha = pattern->shape ? pattern->shape + pixels : NULL;

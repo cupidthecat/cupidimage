@@ -69,6 +69,20 @@ Antialiased path painting also restricts its raster window to the inherited
 clip's bounds before allocating coverage. The original path edges and geometric
 intersection remain unchanged inside that window.
 
+For a local draw intersection, retained clip nodes now carry bounds for each
+closed contour. Contours entirely outside the crop are omitted as whole loops;
+individual edges are never dropped based only on their position. Contours that
+enclose or touch the crop remain in the intersection, including holes and
+opposite windings. Index storage counts against the existing 64 MiB budget, and
+both lookup passes consume work. The full geometry remains available for other
+crops and saved states.
+
+The crop tests compare 512 complete rasters with their unpruned equivalents,
+including nonrectangular contours, holes, parent regions and surrounding loops.
+Another 4,000 checks exercise work exhaustion and allocation cleanup. A page
+with 3,072 separate clipped shapes is compared against independently clipped
+shapes.
+
 ## Shading scans
 
 Function-based, axial and radial shading restrict their scan to the current
@@ -121,10 +135,12 @@ bytes on 72 small pages, including fractional and triangular clips.
 A focused audit of the pinned bug1703683_page2_reduced.pdf corpus page now
 renders with all five PDF options enabled. It still differs from the independent
 raster: mean absolute channel error 0.78596, maximum 169, and 3.183% of color
-channels different. bug1721218_reduced.pdf now gets past the repeated page-clip limit and a dense
-36,250-edge binary clip. It still fails later: the default profile reports a
-pattern error, and the profile with all five options enabled exhausts path
-coverage work. These failures remain under investigation; the issue stays open.
+channels different. bug1721218_reduced.pdf now renders in both the default profile and with all five
+options enabled. It passes the repeated page-clip limit, a 36,250-edge binary
+clip, thousands of local contour intersections and multiple shading-pattern
+caches without increasing those resource limits. The all-options raster still
+differs from the independent 96-DPI image: mean absolute channel error 1.12680,
+maximum 156, and 3.7192% of color channels different.
 Neither result establishes full rendering
 parity, and the broader manual review remains deferred.
 

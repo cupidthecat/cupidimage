@@ -6,6 +6,15 @@
 
 #define CLIP_GEOMETRY_MEMORY (64u * 1024u * 1024u)
 
+typedef struct {
+    unsigned first, count;
+    double bounds[4];
+} clip_contour;
+
+static const clip_contour *clip_contours(const pdf_clip_geometry *geometry) {
+    return (const clip_contour *)(geometry->edges + geometry->count);
+}
+
 int cupidimage_pdf_clip_geometry_retain(pdf_clip_geometry *geometry) {
     if (!geometry)
         return 1;
@@ -49,7 +58,7 @@ pdf_clip_geometry *cupidimage_pdf_clip_geometry_create(pdf_clip_geometry *parent
         (size_t)count + 1 > *work)
         return NULL;
     *work -= (size_t)count + 1;
-    unsigned input_count = count, nonzero = 0;
+    unsigned input_count = count, nonzero = 0, contours = 0;
     double sx = 0, sy = 0, cx = 0, cy = 0, bounds[4] = {INFINITY, INFINITY, -INFINITY, -INFINITY};
     for (unsigned i = 0; i < count; i++) {
         const pdf_region_edge *e = edges + i;
@@ -68,6 +77,8 @@ pdf_clip_geometry *cupidimage_pdf_clip_geometry_create(pdf_clip_geometry *parent
         if (e->x0 == e->x1 && e->y0 == e->y1)
             continue;
         nonzero++;
+        if (e->x1 == sx && e->y1 == sy)
+            contours++;
         bounds[0] = fmin(bounds[0], fmin(e->x0, e->x1));
         bounds[1] = fmin(bounds[1], fmin(e->y0, e->y1));
         bounds[2] = fmax(bounds[2], fmax(e->x0, e->x1));
@@ -99,7 +110,11 @@ pdf_clip_geometry *cupidimage_pdf_clip_geometry_create(pdf_clip_geometry *parent
     }
     if (parent && (parent->depth == 63 || count > 65536 - parent->total_edges))
         return NULL;
-    size_t bytes = sizeof(pdf_clip_geometry) + (size_t)count * sizeof(*edges);
+    if (count > *work)
+        return NULL;
+    *work -= count;
+    size_t bytes = sizeof(pdf_clip_geometry) + (size_t)count * sizeof(*edges) +
+                   (size_t)contours * sizeof(clip_contour);
     if (bytes > CLIP_GEOMETRY_MEMORY - *bytes_used)
         return NULL;
     pdf_clip_geometry *geometry = malloc(bytes);
@@ -127,6 +142,33 @@ pdf_clip_geometry *cupidimage_pdf_clip_geometry_create(pdf_clip_geometry *parent
             continue;
         geometry->edges[j] = edges[i];
         geometry->edges[j++].region = 0;
+    }
+    geometry->contours = contours;
+    clip_contour *index = (clip_contour *)(geometry->edges + count);
+    unsigned first = 0, used = 0;
+    for (unsigned i = 0; i < count; i++) {
+        const pdf_region_edge *e = geometry->edges + i;
+        if (used >= contours) {
+            free(geometry);
+            return NULL;
+        }
+        if (i == first) {
+            index[used].first = first;
+            index[used].bounds[0] = index[used].bounds[2] = e->x0;
+            index[used].bounds[1] = index[used].bounds[3] = e->y0;
+        }
+        index[used].bounds[0] = fmin(index[used].bounds[0], e->x1);
+        index[used].bounds[1] = fmin(index[used].bounds[1], e->y1);
+        index[used].bounds[2] = fmax(index[used].bounds[2], e->x1);
+        index[used].bounds[3] = fmax(index[used].bounds[3], e->y1);
+        if (e->x1 == geometry->edges[first].x0 && e->y1 == geometry->edges[first].y0) {
+            index[used++].count = i - first + 1;
+            first = i + 1;
+        }
+    }
+    if (used != contours || first != count) {
+        free(geometry);
+        return NULL;
     }
     geometry->rectangle = !count || bounds[2] <= bounds[0] || bounds[3] <= bounds[1] ||
                           ((!parent || parent->rectangle) && clip_is_rectangle(geometry));
@@ -160,6 +202,63 @@ int cupidimage_pdf_clip_geometry_collect(const pdf_clip_geometry *geometry, unsi
         for (unsigned i = 0; i < node->count; i++) {
             edges[count] = node->edges[i];
             edges[count++].region = region;
+        }
+        region++;
+    }
+    *output = edges;
+    *output_count = count;
+    return 1;
+}
+
+static int clip_contour_overlaps(const clip_contour *contour, int left, int top, int right,
+                                 int bottom) {
+    const double *b = contour->bounds;
+    return b[0] <= right && b[2] >= left && b[1] <= bottom && b[3] >= top;
+}
+
+int cupidimage_pdf_clip_geometry_collect_crop(const pdf_clip_geometry *geometry,
+                                              unsigned first_region, unsigned char rules[64],
+                                              pdf_region_edge **output, unsigned *output_count,
+                                              size_t *work, int left, int top, int right,
+                                              int bottom) {
+    if (!output || !output_count)
+        return 0;
+    *output = NULL;
+    *output_count = 0;
+    if (!work || !rules || first_region > 64 || left > right || top > bottom ||
+        (geometry && geometry->depth > 64 - first_region))
+        return 0;
+    if (!geometry)
+        return 1;
+    unsigned selected = 0;
+    for (const pdf_clip_geometry *node = geometry; node; node = node->parent) {
+        size_t tests = (size_t)node->contours * 2 + 1;
+        if (tests > *work)
+            return 0;
+        *work -= tests;
+        const clip_contour *contours = clip_contours(node);
+        for (unsigned i = 0; i < node->contours; i++)
+            if (clip_contour_overlaps(contours + i, left, top, right, bottom))
+                selected += contours[i].count;
+    }
+    if (selected > *work)
+        return 0;
+    *work -= selected;
+    pdf_region_edge *edges = malloc((selected ? selected : 1) * sizeof(*edges));
+    if (!edges)
+        return 0;
+    unsigned count = 0, region = first_region;
+    for (const pdf_clip_geometry *node = geometry; node; node = node->parent) {
+        rules[region] = (unsigned char)node->even_odd;
+        const clip_contour *contours = clip_contours(node);
+        for (unsigned i = 0; i < node->contours; i++) {
+            const clip_contour *contour = contours + i;
+            if (!clip_contour_overlaps(contour, left, top, right, bottom))
+                continue;
+            for (unsigned j = 0; j < contour->count; j++) {
+                edges[count] = node->edges[contour->first + j];
+                edges[count++].region = region;
+            }
         }
         region++;
     }

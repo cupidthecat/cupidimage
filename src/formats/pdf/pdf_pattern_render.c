@@ -276,6 +276,15 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
                                           const double matrix[6], pdf_pattern *cache,
                                           pdf_transparency_group *live) {
     cupidimage_image *image = live ? &live->image : &cache->tile;
+    cupidimage_image window = *image;
+    if (!live && cache->shading) {
+        if (cache->cache_top >= cache->canvas_height)
+            return 0;
+        unsigned remaining = cache->canvas_height - cache->cache_top;
+        if (window.height > remaining)
+            window.height = remaining;
+        image = &window;
+    }
     double *shape = live ? live->shape : cache->shape;
     pdf_transparency_group group = {0};
     group.image = *image;
@@ -305,6 +314,11 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     child->gs.fill_alpha = child->gs.stroke_alpha = 1;
     child->gs.blend_mode = 0;
     child->img = image;
+    if (!live && cache->shading) {
+        child->page_x0_pts = (float)cache->page_x0;
+        child->page_top_pts = (float)cache->page_top;
+    }
+    child->shading_row_offset = live ? 0 : cache->cache_top;
     child->shape_plane = shape;
     child->alpha_plane = live ? live->alpha : cache->alpha;
     child->group = live ? live : &group;

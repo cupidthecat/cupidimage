@@ -124,6 +124,7 @@ typedef struct pdf_pattern {
     unsigned channels;
     double inverse[6], xstep, ystep;
     int shading, uncolored, deferred, gray;
+    unsigned canvas_width, canvas_height, cache_top;
     pdf_blend_space blend;
     pdf_object_id resource_object;
     pdf_object_view definition;
@@ -205,6 +206,7 @@ typedef struct {
     int optional_hidden;
     pdf_optional_content *optional_content;
     int paint_coverage_clipped;
+    unsigned shading_row_offset;
     int text_antialias, truetype_hinting, cff_hinting, type1_hinting, graphics_antialias;
     char *error;
     size_t error_capacity;

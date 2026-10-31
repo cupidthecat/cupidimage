@@ -209,8 +209,9 @@ int cupidimage_pdf_clip_intersect(pdf_render_state *st, const pdf_region_edge *d
     rules[0] = (unsigned char)even_odd;
     pdf_region_edge *edges = NULL;
     unsigned count = 0;
-    if (!cupidimage_pdf_clip_geometry_collect(geometry, 1, rules, &edges, &count,
-                                              &st->clip_budget->tests_left))
+    if (!cupidimage_pdf_clip_geometry_collect_crop(geometry, 1, rules, &edges, &count,
+                                                   &st->clip_budget->tests_left, left, top, right,
+                                                   bottom))
         return 0;
     if (count + draw_count > st->clip_budget->tests_left) {
         free(edges);
