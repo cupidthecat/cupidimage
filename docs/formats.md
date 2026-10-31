@@ -320,8 +320,10 @@ body offsets, and ordering are checked before extracting an object.
 Complete PDF files now use a revision-aware cross-reference index, preserving
 generations and free entries and selecting compressed objects by their declared
 container and index. See [PDF objects and revisions](pdf-objects.md) for hybrid
-precedence, indirect stream parameters, validation and limits. Encryption and
-damaged-file reconstruction remain unsupported.
+precedence, indirect stream parameters, validation and limits.
+[Standard password security](pdf-security.md) supports revisions 2 through 6.
+Public-key handlers, newer encryption extensions and general damaged-file
+reconstruction remain unsupported.
 
 ## PDF shadings
 

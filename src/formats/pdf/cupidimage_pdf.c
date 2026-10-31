@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "pdf_internal.h"
+#include "security/security.h"
 
 static int pdf_rotate_page(cupidimage_image *img, int rotation) {
     if (!rotation)
@@ -46,7 +47,8 @@ static int pdf_rotate_page(cupidimage_image *img, int rotation) {
 
 static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
                                         cupidimage_image *img, int page_index, char *err,
-                                        size_t errcap, const cupidimage_pdf_options *opts) {
+                                        size_t errcap, const cupidimage_pdf_options *opts,
+                                        const cupidimage_pdf_password *password) {
     if (!data || !img) {
         cupidimage_set_err(err, errcap, "pdf: null pointer");
         return 0;
@@ -82,13 +84,16 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
         return 0;
     }
 
-    if (!cupidimage_pdf_parse_trailer(data, size, xref_offset, &xref, err, errcap)) {
+    if (!cupidimage_pdf_parse_trailer(data, size, xref_offset, &xref, err, errcap) ||
+        !cupidimage_pdf_security_open(&xref, password, err, errcap)) {
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
 
     pdf_object_id pages_obj = 0;
     if (!cupidimage_pdf_get_pages_obj(data, size, &xref, &pages_obj, err, errcap)) {
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
@@ -96,6 +101,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     pdf_object_id page_obj = 0;
     if (!cupidimage_pdf_get_page_obj_by_index(data, size, &xref, pages_obj, page_index, &page_obj,
                                               err, errcap)) {
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
@@ -105,6 +111,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     if (!cupidimage_pdf_collect_page_fonts_indexed(data, size, page_obj, &fonts, err, errcap,
                                                    &xref)) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         cupidimage_set_err(err, errcap, "pdf: invalid or exhausted font resources");
         return 0;
@@ -114,6 +121,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     if (!cupidimage_pdf_get_page_geometry_indexed(data, size, page_obj, &geometry, err, errcap,
                                                   &xref)) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
@@ -122,6 +130,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     int height = geometry.height;
     if (width <= 0 || height <= 0) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         cupidimage_set_err(err, errcap, "pdf: invalid page dimensions");
         return 0;
@@ -130,12 +139,14 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     size_t pixel_count = (size_t)width * (size_t)height;
     if (height > 0 && pixel_count / (size_t)height != (size_t)width) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         cupidimage_set_err(err, errcap, "pdf: image too large");
         return 0;
     }
     if (pixel_count > SIZE_MAX / 4u) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         cupidimage_set_err(err, errcap, "pdf: image too large");
         return 0;
@@ -146,6 +157,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     img->rgba = (unsigned char *)calloc(pixel_count * 4u, 1);
     if (!img->rgba) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         cupidimage_set_err(err, errcap, "pdf: out of memory");
         return 0;
@@ -159,6 +171,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     if (!cupidimage_pdf_get_page_content_stream(data, size, &xref, page_obj, &stream_data,
                                                 &stream_len, &is_flate, err, errcap)) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         free(img->rgba);
         img->rgba = NULL;
@@ -175,6 +188,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
             if (!cupidimage_pdf_inflate_auto(stream_data, stream_len, &inflated, &inflated_len)) {
                 free(stream_data);
                 cupidimage_pdf_font_table_free(&fonts);
+                cupidimage_pdf_security_close(&xref);
                 free(xref.entries);
                 free(img->rgba);
                 img->rgba = NULL;
@@ -191,6 +205,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
             free(inflated);
             free(stream_data);
             cupidimage_pdf_font_table_free(&fonts);
+            cupidimage_pdf_security_close(&xref);
             free(xref.entries);
             free(img->rgba);
             img->rgba = NULL;
@@ -203,6 +218,7 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
 
     if (!pdf_rotate_page(img, geometry.rotation)) {
         cupidimage_pdf_font_table_free(&fonts);
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         cupidimage_free(img);
         cupidimage_set_err(err, errcap, "pdf: out of memory rotating page");
@@ -213,29 +229,31 @@ static int cupidimage_load_pdf_internal(const unsigned char *data, size_t size,
     img->hotspot_y = 0;
 
     cupidimage_pdf_font_table_free(&fonts);
+    cupidimage_pdf_security_close(&xref);
     free(xref.entries);
     return 1;
 }
 
 int cupidimage_load_pdf(const unsigned char *data, size_t size, cupidimage_image *img, char *err,
                         size_t errcap) {
-    return cupidimage_load_pdf_internal(data, size, img, 0, err, errcap, NULL);
+    return cupidimage_load_pdf_internal(data, size, img, 0, err, errcap, NULL, NULL);
 }
 
 int cupidimage_load_pdf_page(const unsigned char *data, size_t size, cupidimage_image *img,
                              int page_index, char *err, size_t errcap) {
-    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap, NULL);
+    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap, NULL, NULL);
 }
 
 int cupidimage_load_pdf_page_with_options(const unsigned char *data, size_t size,
                                           cupidimage_image *img, int page_index,
                                           const cupidimage_pdf_options *opts, char *err,
                                           size_t errcap) {
-    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap, opts);
+    return cupidimage_load_pdf_internal(data, size, img, page_index, err, errcap, opts, NULL);
 }
 
-int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
-                                  size_t errcap) {
+int cupidimage_get_pdf_page_count_with_password(const unsigned char *data, size_t size, int *count,
+                                                const cupidimage_pdf_password *password, char *err,
+                                                size_t errcap) {
     if (!data || !count) {
         cupidimage_set_err(err, errcap, "pdf: null pointer");
         return 0;
@@ -262,13 +280,16 @@ int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *c
         return 0;
     }
 
-    if (!cupidimage_pdf_parse_trailer(data, size, xref_offset, &xref, err, errcap)) {
+    if (!cupidimage_pdf_parse_trailer(data, size, xref_offset, &xref, err, errcap) ||
+        !cupidimage_pdf_security_open(&xref, password, err, errcap)) {
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
 
     pdf_object_id pages_obj = 0;
     if (!cupidimage_pdf_get_pages_obj(data, size, &xref, &pages_obj, err, errcap)) {
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
@@ -276,11 +297,13 @@ int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *c
     int page_count = 0;
     if (!cupidimage_pdf_get_pages_count_indexed(data, size, pages_obj, &page_count, err, errcap,
                                                 &xref)) {
+        cupidimage_pdf_security_close(&xref);
         free(xref.entries);
         return 0;
     }
 
     *count = page_count;
+    cupidimage_pdf_security_close(&xref);
     free(xref.entries);
     return 1;
 }
@@ -322,4 +345,45 @@ int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, 
 
 int cupidimage_load_pdf_file(const char *path, cupidimage_image *img, char *err, size_t errcap) {
     return cupidimage_load_pdf_page_file(path, img, 0, err, errcap);
+}
+
+int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *error,
+                                  size_t capacity) {
+    return cupidimage_get_pdf_page_count_with_password(data, size, count, NULL, error, capacity);
+}
+
+int cupidimage_load_pdf_page_with_password(const unsigned char *data, size_t size,
+                                           cupidimage_image *image, int page,
+                                           const cupidimage_pdf_options *options,
+                                           const cupidimage_pdf_password *password, char *error,
+                                           size_t capacity) {
+    return cupidimage_load_pdf_internal(data, size, image, page, error, capacity, options,
+                                        password);
+}
+
+int cupidimage_load_pdf_page_file_with_password(const char *path, cupidimage_image *image, int page,
+                                                const cupidimage_pdf_options *options,
+                                                const cupidimage_pdf_password *password,
+                                                char *error, size_t capacity) {
+    unsigned char *data = NULL;
+    size_t length = 0;
+    if (!cupidimage_read_file_bytes(path, &data, &length, error, capacity))
+        return 0;
+    int ok = cupidimage_load_pdf_page_with_password(data, length, image, page, options, password,
+                                                    error, capacity);
+    free(data);
+    return ok;
+}
+
+int cupidimage_get_pdf_page_count_file_with_password(const char *path, int *count,
+                                                     const cupidimage_pdf_password *password,
+                                                     char *error, size_t capacity) {
+    unsigned char *data = NULL;
+    size_t length = 0;
+    if (!cupidimage_read_file_bytes(path, &data, &length, error, capacity))
+        return 0;
+    int ok =
+        cupidimage_get_pdf_page_count_with_password(data, length, count, password, error, capacity);
+    free(data);
+    return ok;
 }

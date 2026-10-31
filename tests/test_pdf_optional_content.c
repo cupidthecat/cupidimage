@@ -32,7 +32,7 @@ static int evaluate(const unsigned char *data, size_t size, const pdf_xref *xref
         cupidimage_pdf_object_view_release(&value);
     }
     store.work_left = 0;
-    pdf_object_view empty = {(const unsigned char *)"<< >>", 5, NULL, xref};
+    pdf_object_view empty = {(const unsigned char *)"<< >>", 5, NULL, xref, 0};
     int ignored;
     if (cupidimage_pdf_optional_visible(&store, &empty, 0, &ignored))
         ok = 0;

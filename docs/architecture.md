@@ -34,6 +34,10 @@ translation unit. Larger ones have private contracts and separate responsibiliti
   `pdf_xref.c` builds revision-aware indices; `pdf_objects.c` resolves indexed
   objects and stream parameters with shared recursion/work budgets. The immutable
   index is passed through document, resource and font views without global state.
+  `security/` owns password preparation, authentication, crypt-filter selection and
+  string/stream decryption. Its private `crypto/` adapters compile the pinned hash
+  and cipher components. The per-load security context belongs to the index and
+  is cleared on every success or failure path.
   Type 3 font metadata lives in `pdf_font_type3.c`, and shared resource-scope
   lookup lives in `pdf_resources.c`. Pattern validation and the bounded
   per-page cell/gradient cache live in `pdf_patterns.c`. Pattern stream execution

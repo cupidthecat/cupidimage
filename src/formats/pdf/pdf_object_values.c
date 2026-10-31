@@ -67,6 +67,7 @@ int cupidimage_pdf_resolve_value(const unsigned char *data, size_t size,
     out->data = view->data + p;
     out->len = view->len - p;
     out->xref = view->xref;
+    out->identity = view->identity;
     return 1;
 }
 

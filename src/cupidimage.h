@@ -63,6 +63,13 @@ typedef struct cupidimage_tga_metadata {
     uint8_t *thumbnail_rgba;
 } cupidimage_tga_metadata;
 
+typedef struct cupidimage_pdf_password {
+    const unsigned char *data;
+    size_t length;
+    /* 0: UTF-8; 1: already encoded PDFDocEncoding bytes (legacy revisions only). */
+    int legacy_bytes;
+} cupidimage_pdf_password;
+
 typedef struct cupidimage_pdf_options {
     /* 0 retains binary text coverage; 1 enables grayscale outline fills/strokes.
      * Geometric clips use fractional coverage. Font hinting is separate. */
@@ -155,6 +162,23 @@ int cupidimage_load_pdf_page_file_with_options(const char *path, cupidimage_imag
 int cupidimage_get_pdf_page_count(const unsigned char *data, size_t size, int *count, char *err,
                                   size_t errcap);
 int cupidimage_get_pdf_page_count_file(const char *path, int *count, char *err, size_t errcap);
+/* Password data is borrowed only during the call and is never retained. */
+int cupidimage_load_pdf_page_with_password(const unsigned char *data, size_t size,
+                                           cupidimage_image *out, int page_index,
+                                           const cupidimage_pdf_options *options,
+                                           const cupidimage_pdf_password *password, char *err,
+                                           size_t errcap);
+int cupidimage_load_pdf_page_file_with_password(const char *path, cupidimage_image *out,
+                                                int page_index,
+                                                const cupidimage_pdf_options *options,
+                                                const cupidimage_pdf_password *password, char *err,
+                                                size_t errcap);
+int cupidimage_get_pdf_page_count_with_password(const unsigned char *data, size_t size, int *count,
+                                                const cupidimage_pdf_password *password, char *err,
+                                                size_t errcap);
+int cupidimage_get_pdf_page_count_file_with_password(const char *path, int *count,
+                                                     const cupidimage_pdf_password *password,
+                                                     char *err, size_t errcap);
 int cupidimage_load_svg(const unsigned char *data, size_t size, cupidimage_image *out, char *err,
                         size_t errcap);
 int cupidimage_load_svg_with_options(const unsigned char *data, size_t size, cupidimage_image *out,

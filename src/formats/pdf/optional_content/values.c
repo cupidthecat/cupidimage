@@ -41,7 +41,7 @@ int cupidimage_pdf_oc_item(pdf_optional_content *store, const pdf_object_view *s
         if (status < 0)
             return 0;
         if (!status)
-            *out = (pdf_object_view){(const unsigned char *)"null", 4, NULL, store->xref};
+            *out = (pdf_object_view){(const unsigned char *)"null", 4, NULL, store->xref, 0};
         *position = end;
         return 1;
     }
@@ -57,14 +57,15 @@ int cupidimage_pdf_oc_item(pdf_optional_content *store, const pdf_object_view *s
         if (!cupidimage_pdf_read_name(source, &end, name))
             return 0;
     } else {
-        pdf_object_view remainder = {source->data + start, source->len - start, NULL, source->xref};
+        pdf_object_view remainder = {source->data + start, source->len - start, NULL, source->xref,
+                                     0};
         if (!cupidimage_pdf_oc_null(&remainder))
             return 0;
         end += 4;
     }
     if (!cupidimage_pdf_oc_charge(store, end - start))
         return 0;
-    *out = (pdf_object_view){source->data + start, end - start, NULL, source->xref};
+    *out = (pdf_object_view){source->data + start, end - start, NULL, source->xref, 0};
     *position = end;
     return 1;
 }

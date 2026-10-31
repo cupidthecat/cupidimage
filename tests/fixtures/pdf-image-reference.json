@@ -716,6 +716,27 @@
       "provenance": "Literal expected pixels for owned opaque geometry on integer device boundaries."
     },
     {
+      "asset": "assets/pdf/security-rc4.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/security-aes128.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
+      "asset": "assets/pdf/security-aes256.pdf",
+      "width": 24,
+      "height": 16,
+      "rgba_zlib": "eJz7z8Dw//8oHsWjeBSP4hGHAQsX/R8=",
+      "tolerance": 0
+    },
+    {
       "asset": "assets/pdf/standalone-catalog-size.pdf",
       "width": 24,
       "height": 16,

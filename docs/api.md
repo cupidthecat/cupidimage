@@ -61,6 +61,26 @@ All library page indices are **zero-based**.
 The directory entry width/height bytes use zero for 256 pixels. Directory fields
 are metadata, not proof that the embedded image is valid; decoding can still fail.
 
+## PDF credentials
+
+The `_with_password` variants of `cupidimage_load_pdf_page`,
+`cupidimage_load_pdf_page_file`, `cupidimage_get_pdf_page_count` and
+`cupidimage_get_pdf_page_count_file` accept a `cupidimage_pdf_password` pointer.
+Page loaders also accept the existing rendering options. Existing entry points
+continue to try an empty password and retain their signatures.
+
+Initialize the credential with a borrowed data pointer, its byte length and
+`legacy_bytes = 0` for UTF-8. No trailing NUL is required. The data is used only
+during the call, is never retained, and is not included in errors. The caller owns
+and clears its input buffer. `legacy_bytes = 1` means already encoded
+PDFDocEncoding bytes and is valid only for security revisions 2 through 4.
+Pass NULL for the default empty password. Input is limited to 4,096 bytes before
+revision-specific preparation and truncation.
+
+Wrong credentials for protected page data fail without returning partial page pixels. Permission bits
+are used for key derivation and validation, not as a promise of editing or printing
+support. See [PDF security](pdf-security.md) for unsupported handlers and extensions.
+
 ## PDF rendering options
 
 `cupidimage_load_pdf_page_with_options` and

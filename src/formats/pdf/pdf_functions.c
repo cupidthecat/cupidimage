@@ -171,7 +171,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
         if (!node->has_range)
             return -1;
         pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL,
-                                  parent->xref};
+                                  parent->xref, 0};
         const unsigned char *raw;
         size_t length, decoded_length;
         unsigned char *decoded = NULL;
@@ -222,7 +222,7 @@ static int pdf_function_value(const pdf_render_state *st, const pdf_object_view 
             !cupidimage_pdf_function_array(st, &view, "Decode", node->decode, components * 2))
             return -1;
         pdf_object_view source = {parent->data + value_start, parent->len - value_start, NULL,
-                                  parent->xref};
+                                  parent->xref, 0};
         const unsigned char *raw;
         size_t length, decoded_length;
         unsigned char *decoded = NULL;
