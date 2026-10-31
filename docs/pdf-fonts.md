@@ -331,7 +331,7 @@ text fidelity in the current PDF work. The main gaps are:
   clipping and stroke qualification and complete antialiased text composition.
 - Nonembedded multiple-master instance matching, synthetic fonts and custom Type 1 procedures.
 - CFF2 and variable-font applicability still needs a PDF-version-specific audit.
-- Unicode variation-sequence cmap format 14 and legacy AAT post format 4.
+- PDF-specific applicability and selection rules for Unicode variation-sequence cmap format 14.
 - Complete CJK font rendering beyond the supported encodings and embedded programs.
 - Broader symbolic/script/CJK substitutes, weights and styles beyond the selected CID-keyed faces.
 
@@ -992,3 +992,37 @@ TrueType locations and a missing CFF .notdef selector when exactly one font
 dictionary exists. It keeps the original glyph programs, identities and PDF
 metrics. Normal parser entry points remain unchanged, and the guide separates
 these compatibility cases from normative font requirements.
+
+
+## TrueType glyph-name tables
+
+Simple TrueType glyph selection keeps its existing encoding and cmap priority.
+When it reaches a PostScript-name fallback, format 2 accepts custom-name indices
+through 65,535, as defined by the current
+[OpenType post specification](https://learn.microsoft.com/en-us/typography/opentype/spec/post).
+The older Apple description reserved indices above 32,767; accepting the modern
+range does not change names in valid older tables.
+
+A fixed 8 KiB bit set records which name indices glyphs actually reference.
+Repeated unreferenced strings no longer cause repeated scans of the entire glyph
+array. Lookup takes bounded linear work in the glyph array and string pool,
+without a new heap allocation. Malformed or truncated names remain unresolved.
+
+The legacy AAT format 4 table supplies one 16-bit character code per glyph.
+The renderer resolves its a-prefixed hexadecimal names to those raw codes;
+they are not assumed to be Unicode. FFFF means no associated code. The array
+must match the font's glyph count exactly. This follows
+[Apple's post table specification](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6post.html);
+format 4 is not an OpenType requirement.
+
+PDF Widths still control placement, and ToUnicode does not select glyphs.
+The name-table suite checks all standard names, legacy signed offsets, high
+custom indices, raw character codes, truncation and a large unreferenced string
+pool. Optional independent checks confirm the modern format 2 names. Complete
+PDF pairs cover all eight text modes, transforms, explicit widths, conflicting
+extraction text, both rendering profiles and allocation cleanup.
+
+The owned post-aat4-names.pdf and post-high-index-names.pdf samples remain
+decoded-unverified visual assets. Regenerate them with
+scripts/generate_pdf_post_table_fixtures.py. These checks cover name selection,
+not complete text raster fidelity or automatic variation-sequence shaping.
