@@ -96,6 +96,9 @@ int main(int argc, char **argv) {
                     for (unsigned j = 0; j < hints.stem_count; j++)
                         printf("stem %u %u %.17g %.17g\n", gid, hints.stems[j].vertical,
                                hints.stems[j].start, hints.stems[j].width);
+                    for (unsigned j = 0; j < hints.flex_count; j++)
+                        printf("flex-event %u %u %.17g\n", gid, hints.flexes[j].segment,
+                               hints.flexes[j].depth);
                     for (unsigned j = 0; j < hints.event_count; j++) {
                         const pdf_ps_hint_event *event = hints.events + j;
                         printf("hint-event %u %u %u %u", gid, event->segment, event->stem_count,

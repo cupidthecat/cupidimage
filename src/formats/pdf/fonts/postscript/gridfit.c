@@ -1,3 +1,4 @@
+#include "flex.h"
 #include "gridfit_internal.h"
 #include "type1_gridfit.h"
 
@@ -142,13 +143,20 @@ static int ps_gridfit_validate(const pdf_ps_private_hints *private_hints,
                                const pdf_ps_gridfit_size *size) {
     if (!private_hints || !hints || !source || !size || private_hints->invalid ||
         (hints->diagnostics & ~(PDF_PS_HINT_EMPTY_MASK | PDF_PS_HINT_MASK_PADDING)) ||
-        hints->stem_count > 96 || hints->event_count > 65536 ||
-        (hints->event_count && !hints->events) || source->composite || source->count > 65536 ||
-        (source->count && !source->segments) || size->x_scale <= 0 || size->y_scale <= 0 ||
-        size->x_scale > 2 * 65536 || size->y_scale > 2 * 65536 ||
-        (int64_t)size->origin_x < -4096 * 65536 || (int64_t)size->origin_x > 4096 * 65536 ||
-        (int64_t)size->origin_y < -4096 * 65536 || (int64_t)size->origin_y > 4096 * 65536)
+        hints->stem_count > 96 || hints->event_count > 65536 || hints->flex_count > 32768 ||
+        (hints->flex_count && !hints->flexes) || (hints->event_count && !hints->events) ||
+        source->composite || source->count > 65536 || (source->count && !source->segments) ||
+        size->x_scale <= 0 || size->y_scale <= 0 || size->x_scale > 2 * 65536 ||
+        size->y_scale > 2 * 65536 || (int64_t)size->origin_x < -4096 * 65536 ||
+        (int64_t)size->origin_x > 4096 * 65536 || (int64_t)size->origin_y < -4096 * 65536 ||
+        (int64_t)size->origin_y > 4096 * 65536)
         return 0;
+    if (size->flex_transform_set != 0 && size->flex_transform_set != 1)
+        return 0;
+    if (size->flex_transform_set)
+        for (unsigned i = 0; i < 4; i++)
+            if (!isfinite(size->flex_transform[i]) || fabs(size->flex_transform[i]) > 1e30)
+                return 0;
     double origin[2] = {size->origin_x / 65536.0, size->origin_y / 65536.0};
     static const unsigned limits[6] = {14, 10, 14, 10, 12, 12};
     int32_t value;
@@ -186,6 +194,21 @@ static int ps_gridfit_validate(const pdf_ps_private_hints *private_hints,
             event->segment > source->count || (i && event->segment < hints->events[i - 1].segment))
             return 0;
     }
+    unsigned mask_index = 0;
+    for (unsigned i = 0; i < hints->flex_count; i++) {
+        const pdf_ps_flex *flex = hints->flexes + i;
+        if (flex->segment >= source->count || source->count - flex->segment < 2 ||
+            source->segments[flex->segment].kind != PDF_CFF_CURVE ||
+            source->segments[flex->segment + 1].kind != PDF_CFF_CURVE || !isfinite(flex->depth) ||
+            fabs(flex->depth) > 1e30 || (i && flex->segment <= hints->flexes[i - 1].segment + 1))
+            return 0;
+        while (mask_index < hints->event_count &&
+               hints->events[mask_index].segment <= flex->segment)
+            mask_index++;
+        if (mask_index < hints->event_count &&
+            hints->events[mask_index].segment == flex->segment + 1)
+            return 0; /* A flex operator cannot contain an intervening hintmask. */
+    }
     int open = 0;
     for (unsigned i = 0; i < source->count; i++) {
         const pdf_cff_segment *segment = source->segments + i;
@@ -208,13 +231,13 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
         return 0;
     memset(output, 0, sizeof(*output));
     if (!work || !private_hints || !hints || !source || !size || source->count > 65536 ||
-        hints->stem_count > 96 || hints->event_count > 65536)
+        hints->stem_count > 96 || hints->event_count > 65536 || hints->flex_count > 32768)
         return 0;
     pdf_ps_private_hints selected;
     if (!cupidimage_pdf_ps_hint_profile(private_hints, &selected))
         return 0;
-    size_t admission = 5120 + source->count + hints->event_count + hints->stem_count +
-                       (size_t)hints->stem_count * hints->stem_count * 16;
+    size_t admission = 5120 + source->count + hints->event_count + hints->flex_count +
+                       hints->stem_count + (size_t)hints->stem_count * hints->stem_count * 16;
     if (!ps_gridfit_charge(work, admission) || !ps_gridfit_validate(&selected, hints, source, size))
         return 0;
     pdf_ps_gridfit_context *context = calloc(1, sizeof(*context));
@@ -227,7 +250,11 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
         goto done;
     ps_gridfit_begin(context, &selected, hints, size, 0);
     struct CF2_FontRec_ *font = &context->font;
-    unsigned event_index = 0;
+    unsigned event_index = 0, flex_index = 0;
+    double current[2] = {0};
+    double flex_transform[4] = {size->x_scale / 65536.0, 0, 0, size->y_scale / 65536.0};
+    if (size->flex_transform_set)
+        memcpy(flex_transform, size->flex_transform, sizeof(flex_transform));
     for (unsigned i = 0; i <= source->count; i++) {
         while (event_index < hints->event_count && hints->events[event_index].segment == i) {
             if (!ps_gridfit_charge(work, 4096 + (size_t)hints->stem_count * hints->stem_count * 16))
@@ -252,6 +279,23 @@ int cupidimage_pdf_ps_gridfit(const pdf_ps_private_hints *private_hints,
         if (!ps_gridfit_charge(work, 256 + (size_t)hints->stem_count * 32))
             ps_gridfit_fail(context);
         const pdf_cff_segment *segment = source->segments + i;
+        pdf_cff_segment flattened = {0};
+        if (flex_index < hints->flex_count && hints->flexes[flex_index].segment == i) {
+            int flatten;
+            if (!cupidimage_pdf_ps_flex_test(current, segment, hints->flexes[flex_index++].depth,
+                                             flex_transform, &flatten))
+                ps_gridfit_fail(context);
+            if (flatten) {
+                flattened.kind = PDF_CFF_LINE;
+                flattened.points[0] = segment[1].points[4];
+                flattened.points[1] = segment[1].points[5];
+                segment = &flattened;
+                i++;
+            }
+        }
+        unsigned endpoint = segment->kind == PDF_CFF_CURVE ? 4 : 0;
+        current[0] = segment->points[endpoint];
+        current[1] = segment->points[endpoint + 1];
         int32_t p[6] = {0};
         for (unsigned j = 0; j < (segment->kind == PDF_CFF_CURVE ? 6u : 2u); j++)
             ps_gridfit_fixed(

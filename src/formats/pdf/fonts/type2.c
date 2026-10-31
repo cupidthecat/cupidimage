@@ -195,6 +195,9 @@ static int t2_escape(type2_state *st, unsigned op) {
             d[11] = fabs(dx) > fabs(dy) ? -dy : s[10];
         } else
             return 0;
+        if (st->hint_program && !cupidimage_pdf_ps_flex_append(st->hint_program, st->outline->count,
+                                                               op == 35 ? s[12] : 50))
+            return 0;
         st->count = 0;
         return t2_curve(st, d) && t2_curve(st, d + 6);
     }

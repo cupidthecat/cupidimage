@@ -26,6 +26,10 @@ coordinates. Input outlines, hint traces and PDF-independent advances are not
 modified. Output widths retain the source values; fitted geometry does not
 supply PDF text advances.
 
+Type 2 [flex hints](pdf-flex.md) retain their thresholds separately from the
+unhinted cubic geometry. The explicit CFF profile selects the line or curve path
+in device space before fitting. Type 1 flex adjustment remains unfinished.
+
 A glyph's initial hint map and active map are separate. Mask changes follow the
 captured outline positions, including changes just before a contour closes.
 Counter masks establish shared stem positions without replacing the active

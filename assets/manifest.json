@@ -594,6 +594,10 @@
       "sha256": "5f17a9b5eded7a4192ba14ae35e55e45e213793a9f95f4dd4758814ca3ea27c8"
     },
     {
+      "path": "assets/pdf/native-cff-flex.pdf",
+      "sha256": "9a9812e923b3b6b4c7becef53c6593b0132c5e2af34404652cfe61648a2f8a60"
+    },
+    {
       "path": "assets/pdf/native-cff-hinting.pdf",
       "sha256": "397684a3ffa4db4f593904d164888c8629bafa16bcd687732c6e81e366510e0e"
     },

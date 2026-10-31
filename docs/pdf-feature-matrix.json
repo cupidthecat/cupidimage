@@ -1009,13 +1009,18 @@
             "docs/pdf-cff-bindings.md",
             "scripts/test_pdf_cff_bindings.py",
             "assets/pdf/reference/cff-direct-cid.pdf",
-            "assets/pdf/reference/opentype-cff-direct-cid.pdf"
+            "assets/pdf/reference/opentype-cff-direct-cid.pdf",
+            "docs/pdf-flex.md",
+            "src/formats/pdf/fonts/postscript/flex.c",
+            "scripts/test_pdf_flex.py",
+            "scripts/compare_pdf_flex.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option.",
             "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
-            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity."
+            "Embedded Type 0 fonts support both CID-keyed CFF charset selection and direct glyph indices in name-keyed CFF. This does not complete font substitution or broader CFF fidelity.",
+            "The explicit CFF profile retains Type 2 flex thresholds and selects lines or curves in device space. Analytic, paired-page and ownership tests cover this path; retained-curve differences from the tested legacy engine are reported separately. Type 1 flex adjustment and broader font fidelity remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -1107,13 +1112,18 @@
             "docs/pdf-subset-fonts.md",
             "src/formats/pdf/fonts/truetype_subset.c",
             "scripts/test_pdf_subset_fonts.py",
-            "scripts/test_pdf_subset_font_pages.py"
+            "scripts/test_pdf_subset_font_pages.py",
+            "docs/pdf-flex.md",
+            "src/formats/pdf/fonts/postscript/flex.c",
+            "scripts/test_pdf_flex.py",
+            "scripts/compare_pdf_flex.py"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
             "A selected native legacy TrueType profile is now connected to pages through an explicit option. Defaults remain unhinted; modern profiles and wider font fidelity remain unfinished. CFF and Type 1 now have separate bounded page-fitting options.",
             "CFF private hint parameters and optional Type 2 stem/mask traces are retained and checked, with a separately tested CFF grid-fitting core. The bounded CFF profile is connected through an explicit page option, including composite placement and checked transforms. Flex policy and broader font fidelity remain unfinished; Type 1 has a separate bounded page-fitting option.",
-            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity."
+            "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
+            "The explicit CFF profile retains Type 2 flex thresholds and selects lines or curves in device space. Analytic, paired-page and ownership tests cover this path; retained-curve differences from the tested legacy engine are reported separately. Type 1 flex adjustment and broader font fidelity remain unfinished."
           ],
           "dependencies": [
             "1",
@@ -4810,10 +4820,15 @@
             "docs/pdf-clipping.md",
             "scripts/test_pdf_fractional_clips.py",
             "tests/test_pdf_region.c",
-            "tests/test_pdf_clip_geometry.c"
+            "tests/test_pdf_clip_geometry.c",
+            "docs/pdf-flex.md",
+            "src/formats/pdf/fonts/postscript/flex.c",
+            "scripts/test_pdf_flex.py",
+            "scripts/compare_pdf_flex.py"
           ],
           "limitations": [
-            "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete."
+            "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete.",
+            "The explicit CFF profile retains Type 2 flex thresholds and selects lines or curves in device space. Analytic, paired-page and ownership tests cover this path; retained-curve differences from the tested legacy engine are reported separately. Type 1 flex adjustment and broader font fidelity remain unfinished."
           ],
           "dependencies": [
             "3",

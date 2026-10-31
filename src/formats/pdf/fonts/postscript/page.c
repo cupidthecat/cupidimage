@@ -44,6 +44,11 @@ static int ps_page_shape(const void *font, unsigned glyph, const double f[6],
         return 0;
     int32_t scale = ((int32_t)scaled + 32) / 64;
     pdf_ps_gridfit_size size = {.x_scale = scale, .y_scale = scale};
+    size.flex_transform_set = 1;
+    for (unsigned column = 0; column < 2; column++)
+        for (unsigned row = 0; row < 2; row++)
+            size.flex_transform[column * 2 + row] =
+                text_matrix[row] * f[column * 2] + text_matrix[row + 2] * f[column * 2 + 1];
     int32_t font_matrix[4], page_matrix[4], font_offset[2] = {0}, page_offset[2];
     for (unsigned i = 0; i < 4; i++)
         if (!ps_page_fixed(f[i] / unit, font_matrix + i) ||
