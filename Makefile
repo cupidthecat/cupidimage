@@ -481,6 +481,7 @@ test-pdf-shading-patterns: $(BINDIR)/test_pdf_pages
 	python3 scripts/test_pdf_shading_patterns.py $(BINDIR)/test_pdf_pages
 
 test-pdf-xref: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/generate_pdf_catalog_size_fixture.py --check
 	python3 scripts/test_pdf_xref.py $< $(BINDIR)/test_pdf_clip_oom
 
 test-pdf-font-defaults: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
