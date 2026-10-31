@@ -71,7 +71,7 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
     double step_y = fmax(1, floor(size / 8 + .5)) / ratio;
     double sign = st->gs.font_size_pts < 0 ? -1 : 1;
     const double *t = st->text_matrix;
-    const float *cmt = st->gs.ctm;
+    const double *cmt = st->gs.ctm;
     double m[6] = {cmt[0] * t[0] + cmt[2] * t[1],          cmt[1] * t[0] + cmt[3] * t[1],
                    cmt[0] * t[2] + cmt[2] * t[3],          cmt[1] * t[2] + cmt[3] * t[3],
                    cmt[0] * t[4] + cmt[2] * t[5] + cmt[4], cmt[1] * t[4] + cmt[3] * t[5] + cmt[5]};
@@ -159,10 +159,10 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
                             st->image_failed = 1;
                             return;
                         }
-                    *seg = (pdf_seg){.x0 = (float)points[0],
-                                     .y0 = (float)points[1],
-                                     .x1 = (float)points[2],
-                                     .y1 = (float)points[3],
+                    *seg = (pdf_seg){.x0 = points[0],
+                                     .y0 = points[1],
+                                     .x1 = points[2],
+                                     .y1 = points[3],
                                      .starts_subpath = 1};
                 }
             }
@@ -207,6 +207,10 @@ static void pdf_draw_glyph(pdf_render_state *st, unsigned char c) {
             double tx = st->page_x0_pts + (x + .5) / ratio - m[4];
             double ty = st->page_top_pts - (y + .5) / ratio - m[5];
             double gx = (m[3] * tx - m[2] * ty) / det, gy = (m[0] * ty - m[1] * tx) / det;
+            if (!isfinite(gx) || !isfinite(gy)) {
+                st->image_failed = 1;
+                goto done;
+            }
             int filled =
                 gx >= 0 && gx < 8 && gy >= 0 && gy < 8 && (glyph[(int)gy] & (1u << (int)gx));
             size_t pixel = (size_t)y * st->img->width + x;

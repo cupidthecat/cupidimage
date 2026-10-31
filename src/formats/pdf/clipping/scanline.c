@@ -19,7 +19,7 @@ static int scan_sift(pdf_scan_crossing *items, unsigned root, unsigned count, si
     return 1;
 }
 
-int cupidimage_pdf_scanline(const pdf_region_edge *edges, unsigned count, float y,
+int cupidimage_pdf_scanline(const pdf_region_edge *edges, unsigned count, double y,
                             pdf_scan_crossing *crossings, size_t *work) {
     if (!work || count > 262144 || (count && (!edges || !crossings)) || !isfinite(y) ||
         count > *work)
@@ -27,15 +27,20 @@ int cupidimage_pdf_scanline(const pdf_region_edge *edges, unsigned count, float 
     *work -= count;
     unsigned used = 0;
     for (unsigned i = 0; i < count; i++) {
-        float x0 = (float)edges[i].x0, y0 = (float)edges[i].y0;
-        float x1 = (float)edges[i].x1, y1 = (float)edges[i].y1;
+        double x0 = edges[i].x0, y0 = edges[i].y0;
+        double x1 = edges[i].x1, y1 = edges[i].y1;
         if (!isfinite(x0) || !isfinite(y0) || !isfinite(x1) || !isfinite(y1))
             return -1;
-        if (!((y0 <= y && y1 > y) || (y1 <= y && y0 > y)) || fabsf(y0 - y1) <= 1e-6f)
+        if (!((y0 <= y && y1 > y) || (y1 <= y && y0 > y)) || fabs(y0 - y1) <= 1e-6)
             continue;
-        /* Preserve the binary renderer's float intersections and endpoint rule. */
-        float t = (y - y0) / (y1 - y0);
-        float x = x0 + t * (x1 - x0);
+        /* Use the shared geometric precision and the binary endpoint rule. */
+        double dx = x1 - x0, dy = y1 - y0;
+        double numerator = (y - y0) * dx;
+        /* Divide the displacement once, rather than rounding a fractional
+         * parameter before multiplication. Exact pixel-center crossings must
+         * retain the endpoint rule. Scale first only if the product overflows. */
+        double displacement = isfinite(numerator) ? numerator / dy : ((y - y0) / dy) * dx;
+        double x = x0 + displacement;
         if (!isfinite(x))
             return -1;
         crossings[used++] = (pdf_scan_crossing){x, y1 > y0 ? 1 : -1};

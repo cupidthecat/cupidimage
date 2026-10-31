@@ -63,7 +63,7 @@ int cupidimage_pdf_paint_path_coverage(pdf_render_state *st, const pdf_path *pat
         y1 = floor(y1) + 1;
     }
     if (stroke) {
-        const float *m = st->gs.ctm;
+        const double *m = st->gs.ctm;
         double pen = fmax(hypot(m[0], m[2]), hypot(m[1], m[3]));
         double extent = fmax(st->gs.miter_limit, st->gs.line_cap == 2 ? sqrt(2.0) : 1.0);
         double margin = st->gs.line_width_pts

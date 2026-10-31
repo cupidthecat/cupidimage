@@ -37,7 +37,7 @@ int main(void) {
     image.width = image.height = 240;
     const double values[] = {0, 100, 1, .25, .125, .01, .001};
     unsigned checks = 0;
-    const float matrices[][6] = {
+    const double matrices[][6] = {
         {1, 0, 0, 1, 0, 0}, {2, 0, 0, .5, 5, 7}, {0, 1, -1, 0, 100, 0}, {1, .25, .5, 1, 0, 0}};
     for (unsigned matrix = 0; matrix < sizeof(matrices) / sizeof(*matrices); matrix++) {
         int previous = 0;
@@ -53,7 +53,7 @@ int main(void) {
             for (unsigned sample = 0; sample <= 1000; sample++) {
                 double t = sample / 1000.0;
                 double ux = 75 * (3 * t * t - 2 * t * t * t), uy = 225 * t * (1 - t);
-                const float *m = matrices[matrix];
+                const double *m = matrices[matrix];
                 double x = (m[0] * ux + m[2] * uy + m[4]) * (4.0 / 3.0);
                 double y = (150 - m[1] * ux - m[3] * uy - m[5]) * (4.0 / 3.0);
                 double closest = HUGE_VAL;

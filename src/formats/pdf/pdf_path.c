@@ -14,10 +14,10 @@ void cupidimage_pdf_path_init(pdf_path *p) {
     p->has_current = 0;
     p->has_subpath = 0;
     p->overflow = 0;
-    p->current_x = 0.0f;
-    p->current_y = 0.0f;
-    p->subpath_start_x = 0.0f;
-    p->subpath_start_y = 0.0f;
+    p->current_x = 0.0;
+    p->current_y = 0.0;
+    p->subpath_start_x = 0.0;
+    p->subpath_start_y = 0.0;
 }
 
 void cupidimage_pdf_path_clear(pdf_path *p) {
@@ -53,7 +53,7 @@ int cupidimage_pdf_path_reserve(pdf_path *p, unsigned additional) {
     return 1;
 }
 
-static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1) {
+static void pdf_path_add_seg(pdf_path *p, double x0, double y0, double x1, double y1) {
     if (!p)
         return;
     if (!cupidimage_pdf_path_reserve(p, 1))
@@ -69,7 +69,7 @@ static void pdf_path_add_seg(pdf_path *p, float x0, float y0, float x1, float y1
     p->seg_count++;
 }
 
-static void pdf_path_move_to(pdf_path *p, float x, float y) {
+static void pdf_path_move_to(pdf_path *p, double x, double y) {
     if (!p)
         return;
     p->subpath_first_seg = p->seg_count;
@@ -81,7 +81,7 @@ static void pdf_path_move_to(pdf_path *p, float x, float y) {
     p->has_subpath = 1;
 }
 
-static void pdf_path_line_to(pdf_path *p, float x, float y) {
+static void pdf_path_line_to(pdf_path *p, double x, double y) {
     if (!p)
         return;
     if (!p->has_current) {
@@ -109,14 +109,14 @@ void cupidimage_pdf_path_close(pdf_path *p) {
 }
 
 /* Paths retain device coordinates when cm or q/Q changes the graphics state. */
-void cupidimage_pdf_path_move_user(pdf_render_state *st, float x, float y) {
-    float px, py;
+void cupidimage_pdf_path_move_user(pdf_render_state *st, double x, double y) {
+    double px, py;
     cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
     pdf_path_move_to(&st->path, px, py);
 }
 
-void cupidimage_pdf_path_line_user(pdf_render_state *st, float x, float y) {
-    float px, py;
+void cupidimage_pdf_path_line_user(pdf_render_state *st, double x, double y) {
+    double px, py;
     cupidimage_pdf_user_to_pixel(st, x, y, &px, &py);
     pdf_path_line_to(&st->path, px, py);
 }
@@ -128,7 +128,7 @@ static double pdf_point_to_segment_dist_sq(double px, double py, double x0, doub
     double wx = px - x0;
     double wy = py - y0;
     double c1 = vx * wx + vy * wy;
-    if (c1 <= 0.0f) {
+    if (c1 <= 0.0) {
         double dx = px - x0;
         double dy = py - y0;
         return dx * dx + dy * dy;
@@ -152,8 +152,8 @@ static double pdf_point_to_segment_dist_sq(double px, double py, double x0, doub
     return dx * dx + dy * dy;
 }
 
-static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1, float y1,
-                              float x2, float y2, float x3, float y3, unsigned depth) {
+static void pdf_flatten_curve(pdf_render_state *st, double x0, double y0, double x1, double y1,
+                              double x2, double y2, double x3, double y3, unsigned depth) {
     if (st->path.overflow)
         return;
     if ((unsigned)st->path.seg_count >= PDF_PATH_SEGMENT_LIMIT) {
@@ -171,18 +171,18 @@ static void pdf_flatten_curve(pdf_render_state *st, float x0, float y0, float x1
         st->path.overflow = 1;
         return;
     }
-    float ax = x0 * 0.5f + x1 * 0.5f, ay = y0 * 0.5f + y1 * 0.5f;
-    float bx = x1 * 0.5f + x2 * 0.5f, by = y1 * 0.5f + y2 * 0.5f;
-    float cx = x2 * 0.5f + x3 * 0.5f, cy = y2 * 0.5f + y3 * 0.5f;
-    float dx = ax * 0.5f + bx * 0.5f, dy = ay * 0.5f + by * 0.5f;
-    float ex = bx * 0.5f + cx * 0.5f, ey = by * 0.5f + cy * 0.5f;
-    float mx = dx * 0.5f + ex * 0.5f, my = dy * 0.5f + ey * 0.5f;
+    double ax = x0 * 0.5 + x1 * 0.5, ay = y0 * 0.5 + y1 * 0.5;
+    double bx = x1 * 0.5 + x2 * 0.5, by = y1 * 0.5 + y2 * 0.5;
+    double cx = x2 * 0.5 + x3 * 0.5, cy = y2 * 0.5 + y3 * 0.5;
+    double dx = ax * 0.5 + bx * 0.5, dy = ay * 0.5 + by * 0.5;
+    double ex = bx * 0.5 + cx * 0.5, ey = by * 0.5 + cy * 0.5;
+    double mx = dx * 0.5 + ex * 0.5, my = dy * 0.5 + ey * 0.5;
     pdf_flatten_curve(st, x0, y0, ax, ay, dx, dy, mx, my, depth + 1);
     pdf_flatten_curve(st, mx, my, ex, ey, cx, cy, x3, y3, depth + 1);
 }
 
-void cupidimage_pdf_path_curve_to(pdf_render_state *st, float x1, float y1, float x2, float y2,
-                                  float x3, float y3, int first_is_current) {
+void cupidimage_pdf_path_curve_to(pdf_render_state *st, double x1, double y1, double x2, double y2,
+                                  double x3, double y3, int first_is_current) {
     if (!st->path.has_current)
         return;
     if (first_is_current) {

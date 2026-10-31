@@ -27,11 +27,8 @@ static int outline_line(pdf_path *path, outline_point a, outline_point b, int fi
     if (!isfinite(a.x) || !isfinite(a.y) || !isfinite(b.x) || !isfinite(b.y) || fabs(a.x) > 1e30 ||
         fabs(a.y) > 1e30 || fabs(b.x) > 1e30 || fabs(b.y) > 1e30)
         return 0;
-    cupidimage_pdf_path_mutable(path)[path->seg_count++] = (pdf_seg){.x0 = (float)a.x,
-                                                                     .y0 = (float)a.y,
-                                                                     .x1 = (float)b.x,
-                                                                     .y1 = (float)b.y,
-                                                                     .starts_subpath = first};
+    cupidimage_pdf_path_mutable(path)[path->seg_count++] =
+        (pdf_seg){.x0 = a.x, .y0 = a.y, .x1 = b.x, .y1 = b.y, .starts_subpath = first};
     return 1;
 }
 
@@ -110,7 +107,7 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
             double tx = m[0] * x + m[2] * y + m[4], ty = m[1] * x + m[3] * y + m[5];
             if (!isfinite(tx) || !isfinite(ty) || fabs(tx) > 1e30 || fabs(ty) > 1e30)
                 return 0;
-            p[j] = (outline_point){(float)tx, (float)ty};
+            p[j] = (outline_point){tx, ty};
         }
         if (segment->kind == PDF_CFF_MOVE) {
             current = p[0];
@@ -139,8 +136,8 @@ static int outline_cff_path(const pdf_cff_outline *outline, pdf_path *path, outl
 }
 
 static outline_point outline_tt_transform(const pdf_tt_point *point, const double matrix[6]) {
-    return (outline_point){(float)(matrix[0] * point->x + matrix[2] * point->y + matrix[4]),
-                           (float)(matrix[1] * point->x + matrix[3] * point->y + matrix[5])};
+    return (outline_point){(matrix[0] * point->x + matrix[2] * point->y + matrix[4]),
+                           (matrix[1] * point->x + matrix[3] * point->y + matrix[5])};
 }
 
 static int outline_path(const pdf_tt_outline *outline, pdf_path *path, outline_edge *edges,
@@ -358,8 +355,8 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         goto done;
     }
     const double *t = st->text_matrix;
-    const float *c = st->gs.ctm;
-    double ratio = (double)(96.0f / 72.0f),
+    const double *c = st->gs.ctm;
+    double ratio = (double)(96.0 / 72.0),
            scale = st->gs.font_size_pts /
                    ((program->is_cff || program->is_type1) ? 1 : program->font.units);
     double m[6] = {(c[0] * t[0] + c[2] * t[1]) * scale * st->gs.horizontal_scale * ratio,

@@ -13,7 +13,7 @@ from test_pdf_embedded_fonts import fixture as tt_pdf
 from test_pdf_cff_render import fixture as cff_pdf
 from test_pdf_type1_render import fixture as type1_pdf
 
-RATIO = struct.unpack('f', struct.pack('f', 96 / 72))[0]
+RATIO = 96 / 72
 WIDTH, HEIGHT = 160, 120
 MAKERS = {'tt': tt_pdf, 'cff': cff_pdf, 'type1': type1_pdf}
 

@@ -1051,3 +1051,11 @@ Type 1 segment lengths without replacing the embedded font. The
 [boundary recovery guide](pdf-font-stream-boundaries.md) describes the parsed
 operator checks, limits and paired tests. This is damaged-input compatibility,
 not a relaxation of the font specifications or proof of complete font fidelity.
+
+## Geometry precision
+
+Text placement, page origins and shared path geometry now retain doubles through
+transformation and storage. This prevents small translations from disappearing
+inside larger intermediate transforms. The [geometry guide](pdf-geometry-precision.md)
+describes the numerical boundaries, scanline checks and remaining raster-policy
+differences. PDF widths and character/word spacing keep their existing roles.

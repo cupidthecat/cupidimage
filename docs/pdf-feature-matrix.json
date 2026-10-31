@@ -536,10 +536,16 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_document.c",
-            "scripts/test_pdf_pages.py"
+            "scripts/test_pdf_pages.py",
+            "docs/pdf-geometry-precision.md",
+            "src/formats/pdf/geometry/matrix.c",
+            "scripts/test_pdf_geometry_precision.py",
+            "scripts/test_pdf_geometry_limits.py",
+            "tests/test_pdf_geometry_precision.c"
           ],
           "limitations": [
-            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished.",
+            "Shared geometry now retains doubles and rejects nonrepresentable inverse coordinates. Selected equivalent-transform controls pass; full raster/profile equivalence is not established."
           ],
           "dependencies": [
             "1"
@@ -572,10 +578,16 @@
           "evidence": [
             "docs/formats.md",
             "src/formats/pdf/pdf_document.c",
-            "scripts/test_pdf_pages.py"
+            "scripts/test_pdf_pages.py",
+            "docs/pdf-geometry-precision.md",
+            "src/formats/pdf/geometry/matrix.c",
+            "scripts/test_pdf_geometry_precision.py",
+            "scripts/test_pdf_geometry_limits.py",
+            "tests/test_pdf_geometry_precision.c"
           ],
           "limitations": [
-            "All page-box selection APIs and the complete page-geometry version audit are unfinished."
+            "All page-box selection APIs and the complete page-geometry version audit are unfinished.",
+            "Shared geometry now retains doubles and rejects nonrepresentable inverse coordinates. Selected equivalent-transform controls pass; full raster/profile equivalence is not established."
           ],
           "dependencies": [
             "1"
@@ -971,7 +983,11 @@
             "src/formats/pdf/fonts/truetype_hint/policy.c",
             "tests/pdf_tt_vm/profile.c",
             "scripts/test_pdf_tt_modern_pages.py",
-            "scripts/test_pdf_tt_policy.py"
+            "scripts/test_pdf_tt_policy.py",
+            "docs/pdf-geometry-precision.md",
+            "src/formats/pdf/geometry/matrix.c",
+            "scripts/test_pdf_geometry_precision.py",
+            "tests/test_pdf_geometry_precision.c"
           ],
           "limitations": [
             "Hinting, antialiasing, substitution and broader font-program coverage remain incomplete.",
@@ -979,7 +995,8 @@
             "The embedded CID path has bounded compatibility recovery for unordered TrueType locations and a missing single-dictionary CFF glyph-zero selector. Ordinary parser entry points remain strict; these nonconforming subsets do not establish full font fidelity.",
             "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified.",
             "PDF CID subset compatibility recovers a zero maxZones declaration only with no twilight points. Strict standalone hinting and all instruction bounds remain unchanged; this is recovery for nonconforming metadata, not full TrueType fidelity.",
-            "An explicit modern grayscale TrueType profile preserves PDF advances and has selected instruction, metadata, page, cache and failure tests. LCD layouts, variation instances and broader font fidelity remain unverified."
+            "An explicit modern grayscale TrueType profile preserves PDF advances and has selected instruction, metadata, page, cache and failure tests. LCD layouts, variation instances and broader font fidelity remain unverified.",
+            "Shared PDF geometry retains double precision through transforms and paths. Equivalent-page and exact-orientation checks cover selected precision failures; raster policy and full document fidelity remain unverified."
           ],
           "dependencies": [
             "1",
@@ -1618,10 +1635,16 @@
           "evidence": [
             "docs/pdf-fonts.md",
             "src/formats/pdf/pdf_text.c",
-            "scripts/test_pdf_text_state.py"
+            "scripts/test_pdf_text_state.py",
+            "docs/pdf-geometry-precision.md",
+            "src/formats/pdf/geometry/matrix.c",
+            "scripts/test_pdf_geometry_precision.py",
+            "scripts/test_pdf_geometry_limits.py",
+            "tests/test_pdf_geometry_precision.c"
           ],
           "limitations": [
-            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete."
+            "Rasterization, non-device color spaces and full cross-feature fidelity remain incomplete.",
+            "Shared geometry now retains doubles and rejects nonrepresentable inverse coordinates. Selected equivalent-transform controls pass; full raster/profile equivalence is not established."
           ],
           "dependencies": [
             "3",
@@ -4945,14 +4968,19 @@
             "src/formats/pdf/fonts/truetype_hint/policy.c",
             "tests/pdf_tt_vm/profile.c",
             "scripts/test_pdf_tt_modern_pages.py",
-            "scripts/test_pdf_tt_policy.py"
+            "scripts/test_pdf_tt_policy.py",
+            "docs/pdf-geometry-precision.md",
+            "src/formats/pdf/geometry/matrix.c",
+            "scripts/test_pdf_geometry_precision.py",
+            "tests/test_pdf_geometry_precision.c"
           ],
           "limitations": [
             "Opt-in outline fills, analytic text-stroke unions and geometric fractional clips are tested, along with selected native TrueType, CFF and Type 1 hinting profiles. Defaults retain unhinted binary coverage. General vector antialiasing, image resampling, broader hint profiles and wider raster fidelity remain incomplete.",
             "The explicit CFF profile retains Type 2 flex thresholds and selects lines or curves in device space. Analytic, paired-page and ownership tests cover this path; retained-curve differences from the tested legacy engine are reported separately. Standard Type 1 flex calls have separate reference-point and pixel-phase handling; custom OtherSubrs and broader font fidelity remain unfinished.",
             "Standard Type 1 flex calls retain reference points and apply the documented device-phase procedure. Embedded PaintType is ignored under ISO 32000-1 9.9; PDF text modes still select painting. Known unadjusted-curve reference differences are not counted as matches.",
             "The optional legacy TrueType monochrome path consumes scan/dropout controls and has analytic page, independent bitmap and failure-ownership coverage. Broader font profiles and full text fidelity remain unverified.",
-            "An explicit modern grayscale TrueType profile preserves PDF advances and has selected instruction, metadata, page, cache and failure tests. LCD layouts, variation instances and broader font fidelity remain unverified."
+            "An explicit modern grayscale TrueType profile preserves PDF advances and has selected instruction, metadata, page, cache and failure tests. LCD layouts, variation instances and broader font fidelity remain unverified.",
+            "Shared PDF geometry retains double precision through transforms and paths. Equivalent-page and exact-orientation checks cover selected precision failures; raster policy and full document fidelity remain unverified."
           ],
           "dependencies": [
             "3",

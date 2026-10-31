@@ -93,7 +93,7 @@ def main():
         same('composite-point-attachment','BT /F 30 Tf 20 30 Td (E) Tj ET',box+' 32 48 12 18 re f')
         actual=render('BT /F 30 Tf 20 30 Td (C) Tj ET')
         assert actual.returncode==0,actual.stderr
-        ratio=struct.unpack('f',struct.pack('f',96/72))[0]
+        ratio=96 / 72
         def curved_pixel(x,y):
             gx=((x+.5)/ratio-21.125)/.03;gy=(60-(y+.5)/ratio)/.03
             if gx<0 or gx>600 or gy<0:return (255,255,255,255)

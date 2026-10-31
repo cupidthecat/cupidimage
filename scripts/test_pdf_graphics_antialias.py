@@ -14,14 +14,10 @@ from test_pdf_text_strokes import combined, polygon_mask
 from fractions import Fraction
 
 WIDTH,HEIGHT=48,40
-RATIO=struct.unpack('f',struct.pack('f',96/72))[0]
-
-def f32(x):
-    return struct.unpack('f',struct.pack('f',x))[0]
+RATIO=96 / 72
 
 def box(x,y,w,h):
-    return (f32(f32(x)*RATIO),f32(f32(30-y-h)*RATIO),
-            f32(f32(x+w)*RATIO),f32(f32(30-y)*RATIO))
+    return (x*RATIO,(30-y-h)*RATIO,(x+w)*RATIO,(30-y)*RATIO)
 
 def area(bounds,x,y):
     a,b,c,d=bounds
@@ -137,7 +133,7 @@ def main():
         for matrix in ((1,0,0,1,0,0),(.5,.75,-.75,.5,18,0),
                        (-1,0,.25,1,30,0),(1,.25,.125,1,0,0),(.5,0,0,1.5,3,0)):
             a,b,c,d,e,f=matrix
-            points=[(f32(f32(a*x+c*y+e)*RATIO),f32(f32(30-(b*x+d*y+f))*RATIO))
+            points=[((a*x+c*y+e)*RATIO,(30-(b*x+d*y+f))*RATIO)
                     for x,y in ((6.1875,6.1875),(18.5625,6.1875),(18.5625,18.5625),(6.1875,18.5625))]
             mask=polygon_mask([tuple(Fraction(v) for v in p) for p in points],WIDTH,HEIGHT)
             expected=colored(mask)
@@ -146,7 +142,7 @@ def main():
             assert max(abs(a-b) for a,b in zip(actual,expected))<=tolerance,(matrix,'rational affine fill')
         # ISO 32000-2 8.5.3.3.1: filled point subpaths enclose a device pixel.
         for x,y in ((6,6),(6.1875,6.1875),(-.1875,6),(36,6),(6,30)):
-            px,py=math.floor(f32(x*RATIO)),math.floor(f32((30-y)*RATIO))
+            px,py=math.floor(x*RATIO),math.floor((30-y)*RATIO)
             mask=bytearray(WIDTH*HEIGHT)
             if 0<=px<WIDTH and 0<=py<HEIGHT:mask[py*WIDTH+px]=255
             expected=colored(mask)

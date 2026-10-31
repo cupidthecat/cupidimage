@@ -14,7 +14,7 @@ PDF previews can open [password-protected documents](docs/pdf-security.md) using
 the Standard security handler. They include packed, indexed, fax-, JPEG-, [JPEG 2000](docs/pdf-jpeg2000.md)- and
 [JBIG2](docs/pdf-jbig2.md)-compressed images, inline
 images, image masks, filter chains, opacity and transparency blending. Image dictionaries can
-request [bilinear sampling](docs/pdf-image-interpolation.md). Text supports matrices,
+request [bilinear sampling](docs/pdf-image-interpolation.md). Text uses [double-precision geometry](docs/pdf-geometry-precision.md) and supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID
 metrics, standard and Latin vector font substitutes, selected CJK CID-keyed
 substitutes, and unhinted embedded
