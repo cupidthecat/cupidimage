@@ -35,6 +35,7 @@ typedef struct {
     int32_t minimum_distance, cvt_cut_in, single_width_cut_in;
     int auto_flip;
     unsigned instruction_control, scan_flags, scan_type;
+    int scan_control;
     int32_t single_width;
 } pdf_tt_vm_graphics;
 
@@ -51,6 +52,8 @@ typedef struct {
 typedef struct {
     int32_t current[2], original[2];
     unsigned char touched, on, end;
+    /* Zero inherits the preceding contour policy; 1..8 select scan mode 0..7. */
+    unsigned char scan;
 } pdf_tt_vm_point;
 
 typedef struct {

@@ -186,6 +186,10 @@ int cupidimage_pdf_tt_hint_composite(pdf_tt_hint *hint, unsigned glyph, const pd
         ok = cupidimage_pdf_tt_vm_begin_component(&hint->vm, points, total + 4, total) &&
              cupidimage_pdf_tt_vm_run(&hint->vm, program.data, program.length, PDF_TT_VM_GLYPH,
                                       *work);
+    if (ok && total && program.length && !(hint->vm.prepared_graphics.instruction_control & 1)) {
+        unsigned mode = hint->vm.graphics.scan_control ? hint->vm.graphics.scan_type : 2;
+        hint->vm.zones[1].points[0].scan = (unsigned char)(mode + 1);
+    }
     if (ok)
         *work = hint->vm.work_left;
     free(points);

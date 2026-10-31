@@ -1,8 +1,8 @@
 static void point_tests(void) {
     pdf_tt_vm vm;
-    const pdf_tt_vm_point input[] = {{{31, 35}, {31, 35}, 0, 1, 0},
-                                     {{100, 0}, {0, 100}, 0, 1, 0},
-                                     {{0, 100}, {0, 100}, 0, 1, 1}};
+    const pdf_tt_vm_point input[] = {{{31, 35}, {31, 35}, 0, 1, 0, 0},
+                                     {{100, 0}, {0, 100}, 0, 1, 0, 0},
+                                     {{0, 100}, {0, 100}, 0, 1, 1, 0}};
     init(&vm, NULL, 0);
     CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 2, input, 3, 3));
     CHECK(vm.zones[0].count == 2 && vm.zones[1].outline_count == 3);
@@ -34,8 +34,9 @@ static void point_tests(void) {
     CHECK(vm.zones[1].points[2].current[0] == 0 && vm.zones[1].points[2].current[1] == 100);
     CHECK(vm.zones[1].points[2].touched == 1);
     finish(&vm);
-    const pdf_tt_vm_point lines[] = {
-        {{0, 0}, {0, 0}, 0, 1, 0}, {{100, 0}, {0, 100}, 0, 1, 0}, {{0, 100}, {100, 0}, 0, 1, 1}};
+    const pdf_tt_vm_point lines[] = {{{0, 0}, {0, 0}, 0, 1, 0, 0},
+                                     {{100, 0}, {0, 100}, 0, 1, 0, 0},
+                                     {{0, 100}, {100, 0}, 0, 1, 1, 0}};
     for (unsigned op = 0x06; op <= 0x09; op++) {
         init(&vm, NULL, 0);
         CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, lines, 3, 3));
@@ -114,7 +115,7 @@ static void point_tests(void) {
     CHECK(!vm.zones[0].points && !vm.zones[1].points && !vm.zones[1].count);
     finish(&vm);
     init(&vm, NULL, 0);
-    const pdf_tt_vm_point large[] = {{{INT32_MAX, INT32_MAX}, {INT32_MAX, INT32_MAX}, 0, 1, 1}};
+    const pdf_tt_vm_point large[] = {{{INT32_MAX, INT32_MAX}, {INT32_MAX, INT32_MAX}, 0, 1, 1, 0}};
     CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, large, 1, 1));
     static const unsigned char overflow_round[] = {0xb0, 0, 0x2f};
     CHECK(!cupidimage_pdf_tt_vm_run(&vm, overflow_round, sizeof(overflow_round), PDF_TT_VM_GLYPH,

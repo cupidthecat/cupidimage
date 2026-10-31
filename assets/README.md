@@ -142,3 +142,9 @@ outlines with legacy character-code names and modern high custom-name indices.
 They remain decoded-unverified. Regenerate them with
 scripts/generate_pdf_post_table_fixtures.py; separate paired tests verify glyph
 selection and PDF widths.
+
+`pdf/native-monochrome-hinting.pdf` uses owned narrow-stem glyphs to show simple,
+smart and disabled dropout policies, composite overrides and conditional transforms.
+View it with `--pdf-tt-hinting` and without `--pdf-text-aa`. The complete sample is
+decoded-unverified; focused analytic and independent raster tests are described in
+[monochrome rendering](../docs/pdf-monochrome.md).

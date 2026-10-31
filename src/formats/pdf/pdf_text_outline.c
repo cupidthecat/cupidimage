@@ -2,6 +2,7 @@
 #include "fonts/program.h"
 #include "pdf_render_internal.h"
 #include "raster/font_coverage.h"
+#include "raster/font_monochrome.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -342,6 +343,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
     int mode = st->optional_hidden ? 3 : st->gs.text_mode & 3, clipping = st->gs.text_mode >= 4;
     unsigned char *stroke = NULL, *stroke_aa = NULL, *fill = NULL;
     int aa_stroke = st->text_antialias;
+    int monochrome = 0;
     int ok = 0, borrowed = 0;
     pdf_paint_group combined = {0};
     pdf_clip_mask paint_geometry = {0};
@@ -381,6 +383,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                                "pdf: unable to grid-fit TrueType glyph");
             goto done;
         }
+        monochrome = !st->text_antialias;
         device_outline.points = hinted.points;
         device_outline.count = hinted.count;
         draw_outline = &device_outline;
@@ -489,12 +492,21 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
         y0 -= margin;
         y1 += margin;
     }
+    int mono_fill = monochrome && (mode == 0 || mode == 2) &&
+                    !cupidimage_pdf_empty_color(&st->gs.fill_space, st->gs.fill_pattern);
+    if (mono_fill) {
+        /* Dropout pixels may lie just beyond the geometric outline bounds. */
+        x0 -= 1;
+        x1 += 1;
+        y0 -= 1;
+        y1 += 1;
+    }
     int left = (int)fmax(0, fmin(st->img->width, floor(x0))),
         right = (int)fmax(0, fmin(st->img->width, ceil(x1)));
     int top = (int)fmax(0, fmin(st->img->height, floor(y0))),
         bottom = (int)fmax(0, fmin(st->img->height, ceil(y1)));
     size_t pixels = (size_t)(right - left) * (bottom - top);
-    int need_winding = clipping || !st->text_antialias;
+    int need_winding = clipping || (!st->text_antialias && !mono_fill);
     if (need_winding) {
         if (edge_count && pixels > st->clip_budget->tests_left / edge_count)
             goto done;
@@ -506,6 +518,10 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                                       program->is_cff || program->is_type1 ? draw_cff : NULL,
                                       program->is_cff || program->is_type1 ? m : draw_matrix, left,
                                       top, right, bottom, &st->clip_budget->tests_left, &fill))
+        goto done;
+    if (mono_fill && pixels &&
+        !cupidimage_pdf_font_monochrome(&hinted, left, top, right, bottom,
+                                        &st->clip_budget->tests_left, &fill))
         goto done;
     coverage_clipped = st->text_antialias && pixels && mode != 3 && st->gs.clip &&
                        st->gs.clip->coverage &&
@@ -562,7 +578,7 @@ int cupidimage_pdf_draw_font_program_glyph(pdf_render_state *st, pdf_font_progra
                     ? (stroke_aa ? stroke_aa[(size_t)(y - top) * (right - left) + x - left] : 0)
                     : (stroke && (stroke[pixel / 8] & bit) ? 255u : 0u);
             unsigned coverage =
-                st->text_antialias
+                st->text_antialias || mono_fill
                     ? (fill ? fill[(size_t)(fill_top_down ? y - top : bottom - y - 1) *
                                        (right - left) +
                                    x - left]

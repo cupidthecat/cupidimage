@@ -11,6 +11,7 @@ struct pdf_page_hint {
     pdf_tt_hint hint;
     int32_t pixels, points;
     int grayscale;
+    unsigned transform_flags;
 };
 
 void cupidimage_pdf_page_hint_free(pdf_page_hint **cache) {
@@ -53,6 +54,18 @@ static size_t page_hint_quota(size_t *work) {
     return quota;
 }
 
+static unsigned page_hint_transform_flags(const int32_t matrix[4]) {
+    /* The device's downward Y axis is not a glyph rotation. Reflection alone
+     * is distinct from rotation; unequal axis lengths or shear mean stretch. */
+    int64_t a = matrix[0], b = -(int64_t)matrix[1], c = matrix[2], d = -(int64_t)matrix[3];
+    unsigned flags = b || c || (a < 0 && d < 0) ? PDF_TT_VM_ROTATED : 0;
+    uint64_t x_length = (uint64_t)(a * a) + (uint64_t)(b * b);
+    uint64_t y_length = (uint64_t)(c * c) + (uint64_t)(d * d);
+    if (x_length != y_length || a * c != -(b * d))
+        flags |= PDF_TT_VM_STRETCHED;
+    return flags;
+}
+
 int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, pdf_font_program *program, unsigned glyph,
                                    const double matrix[6], int grayscale, size_t *work_left,
                                    pdf_tt_hint_shape *shape) {
@@ -87,8 +100,10 @@ int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, pdf_font_program *prog
             goto fail;
         offset[i] = (int32_t)value;
     }
+    unsigned transform_flags = grayscale ? 0 : page_hint_transform_flags(transform);
     if (*cache && ((*cache)->program != program || (*cache)->pixels != ppem * 64 ||
-                   (*cache)->points != points || (*cache)->grayscale != grayscale))
+                   (*cache)->points != points || (*cache)->grayscale != grayscale ||
+                   (*cache)->transform_flags != transform_flags))
         cupidimage_pdf_page_hint_free(cache);
     if (!*cache) {
         if (!page_hint_prepare_cost(&program->font, work_left))
@@ -103,9 +118,11 @@ int cupidimage_pdf_page_hint_shape(pdf_page_hint **cache, pdf_font_program *prog
         entry->pixels = ppem * 64;
         entry->points = points;
         entry->grayscale = grayscale;
+        entry->transform_flags = transform_flags;
         size_t quota = page_hint_quota(work_left);
-        if (!quota || !cupidimage_pdf_tt_hint_init(&entry->hint, &program->font, entry->pixels,
-                                                   points, grayscale, quota))
+        if (!quota || !cupidimage_pdf_tt_hint_init_xy(&entry->hint, &program->font, entry->pixels,
+                                                      entry->pixels, points, grayscale,
+                                                      transform_flags, quota))
             goto fail;
         *work_left += entry->hint.vm.work_left;
     }

@@ -43,10 +43,10 @@ static void interpolation_tests(void) {
                     }
                 }
     /* Two contours, wraparound anchors, a single anchor, and excluded phantoms. */
-    pdf_tt_vm_point points[] = {{{10, 0}, {10, 0}, 0, 1, 0}, {{84, 0}, {20, 0}, 1, 1, 0},
-                                {{30, 0}, {30, 0}, 0, 1, 1}, {{-10, 0}, {-10, 0}, 0, 1, 0},
-                                {{25, 0}, {5, 0}, 1, 1, 0},  {{45, 0}, {25, 0}, 1, 1, 0},
-                                {{35, 0}, {35, 0}, 0, 1, 1}, {{1000, 0}, {1000, 0}, 0, 1, 0}};
+    pdf_tt_vm_point points[] = {{{10, 0}, {10, 0}, 0, 1, 0, 0}, {{84, 0}, {20, 0}, 1, 1, 0, 0},
+                                {{30, 0}, {30, 0}, 0, 1, 1, 0}, {{-10, 0}, {-10, 0}, 0, 1, 0, 0},
+                                {{25, 0}, {5, 0}, 1, 1, 0, 0},  {{45, 0}, {25, 0}, 1, 1, 0, 0},
+                                {{35, 0}, {35, 0}, 0, 1, 1, 0}, {{1000, 0}, {1000, 0}, 0, 1, 0, 0}};
     init(&vm, NULL, 0);
     CHECK(cupidimage_pdf_tt_vm_set_zones(&vm, 0, points, 8, 7));
     static const unsigned char twice[] = {0x31, 0x31};

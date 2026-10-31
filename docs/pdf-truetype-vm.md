@@ -141,8 +141,8 @@ F26Dot6 point size. These interfaces are tested separately from PDF text paintin
 Execution distinguishes font, preparation and glyph stages. Font and preparation
 streams may define functions. INSTCTRL records valid flags in the permitted stage;
 glyph execution is skipped when preparation has inhibited it. The defaults-selection
-flag is applied at explicit glyph entry. SCANCTRL and
-SCANTYPE preserve their settings, but no scan converter consumes them. A preparation
+flag is applied at explicit glyph entry. SCANCTRL evaluates conditional dropout
+state, and SCANTYPE selects the [monochrome converter](pdf-monochrome.md) policy. A preparation
 program has no associated glyph outline: glyph-coordinate queries return zero and
 outline-specific point operations have no effect. Twilight operations remain
 available when that zone has been allocated.
@@ -352,17 +352,17 @@ perpendicular-vector movement failure, one had a truncated glyph description,
 13 font containers were rejected and three failed the diagnostic parser. These
 are diagnostic results, not a corpus-wide pass or PDF rendering qualification.
 
-Remaining work includes broader font-program qualification, variation and LCD
-behavior, scan conversion and integration with PDF text rendering.
-Existing PDF advances and resource ownership must remain intact
-when that integration is implemented.
+The selected legacy profile is integrated with [PDF text painting](pdf-page-hinting.md),
+including [monochrome scan conversion](pdf-monochrome.md). Broader font-program
+qualification, variation and LCD behavior remain unfinished. PDF advances continue
+to come from the document rather than hinted phantom widths.
 
 `scripts/test_pdf_tt_state_reference.py` checks paired-glyph sequences for prepared
 CVT/storage isolation, entry defaults, instruction controls, definitions and
 persistent twilight coordinates. In the tested configurations, 103 sequences match
 independently and one specified-defaults case differs. Targeted allocation-failure
-tests cover snapshots and glyph replacement. Controls affecting unfinished
-movement or scan-conversion features still need rendering-level verification.
+tests cover snapshots and glyph replacement. The separate monochrome page suite
+checks scan controls through placement, clipping and combined painting.
 
 The differing case sets a three-pixel minimum distance in preparation, then uses
 INSTCTRL selector 2 to request implementation defaults. CupidImage restores the

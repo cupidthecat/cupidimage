@@ -281,6 +281,17 @@ FreeType Project License. The original license, source hashes and modification
 notes are in `third_party/freetype-raster`. Include this notice with binary
 distributions and retain that directory with source distributions.
 
+## FreeType monochrome glyph coverage
+
+Portions of this software are copyright © 1996-2026 The FreeType Project
+(https://freetype.org). All rights reserved.
+
+The monochrome scan converter is adapted from FreeType 2.15.0 under the FreeType
+Project License. Source hashes and reversible adaptations are recorded in
+`third_party/freetype-monochrome`. The original license and shared declarations
+are in `third_party/freetype-raster`. Retain both directories with source
+distributions and this notice with binaries.
+
 ## FreeType PostScript outline hinting
 
 Portions of this software are copyright © 2000-2026 The FreeType Project

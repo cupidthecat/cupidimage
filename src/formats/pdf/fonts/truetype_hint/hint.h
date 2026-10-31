@@ -20,6 +20,8 @@ void cupidimage_pdf_tt_hint_free(pdf_tt_hint *);
 typedef struct {
     pdf_tt_point *points;
     unsigned count;
+    unsigned char *scan_modes;
+    unsigned scan_mode, high_precision;
 } pdf_tt_hint_shape;
 
 /* Copy a completed glyph into device pixels after a 16.16 matrix and F26Dot6

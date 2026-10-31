@@ -1,8 +1,8 @@
 static void movement_tests(void) {
     pdf_tt_vm vm;
-    const pdf_tt_vm_point points[] = {{{0, 0}, {0, 0}, 0, 1, 0},
-                                      {{31, 19}, {-91, 19}, 0, 1, 0},
-                                      {{100, 100}, {100, 100}, 0, 1, 1}};
+    const pdf_tt_vm_point points[] = {{{0, 0}, {0, 0}, 0, 1, 0, 0},
+                                      {{31, 19}, {-91, 19}, 0, 1, 0, 0},
+                                      {{100, 100}, {100, 100}, 0, 1, 1, 0}};
     const int32_t targets[] = {-257, -38, -37, -1, 0, 31, 32, 63, 64, 99, 100, 257};
     const int32_t cutins[] = {-1, 0, 16, 68, INT32_MAX};
     for (unsigned rounded = 0; rounded < 2; rounded++)
@@ -168,8 +168,8 @@ static void movement_tests(void) {
 }
 
 static void align_points_tests(void) {
-    const pdf_tt_vm_point points[] = {{{-93, 35}, {20, 25}, 0, 1, 0},
-                                      {{100, -14}, {100, 0}, 0, 0, 1}};
+    const pdf_tt_vm_point points[] = {{{-93, 35}, {20, 25}, 0, 1, 0, 0},
+                                      {{100, -14}, {100, 0}, 0, 0, 1, 0}};
     for (unsigned axis = 0; axis < 2; axis++)
         for (unsigned za = 0; za < 2; za++)
             for (unsigned zb = 0; zb < 2; zb++)

@@ -757,3 +757,12 @@ subpixel regions, holes, transformed Form boundaries and allocation failures.
 `assets/pdf/fractional-clipping.pdf` is a decoded-unverified visual sample, rebuilt
 with `scripts/generate_pdf_fractional_clip_fixture.py`. See the
 [clipping guide](pdf-clipping.md) for limits and remaining raster qualification.
+
+## Monochrome TrueType scan conversion
+
+`make test-pdf-monochrome` checks conditional instruction state, bounded raster
+ownership, stored independent bitmaps and authored PDF placement and paint cases.
+It needs no optional packages. The separate reference script accepts `--library`
+for a specific font-engine build and reports unsupported older versions explicitly.
+See [monochrome rendering](pdf-monochrome.md) for the comparison boundaries and
+fixture regeneration commands.
