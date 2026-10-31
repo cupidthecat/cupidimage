@@ -28,6 +28,94 @@ static unsigned checks, failures;
         }                                                                                          \
     } while (0)
 
+static void flex_checks(void) {
+    pdf_ps_private_hints priv;
+    cupidimage_pdf_ps_hints_init(&priv);
+    pdf_cff_segment segments[] = {{{0, 0}, PDF_CFF_MOVE},
+                                  {{20, 0, 40, 4, 60, 4}, PDF_CFF_CURVE},
+                                  {{80, 4, 100, 0, 120, 0}, PDF_CFF_CURVE},
+                                  {{120, -20}, PDF_CFF_LINE},
+                                  {{0, -20}, PDF_CFF_LINE},
+                                  {{0, 0}, PDF_CFF_CLOSE}};
+    pdf_cff_outline source = {.segments = segments, .count = 6, .width = 600};
+    pdf_ps_gridfit_size size = {.x_scale = 8192, .y_scale = 8192};
+    pdf_ps_flex flex = {1, 51};
+    pdf_ps_hint_program hints = {.flexes = &flex, .flex_count = 1};
+    size_t total = 0;
+    pdf_cff_segment expected[16];
+    unsigned expected_count = 0;
+    for (size_t failure = 0; failure <= total + 1; failure++) {
+        fail_at = failure;
+        allocation_count = 0;
+        size_t work = 100000;
+        pdf_cff_outline output = {0};
+        int ok = cupidimage_pdf_ps_gridfit(&priv, &hints, &source, &size, &output, &work);
+        if (!failure) {
+            total = allocation_count;
+            expected_count = output.count;
+            CHECK(expected_count <= 16);
+            memcpy(expected, output.segments, output.count * sizeof(*expected));
+        }
+        CHECK(ok == (!failure || failure > total));
+        if (ok) {
+            CHECK(output.width == 600 && output.count == expected_count);
+            CHECK(!memcmp(output.segments, expected, output.count * sizeof(*expected)));
+            for (unsigned i = 0; i < output.count; i++)
+                CHECK(output.segments[i].kind != PDF_CFF_CURVE);
+        } else
+            CHECK(!output.count && !output.segments);
+        cupidimage_pdf_type2_free(&output);
+        CHECK(!live_count);
+    }
+    fail_at = 0;
+    for (size_t budget = 0; budget < 12000; budget += 31) {
+        size_t work = budget;
+        pdf_cff_outline output = {0};
+        int ok = cupidimage_pdf_ps_gridfit(&priv, &hints, &source, &size, &output, &work);
+        CHECK(work <= budget);
+        if (ok) {
+            CHECK(output.count == expected_count);
+            CHECK(!memcmp(output.segments, expected, output.count * sizeof(*expected)));
+        } else
+            CHECK(!output.count && !output.segments);
+        cupidimage_pdf_type2_free(&output);
+        CHECK(!live_count);
+    }
+    for (unsigned bad = 0; bad < 9; bad++) {
+        pdf_ps_hint_program invalid = hints;
+        pdf_ps_flex records[2] = {flex, flex};
+        pdf_ps_hint_event event = {.segment = 2};
+        pdf_ps_gridfit_size transform = size;
+        invalid.flexes = records;
+        if (bad == 0)
+            records[0].segment = 0;
+        if (bad == 1)
+            records[0].segment = 5;
+        if (bad == 2)
+            records[0].segment = UINT_MAX;
+        if (bad == 3)
+            records[0].depth = NAN;
+        if (bad == 4)
+            invalid.flex_count = 2;
+        if (bad == 5)
+            invalid.flexes = NULL;
+        if (bad == 6)
+            invalid.flex_count = UINT_MAX;
+        if (bad == 7) {
+            invalid.events = &event;
+            invalid.event_count = 1;
+        }
+        if (bad == 8) {
+            transform.flex_transform_set = 1;
+            transform.flex_transform[0] = INFINITY;
+        }
+        pdf_cff_outline output = {0};
+        size_t work = 100000;
+        CHECK(!cupidimage_pdf_ps_gridfit(&priv, &invalid, &source, &transform, &output, &work));
+        CHECK(!output.segments && !output.count && !live_count);
+    }
+}
+
 static int font_probe(const char *path, unsigned x_ppem, unsigned y_ppem, int bitmap) {
     FILE *file = fopen(path, "rb");
     if (!file)
@@ -427,6 +515,7 @@ int main(int argc, char **argv) {
         cupidimage_pdf_type2_free(&output);
         CHECK(!live_count);
     }
+    flex_checks();
     printf("PostScript grid fitting: %u checks, %u failures\n", checks, failures);
     return failures != 0;
 }

@@ -8,6 +8,11 @@ typedef struct {
     int32_t x_scale, y_scale;
     /* Component origin in 16.16 character-space units, before fitting. */
     int32_t origin_x, origin_y;
+    /* Full character-to-device linear transform for flex depth. If unset, use
+     * the diagonal fitting scales. Translation does not affect depth. */
+    double flex_transform[4];
+    int flex_transform_set;
+    double flex_offset[2]; /* Device origin for Type 1 pixel-phase adjustment. */
 } pdf_ps_gridfit_size;
 
 /* Returns an owned, device-pixel outline, quantized down to the 1/64-pixel grid.

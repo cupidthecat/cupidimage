@@ -26,6 +26,10 @@ coordinates. Input outlines, hint traces and PDF-independent advances are not
 modified. Output widths retain the source values; fitted geometry does not
 supply PDF text advances.
 
+Type 2 [flex hints](pdf-flex.md) retain their thresholds separately from the
+unhinted cubic geometry. The explicit CFF profile selects the line or curve path
+in device space before fitting. Type 1 consumes its separate reference-point and pixel-phase procedure.
+
 A glyph's initial hint map and active map are separate. Mask changes follow the
 captured outline positions, including changes just before a contour closes.
 Counter masks establish shared stem positions without replacing the active
@@ -57,7 +61,8 @@ without adding a closing stroke. Logical current-point records do not add a path
 vertex; subsequent absolute endpoints already include the position change.
 The selected profile tolerates the known -20/-21 edge encodings on either axis,
 while retaining input diagnostics. It does not implement legacy dotsection
-suppression or flex flattening.
+suppression. Standard flex calls now use the [separate Type 1 procedure](pdf-flex.md#type-1-flex),
+including retained-curve adjustment; custom OtherSubrs execution remains outside this profile.
 
 ## Bounds and ownership
 
@@ -90,7 +95,7 @@ applied before fitting; checked affine transforms follow it.
 
 ## Verification
 
-`make test-pdf-ps-gridfit` runs 191,038 authored checks covering ownership,
+`make test-pdf-ps-gridfit` runs 192,419 authored checks covering ownership,
 allocation failure, budget boundaries, malformed input, repeated contours and
 2,000 bounded parameter/geometry stress cases. Input geometry must remain
 unchanged. A 96-stem case exercises mask handling and buffer growth.
@@ -118,7 +123,7 @@ behavior with grid fitting; native encoding-equivalence checks retain the
 
 ### Type 1 checks
 
-`make test-pdf-type1-gridfit` runs 31,899 native checks, including work-budget
+`make test-pdf-type1-gridfit` runs 35,358 native checks, including work-budget
 boundaries, allocation failures, composite cleanup, malformed traces, open
 contours, transforms and 2,000 bounded sizing/origin cases. It also runs optional
 independent checks for 31 authored programs: 420 fitted fill-contour matches at
@@ -147,7 +152,7 @@ Type 1 hinting on/off. The pairs also agree in 48 optional independent page chec
 ## Remaining work
 
 Designer counter priorities, computed private dictionaries, broader OtherSubrs,
-flex policy, stem darkening, synthetic bold, fractional private parameters and
+custom flex procedures, stem darkening, synthetic bold, fractional private parameters and
 broader font-program arithmetic qualification remain open. The matching outlines
 and bitmaps establish the tested profile, not complete CFF/PDF rendering parity.
 

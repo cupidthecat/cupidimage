@@ -94,7 +94,7 @@ masks. These checks establish agreement on decoded inputs, not rendered pixels.
 
 The separate grid-fitting core has bounded outline and glyph-bitmap tests.
 Composite placement and CFF/Type 1 page integration have focused checks. Type 1
-computed parameters, flex-depth handling and broader profile qualification remain
+computed parameters, custom flex procedures and broader profile qualification remain
 open. See the [Type 1 page guide](pdf-type1-page-hinting.md).
 `--pdf-tt-hinting` applies only to TrueType and does not enable these stages.
 

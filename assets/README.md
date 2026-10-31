@@ -154,3 +154,8 @@ oracle and a nonzero content-object generation. They test encrypted loading
 through the existing default APIs. Regenerate their exact bytes with
 scripts/generate_pdf_security_assets.py. The larger password/structure fixtures
 and independent generation procedure are described in ../docs/pdf-security.md.
+
+`pdf/native-cff-flex.pdf` pairs owned flex glyphs with their literal cubic controls
+at four sizes. Enable `--pdf-cff-hinting` to apply depth-dependent selection.
+The complete sample is decoded-unverified; focused outline and page comparisons
+are described in [Type 2 flex hints](../docs/pdf-flex.md).
