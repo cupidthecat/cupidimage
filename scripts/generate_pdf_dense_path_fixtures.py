@@ -22,6 +22,13 @@ def fixtures():
     green = bytes(v for y in range(1056) for x in range(816)
                   for v in ((0, 255, 0, 255) if 4 <= x < 16 and 1044 <= y < 1052 else (255,) * 4))
     yield 'bounded-shading-work.pdf', shading_page(repeats=192), 816, 1056, green
+    repeated = document('/MediaBox [0 0 18 12]', stream=
+                        '0 0 9 6 re W n ' + '0 0 18 12 re W n ' * 7072 +
+                        '1 0 0 rg 0 0 18 12 re f')
+    red = bytes(v for y in range(16) for x in range(24)
+                for v in ((255, 0, 0, 255) if x < 12 and y >= 8 else (255,) * 4))
+    yield 'repeated-page-clips.pdf', repeated, 24, 16, red
+
 
 
 def main():

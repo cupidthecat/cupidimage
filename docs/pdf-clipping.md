@@ -94,6 +94,12 @@ bounding boxes or increase the work limit. An owned page with 40 saved-state
 rectangular clips now completes under the existing budget and matches the
 single-clip result.
 
+Canvas-sized rectangular clips retain the existing mask unchanged. Their four
+edges consume work, but no new mask is constructed. This avoids counting
+redundant page rectangles against the 4,096 mask-construction limit. Other clips
+still consume that limit, and resource exhaustion remains an error. See
+[dense paths](pdf-dense-paths.md) for the scanline and bounded-raster changes.
+
 ## Verification
 
 `make test-pdf-clip-regions` runs:

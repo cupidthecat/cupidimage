@@ -61,6 +61,7 @@ static int test_font_outline(pdf_font_program *program, unsigned glyph, pdf_tt_o
 #include "../src/formats/pdf/pdf_font_program.c"
 #undef cupidimage_pdf_font_outline
 #include "../src/formats/pdf/clipping/geometry.c"
+#include "../src/formats/pdf/clipping/scanline.c"
 #include "../src/formats/pdf/color/black_generation.c"
 #include "../src/formats/pdf/color/blend.c"
 #include "../src/formats/pdf/color/curve_inverse.c"

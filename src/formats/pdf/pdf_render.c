@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "clipping/scanline.h"
 #include "pdf_internal.h"
 
 #include "pdf_content_syntax.h"
@@ -277,22 +278,10 @@ void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy
     *py = (st->page_top_pts - ty) * s;
 }
 
-static int pdf_scanline_intersects(float x, float y, const pdf_seg *seg) {
-    float y0 = seg->y0;
-    float y1 = seg->y1;
-    if ((y0 <= y && y1 > y) || (y1 <= y && y0 > y)) {
-        /* Skip horizontal edges (approximately) to avoid double-counting. */
-        if (fabsf(y0 - y1) <= 1e-6f) {
-            return 0;
-        }
-        float t = (y - y0) / (y1 - y0);
-        float ix = seg->x0 + t * (seg->x1 - seg->x0);
-        return ix > x ? (y1 > y0 ? 1 : -1) : 0;
-    }
-    return 0;
-}
-
-static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char *mask) {
+static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char *mask,
+                              int *bounds) {
+    if (bounds)
+        memset(bounds, 0, 4 * sizeof(*bounds));
     if (st->path.overflow) {
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity,
@@ -322,28 +311,39 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
     int x1 = (int)fminf((float)st->img->width, fmaxf(0, ceilf(max_x)));
     int y1 = (int)fminf((float)st->img->height, fmaxf(0, ceilf(max_y)));
 
-    if (mask) {
-        size_t area = (size_t)(x1 - x0) * (size_t)(y1 - y0);
-        if (area > st->clip_budget->tests_left / (size_t)n) {
+    if (bounds) {
+        bounds[0] = x0;
+        bounds[1] = y0;
+        bounds[2] = x1;
+        bounds[3] = y1;
+    }
+    size_t area = (size_t)(x1 - x0) * (size_t)(y1 - y0);
+    if (area > st->clip_budget->tests_left) {
+        free(edges);
+        return 0;
+    }
+    st->clip_budget->tests_left -= area;
+    pdf_scan_crossing *crossings = malloc((n ? n : 1) * sizeof(*crossings));
+    if (!crossings) {
+        free(edges);
+        return 0;
+    }
+    for (int y = y0; y < y1; y++) {
+        int used = cupidimage_pdf_scanline(edges, n, (float)y + 0.5f, crossings,
+                                           &st->clip_budget->tests_left);
+        if (used < 0) {
+            free(crossings);
             free(edges);
             return 0;
         }
-        st->clip_budget->tests_left -= area * (size_t)n;
-    }
-
-    for (int y = y0; y < y1; y++) {
-        float py = (float)y + 0.5f;
+        int winding = 0, at = 0;
+        for (int i = 0; i < used; i++)
+            winding += crossings[i].direction;
         for (int x = x0; x < x1; x++) {
             float px = (float)x + 0.5f;
-            int crossings = 0;
-            for (unsigned i = 0; i < n; i++) {
-                pdf_seg edge = {.x0 = (float)edges[i].x0,
-                                .y0 = (float)edges[i].y0,
-                                .x1 = (float)edges[i].x1,
-                                .y1 = (float)edges[i].y1};
-                crossings += pdf_scanline_intersects(px, py, &edge);
-            }
-            if (even_odd ? crossings % 2 != 0 : crossings != 0) {
+            while (at < used && crossings[at].x <= px)
+                winding -= crossings[at++].direction;
+            if (even_odd ? winding % 2 != 0 : winding != 0) {
                 if (mask) {
                     size_t pixel = (size_t)y * st->img->width + (size_t)x;
                     mask[pixel / 8] |= (unsigned char)(1u << (pixel % 8));
@@ -353,6 +353,7 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
             }
         }
     }
+    free(crossings);
     free(edges);
     return 1;
 }
@@ -364,7 +365,11 @@ static void pdf_fill_path(pdf_render_state *st, int even_odd) {
         (void)cupidimage_pdf_paint_path_coverage(st, &st->path, 1, 0, even_odd);
         return;
     }
-    pdf_rasterize_path(st, even_odd, NULL);
+    if (!pdf_rasterize_path(st, even_odd, NULL, NULL)) {
+        st->image_failed = 1;
+        cupidimage_set_err(st->error, st->error_capacity,
+                           "pdf: filled path exceeds limits or allocation failed");
+    }
 }
 
 /* Fill-and-stroke is one PDF object. Stroke-covered pixels use the original
@@ -399,7 +404,7 @@ static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
         return;
     }
     unsigned char *stroke = masks + bytes;
-    if (!pdf_rasterize_path(st, even_odd, masks)) {
+    if (!pdf_rasterize_path(st, even_odd, masks, NULL)) {
         free(masks);
         st->image_failed = 1;
         cupidimage_set_err(st->error, st->error_capacity, "pdf: invalid fill coverage");
@@ -424,6 +429,8 @@ static void pdf_fill_and_stroke(pdf_render_state *st, int even_odd) {
 }
 
 static int pdf_apply_clip(pdf_render_state *st) {
+    if (cupidimage_pdf_clip_covers_canvas(st))
+        return 1;
     size_t bytes = ((size_t)st->img->width * st->img->height + 7) / 8;
     if (st->path.overflow || !st->clip_budget->calls_left ||
         st->clip_budget->bytes_used > 64u * 1024u * 1024u ||
@@ -437,7 +444,7 @@ static int pdf_apply_clip(pdf_render_state *st) {
     clip->bytes = bytes;
     st->clip_budget->bytes_used += bytes;
     if (!cupidimage_pdf_clip_antialias(st) &&
-        !pdf_rasterize_path(st, st->pending_clip == 2, clip->bits)) {
+        !pdf_rasterize_path(st, st->pending_clip == 2, clip->bits, clip->bounds)) {
         cupidimage_pdf_clip_release(st, clip);
         return 0;
     }
@@ -452,7 +459,18 @@ static int pdf_apply_clip(pdf_render_state *st) {
         cupidimage_pdf_clip_release(st, clip);
         return 1;
     }
+    clip->bounds_known = !cupidimage_pdf_clip_antialias(st);
     if (st->gs.clip && !cupidimage_pdf_clip_antialias(st)) {
+        if (st->gs.clip->bounds_known) {
+            clip->bounds[0] =
+                clip->bounds[0] > st->gs.clip->bounds[0] ? clip->bounds[0] : st->gs.clip->bounds[0];
+            clip->bounds[1] =
+                clip->bounds[1] > st->gs.clip->bounds[1] ? clip->bounds[1] : st->gs.clip->bounds[1];
+            clip->bounds[2] =
+                clip->bounds[2] < st->gs.clip->bounds[2] ? clip->bounds[2] : st->gs.clip->bounds[2];
+            clip->bounds[3] =
+                clip->bounds[3] < st->gs.clip->bounds[3] ? clip->bounds[3] : st->gs.clip->bounds[3];
+        }
         for (size_t i = 0; i < bytes; i++)
             clip->bits[i] &= st->gs.clip->bits[i];
     }
@@ -1518,7 +1536,7 @@ done:
         cupidimage_pdf_render_state_release(child);
     free(child);
     cupidimage_pdf_group_free(st, &group);
-    if (!ok)
+    if (!ok && (!st->error || !st->error_capacity || !st->error[0]))
         cupidimage_set_err(st->error, st->error_capacity,
                            "pdf: invalid, recursive, or unsupported Form XObject");
     return ok;

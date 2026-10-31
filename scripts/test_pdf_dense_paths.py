@@ -56,6 +56,19 @@ def main():
                 prefix='/Half gs 1 0 0 rg 0 0 1 RG 1 w '
                 assert render(page(prefix+padded(5000)+operation),aa=aa)==render(page(prefix+padded(0)+operation),aa=aa),(operation,aa)
             assert render(page(curves(2500)+'1 0 0 rg f'),aa=aa)==render(page(curves(1)+'1 0 0 rg f'),aa=aa)
+        # Repeating a canvas-sized rectangle does not change any inherited clip.
+        for aa in (False, True):
+            for shape in ('0 0 18 12 re', '18 12 -18 -12 re',
+                          '0 0 m 18 0 l 18 12 l 0 12 l h'):
+                repeat=(shape+' W n ')*7072
+                for prefix in ('', '.1875 .1875 9 6 re W n '):
+                    paint='1 0 0 rg 0 0 18 12 re f'
+                    assert render(page(prefix+repeat+paint),aa=aa)==render(page(prefix+paint),aa=aa)
+            # A similar bounding box does not make a diamond a full-canvas clip.
+            diamond='9 0 m 18 6 l 9 12 l 0 6 l h '
+            assert render(page(diamond+'W n 1 0 0 rg 0 0 18 12 re f'),aa=aa)==render(page('1 0 0 rg '+diamond+'f'),aa=aa)
+            clipped='q .1875 .1875 9 6 re W n '
+            assert render(page(clipped+('0 0 18 12 re W n '*7072)+'1 0 0 rg 0 0 18 12 re f Q'),aa=aa)==render(page(clipped+'1 0 0 rg 0 0 18 12 re f Q'),aa=aa)
         fault(page(rectangles(1300)+'/Half gs 1 0 0 rg f',small=True))
         fault(page(rectangles(5000)+'1 0 0 rg f',small=True))
         fault(page(curves(2500)+'1 0 0 rg f',small=True))

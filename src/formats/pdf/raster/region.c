@@ -160,6 +160,22 @@ static int region_pixel(region_sweep *s, const region_edge *active, unsigned cou
                 return 0;
         s->candidates[candidates++] = e;
     }
+    /* Without a boundary or event inside the pixel, its winding is constant.
+     * Evaluate the same midpoint ray as the general integrator, avoiding event
+     * sorting and integration for fully covered or fully empty pixels. */
+    if (!candidates && !ellipse_count && s->event_count == 2) {
+        if (!region_charge(s, (size_t)count + regions))
+            return 0;
+        int32_t winding[64] = {0};
+        region_real y = s->y + .5L;
+        for (unsigned i = 0; i < count; i++) {
+            const region_edge *e = active + i;
+            if (y >= e->low && y < e->high && region_x(e, y) <= s->x)
+                winding[e->region] += e->direction;
+        }
+        *area = region_inside(winding, even_odd, regions) ? 1 : 0;
+        return 1;
+    }
     for (unsigned i = 0; i < ellipse_count; i++) {
         const pdf_region_ellipse *e = ellipses + i;
         if (!region_charge(s, 2) || !region_event(s, e->y - s->ellipse_frame.height) ||

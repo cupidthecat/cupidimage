@@ -95,6 +95,10 @@ static int pdf_shading_visible_bounds(const pdf_render_state *st, int bounds[4],
         bounds[3] = (int)fmax(0, fmin(height, ceil(b[3])));
         return 1;
     }
+    if (clip->bounds_known) {
+        memcpy(bounds, clip->bounds, sizeof(clip->bounds));
+        return 1;
+    }
     size_t pixels = (size_t)width * height, bytes = (pixels + 7) / 8;
     if (clip->bytes != bytes || bytes > *work)
         return 0;

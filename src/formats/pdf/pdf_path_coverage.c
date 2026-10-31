@@ -80,6 +80,17 @@ int cupidimage_pdf_paint_path_coverage(pdf_render_state *st, const pdf_path *pat
         right = (int)fmax(0, fmin(st->img->width, ceil(x1)));
     int top = (int)fmax(0, fmin(st->img->height, floor(y0))),
         bottom = (int)fmax(0, fmin(st->img->height, ceil(y1)));
+    /* Nothing outside the inherited clip can be painted. Limit the raster
+     * window before allocating or intersecting coverage, while retaining the
+     * original edges and exact fractional clipping inside that window. */
+    if (st->gs.clip && st->gs.clip->geometry && st->gs.clip->coverage &&
+        !st->paint_coverage_clipped) {
+        const double *bounds = st->gs.clip->geometry->bounds;
+        left = (int)fmax(left, fmin(st->img->width, floor(bounds[0])));
+        top = (int)fmax(top, fmin(st->img->height, floor(bounds[1])));
+        right = (int)fmin(right, fmax(0, ceil(bounds[2])));
+        bottom = (int)fmin(bottom, fmax(0, ceil(bounds[3])));
+    }
     if (left >= right || top >= bottom)
         return 1;
     int clipped = st->gs.clip && st->gs.clip->coverage &&

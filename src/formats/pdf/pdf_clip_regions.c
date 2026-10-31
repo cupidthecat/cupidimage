@@ -3,6 +3,31 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* A rectangle containing the complete device canvas cannot narrow any visible
+ * clipping region. Check its edges, not only its bounding box: a sheared path
+ * or several subpaths may have the same bounds without covering the canvas. */
+int cupidimage_pdf_clip_covers_canvas(pdf_render_state *st) {
+    const pdf_path *path = &st->path;
+    if (!cupidimage_pdf_path_valid(path) || path->seg_count != 4 || st->clip_budget->tests_left < 4)
+        return 0;
+    st->clip_budget->tests_left -= 4;
+    const pdf_seg *edges = cupidimage_pdf_path_segments(path);
+    double left = INFINITY, top = INFINITY, right = -INFINITY, bottom = -INFINITY;
+    for (unsigned i = 0; i < 4; i++) {
+        const pdf_seg *a = edges + i, *b = edges + (i + 1) % 4;
+        int horizontal = a->y0 == a->y1, vertical = a->x0 == a->x1;
+        if (a->curve || (i && a->starts_subpath) || horizontal == vertical || a->x1 != b->x0 ||
+            a->y1 != b->y0 || horizontal == (b->y0 == b->y1) || !isfinite(a->x0) ||
+            !isfinite(a->y0) || fabs(a->x0) > 32768 || fabs(a->y0) > 32768)
+            return 0;
+        left = fmin(left, a->x0);
+        top = fmin(top, a->y0);
+        right = fmax(right, a->x0);
+        bottom = fmax(bottom, a->y0);
+    }
+    return left <= 0 && top <= 0 && right >= st->img->width && bottom >= st->img->height;
+}
+
 int cupidimage_pdf_clip_append_edge_to(pdf_render_state *st, pdf_clip_mask *clip, double x0,
                                        double y0, double x1, double y1) {
     size_t *work = &st->clip_budget->tests_left;
