@@ -78,6 +78,10 @@ Standard [flex calls](pdf-flex.md#type-1-flex) now retain their reference points
 and use the separate Type 1 selection and pixel-phase procedure. Unhinted
 outlines and PDF widths are unchanged.
 
+Longer [hint replacement traces](pdf-type1-replacements.md) preserve the glyph
+when the selected map exceeds its capacity. Their page tests keep PDF advances,
+painting modes and allocation ownership separate from map fitting.
+
 ## Remaining scope and references
 
 Computed PostScript dictionaries, broader OtherSubrs,

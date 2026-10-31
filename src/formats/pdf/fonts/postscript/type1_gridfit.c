@@ -9,8 +9,8 @@ static int ps_type1_coordinate(double value) {
 int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
                                    const pdf_type1_hint_trace *trace, const pdf_cff_outline *source,
                                    const pdf_ps_gridfit_size *size, pdf_ps_private_hints *selected,
-                                   unsigned *stem_count) {
-    if (!private_hints || !trace || !source || !size || !selected || !stem_count ||
+                                   unsigned *stem_count, unsigned *active_count) {
+    if (!private_hints || !trace || !source || !size || !selected || !stem_count || !active_count ||
         source->composite || source->count > 65536 || (source->count && !source->segments) ||
         trace->count > 65536 || (trace->count && !trace->events) ||
         (trace->diagnostics & ~(PDF_T1_HINT_BAD_WIDTH | PDF_T1_HINT_COUNTER_DATA)))
@@ -18,7 +18,8 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
     if (!cupidimage_pdf_ps_hint_profile(private_hints, selected))
         return 0;
     double origin[2] = {size->origin_x / 65536.0, size->origin_y / 65536.0};
-    *stem_count = 0;
+    *stem_count = *active_count = 0;
+    unsigned current_stems = 0;
     unsigned last_flex = 0;
     int has_flex = 0;
     for (unsigned i = 0; i < trace->count; i++) {
@@ -52,12 +53,23 @@ int cupidimage_pdf_ps_type1_inputs(const pdf_ps_private_hints *private_hints,
             has_flex = 1;
             last_flex = event->segment;
         }
+        if (event->kind == PDF_T1_HINT_REPLACE)
+            current_stems = 0;
         if (event->kind > PDF_T1_HINT_STEM3)
             continue;
         unsigned count = event->kind == PDF_T1_HINT_STEM3 ? 3 : 1;
-        if (*stem_count > 96 - count)
-            return 0;
-        *stem_count += count;
+        if (*stem_count < 97) {
+            *stem_count += count;
+            if (*stem_count > 97)
+                *stem_count = 97;
+        }
+        if (current_stems < 97) {
+            current_stems += count;
+            if (current_stems > 97)
+                current_stems = 97;
+        }
+        if (*active_count < current_stems)
+            *active_count = current_stems;
         for (unsigned j = 0; j < count; j++) {
             double start = event->values[2 * j], width = event->values[2 * j + 1];
             if (!ps_type1_coordinate(start) || !ps_type1_coordinate(start + width) ||

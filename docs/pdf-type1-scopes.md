@@ -47,8 +47,8 @@ This is a reader for the supported font-declaration subset, not an unrestricted
 PostScript evaluator. Computed dictionaries and parameters, arbitrary procedures,
 operator redefinitions and general saved-dictionary expressions remain outside
 that subset. Font fitting and raster coverage have separate limits; see the
-[Type 1 hinting guide](pdf-type1-page-hinting.md). Larger replacement traces remain
-tracked in [issue #89](https://github.com/cupidthecat/cupidimage/issues/89).
+[Type 1 hinting guide](pdf-type1-page-hinting.md) and the
+[replacement-trace guide](pdf-type1-replacements.md).
 
 ## Verification
 

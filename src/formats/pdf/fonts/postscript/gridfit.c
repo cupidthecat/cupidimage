@@ -343,6 +343,10 @@ static void ps_gridfit_type1_stems(pdf_ps_gridfit_context *context,
                                    const pdf_type1_hint_event *event) {
     unsigned count = event->kind == PDF_T1_HINT_STEM3 ? 6 : 2;
     for (unsigned i = 0; i < count; i += 2) {
+        /* The map rejects an over-capacity set before reading its stems.
+         * Retain one overflow entry without allocating the remaining trace. */
+        if (context->horizontal.count + context->vertical.count >= CF2_MAX_HINTS + 1)
+            return;
         CF2_StemHintRec item = {0};
         ps_gridfit_fixed(event->values[i], &item.min);
         ps_gridfit_fixed(event->values[i] + event->values[i + 1], &item.max);
@@ -415,8 +419,9 @@ int cupidimage_pdf_ps_gridfit_type1(const pdf_ps_private_hints *private_hints,
     pdf_ps_private_hints selected;
     pdf_ps_hint_program empty_hints = {0};
     pdf_cff_outline empty_outline = {0};
-    unsigned stems = 0;
-    if (!cupidimage_pdf_ps_type1_inputs(private_hints, trace, source, size, &selected, &stems) ||
+    unsigned stems = 0, active_stems = 0;
+    if (!cupidimage_pdf_ps_type1_inputs(private_hints, trace, source, size, &selected, &stems,
+                                        &active_stems) ||
         !ps_gridfit_validate(&selected, &empty_hints, &empty_outline, size) ||
         !ps_gridfit_charge(work, stems + (size_t)stems * stems * 16))
         return 0;
@@ -438,6 +443,7 @@ int cupidimage_pdf_ps_gridfit_type1(const pdf_ps_private_hints *private_hints,
     cf2_arrstack_clear(&context->vertical);
     cf2_hintmask_init(&context->mask, &context->font.error);
     context->mask.isNew = 1;
+    stems = active_stems;
     unsigned event_index = 0;
     for (unsigned i = 0; i <= source->count; i++) {
         const pdf_type1_hint_event *flex_event = NULL;

@@ -7,6 +7,7 @@ import tempfile
 from compare_pdf_type1_hints import pfb_program
 from test_pdf_type1 import fixture
 from test_pdf_type1_charstrings import command, WIDTH
+from pdf_type1_replacement_fixture import authored_fonts as replacement_fonts
 
 
 def authored_fonts():
@@ -92,7 +93,7 @@ def main():
     except ImportError:
         print('Type 1 fitting references skipped: optional freetype-py unavailable')
         return
-    fonts = [(name, parts, parts[0]) for name, parts in authored_fonts()]
+    fonts = [(name, parts, parts[0]) for name, parts in authored_fonts() + replacement_fonts()]
     paths = sorted({p for item in args.fonts for p in
                     (item.glob('*.pfb') if item.is_dir() else [item])})
     for font in paths:
