@@ -10,13 +10,13 @@ import tempfile
 from test_pdf_truetype import tables,replace_tables
 
 
-def expanded(font):
+def expanded(font, glyphs=258):
     records=tables(font)
     def get(tag):
         _,start,length=records[tag];return font[start:start+length]
-    maxp=bytearray(get(b'maxp'));old=struct.unpack_from('>H',maxp,4)[0];struct.pack_into('>H',maxp,4,258)
+    maxp=bytearray(get(b'maxp'));old=struct.unpack_from('>H',maxp,4)[0];struct.pack_into('>H',maxp,4,glyphs)
     loca=get(b'loca');assert struct.unpack_from('>H',get(b'head'),50)[0]==0
-    return replace_tables(font,{b'maxp':bytes(maxp),b'loca':loca+loca[-2:]*(258-old),b'hmtx':get(b'hmtx')+bytes((258-old)*2)})
+    return replace_tables(font,{b'maxp':bytes(maxp),b'loca':loca+loca[-2:]*(glyphs-old),b'hmtx':get(b'hmtx')+bytes((glyphs-old)*2)})
 
 
 def main():
@@ -80,6 +80,33 @@ def main():
         ids[1]=32768
         check(header(0x20000)+struct.pack('>H',258)+struct.pack('>258H',*ids)+b'\x06custom',['custom'],[0])
         check(header(0x20000)+struct.pack('>H',257)+struct.pack('>258H',*ids),['A'],[0])
+        # Current OpenType permits the complete uint16 custom-name index range.
+        for index in (32767,32768,65535):
+            indices=[0,index]+[0]*256
+            pool=b'\x01x'*(index-258)+b'\x08farGlyph'
+            high=header(0x20000)+struct.pack('>H',258)+struct.pack('>258H',*indices)+pool
+            check(high,['farGlyph','x','absent'],[1,0,0],compare=True)
+            check(high[:-1],['farGlyph'],[0])
+        # A large pool of repeated, unreferenced strings must not rescan the
+        # entire glyph array for each string. The ordinary probe timeout applies.
+        largest=expanded(font,65535)
+        pool=header(0x20000)+struct.pack('>H',65535)+bytes(65535*2)+b'\x05probe'*(65536-258)
+        check(pool,['probe'],[0],source=largest)
+        repeated=header(0x20000)+struct.pack('>H',258)+struct.pack('>258H',0,259,258,*([0]*255))+b'\x05probe\x05probe'
+        check(repeated,['probe'],[2])
+        maximum=header(0x40000)+b'\xff\xff'*65534+b'\xff\xfe'
+        check(maximum,['aFFFE'],[65534],source=largest)
+
+        codes=[65535,0x41,0x20ac,0x8140,0,0xd800,0xfffe]+[65535]*251
+        aat=header(0x40000)+struct.pack('>258H',*codes)
+        queries=['a0041','a41','a000041','a20AC','a20ac','a8140','a0000','aD800','aFFFE',
+                 'aFFFF','a','A0041','a0x41','a10000','a0041.alt','a-1','A','uni0041']
+        check(aat,queries,[1,1,1,2,2,3,4,5,6,0,0,0,0,0,0,0,0,0])
+        codes[2]=0x41
+        check(header(0x40000)+struct.pack('>258H',*codes),['a0041'],[1])
+        for bad in (aat[:-1],aat[:-2],aat+b'\0',aat+b'\0\0'):
+            check(bad,['a0041'],[0])
+
     print(f'TrueType post names: {count} standard, custom and malformed-table checks passed; {references} independent name mappings')
 
 if __name__=='__main__':main()

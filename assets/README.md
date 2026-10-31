@@ -123,3 +123,9 @@ scripts/generate_pdf_cff_binding_fixtures.py.
 `pdf/reference/jpx-native-rgb.pdf` and `jpx-palette-opacity.pdf` exercise native
 JPEG 2000 samples, palette expansion and embedded alpha. Both have literal pixel
 oracles. Regenerate them with `scripts/generate_pdf_jpx_fixtures.py`.
+
+The post-aat4-names.pdf and post-high-index-names.pdf samples use owned glyph
+outlines with legacy character-code names and modern high custom-name indices.
+They remain decoded-unverified. Regenerate them with
+scripts/generate_pdf_post_table_fixtures.py; separate paired tests verify glyph
+selection and PDF widths.

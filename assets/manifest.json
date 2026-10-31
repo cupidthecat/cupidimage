@@ -619,6 +619,14 @@
       "sha256": "fcee6184c0d776126782cd2799797b106373278c8ea0a4354ee4e33cd8663d51"
     },
     {
+      "path": "assets/pdf/post-aat4-names.pdf",
+      "sha256": "672118f6169a43626101f85a5e2a37bcb9a37a4e4f960c68ba9e995f1f25be0b"
+    },
+    {
+      "path": "assets/pdf/post-high-index-names.pdf",
+      "sha256": "6c70f1a5e07038013c8f8f4fdd51e5bbb9241fd85c9fee8091f794bc77fab298"
+    },
+    {
       "path": "assets/pdf/pypdf/LICENSE-CC-BY-SA-4.0.txt",
       "sha256": "23ee78c8bae49cf08ea2f0c84945c66b987ebe4520881fb51b3dad4fb43d07c2"
     },
