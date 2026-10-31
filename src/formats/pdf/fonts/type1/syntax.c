@@ -81,6 +81,25 @@ unsigned cupidimage_pdf_type1_syntax_lookup(pdf_type1_syntax *syntax, const char
     return found ? syntax->bindings[found - 1].kind : 0;
 }
 
+/* The caller supplies a known systemdict operator. Unlike alias lookup,
+ * finding the read-only system dictionary hides lower user definitions. */
+int cupidimage_pdf_type1_syntax_builtin(pdf_type1_syntax *syntax, const char *name) {
+    for (unsigned depth = syntax->depth + 1; depth;) {
+        unsigned dictionary = syntax->dictionaries[--depth];
+        for (unsigned i = syntax->count; i;) {
+            i--;
+            if (!cupidimage_pdf_type1_syntax_take(syntax, 1))
+                return 0;
+            if (syntax->bindings[i].dictionary == dictionary &&
+                !strcmp(name, syntax->bindings[i].name))
+                return 0;
+        }
+        if (dictionary == UINT_MAX)
+            return 1;
+    }
+    return !syntax->failed;
+}
+
 static unsigned t1_syntax_procedure(pdf_type1_token value) {
     if (value.type != PDF_T1_PROC)
         return 0;
@@ -161,6 +180,8 @@ static int t1_syntax_definition(pdf_type1_syntax *syntax, const char *name, pdf_
         return 0;
     pdf_type1_token value = cupidimage_pdf_type1_lex(source, &pos, 0);
     unsigned kind = t1_syntax_procedure(value);
+    int boundary =
+        !strcmp(name, "currentfile") || !strcmp(name, "eexec") || !strcmp(name, "closefile");
     unsigned previous = t1_syntax_find(syntax, name);
     unsigned index = syntax->count;
     for (unsigned i = 0; i < syntax->count; i++)
@@ -171,10 +192,10 @@ static int t1_syntax_definition(pdf_type1_syntax *syntax, const char *name, pdf_
         }
     if (!t1_syntax_literal(syntax, source, &pos, value) ||
         !t1_syntax_end_definition(syntax, source, &pos, put))
-        return !syntax->failed && !previous && index == syntax->count;
+        return !syntax->failed && !boundary && !previous && index == syntax->count;
     if (dictionary == UINT_MAX)
         return 0;
-    if (kind || previous || index != syntax->count) {
+    if (kind || previous || index != syntax->count || boundary) {
         if (index == syntax->count) {
             if (syntax->count == 128)
                 return 0;

@@ -339,6 +339,21 @@ static int object_at(const pdf_xref *xref, pdf_object_id object, size_t offset,
                     dictionary = {0};
     size_t pos = 0;
     cupidimage_pdf_skip_ws_and_comments(tail.data, tail.len, &pos);
+    /* Some damaged wrappers omit the separator before a scalar object's
+     * terminator. Recover only one complete number at this indexed object,
+     * never by splitting arbitrary content tokens or searching another object. */
+    size_t numeric = pos;
+    double number;
+    size_t numeric_limit = tail.len - pos < 64 ? tail.len : pos + 64;
+    if (cupidimage_pdf_parse_pdf_number(tail.data, numeric_limit, &numeric, &number) &&
+        object_word(&tail, numeric, "endobj")) {
+        if (numeric > *work || *work - numeric < 6)
+            return -1;
+        *work -= numeric + 6;
+        *view = tail;
+        view->len = numeric;
+        return 1;
+    }
     if (tail.len - pos >= 2 && !memcmp(tail.data + pos, "<<", 2)) {
         if (!cupidimage_pdf_dictionary_view(&tail, pos, &dictionary, &end) || end > *work)
             return -1;

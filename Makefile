@@ -889,3 +889,10 @@ $(BINDIR)/test_pdf_tt_policy: tests/test_pdf_tt_policy.c $(LIB)
 test-pdf-tt-policy: $(BINDIR)/test_pdf_tt_policy
 	$<
 	python3 scripts/test_pdf_tt_policy.py $<
+
+TEST_TARGETS += test-pdf-font-boundaries
+test: test-pdf-font-boundaries
+.PHONY: test-pdf-font-boundaries
+test-pdf-font-boundaries: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_type1_scope_oom
+	python3 scripts/generate_pdf_font_boundaries_fixture.py --check
+	python3 scripts/test_pdf_font_boundaries.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_type1_scope_oom

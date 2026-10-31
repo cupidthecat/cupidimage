@@ -683,6 +683,10 @@
       "sha256": "f723638db6e763cf4ccadad38a3d38a02d9ecab95dab1f0bbf00e801991b5f92"
     },
     {
+      "path": "assets/pdf/recovered-font-streams.pdf",
+      "sha256": "ff2dc43f5d24269b1ce2e692ce907fd0afecae8eaa0f478384257403f5bc50b0"
+    },
+    {
       "path": "assets/pdf/reference/annotation-appearance.pdf",
       "sha256": "ee31ef37422d027bc741992199d953b061fc873576d17dbb5dbf85896d8b6972"
     },

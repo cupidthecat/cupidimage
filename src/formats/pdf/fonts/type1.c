@@ -75,11 +75,12 @@ static int t1_matrix(pdf_cff_slice source, size_t *position, double matrix[6]) {
 }
 
 static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][128], int plain,
-                    size_t *private_start, pdf_type1_syntax *syntax) {
+                    size_t *private_start, pdf_type1_syntax *syntax, int *encrypted,
+                    int structural) {
     size_t pos = 0;
     unsigned scope = syntax->depth, font_scope = 0, literal_depth = 0, dictionary_target = 0;
     unsigned font_dictionary = cupidimage_pdf_type1_syntax_dictionary(syntax);
-    int encoding = 0, found_type = 0, found_eexec = 0, font_active = 1;
+    int encoding = 0, found_type = 0, found_eexec = 0, font_active = 1, current_file = 0;
     while (pos < source.length) {
         if (!cupidimage_pdf_type1_syntax_take(syntax, 1))
             return 0;
@@ -89,6 +90,8 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
         dictionary_target = t1_dictionary_target(token);
         if (token.type == PDF_T1_ERROR)
             return 0;
+        int previous_current_file = current_file;
+        current_file = !literal_depth && t1_word(token, "currentfile");
         if (token.type == PDF_T1_OTHER) {
             if (!strcmp(token.text, "[") || !strcmp(token.text, "<<")) {
                 if (++literal_depth > 64)
@@ -127,7 +130,13 @@ static int t1_clear(pdf_type1_font *font, pdf_cff_slice source, char names[256][
             scope = syntax->depth;
         }
         if (t1_word(token, "eexec")) {
+            if (structural && (!previous_current_file ||
+                               !cupidimage_pdf_type1_syntax_builtin(syntax, "currentfile") ||
+                               !cupidimage_pdf_type1_syntax_builtin(syntax, "eexec")))
+                return 0;
             found_eexec = 1;
+            *encrypted = 1;
+            *private_start = pos;
             break;
         }
         if (!font_active || cupidimage_pdf_type1_syntax_dictionary(syntax) != font_dictionary) {
@@ -287,13 +296,35 @@ static int t1_discard_dictionary_value(pdf_cff_slice source, size_t *position,
     return ok;
 }
 
-static int t1_private(pdf_type1_font *font, pdf_type1_syntax *syntax) {
+static int t1_private_end(pdf_cff_slice source, size_t pos, size_t end) {
+    while (pos < end) {
+        if (cupidimage_pdf_type1_space(source.data[pos]))
+            pos++;
+        else if (source.data[pos] == '%') {
+            while (pos < end && source.data[pos] != '\r' && source.data[pos] != '\n')
+                pos++;
+        } else
+            return 0;
+    }
+    return 1;
+}
+
+static int t1_private(pdf_type1_font *font, pdf_type1_syntax *syntax, int require_close,
+                      size_t declared_length) {
     pdf_cff_slice source = {font->private_data + 4, font->private_length - 4};
     size_t pos = 0;
     unsigned base_scope = syntax->depth, scope = base_scope;
     unsigned private_scope = 0, private_pending = 0, literal_depth = 0, dictionary_target = 0;
     unsigned private_dictionary = 0;
+    int closed = 0, current_file = 0;
+    size_t declared_end = declared_length >= 4 ? declared_length - 4 : 0;
     while (pos < source.length) {
+        if (declared_length && !require_close) {
+            if (pos > declared_end)
+                require_close = 1;
+            else if (font->glyph_count && t1_private_end(source, pos, declared_end))
+                break;
+        }
         if (!cupidimage_pdf_type1_syntax_take(syntax, 1))
             return 0;
         pdf_type1_token token = cupidimage_pdf_type1_lex(source, &pos, 0);
@@ -301,6 +332,8 @@ static int t1_private(pdf_type1_font *font, pdf_type1_syntax *syntax) {
         dictionary_target = t1_dictionary_target(token);
         if (token.type == PDF_T1_ERROR)
             return 0;
+        int previous_current_file = current_file;
+        current_file = !literal_depth && t1_word(token, "currentfile");
         if (token.type == PDF_T1_OTHER) {
             if (!strcmp(token.text, "<<") || !strcmp(token.text, "[")) {
                 if (++literal_depth > 64)
@@ -379,10 +412,20 @@ static int t1_private(pdf_type1_font *font, pdf_type1_syntax *syntax) {
                     return 0;
             }
         }
-        if (!literal_depth && t1_word(token, "closefile"))
-            break;
+        if (!literal_depth && t1_word(token, "closefile")) {
+            if (declared_length && pos > declared_end)
+                require_close = 1;
+            if (!require_close || (previous_current_file &&
+                                   cupidimage_pdf_type1_syntax_builtin(syntax, "currentfile") &&
+                                   cupidimage_pdf_type1_syntax_builtin(syntax, "closefile"))) {
+                closed = 1;
+                break;
+            }
+        }
     }
-    return font->glyph_count != 0 && !syntax->failed;
+    if (declared_length && pos > declared_end)
+        require_close = 1;
+    return font->glyph_count != 0 && !syntax->failed && (!require_close || closed);
 }
 
 void cupidimage_pdf_type1_free(pdf_type1_font *font) {
@@ -429,14 +472,15 @@ static int t1_char_decrypt(pdf_type1_font *font, pdf_cff_slice *code) {
     return 1;
 }
 
-int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, size_t length,
-                              size_t clear_length, size_t encrypted_length) {
+static int t1_initialize(pdf_type1_font *font, const unsigned char *data, size_t length,
+                         size_t clear_length, size_t encrypted_length, int recover) {
     memset(font, 0, sizeof(*font));
     font->len_iv = 4;
     cupidimage_pdf_ps_hints_init(&font->hints);
     font->matrix[0] = font->matrix[3] = .001;
-    if (length > 16u * 1024u * 1024u || clear_length > length ||
-        encrypted_length > length - clear_length || (encrypted_length && encrypted_length < 4))
+    if (length > 16u * 1024u * 1024u ||
+        (!recover && (clear_length > length || encrypted_length > length - clear_length ||
+                      (encrypted_length && encrypted_length < 4))))
         return 0;
     char (*names)[128] = calloc(256, 128);
     if (!names)
@@ -446,9 +490,35 @@ int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, s
     size_t private_start = 0;
     pdf_type1_syntax syntax;
     cupidimage_pdf_type1_syntax_init(&syntax);
-    if (!t1_clear(font, (pdf_cff_slice){data, clear_length}, names, !encrypted_length,
-                  &private_start, &syntax))
+    int encrypted = 0;
+    if (!t1_clear(font, (pdf_cff_slice){data, recover ? length : clear_length}, names,
+                  !encrypted_length, &private_start, &syntax, &encrypted, recover))
         goto fail;
+    int require_close = 0;
+    if (recover && encrypted) {
+        int boundaries = clear_length > private_start && clear_length <= length &&
+                         encrypted_length >= 4 && encrypted_length <= length - clear_length;
+        for (size_t at = private_start; boundaries && at < clear_length; at++)
+            boundaries = cupidimage_pdf_type1_space(data[at]);
+        if (!boundaries) {
+            /* Parse the eexec boundary once. Do not retry failed allocations or
+             * search ciphertext for plausible font dictionaries. */
+            clear_length = private_start;
+            if (clear_length >= length || !cupidimage_pdf_type1_space(data[clear_length]))
+                goto fail;
+            while (clear_length < length && cupidimage_pdf_type1_space(data[clear_length]))
+                clear_length++;
+            encrypted_length = length - clear_length;
+            if (encrypted_length < 4)
+                goto fail;
+            require_close = 1;
+        }
+    } else if (recover &&
+               (encrypted_length || clear_length > length || clear_length < private_start))
+        goto fail;
+    size_t declared_length = recover && encrypted && !require_close ? encrypted_length : 0;
+    if (recover && encrypted)
+        encrypted_length = length - clear_length;
     font->private_length = encrypted_length ? encrypted_length : clear_length - private_start + 4;
     font->private_data = malloc(font->private_length);
     if (!font->private_data)
@@ -464,7 +534,7 @@ int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, s
     if (encrypted_length &&
         !cupidimage_pdf_type1_syntax_begin_dictionary(&syntax, PDF_T1_SYSTEM_DICTIONARY))
         goto fail;
-    if (!t1_private(font, &syntax))
+    if (!t1_private(font, &syntax, require_close, declared_length))
         goto fail;
     qsort(font->glyphs, font->glyph_count, sizeof(*font->glyphs), t1_glyph_compare);
     unsigned unique = 0;
@@ -499,4 +569,14 @@ fail:
     free(names);
     cupidimage_pdf_type1_free(font);
     return 0;
+}
+
+int cupidimage_pdf_type1_init(pdf_type1_font *font, const unsigned char *data, size_t length,
+                              size_t clear_length, size_t encrypted_length) {
+    return t1_initialize(font, data, length, clear_length, encrypted_length, 0);
+}
+
+int cupidimage_pdf_type1_init_pdf(pdf_type1_font *font, const unsigned char *data, size_t length,
+                                  size_t clear_length, size_t encrypted_length) {
+    return t1_initialize(font, data, length, clear_length, encrypted_length, 1);
 }

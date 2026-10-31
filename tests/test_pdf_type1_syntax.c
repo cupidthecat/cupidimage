@@ -139,6 +139,22 @@ int main(void) {
                    syntax.failed);
         assert(syntax.work <= work);
     }
+    cupidimage_pdf_type1_syntax_init(&syntax);
+    assert(cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile"));
+    assert(define(&syntax, "closefile", "{pop} def"));
+    assert(!cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile"));
+    assert(cupidimage_pdf_type1_syntax_begin_dictionary(&syntax, PDF_T1_SYSTEM_DICTIONARY));
+    assert(cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile"));
+    assert(cupidimage_pdf_type1_syntax_begin(&syntax));
+    assert(define(&syntax, "closefile", "{pop} def"));
+    assert(!cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile"));
+    assert(cupidimage_pdf_type1_syntax_end(&syntax));
+    assert(cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile"));
+    assert(cupidimage_pdf_type1_syntax_end(&syntax));
+    assert(!cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile"));
+    syntax.work = 0;
+    assert(!cupidimage_pdf_type1_syntax_builtin(&syntax, "closefile") && syntax.failed);
+    checks += 12;
     printf("Type 1 scoped syntax: %u definition, inheritance, shadowing and budget checks\n",
            checks);
     return 0;

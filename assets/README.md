@@ -190,3 +190,9 @@ it with a valid declaration; see [CID subset recovery](../docs/pdf-subset-fonts.
 Its large canvas exercises sparse group storage without increasing memory limits.
 A flattened leaf program supplies an exact whole-page control; see
 [PDF group storage](../docs/pdf-group-storage.md).
+
+`pdf/recovered-font-streams.pdf` is an owned damaged-wrapper fixture. It combines
+adjacent numeric-object terminators with an incorrect Type 1 clear-text length
+and should draw two geometric glyphs. Its full raster remains decoded-unverified.
+Regenerate it with `scripts/generate_pdf_font_boundaries_fixture.py`; focused
+controls and allocation failures run under `make test-pdf-font-boundaries`.

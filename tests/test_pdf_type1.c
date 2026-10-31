@@ -26,9 +26,13 @@ int main(int argc, char **argv) {
     int read_ok = fread(data, 1, (size_t)n, file) == (size_t)n;
     fclose(file);
     pdf_type1_font font;
-    if (!read_ok ||
-        !cupidimage_pdf_type1_init(&font, data, (size_t)n, (size_t)strtoul(argv[2], NULL, 10),
-                                   (size_t)strtoul(argv[3], NULL, 10))) {
+    size_t clear = (size_t)strtoul(argv[2], NULL, 10);
+    size_t encrypted = (size_t)strtoul(argv[3], NULL, 10);
+    int valid =
+        read_ok && (argc == 5 && !strcmp(argv[4], "--pdf-boundaries")
+                        ? cupidimage_pdf_type1_init_pdf(&font, data, (size_t)n, clear, encrypted)
+                        : cupidimage_pdf_type1_init(&font, data, (size_t)n, clear, encrypted));
+    if (!valid) {
         free(data);
         return 2;
     }
