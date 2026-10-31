@@ -166,7 +166,7 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
     if (!isfinite(shading_det))
         return 0;
     int empty = type == 1 && (shading_det == 0 || domain[0] == domain[1] || domain[2] == domain[3]);
-    const float *m = st->gs.ctm;
+    const double *m = st->gs.ctm;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
     if (!isfinite(det))
         return 0;
@@ -205,6 +205,8 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
             double tx = st->page_x0_pts + (x + .5) * (72.0 / 96.0) - m[4];
             double ty = st->page_top_pts - (y + st->shading_row_offset + .5) * (72.0 / 96.0) - m[5];
             double ux = (m[3] * tx - m[2] * ty) / det, uy = (m[0] * ty - m[1] * tx) / det;
+            if (!isfinite(ux) || !isfinite(uy))
+                return 0;
             if (has_box && (ux < box[0] || ux >= box[2] || uy < box[1] || uy >= box[3]))
                 continue;
             if (background)
@@ -218,6 +220,8 @@ static int pdf_paint_shading_loaded(pdf_render_state *st, const pdf_object_view 
                 double mx = ux - matrix[4], my = uy - matrix[5];
                 input[0] = (matrix[3] * mx - matrix[2] * my) / shading_det;
                 input[1] = (matrix[0] * my - matrix[1] * mx) / shading_det;
+                if (!isfinite(input[0]) || !isfinite(input[1]))
+                    return 0;
                 if (input[0] < domain[0] || input[0] > domain[1] || input[1] < domain[2] ||
                     input[1] > domain[3])
                     continue;

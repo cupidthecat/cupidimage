@@ -24,7 +24,7 @@ int main(void) {
     cupidimage_pdf_path_init(&state->path);
     cupidimage_pdf_path_move_user(state, 0, 0);
     for (unsigned i = 0; i < PDF_PATH_SEGMENT_LIMIT; i++) {
-        cupidimage_pdf_path_line_user(state, (float)(i & 1), 1);
+        cupidimage_pdf_path_line_user(state, (double)(i & 1), 1);
         CHECK(!state->path.overflow && state->path.seg_count == (int)i + 1);
         if (i + 1 == PDF_PATH_INLINE_SEGMENTS)
             CHECK(!state->path.extra);
@@ -36,7 +36,7 @@ int main(void) {
     }
     const pdf_seg *segments = cupidimage_pdf_path_segments(&state->path);
     for (unsigned i = 0; i < PDF_PATH_SEGMENT_LIMIT; i++) {
-        CHECK(segments[i].x1 == (i & 1 ? (float)(4.0 / 3.0) : 0));
+        CHECK(segments[i].x1 == (i & 1 ? (4.0 / 3.0) : 0));
         CHECK(segments[i].starts_subpath == (i == 0));
     }
     CHECK(state->path.capacity == PDF_PATH_SEGMENT_LIMIT);

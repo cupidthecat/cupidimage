@@ -49,7 +49,7 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     child->group = cache->color ? &group : NULL;
     child->mask_rendering = 0;
     child->page_x0_pts = 0;
-    child->page_top_pts = image->height * (72.0f / 96.0f);
+    child->page_top_pts = image->height * (72.0 / 96.0);
     child->in_text = 0;
     child->glyph_active = 0;
     child->glyph_uncolored = 0;
@@ -59,11 +59,11 @@ int cupidimage_pdf_render_pattern_cell(pdf_render_state *parent, const pdf_objec
     child->gs.blend_mode = 0;
     child->pattern_depth = parent->pattern_depth + 1;
     child->resource_override = pattern;
-    child->gs.ctm[0] = (float)sx;
+    child->gs.ctm[0] = sx;
     child->gs.ctm[1] = child->gs.ctm[2] = 0;
-    child->gs.ctm[3] = (float)sy;
-    child->gs.ctm[4] = (float)(ox * sx);
-    child->gs.ctm[5] = (float)(oy * sy);
+    child->gs.ctm[3] = sy;
+    child->gs.ctm[4] = (ox * sx);
+    child->gs.ctm[5] = (oy * sy);
     if (uncolored) {
         memset(child->gs.fill_color, 0, sizeof(child->gs.fill_color));
         memset(child->gs.stroke_color, 0, sizeof(child->gs.stroke_color));
@@ -244,7 +244,7 @@ int cupidimage_pdf_render_pattern_page(pdf_render_state *parent, pdf_pattern *pa
                 if (!isfinite(m[i]) || fabs(m[i]) > 1e30)
                     ok = 0;
                 else
-                    child->gs.ctm[i] = (float)m[i];
+                    child->gs.ctm[i] = m[i];
             }
             if (pattern->uncolored) {
                 memcpy(child->gs.fill_color, pattern->base, sizeof(pattern->base));
@@ -322,8 +322,8 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
     child->gs.blend_mode = 0;
     child->img = image;
     if (!live && cache->shading) {
-        child->page_x0_pts = (float)cache->page_x0;
-        child->page_top_pts = (float)cache->page_top;
+        child->page_x0_pts = cache->page_x0;
+        child->page_top_pts = cache->page_top;
     }
     child->shading_row_offset = live ? 0 : cache->cache_top;
     child->shape_plane = shape;
@@ -348,7 +348,7 @@ int cupidimage_pdf_render_shading_pattern(pdf_render_state *parent, const pdf_ob
         if (!isfinite(m[i]) || fabs(m[i]) > 1e30)
             ok = 0;
         else
-            child->gs.ctm[i] = (float)m[i];
+            child->gs.ctm[i] = m[i];
     }
     double det = m[0] * m[3] - m[1] * m[2];
     if (!isfinite(det) || det == 0)

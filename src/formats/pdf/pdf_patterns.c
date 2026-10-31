@@ -343,7 +343,7 @@ int cupidimage_pdf_select_pattern(pdf_render_state *st, const char *name, int st
         goto done;
     step_x = fabs(step_x);
     step_y = fabs(step_y);
-    const float *p = st->initial_gs.ctm;
+    const double *p = st->initial_gs.ctm;
     double m[6] = {
         p[0] * matrix[0] + p[2] * matrix[1],        p[1] * matrix[0] + p[3] * matrix[1],
         p[0] * matrix[2] + p[2] * matrix[3],        p[1] * matrix[2] + p[3] * matrix[3],

@@ -369,7 +369,7 @@ int cupidimage_pdf_paint_patches(pdf_mesh_context *mesh, const unsigned char *da
             memcpy(corner[0], previous_colors[flag], sizeof(corner[0]));
             memcpy(corner[1], previous_colors[(flag + 1) % 4], sizeof(corner[1]));
         }
-        const float *m = mesh->state->gs.ctm;
+        const double *m = mesh->state->gs.ctm;
         for (unsigned i = start; i < points; i++) {
             double x = cupidimage_pdf_mesh_decode(
                 cupidimage_pdf_mesh_bits(data + pos, &bit, mesh->coordinate_bits),

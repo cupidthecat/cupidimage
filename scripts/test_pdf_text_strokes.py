@@ -49,11 +49,9 @@ def top_down(mask):
 
 def stroke_rectangle(size=30, width=1.125, matrix=TM):
     _,_,_,_,tx,ty = matrix
-    q = lambda value: struct.unpack("f",struct.pack("f",value))[0]
     radius = width*(96/72)/2
     x0,x1 = (tx+1.125)*RATIO,(tx+1.125+size*.4)*RATIO
     y0,y1 = (90-ty-size*.6)*RATIO,(90-ty)*RATIO
-    x0,y0,x1,y1=map(q,(x0,y0,x1,y1))
     outer = (x0-radius,y0-radius,x1+radius,y1+radius)
     inner = (x0+radius,y0+radius,x1-radius,y1-radius)
     def area(box,x,y):
@@ -105,9 +103,8 @@ def polygon_mask(points, width=WIDTH, height=HEIGHT):
 
 def open_line_polygon(tm,ctm,width,cap):
     a,b,c,d,tx,ty=tm;ca,cb,cc,cd=ctm
-    f32=lambda x:struct.unpack('f',struct.pack('f',x))[0]
-    points=[(f32((ca*(a*x+tx)+cc*(b*x+ty)+1.125)*RATIO),
-             f32((90-cb*(a*x+tx)-cd*(b*x+ty))*RATIO)) for x in (0,12)]
+    points=[((ca*(a*x+tx)+cc*(b*x+ty)+1.125)*RATIO,
+             (90-cb*(a*x+tx)-cd*(b*x+ty))*RATIO) for x in (0,12)]
     pen=(ca*96/72,-cb*96/72,cc*96/72,-cd*96/72)
     if width==0:pen=(1,0,0,1);width=1
     det=pen[0]*pen[3]-pen[1]*pen[2]

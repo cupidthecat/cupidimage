@@ -279,11 +279,11 @@ void cupidimage_pdf_composite_device(pdf_render_state *st, int x, int y, const d
     cupidimage_pdf_composite_space(st, x, y, values, &space, alpha, shape);
 }
 
-void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
-                                  float *py) {
-    float tx = st->gs.ctm[0] * ux + st->gs.ctm[2] * uy + st->gs.ctm[4];
-    float ty = st->gs.ctm[1] * ux + st->gs.ctm[3] * uy + st->gs.ctm[5];
-    float s = 96.0f / 72.0f;
+void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, double ux, double uy, double *px,
+                                  double *py) {
+    double tx = st->gs.ctm[0] * ux + st->gs.ctm[2] * uy + st->gs.ctm[4];
+    double ty = st->gs.ctm[1] * ux + st->gs.ctm[3] * uy + st->gs.ctm[5];
+    double s = 96.0 / 72.0;
     *px = (tx - st->page_x0_pts) * s;
     *py = (st->page_top_pts - ty) * s;
 }
@@ -301,7 +301,7 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
     if (st->path.seg_count <= 0)
         return 1;
 
-    float min_x = INFINITY, min_y = INFINITY, max_x = -INFINITY, max_y = -INFINITY;
+    double min_x = INFINITY, min_y = INFINITY, max_x = -INFINITY, max_y = -INFINITY;
     pdf_region_edge *edges = NULL;
     unsigned n = 0;
     if (!cupidimage_pdf_path_fill_edges(&st->path, &st->clip_budget->tests_left, &edges, &n)) {
@@ -310,16 +310,16 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
         return 0;
     }
     for (unsigned i = 0; i < n; i++) {
-        min_x = fminf(min_x, fminf(edges[i].x0, edges[i].x1));
-        max_x = fmaxf(max_x, fmaxf(edges[i].x0, edges[i].x1));
-        min_y = fminf(min_y, fminf(edges[i].y0, edges[i].y1));
-        max_y = fmaxf(max_y, fmaxf(edges[i].y0, edges[i].y1));
+        min_x = fmin(min_x, fmin(edges[i].x0, edges[i].x1));
+        max_x = fmax(max_x, fmax(edges[i].x0, edges[i].x1));
+        min_y = fmin(min_y, fmin(edges[i].y0, edges[i].y1));
+        max_y = fmax(max_y, fmax(edges[i].y0, edges[i].y1));
     }
 
-    int x0 = (int)fminf((float)st->img->width, fmaxf(0, floorf(min_x)));
-    int y0 = (int)fminf((float)st->img->height, fmaxf(0, floorf(min_y)));
-    int x1 = (int)fminf((float)st->img->width, fmaxf(0, ceilf(max_x)));
-    int y1 = (int)fminf((float)st->img->height, fmaxf(0, ceilf(max_y)));
+    int x0 = (int)fmin(st->img->width, fmax(0, floor(min_x)));
+    int y0 = (int)fmin(st->img->height, fmax(0, floor(min_y)));
+    int x1 = (int)fmin(st->img->width, fmax(0, ceil(max_x)));
+    int y1 = (int)fmin(st->img->height, fmax(0, ceil(max_y)));
 
     if (bounds) {
         bounds[0] = x0;
@@ -339,8 +339,8 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
         return 0;
     }
     for (int y = y0; y < y1; y++) {
-        int used = cupidimage_pdf_scanline(edges, n, (float)y + 0.5f, crossings,
-                                           &st->clip_budget->tests_left);
+        int used =
+            cupidimage_pdf_scanline(edges, n, y + 0.5, crossings, &st->clip_budget->tests_left);
         if (used < 0) {
             free(crossings);
             free(edges);
@@ -350,7 +350,7 @@ static int pdf_rasterize_path(pdf_render_state *st, int even_odd, unsigned char 
         for (int i = 0; i < used; i++)
             winding += crossings[i].direction;
         for (int x = x0; x < x1; x++) {
-            float px = (float)x + 0.5f;
+            double px = x + 0.5;
             while (at < used && crossings[at].x <= px)
                 winding -= crossings[at++].direction;
             if (even_odd ? winding % 2 != 0 : winding != 0) {
@@ -971,7 +971,7 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         if (!strcmp(op, "w")) {
             valid = valid && value >= 0 && value <= 1e6;
             if (valid)
-                st->gs.line_width_pts = (float)value;
+                st->gs.line_width_pts = value;
         } else if (!strcmp(op, "M")) {
             valid = valid && value >= 1 && value <= 1e6;
             if (valid)
@@ -996,13 +996,13 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         if (n >= 6 && pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
             pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            float m[6];
-            m[0] = (float)ops[n - 6].num;
-            m[1] = (float)ops[n - 5].num;
-            m[2] = (float)ops[n - 4].num;
-            m[3] = (float)ops[n - 3].num;
-            m[4] = (float)ops[n - 2].num;
-            m[5] = (float)ops[n - 1].num;
+            double m[6];
+            m[0] = ops[n - 6].num;
+            m[1] = ops[n - 5].num;
+            m[2] = ops[n - 4].num;
+            m[3] = ops[n - 3].num;
+            m[4] = ops[n - 2].num;
+            m[5] = ops[n - 1].num;
             cupidimage_pdf_matrix_concat(st->gs.ctm, m);
         }
     } else if (strcmp(op, "q") == 0) {
@@ -1023,25 +1023,24 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
         }
     } else if (strcmp(op, "m") == 0) {
         if (n >= 2 && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            cupidimage_pdf_path_move_user(st, (float)ops[n - 2].num, (float)ops[n - 1].num);
+            cupidimage_pdf_path_move_user(st, ops[n - 2].num, ops[n - 1].num);
         }
     } else if (strcmp(op, "l") == 0) {
         if (n >= 2 && pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            cupidimage_pdf_path_line_user(st, (float)ops[n - 2].num, (float)ops[n - 1].num);
+            cupidimage_pdf_path_line_user(st, ops[n - 2].num, ops[n - 1].num);
         }
     } else if (strcmp(op, "c") == 0) {
         if (n >= 6 && pdf_expect_num(&ops[n - 6]) && pdf_expect_num(&ops[n - 5]) &&
             pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            cupidimage_pdf_path_curve_to(st, (float)ops[n - 6].num, (float)ops[n - 5].num,
-                                         (float)ops[n - 4].num, (float)ops[n - 3].num,
-                                         (float)ops[n - 2].num, (float)ops[n - 1].num, 0);
+            cupidimage_pdf_path_curve_to(st, ops[n - 6].num, ops[n - 5].num, ops[n - 4].num,
+                                         ops[n - 3].num, ops[n - 2].num, ops[n - 1].num, 0);
         }
     } else if (strcmp(op, "v") == 0 || strcmp(op, "y") == 0) {
         if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            float x = (float)ops[n - 2].num, y = (float)ops[n - 1].num;
-            float cx = (float)ops[n - 4].num, cy = (float)ops[n - 3].num;
+            double x = ops[n - 2].num, y = ops[n - 1].num;
+            double cx = ops[n - 4].num, cy = ops[n - 3].num;
             if (op[0] == 'v') {
                 cupidimage_pdf_path_curve_to(st, 0, 0, cx, cy, x, y, 1);
             } else {
@@ -1053,10 +1052,10 @@ static void pdf_execute_operator(pdf_render_state *st, const char *op, pdf_opera
     } else if (strcmp(op, "re") == 0) {
         if (n >= 4 && pdf_expect_num(&ops[n - 4]) && pdf_expect_num(&ops[n - 3]) &&
             pdf_expect_num(&ops[n - 2]) && pdf_expect_num(&ops[n - 1])) {
-            float x = (float)ops[n - 4].num;
-            float y = (float)ops[n - 3].num;
-            float w = (float)ops[n - 2].num;
-            float h = (float)ops[n - 1].num;
+            double x = ops[n - 4].num;
+            double y = ops[n - 3].num;
+            double w = ops[n - 2].num;
+            double h = ops[n - 1].num;
             cupidimage_pdf_path_move_user(st, x, y);
             cupidimage_pdf_path_line_user(st, x + w, y);
             cupidimage_pdf_path_line_user(st, x + w, y + h);
@@ -1406,7 +1405,7 @@ int cupidimage_pdf_draw_type3_glyph(pdf_render_state *st, const pdf_font_map *fo
     for (int i = 0; i < 6; i++) {
         if (!isfinite(m[i]) || fabs(m[i]) > 1e30)
             goto done;
-        child->gs.ctm[i] = (float)m[i];
+        child->gs.ctm[i] = m[i];
     }
     pdf_object_view glyph_resources = {0};
     int local_resources = cupidimage_pdf_optional_dictionary(
@@ -1490,15 +1489,17 @@ static int pdf_draw_form(pdf_render_state *st, pdf_object_id object, const pdf_o
     if (!cupidimage_pdf_page_value(form, "BBox", &pos) ||
         !cupidimage_pdf_page_rectangle(st->document, st->document_size, form, pos, clip->box))
         goto done;
-    float matrix[6];
+    double matrix[6];
     if (!cupidimage_pdf_form_matrix(st, form, matrix))
         goto done;
     cupidimage_pdf_matrix_concat(child->gs.ctm, matrix);
-    const float *m = child->gs.ctm;
+    const double *m = child->gs.ctm;
     for (int i = 0; i < 6; i++)
         if (!isfinite(m[i]))
             goto done;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
+    if (!isfinite(det))
+        goto done;
     if (det == 0) {
         ok = 1;
         goto done;
@@ -1510,6 +1511,9 @@ static int pdf_draw_form(pdf_render_state *st, pdf_object_id object, const pdf_o
     inv[3] = m[0] / det;
     inv[4] = -(inv[0] * m[4] + inv[2] * m[5]);
     inv[5] = -(inv[1] * m[4] + inv[3] * m[5]);
+    for (unsigned i = 0; i < 6; i++)
+        if (!isfinite(inv[i]))
+            goto done;
     child->form_objects[child->form_depth++] = object;
     pdf_object_view form_resources = {0};
     int local_resources = cupidimage_pdf_optional_dictionary(st->document, st->document_size, form,
@@ -1600,14 +1604,14 @@ int cupidimage_pdf_render_content_stream_options(
     st.image_failed = 0;
     st.error = err;
     st.error_capacity = errcap;
-    st.page_x0_pts = (float)geometry->x0;
-    st.page_top_pts = (float)geometry->y1;
+    st.page_x0_pts = geometry->x0;
+    st.page_top_pts = geometry->y1;
     cupidimage_pdf_text_begin(&st);
     st.gs.font_size_pts = 12.0;
     st.gs.horizontal_scale = 1.0;
     cupidimage_pdf_matrix_identity(st.gs.ctm);
-    st.gs.ctm[0] = st.gs.ctm[3] = (float)geometry->user_unit;
-    st.gs.line_width_pts = 1.0f;
+    st.gs.ctm[0] = st.gs.ctm[3] = geometry->user_unit;
+    st.gs.line_width_pts = 1.0;
     st.gs.miter_limit = 10;
     st.gs.flatness = 1;
     st.gs.fill_alpha = st.gs.stroke_alpha = 1;

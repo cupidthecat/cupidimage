@@ -13,7 +13,7 @@ from test_pdf_embedded_fonts import fixture as page
 from test_pdf_type3 import stream
 from compare_pdf_type1_hints import pfb_program
 
-RATIO = struct.unpack('f', struct.pack('f', 96/72))[0]
+RATIO = 96 / 72
 BASE = WIDTH+command([0, 20], 1)+command([580, 20], 1)+command([0, 0], 21)
 BASE += command([400, 0], 5)+command([0, 600], 5)+command([-400, 0], 5)+b'\x09\x0e'
 ACCENT = command([0, 200], 13)+command([0, 20], 1)+command([80, 20], 1)+command([0, 0], 21)

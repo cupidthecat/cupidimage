@@ -220,7 +220,7 @@ static int stroke_geometry(pdf_render_state *st, const pdf_path *path, unsigned 
     r.state = st;
     r.aa = aa;
     r.radius = st->gs.line_width_pts * .5;
-    const float *m = st->gs.ctm;
+    const double *m = st->gs.ctm;
     double ratio = 96.0 / 72.0;
     r.matrix[0] = m[0] * ratio;
     r.matrix[1] = -m[1] * ratio;

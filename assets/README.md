@@ -196,3 +196,9 @@ adjacent numeric-object terminators with an incorrect Type 1 clear-text length
 and should draw two geometric glyphs. Its full raster remains decoded-unverified.
 Regenerate it with `scripts/generate_pdf_font_boundaries_fixture.py`; focused
 controls and allocation failures run under `make test-pdf-font-boundaries`.
+
+`pdf/geometry-precision.pdf` compares two mathematically equivalent translation
+sequences on separate text rows. Their glyphs should share X positions. Its full
+raster remains decoded-unverified. Regenerate it with
+`scripts/generate_pdf_geometry_precision_fixture.py`; focused page controls run
+under `make test-pdf-geometry-precision`.

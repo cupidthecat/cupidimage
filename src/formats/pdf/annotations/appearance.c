@@ -56,7 +56,7 @@ static int annotation_rect(pdf_render_state *st, const pdf_object_view *value, c
 static int annotation_transform(pdf_render_state *st, const pdf_object_view *form,
                                 const double rect[4], int rotation, int *empty) {
     double box[4], bounds[4] = {INFINITY, INFINITY, -INFINITY, -INFINITY};
-    float m[6];
+    double m[6];
     *empty = 0;
     if (!annotation_rect(st, form, "BBox", box) || !cupidimage_pdf_form_matrix(st, form, m))
         return 0;
@@ -73,23 +73,19 @@ static int annotation_transform(pdf_render_state *st, const pdf_object_view *for
         return 1;
     }
     if (rotation) {
-        float c = rotation == 180 ? -1 : 0, s = rotation == 90 ? 1 : rotation == 270 ? -1 : 0;
-        float pivot[6] = {c,
-                          s,
-                          -s,
-                          c,
-                          (float)(rect[0] * (1 - c) + rect[3] * s),
-                          (float)(rect[3] * (1 - c) - rect[0] * s)};
+        double c = rotation == 180 ? -1 : 0, s = rotation == 90 ? 1 : rotation == 270 ? -1 : 0;
+        double pivot[6] = {
+            c, s, -s, c, (rect[0] * (1 - c) + rect[3] * s), (rect[3] * (1 - c) - rect[0] * s)};
         cupidimage_pdf_matrix_concat(st->gs.ctm, pivot);
     }
     double sx = (rect[2] - rect[0]) / (bounds[2] - bounds[0]);
     double sy = (rect[3] - rect[1]) / (bounds[3] - bounds[1]);
     double a[6] = {sx, 0, 0, sy, rect[0] - sx * bounds[0], rect[1] - sy * bounds[1]};
-    float mapping[6];
+    double mapping[6];
     for (unsigned i = 0; i < 6; i++) {
         if (!isfinite(a[i]) || fabs(a[i]) > 1e30)
             return 0;
-        mapping[i] = (float)a[i];
+        mapping[i] = a[i];
     }
     cupidimage_pdf_matrix_concat(st->gs.ctm, mapping);
     return 1;

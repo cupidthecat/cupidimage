@@ -15,7 +15,7 @@ from test_pdf_embedded_fonts import fixture as base_fixture
 FIXTURE=json.loads(Path('tests/fixtures/pdf-page-hinting.json').read_text())
 FONT=base64.b64decode(FIXTURE['font'])
 POINT_SIZE_FONT=base64.b64decode(FIXTURE['point_size_font'])
-RATIO=struct.unpack('f',struct.pack('f',96/72))[0]
+RATIO=96 / 72
 
 
 def font_descriptor(data, name='CupidImageHintedShapes', file_object=9):

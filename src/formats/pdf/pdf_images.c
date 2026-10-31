@@ -496,7 +496,7 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     if (!jpx.present && !pdf_image_samples(st, &image, width, height, components, bits, &samples))
         goto done;
     size_t sample_row = ((size_t)width * components * bits + 7u) / 8u;
-    const float *m = st->gs.ctm;
+    const double *m = st->gs.ctm;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
     if (!isfinite(det))
         goto done;
@@ -506,8 +506,8 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
     }
     double min_x = st->img->width, max_x = 0, min_y = st->img->height, max_y = 0;
     for (int corner = 0; corner < 4; corner++) {
-        float x, y;
-        cupidimage_pdf_user_to_pixel(st, (float)(corner & 1), (float)(corner >> 1), &x, &y);
+        double x, y;
+        cupidimage_pdf_user_to_pixel(st, (corner & 1), (corner >> 1), &x, &y);
         if (!isfinite(x) || !isfinite(y))
             goto done;
         min_x = fmin(min_x, x);
@@ -540,6 +540,8 @@ int cupidimage_pdf_draw_image_view(pdf_render_state *st, const pdf_object_view *
             double ty = st->page_top_pts - (y + 0.5) * (72.0 / 96.0) - m[5];
             double u = (m[3] * tx - m[2] * ty) / det;
             double v = (m[0] * ty - m[1] * tx) / det;
+            if (!isfinite(u) || !isfinite(v))
+                goto done;
             if (u < 0 || u >= 1 || v <= 0 || v > 1)
                 continue;
             double values[PDF_COLOR_COMPONENTS] = {0};

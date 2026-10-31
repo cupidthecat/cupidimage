@@ -3,6 +3,7 @@
 
 #include "clipping/geometry.h"
 #include "fonts/page_hint.h"
+#include "geometry/matrix.h"
 #include "optional_content/state.h"
 #include "pdf_internal.h"
 #include "transparency/storage.h"
@@ -10,14 +11,14 @@
 #define PDF_COLOR_COMPONENTS 32
 
 typedef struct {
-    float x0;
-    float y0;
-    float x1;
-    float y1;
+    double x0;
+    double y0;
+    double x1;
+    double y1;
     int starts_subpath;
     int closes_subpath;
     int curve;
-    float cx1, cy1, cx2, cy2;
+    double cx1, cy1, cx2, cy2;
 } pdf_seg;
 
 #define PDF_PATH_INLINE_SEGMENTS 4096u
@@ -29,10 +30,10 @@ typedef struct {
     unsigned capacity;
     int seg_count;
     int subpath_first_seg;
-    float current_x;
-    float current_y;
-    float subpath_start_x;
-    float subpath_start_y;
+    double current_x;
+    double current_y;
+    double subpath_start_x;
+    double subpath_start_y;
     int has_current;
     int has_subpath;
     int overflow;
@@ -136,7 +137,7 @@ typedef struct pdf_pattern {
     double matrix[6], bounds[4], base[PDF_COLOR_COMPONENTS];
     pdf_image_colors base_space;
     uint64_t serial;
-    float initial_ctm[6];
+    double initial_ctm[6];
     double page_x0, page_top;
 } pdf_pattern;
 
@@ -154,7 +155,7 @@ typedef struct {
 } pdf_soft_mask;
 
 typedef struct pdf_graphics_state {
-    float ctm[6];
+    double ctm[6];
     double font_size_pts, leading_pts, char_space, word_space, horizontal_scale, text_rise;
     int text_mode;
     int rendering_intent; /* Relative, perceptual, saturation, absolute. */
@@ -162,7 +163,7 @@ typedef struct pdf_graphics_state {
     pdf_soft_mask *soft_mask;
     const pdf_font_map *current_font;
     double fill_color[PDF_COLOR_COMPONENTS], stroke_color[PDF_COLOR_COMPONENTS];
-    float line_width_pts;
+    double line_width_pts;
     int line_cap, line_join, dash_count;
     double miter_limit, flatness, dash_phase, dash[32];
     double fill_alpha, stroke_alpha;
@@ -211,8 +212,8 @@ typedef struct {
     int text_antialias, truetype_hinting, cff_hinting, type1_hinting, graphics_antialias;
     char *error;
     size_t error_capacity;
-    float page_x0_pts;
-    float page_top_pts;
+    double page_x0_pts;
+    double page_top_pts;
     double text_matrix[6], text_line_matrix[6];
     pdf_graphics_state gs;
     pdf_graphics_state initial_gs;
@@ -331,9 +332,7 @@ int cupidimage_pdf_type3_stencil_finish(pdf_render_state *st, const pdf_transpar
 int cupidimage_pdf_composite_implicit_group(pdf_render_state *st,
                                             const pdf_transparency_group *group);
 
-void cupidimage_pdf_matrix_identity(float[6]);
-void cupidimage_pdf_matrix_concat(float[6], const float[6]);
-int cupidimage_pdf_form_matrix(const pdf_render_state *, const pdf_object_view *, float[6]);
+int cupidimage_pdf_form_matrix(const pdf_render_state *, const pdf_object_view *, double[6]);
 int cupidimage_pdf_draw_appearance(pdf_render_state *, pdf_object_id, const pdf_object_view *);
 int cupidimage_pdf_render_annotations(pdf_render_state *, const pdf_page_geometry *);
 int cupidimage_pdf_appearance_group_begin(pdf_render_state *, const pdf_render_state *,
@@ -348,8 +347,8 @@ int cupidimage_pdf_image_stream(const pdf_render_state *st, const pdf_object_vie
                                 const unsigned char **stream, size_t *length);
 int cupidimage_pdf_draw_image(pdf_render_state *st, const char *name);
 uint8_t cupidimage_pdf_clamp_u8(double v);
-void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, float ux, float uy, float *px,
-                                  float *py);
+void cupidimage_pdf_user_to_pixel(const pdf_render_state *st, double ux, double uy, double *px,
+                                  double *py);
 const unsigned char *cupidimage_pdf_palette_intern(pdf_palette_store *, const unsigned char *,
                                                    size_t);
 void cupidimage_pdf_palettes_free(pdf_palette_store *);
@@ -479,10 +478,10 @@ void cupidimage_pdf_path_init(pdf_path *path);
 void cupidimage_pdf_path_clear(pdf_path *path);
 int cupidimage_pdf_path_reserve(pdf_path *path, unsigned additional);
 void cupidimage_pdf_path_close(pdf_path *path);
-void cupidimage_pdf_path_move_user(pdf_render_state *state, float x, float y);
-void cupidimage_pdf_path_line_user(pdf_render_state *state, float x, float y);
-void cupidimage_pdf_path_curve_to(pdf_render_state *state, float x1, float y1, float x2, float y2,
-                                  float x3, float y3, int first_is_current);
+void cupidimage_pdf_path_move_user(pdf_render_state *state, double x, double y);
+void cupidimage_pdf_path_line_user(pdf_render_state *state, double x, double y);
+void cupidimage_pdf_path_curve_to(pdf_render_state *state, double x1, double y1, double x2,
+                                  double y2, double x3, double y3, int first_is_current);
 int cupidimage_pdf_path_flatten(pdf_render_state *state);
 void cupidimage_pdf_render_state_release(pdf_render_state *st);
 int cupidimage_pdf_render_stream(pdf_render_state *st, const unsigned char *stream, size_t len);

@@ -30,7 +30,7 @@ static unsigned mesh_vertex_read(const pdf_mesh_context *mesh, const unsigned ch
     double y =
         cupidimage_pdf_mesh_decode(cupidimage_pdf_mesh_bits(record, &pos, mesh->coordinate_bits),
                                    mesh->coordinate_bits, mesh->decode + 2);
-    const float *m = mesh->state->gs.ctm;
+    const double *m = mesh->state->gs.ctm;
     v->x = (m[0] * x + m[2] * y + m[4] - mesh->state->page_x0_pts) * (96.0 / 72.0);
     v->y = (mesh->state->page_top_pts - (m[1] * x + m[3] * y + m[5])) * (96.0 / 72.0);
     for (int c = 0; c < mesh->samples; c++)
@@ -197,7 +197,7 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         vertices > st->form_budget->shade_evaluations_left)
         goto done;
     st->form_budget->shade_evaluations_left -= vertices;
-    const float *m = st->gs.ctm;
+    const double *m = st->gs.ctm;
     double det = (double)m[0] * m[3] - (double)m[1] * m[2];
     if (!isfinite(det))
         goto done;
@@ -209,6 +209,9 @@ int cupidimage_pdf_paint_mesh(pdf_render_state *st, const pdf_object_view *view,
         double tx = st->page_x0_pts - m[4], ty = st->page_top_pts - m[5];
         mesh.inverse[4] = (m[3] * tx - m[2] * ty) / det;
         mesh.inverse[5] = (m[0] * ty - m[1] * tx) / det;
+        for (unsigned i = 0; i < 6; i++)
+            if (!isfinite(mesh.inverse[i]))
+                goto done;
     }
     size_t pixels = (size_t)st->img->width * st->img->height;
     size_t available =

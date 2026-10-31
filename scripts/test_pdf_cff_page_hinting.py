@@ -12,7 +12,7 @@ from test_pdf_cff_render import fixture
 from test_pdf_ps_gridfit_reference import authored_fonts
 from generate_pdf_standard_outlines import FONTS, font_bytes
 
-RATIO = struct.unpack('f', struct.pack('f', 96 / 72))[0]
+RATIO = 96 / 72
 FONTS_AUTHORED = dict(authored_fonts())
 FONT = FONTS_AUTHORED['composite-100-600']
 ENCODING = '<< /BaseEncoding /WinAnsiEncoding /Differences [66 /Aacute] >>'

@@ -7,17 +7,21 @@
 
 static uint32_t random_state = 42;
 
-static float coordinate(void) {
+static double coordinate(void) {
     random_state = random_state * 1664525u + 1013904223u;
-    return (int)(random_state >> 24) / 8.0f - 8;
+    return (int)(random_state >> 24) / 8.0 - 8;
 }
 
-static int oracle(const pdf_region_edge *e, float x, float y) {
-    float y0 = e->y0, y1 = e->y1, x0 = e->x0, x1 = e->x1;
-    if (!((y0 <= y && y1 > y) || (y1 <= y && y0 > y)) || fabsf(y0 - y1) <= 1e-6f)
+/* Generated coordinates are eighths. This exact integer orientation oracle
+ * does not duplicate the scanline division or its rounding behavior. */
+static int oracle(const pdf_region_edge *e, double x, double y) {
+    int64_t x0 = llround(e->x0 * 8), y0 = llround(e->y0 * 8);
+    int64_t x1 = llround(e->x1 * 8), y1 = llround(e->y1 * 8);
+    int64_t px = llround(x * 8), py = llround(y * 8);
+    if (!((y0 <= py && y1 > py) || (y1 <= py && y0 > py)))
         return 0;
-    float t = (y - y0) / (y1 - y0);
-    return x0 + t * (x1 - x0) > x ? (y1 > y0 ? 1 : -1) : 0;
+    int64_t side = (x1 - x0) * (py - y0) - (px - x0) * (y1 - y0);
+    return (y1 > y0 ? side > 0 : side < 0) ? (y1 > y0 ? 1 : -1) : 0;
 }
 
 int main(void) {
@@ -36,14 +40,14 @@ int main(void) {
                 edges[i] = edges[i - 1];
         }
         for (int row = -8; row < 24; row++) {
-            float y = row + .5f;
+            double y = row + .5;
             size_t work = 100000;
             int n = cupidimage_pdf_scanline(edges, count, y, crossings, &work);
             assert(n >= 0 && (unsigned)n <= count && work <= 100000 - count);
             for (int i = 1; i < n; i++)
                 assert(crossings[i - 1].x <= crossings[i].x);
             for (int col = -8; col < 24; col++) {
-                float x = col + .5f;
+                double x = col + .5;
                 int expected = 0, got = 0;
                 for (unsigned i = 0; i < count; i++)
                     expected += oracle(edges + i, x, y);

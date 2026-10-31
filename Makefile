@@ -896,3 +896,16 @@ test: test-pdf-font-boundaries
 test-pdf-font-boundaries: $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_type1_scope_oom
 	python3 scripts/generate_pdf_font_boundaries_fixture.py --check
 	python3 scripts/test_pdf_font_boundaries.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom $(BINDIR)/test_pdf_type1 $(BINDIR)/test_pdf_type1_scope_oom
+
+TEST_BINS += test_pdf_geometry_precision
+TEST_TARGETS += test-pdf-geometry-precision
+test: test-pdf-geometry-precision
+.PHONY: test-pdf-geometry-precision
+$(BINDIR)/test_pdf_geometry_precision: tests/test_pdf_geometry_precision.c $(LIB)
+	$(CC) $(CFLAGS) $(INCLUDES) $< $(LIB) -o $@ $(LDLIBS)
+
+test-pdf-geometry-precision: $(BINDIR)/test_pdf_geometry_precision $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	$(BINDIR)/test_pdf_geometry_precision
+	python3 scripts/generate_pdf_geometry_precision_fixture.py --check
+	python3 scripts/test_pdf_geometry_precision.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom
+	python3 scripts/test_pdf_geometry_limits.py $(BINDIR)/test_pdf_pages $(BINDIR)/test_pdf_clip_oom --sweep

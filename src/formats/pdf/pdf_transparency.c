@@ -142,7 +142,7 @@ static int pdf_apply_graphics_view(pdf_render_state *st, const pdf_object_view *
         if (!cupidimage_pdf_graphics_number(st, view, "CA", 0, 1, &next.stroke_alpha) ||
             !cupidimage_pdf_graphics_number(st, view, "LW", 0, 1e6, &value))
             return 0;
-        next.line_width_pts = (float)value;
+        next.line_width_pts = value;
     }
     if (!cupidimage_pdf_dictionary_boolean(st, view, "AIS", &next.alpha_is_shape) ||
         (!shading && !cupidimage_pdf_dictionary_boolean(st, view, "TK", &next.text_knockout)) ||

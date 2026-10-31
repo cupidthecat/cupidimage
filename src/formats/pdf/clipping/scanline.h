@@ -3,11 +3,11 @@
 #include "../raster/region.h"
 
 typedef struct {
-    float x;
+    double x;
     int direction;
 } pdf_scan_crossing;
 
 /* Return sorted center-sampled crossings, or -1 on invalid input or exhaustion. */
-int cupidimage_pdf_scanline(const pdf_region_edge *, unsigned, float, pdf_scan_crossing *,
+int cupidimage_pdf_scanline(const pdf_region_edge *, unsigned, double, pdf_scan_crossing *,
                             size_t *);
 #endif
