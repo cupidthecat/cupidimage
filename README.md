@@ -11,7 +11,8 @@ implemented, and color-managed output is incomplete. See the
 for the exact boundaries. HEIC/HEIF is deferred.
 
 PDF previews can open [password-protected documents](docs/pdf-security.md) using
-the Standard security handler. They include packed, indexed, fax-, JPEG- and [JPEG 2000](docs/pdf-jpeg2000.md)-compressed images, inline
+the Standard security handler. They include packed, indexed, fax-, JPEG-, [JPEG 2000](docs/pdf-jpeg2000.md)- and
+[JBIG2](docs/pdf-jbig2.md)-compressed images, inline
 images, image masks, filter chains, opacity and transparency blending. Image dictionaries can
 request [bilinear sampling](docs/pdf-image-interpolation.md). Text supports matrices,
 spacing, clipping, Type 3 glyph programs, variable-length encoding CMaps, CID

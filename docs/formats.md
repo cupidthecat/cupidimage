@@ -130,7 +130,8 @@ packed/16-bit prediction; each filter reads only its own parameters. The current
 DCT path supports 8-bit Huffman baseline/extended sequential/progressive frames
 and arithmetic sequential/progressive frames. Sampling factors run from one
 through four, with separate or mixed sequential component scans. Remaining DCT
-applicability questions and JBIG2 remain open. [JPXDecode](pdf-jpeg2000.md) now
+applicability questions remain open. [JBIG2Decode](pdf-jbig2.md) supports bounded
+bitonal images, masks, symbol dictionaries, refinements, halftones and globals. [JPXDecode](pdf-jpeg2000.md) now
 paints native JPEG 2000 samples, palettes, embedded alpha and selected color spaces;
 its remaining baseline and extension gaps are documented separately. See [PDF images](pdf-images.md) for the pipeline,
 checks and limits.

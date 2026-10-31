@@ -59,7 +59,7 @@ with per-item status and evidence. It is not a completed standards audit.
 | ICO/CUR | PNG/DIB entries, directory pages, masks, cursor hotspots | Full DIB depth/compression coverage and malformed directory combinations |
 | TIFF | Classic/BigTIFF, many photometrics and compression methods | JPEG tiles, planar/tiled YCbCr, predictors/sample formats, complete tag matrix |
 | TGA | Existing raw/RLE, origins, palettes, extension metadata | Full format/depth/attribute combinations and independent output comparison |
-| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, stored annotation appearances, default layer visibility, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, appearance generation, interactive layer configuration, remaining JPX modes, JBIG2 and full-document qualification |
+| PDF | Revision-aware objects, text positioning and unhinted outlines, paths, forms, images/masks, stored annotation appearances, default layer visibility, tiling patterns, seven shading types, RGB/gray/CMYK groups and text knockout | Font fidelity/substitution, wider image resampling, color management, further transparency spaces, appearance generation, interactive layer configuration, remaining codec profiles and full-document qualification |
 | HEIC/HEIF | Todo; no decoder implemented | Container, item properties, codec support, image sequences, color/HDR and metadata |
 
 The 49 files in `assets/webp/reference/` contain real WebP streams generated
@@ -190,7 +190,9 @@ saturation, resets, and the next-code special case. Chained predictor tests cove
 1/2/4/8/16-bit gray, RGB, and CMYK samples. CCITT fax decoding adds Group 3, mixed
 Group 3, and Group 4 one-bit images, including bounded damaged-row recovery.
 JPX image streams have [bounded native sample, container, color and mask support](pdf-jpeg2000.md).
-Full JPX coverage, JBIG2 and fax uncompressed extension modes remain separate work.
+[JBIG2 image streams](pdf-jbig2.md) have native bitonal decoding, shared globals,
+refinement, text and halftone regions. Full codec qualification and fax
+uncompressed extension modes remain separate work.
 Image filter names and applicable parameter dictionaries can be indirect.
 
 ## Graphics-state opacity and blend modes

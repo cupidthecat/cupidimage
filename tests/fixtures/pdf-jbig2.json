@@ -1,0 +1,38 @@
+{
+  "description": "Owned bitmap patterns encoded with the test MQ encoder and standard Huffman tables. Samples use black=1 polarity.",
+  "globals": "AAAAAgABAAAAABsAAAP//f8C/v7+AAAAAwAAAANmeOa791ui/6w=",
+  "samples": [
+    {
+      "name": "Generic arithmetic",
+      "width": 24,
+      "height": 16,
+      "globals": false,
+      "data": "AAAAATABAQAAABMAAAAYAAAAEAAAAAAAAAAAAAAAAAAAAiYBAQAAACsAAAAYAAAAEAAAAAAAAAAAAAAD//3/Av7+/kKGJePl/sFZ/2P05D//f/+s",
+      "black_samples": "HHHHHHHH44444444HHHHHHHH44444444HHHHHHHH44444444HHHHHHHH44444444"
+    },
+    {
+      "name": "Arithmetic symbols",
+      "width": 23,
+      "height": 23,
+      "globals": true,
+      "data": "AAAAATABAQAAABMAAAAXAAAAFwAAAAAAAAAAAAAAAAAAAwYjAgEAAAAgAAAAFwAAABcAAAAAAAAAAAAAEAAAAAaTQF3g6Hd0/6w=",
+      "black_samples": "KMGAOKIAKMGAAAAAAAAAAAAAAAAAAAAAKMGAOKIAKMGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "Huffman symbols",
+      "width": 23,
+      "height": 23,
+      "globals": true,
+      "data": "AAAAATABAQAAABMAAAAXAAAAFwAAAAAAAAAAAAAAAAAAAwYjAgEAAAA0AAAAFwAAABcAAAAAAAAAAAAAEQAAAAAABgAQAAAAAAAAAAAAAAAAAAAAAABEBgTyACAwJA==",
+      "black_samples": "KMGAOKIAKMGAAAAAAAAAAAAAAAAAAAAAKMGAOKIAKMGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "Gray-coded halftone",
+      "width": 24,
+      "height": 18,
+      "globals": false,
+      "data": "AAAAATABAQAAABMAAAAYAAAAEgAAAAAAAAAAAAAAAAAAAhABAQAAAA4AAwMAAAADyiyzJQP/rAAAAAMWIwIBAAAAMQAAABgAAAASAAAAAAAAAAAAAAAAAAgAAAAGAAAAAAAAAAADAAAAODyD4MHY3OXg/6w=",
+      "black_samples": "kvkvBfBfL/L/l8l8L4L4f5f5vkvkfBfB/L/L8l8l4L4L5f5fkvkvBfBfL/L/l8l8L4L4f5f5"
+    }
+  ]
+}

@@ -155,6 +155,12 @@ through the existing default APIs. Regenerate their exact bytes with
 scripts/generate_pdf_security_assets.py. The larger password/structure fixtures
 and independent generation procedure are described in ../docs/pdf-security.md.
 
+
+`pdf/native-jbig2.pdf` uses owned bitmaps to exercise generic arithmetic coding,
+arithmetic and Huffman symbol placement, and Gray-coded halftones. The symbol
+images share a separate globals stream. Stored packed samples provide exact
+uncompressed controls; see [JBIG2 decoding](../docs/pdf-jbig2.md).
+
 `pdf/native-cff-flex.pdf` pairs owned flex glyphs with their literal cubic controls
 at four sizes. Enable `--pdf-cff-hinting` to apply depth-dependent selection.
 The complete sample is decoded-unverified; focused outline and page comparisons

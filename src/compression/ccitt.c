@@ -231,25 +231,36 @@ static int fax_resync(fax_bits *bits, size_t start) {
     return 0;
 }
 
-int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
-                            const cupidimage_ccitt_options *o, unsigned char **output,
-                            size_t *output_length) {
+int cupidimage_ccitt_decode_bounded(const unsigned char *data, size_t length,
+                                    const cupidimage_ccitt_options *o, unsigned char **output,
+                                    size_t *output_length, size_t output_limit, size_t *work_left,
+                                    int mmr_only, size_t *consumed_bits) {
     if (!output || !output_length)
         return 0;
     *output = NULL;
     *output_length = 0;
-    if (!o || (!data && length))
+    if (consumed_bits)
+        *consumed_bits = 0;
+    if (!o || (!data && length) || (mmr_only != 0 && mmr_only != 1))
         return 0;
     if (length > FAX_LIMIT || o->columns < 1 || o->columns > 1048576 || o->rows < 0 ||
-        o->damaged_rows < 0)
+        o->damaged_rows < 0 ||
+        (mmr_only && (o->k >= 0 || o->end_of_line || o->byte_align || o->damaged_rows)))
         return 0;
 
     size_t row_bytes = ((size_t)o->columns + 7) / 8, used = 0, capacity = 0;
+    if (output_limit > FAX_LIMIT)
+        output_limit = FAX_LIMIT;
+    if (row_bytes > output_limit)
+        return 0;
+    size_t budget = 128u * 1024u * 1024u;
+    if (work_left && *work_left < budget)
+        budget = *work_left;
+    fax_bits bits = {data, length, 0, budget};
     unsigned char *decoded = NULL, *row = calloc(1, row_bytes), *previous = calloc(1, row_bytes);
     uint32_t *edges = malloc(((size_t)o->columns + 2) * sizeof(*edges));
     if (!row || !previous || !edges)
         goto fail;
-    fax_bits bits = {data, length, 0, 128u * 1024u * 1024u};
     unsigned rows = 0, damaged = 0;
     int previous_damaged = 0;
     for (;;) {
@@ -263,9 +274,11 @@ int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
             break;
         if (!o->end_of_block && fax_empty_tail(&bits))
             break;
-        if (used > FAX_LIMIT - row_bytes)
+        if (used > output_limit - row_bytes)
             goto fail;
         int eol = fax_eol(&bits), one_dimensional = o->k == 0;
+        if (mmr_only && eol)
+            goto fail;
         int valid = !o->end_of_line || eol;
         if (valid && o->k > 0)
             valid = fax_bit(&bits, &one_dimensional);
@@ -293,8 +306,8 @@ int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
             size_t next = capacity ? capacity * 2 : row_bytes;
             if (next < used + row_bytes)
                 next = used + row_bytes;
-            if (next > FAX_LIMIT)
-                next = FAX_LIMIT;
+            if (next > output_limit)
+                next = output_limit;
             unsigned char *grown = realloc(decoded, next);
             if (!grown)
                 goto fail;
@@ -307,6 +320,8 @@ int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
         used += row_bytes;
         rows++;
     }
+    if (work_left)
+        *work_left -= budget - bits.work;
     free(row);
     free(previous);
     free(edges);
@@ -317,11 +332,22 @@ int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
     }
     *output = decoded;
     *output_length = used;
+    if (consumed_bits)
+        *consumed_bits = bits.bit;
     return 1;
 fail:
+    if (work_left)
+        *work_left -= budget - bits.work;
     free(decoded);
     free(row);
     free(previous);
     free(edges);
     return 0;
+}
+
+int cupidimage_ccitt_decode(const unsigned char *data, size_t length,
+                            const cupidimage_ccitt_options *options, unsigned char **output,
+                            size_t *output_length) {
+    return cupidimage_ccitt_decode_bounded(data, length, options, output, output_length, FAX_LIMIT,
+                                           NULL, 0, NULL);
 }

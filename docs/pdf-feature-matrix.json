@@ -220,7 +220,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -238,7 +238,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -256,7 +256,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -274,7 +274,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -292,7 +292,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -303,18 +303,28 @@
         {
           "id": "2.6",
           "requirement": "JBIG2Decode, including JBIG2Globals and safe decoding limits.",
-          "status": "missing",
+          "status": "partial",
           "evidence": [
-            "docs/format-conformance.md"
+            "docs/pdf-jbig2.md",
+            "src/formats/pdf/images/jbig2/decode.c",
+            "src/formats/pdf/images/jbig2/document_dictionary.c",
+            "src/formats/pdf/images/jbig2/document_regions.c",
+            "src/formats/pdf/images/jbig2/filter.c",
+            "scripts/test_pdf_jbig2_images.py",
+            "tests/test_pdf_jbig2_document.c"
           ],
           "limitations": [
-            "No complete implementation of this capability; prerequisites do not count as support."
+            "Native embedded-stream decoding includes globals, arithmetic and Huffman dictionaries, refinement, text and halftone regions. Full corpus and independent profile qualification remains in progress; documented memory, work and size limits apply."
           ],
           "dependencies": [
             "1"
           ],
           "audit": "known unsupported path; detailed version audit pending",
-          "standard_clauses": []
+          "standard_clauses": [
+            "ISO 32000-1:2008 7.4.7",
+            "ISO 32000-2:2020 7.4.7",
+            "ITU-T T.88 (08/2018) clauses 6-8 and Annexes A-E"
+          ]
         },
         {
           "id": "2.7",
@@ -329,7 +339,7 @@
             "scripts/test_pdf_jpeg_sampling.py"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -392,7 +402,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -410,7 +420,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -428,7 +438,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -446,7 +456,7 @@
             "tests/test_pdf_filters.c"
           ],
           "limitations": [
-            "JPX is partial; JBIG2 and crypt filters are missing; codec mode/parameter coverage is not complete."
+            "JPX and JBIG2 have bounded native decoding, and Standard-handler crypt filters are supported. Complete codec and parameter qualification remains unfinished."
           ],
           "dependencies": [
             "1"
@@ -2087,7 +2097,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2108,7 +2118,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2133,7 +2143,7 @@
             "tests/test_pdf_image_sampling.c"
           ],
           "limitations": [
-            "Dictionary-controlled bilinear sampling has focused component, mask, Matte and affine tests. Minification area filtering, image-boundary coverage, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain unfinished. Independent interpolation profiles still differ."
+            "Dictionary-controlled bilinear sampling has focused component, mask, Matte and affine tests. Minification area filtering, image-boundary coverage, additional image color spaces, remaining codec profiles and interactive optional-content handling remain unfinished. Independent interpolation profiles still differ."
           ],
           "dependencies": [
             "1",
@@ -2156,7 +2166,7 @@
             "scripts/test_pdf_image_interpolation.py"
           ],
           "limitations": [
-            "Area resampling, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Area resampling, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2177,7 +2187,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2198,7 +2208,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2245,7 +2255,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",
@@ -2285,7 +2295,7 @@
             "scripts/test_pdf_image_values.py"
           ],
           "limitations": [
-            "Interpolation, additional image color spaces, remaining JPX modes, JBIG2 and interactive optional-content handling remain missing."
+            "Interpolation, additional image color spaces, remaining codec profiles and interactive optional-content handling remain missing."
           ],
           "dependencies": [
             "1",

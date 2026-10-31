@@ -602,6 +602,10 @@
       "sha256": "397684a3ffa4db4f593904d164888c8629bafa16bcd687732c6e81e366510e0e"
     },
     {
+      "path": "assets/pdf/native-jbig2.pdf",
+      "sha256": "c0b6fd865224909e0996232996fce7b3f4c08bd0b624e590ab75067abdad0d9c"
+    },
+    {
       "path": "assets/pdf/native-monochrome-hinting.pdf",
       "sha256": "b820bb7131f1c46a118ec0c508e9698024436c1bf9082aa3556099f9dbb68562"
     },
