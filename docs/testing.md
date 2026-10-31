@@ -770,3 +770,12 @@ The optional `compare_pdf_flex.py` and `compare_pdf_type1_flex.py` scripts repor
 legacy engines that retain unadjusted curves separately from matching outlines.
 Those differences are not tolerances or accepted pixel matches. See
 [flex rendering](pdf-flex.md) for the specified rules and selected device profile.
+
+## Monochrome TrueType scan conversion
+
+`make test-pdf-monochrome` checks conditional instruction state, bounded raster
+ownership, stored independent bitmaps and authored PDF placement and paint cases.
+It needs no optional packages. The separate reference script accepts `--library`
+for a specific font-engine build and reports unsupported older versions explicitly.
+See [monochrome rendering](pdf-monochrome.md) for the comparison boundaries and
+fixture regeneration commands.

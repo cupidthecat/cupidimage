@@ -4,9 +4,9 @@ static int32_t relative_grid(int32_t value) {
 
 static void relative_tests(void) {
     pdf_tt_vm vm;
-    const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0},
-                                      {{100, 0}, {100, 0}, 0, 1, 0},
-                                      {{0, 100}, {0, 100}, 0, 1, 1}};
+    const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 0, 0},
+                                      {{100, 0}, {100, 0}, 0, 1, 0, 0},
+                                      {{0, 100}, {0, 100}, 0, 1, 1, 0}};
     const int32_t values[] = {-129, -65, -1, 0, 1, 31, 64, 97, 145, 257};
     const int32_t cutins[] = {0, 68, 76, 256}, minimums[] = {0, 16, 64, 128};
     for (unsigned op = 0xe0; op <= 0xff; op++) {

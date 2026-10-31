@@ -73,6 +73,10 @@ int cupidimage_pdf_tt_hint_simple(pdf_tt_hint *hint, unsigned glyph, const pdf_t
              cupidimage_pdf_tt_vm_set_design_xy(vm, design, count, vm->size.axis_scale[0],
                                                 vm->size.axis_scale[1]) &&
              cupidimage_pdf_tt_vm_run(vm, program.data, program.length, PDF_TT_VM_GLYPH, remaining);
+    if (ok && outline && program.length && !(hint->vm.prepared_graphics.instruction_control & 1)) {
+        unsigned mode = hint->vm.graphics.scan_control ? hint->vm.graphics.scan_type : 2;
+        hint->vm.zones[1].points[0].scan = (unsigned char)(mode + 1);
+    }
     if (ok)
         *work = vm->work_left;
     free(points);

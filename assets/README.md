@@ -143,6 +143,11 @@ They remain decoded-unverified. Regenerate them with
 scripts/generate_pdf_post_table_fixtures.py; separate paired tests verify glyph
 selection and PDF widths.
 
+`pdf/native-monochrome-hinting.pdf` uses owned narrow-stem glyphs to show simple,
+smart and disabled dropout policies, composite overrides and conditional transforms.
+View it with `--pdf-tt-hinting` and without `--pdf-text-aa`. The complete sample is
+decoded-unverified; focused analytic and independent raster tests are described in
+[monochrome rendering](../docs/pdf-monochrome.md).
 The security-rc4.pdf, security-aes128.pdf and security-aes256.pdf assets have empty
 user passwords and synthetic owner credentials. Each has a literal red-page
 oracle and a nonzero content-object generation. They test encrypted loading

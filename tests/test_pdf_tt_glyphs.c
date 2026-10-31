@@ -167,8 +167,8 @@ int main(int argc, char **argv) {
     }
     for (unsigned i = 0; i < count; i++) {
         const unsigned char *p = fixture + 12 + i * 28;
-        points[i] =
-            (pdf_tt_vm_point){{i32(p), i32(p + 4)}, {i32(p + 8), i32(p + 12)}, p[16], p[17], p[18]};
+        points[i] = (pdf_tt_vm_point){
+            {i32(p), i32(p + 4)}, {i32(p + 8), i32(p + 12)}, p[16], p[17], p[18], 0};
         design[i][0] = i32(p + 20);
         design[i][1] = i32(p + 24);
     }

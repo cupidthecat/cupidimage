@@ -1,7 +1,7 @@
 static void lifecycle_tests(void) {
     pdf_tt_vm vm;
     const int32_t raw[] = {64, 128};
-    const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 1}};
+    const pdf_tt_vm_point points[] = {{{31, 35}, {31, 35}, 0, 1, 1, 0}};
     static const unsigned char definition[] = {0xb0, 1, 0x2c, 0xb0, 42, 0x2d};
     init(&vm, raw, 2);
     CHECK(cupidimage_pdf_tt_vm_run(&vm, definition, sizeof(definition), PDF_TT_VM_FONT, 100));

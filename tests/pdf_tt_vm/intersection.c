@@ -40,11 +40,11 @@ static void intersection_tests(void) {
     }
     static const unsigned char code[] = {0xb4, 4, 0, 1, 2, 3, 0x0f};
     for (unsigned kind = 0; kind < 5; kind++) {
-        pdf_tt_vm_point points[5] = {{{0, 0}, {1, 2}, 0, 1, 0},
-                                     {{128, 128}, {3, 4}, 0, 1, 0},
-                                     {{0, 128}, {5, 6}, 0, 1, 0},
-                                     {{128, 0}, {7, 8}, 0, 1, 0},
-                                     {{99, 77}, {9, 10}, 0, 0, 1}};
+        pdf_tt_vm_point points[5] = {{{0, 0}, {1, 2}, 0, 1, 0, 0},
+                                     {{128, 128}, {3, 4}, 0, 1, 0, 0},
+                                     {{0, 128}, {5, 6}, 0, 1, 0, 0},
+                                     {{128, 0}, {7, 8}, 0, 1, 0, 0},
+                                     {{99, 77}, {9, 10}, 0, 0, 1, 0}};
         int32_t expected[2] = {64, 64};
         if (kind == 1) { /* Parallel. */
             points[3].current[1] = 256;

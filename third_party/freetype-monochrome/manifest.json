@@ -1,0 +1,164 @@
+{
+  "version": "VER-2-15-0",
+  "files": [
+    {
+      "source": "https://github.com/freetype/freetype/blob/VER-2-15-0/src/raster/ftraster.c",
+      "file": "ftraster.inc",
+      "original_sha256": "8fbabc9a6921b5ec476bc7cad449f202d6a3961415241b44bf69838782c6830f",
+      "adapted_sha256": "f49043efa0557785884bda07b501e4593fc402559bf33646eb167e81d0caae89"
+    },
+    {
+      "source": "https://github.com/freetype/freetype/blob/VER-2-15-0/src/raster/ftmisc.h",
+      "file": "ftmisc.h",
+      "original_sha256": "72ccdf0e31b3c88aecd376c2b5d09be3c0bdeb22ddbd84e099469e00d3d78624",
+      "adapted_sha256": "72ccdf0e31b3c88aecd376c2b5d09be3c0bdeb22ddbd84e099469e00d3d78624"
+    }
+  ],
+  "patches": [
+    {
+      "old": "  /**** RASTER OBJECT CREATION: In standalone mode, we simply use *****/\n  /****                         a static object.                  *****/\n\n\n#ifdef STANDALONE_\n\n\n  static int\n  ft_black_new( void*       memory,\n                FT_Raster  *araster )\n  {\n     static black_TRaster  the_raster;\n     FT_UNUSED( memory );\n\n\n     *araster = (FT_Raster)&the_raster;\n     FT_ZERO( &the_raster );\n\n     return 0;\n  }\n\n\n  static void\n  ft_black_done( FT_Raster  raster )\n  {\n    /* nothing */\n    FT_UNUSED( raster );\n  }\n\n\n#else /* !STANDALONE_ */\n\n\n  static int\n  ft_black_new( void*       memory_,    /* FT_Memory     */\n                FT_Raster  *araster_ )  /* black_PRaster */\n  {\n    FT_Memory       memory = (FT_Memory)memory_;\n    black_PRaster  *araster = (black_PRaster*)araster_;\n\n    FT_Error       error;\n    black_PRaster  raster = NULL;\n\n\n    if ( !FT_NEW( raster ) )\n      raster->memory = memory;\n\n    *araster = raster;\n\n    return error;\n  }\n\n\n  static void\n  ft_black_done( FT_Raster  raster_ )   /* black_PRaster */\n  {\n    black_PRaster  raster = (black_PRaster)raster_;\n    FT_Memory      memory = (FT_Memory)raster->memory;\n\n\n    FT_FREE( raster );\n  }\n\n\n#endif /* !STANDALONE_ */\n\n\n  static void\n  ft_black_reset( FT_Raster  raster,\n                  PByte      pool_base,\n                  ULong      pool_size )\n  {\n    FT_UNUSED( raster );\n    FT_UNUSED( pool_base );\n    FT_UNUSED( pool_size );\n  }\n\n\n  static int\n  ft_black_set_mode( FT_Raster  raster,\n                     ULong      mode,\n                     void*      args )\n  {\n    FT_UNUSED( raster );\n    FT_UNUSED( mode );\n    FT_UNUSED( args );\n\n    return 0;\n  }\n\n\n  static int\n  ft_black_render( FT_Raster                raster,\n                   const FT_Raster_Params*  params )\n  {\n    const FT_Outline*  outline    = (const FT_Outline*)params->source;\n    const FT_Bitmap*   target_map = params->target;\n\n    FT_ULong  estimate;\n    int       ret;\n\n#ifndef FT_STATIC_RASTER\n    black_TWorker  worker[1];\n#endif\n\n\n    if ( !raster )\n      return FT_THROW( Raster_Uninitialized );\n\n    if ( !outline )\n      return FT_THROW( Invalid_Outline );\n\n    /* return immediately if the outline is empty */\n    if ( outline->n_points == 0 || outline->n_contours == 0 )\n      return Raster_Err_Ok;\n\n    if ( !outline->contours || !outline->points )\n      return FT_THROW( Invalid_Outline );\n\n    if ( outline->n_points !=\n           outline->contours[outline->n_contours - 1] + 1 )\n      return FT_THROW( Invalid_Outline );\n\n    /* this version of the raster does not support direct rendering, sorry */\n    if ( params->flags & FT_RASTER_FLAG_DIRECT ||\n         params->flags & FT_RASTER_FLAG_AA     )\n      return FT_THROW( Cannot_Render_Glyph );\n\n    if ( !target_map )\n      return FT_THROW( Invalid_Argument );\n\n    /* nothing to do */\n    if ( !target_map->width || !target_map->rows )\n      return Raster_Err_Ok;\n\n    if ( !target_map->buffer )\n      return FT_THROW( Invalid_Argument );\n\n    ras.outline = *outline;\n\n    ras.bTop    =   (Int)target_map->rows - 1;\n    ras.bRight  =   (Int)target_map->width - 1;\n    ras.bPitch  =   (Int)target_map->pitch;\n    ras.bOrigin = (PByte)target_map->buffer;\n\n    if ( ras.bPitch > 0 )\n      ras.bOrigin += ras.bTop * ras.bPitch;\n\n    /* allocate memory based on empirical estimate from CJK fonts */\n    estimate = ( ras.bTop + ras.bRight ) * 8UL +\n               80UL * sizeof ( TProfile ) / sizeof ( Long );\n    if ( estimate > FT_MAX_BLACK_POOL )\n    {\n      FT_Error   error;\n      FT_Memory  memory = (FT_Memory)((black_PRaster)raster)->memory;\n\n\n      if ( FT_QNEW_ARRAY( ras.buff, estimate ) )\n        ret = error;\n      else\n      {\n        ras.sizeBuff = ras.buff + estimate;\n        ret = Render_Glyph( RAS_VAR );\n        FT_FREE( ras.buff );\n      }\n    }\n    else\n    {\n      Long  buffer[FT_MAX_BLACK_POOL];  /* stack allocation */\n\n\n      ras.buff     = buffer;\n      ras.sizeBuff = (&buffer)[1]; /* Points to right after buffer. */\n\n      ret = Render_Glyph( RAS_VAR );\n    }\n\n    return ret;\n  }\n\n\n  FT_DEFINE_RASTER_FUNCS(\n    ft_standard_raster,\n\n    FT_GLYPH_FORMAT_OUTLINE,\n\n    ft_black_new,       /* FT_Raster_New_Func      raster_new      */\n    ft_black_reset,     /* FT_Raster_Reset_Func    raster_reset    */\n    ft_black_set_mode,  /* FT_Raster_Set_Mode_Func raster_set_mode */\n    ft_black_render,    /* FT_Raster_Render_Func   raster_render   */\n    ft_black_done       /* FT_Raster_Done_Func     raster_done     */\n  )\n\n\n/* END */\n",
+      "new": "/* Public factories are omitted; the bounded adapter supplies per-call state. */\n",
+      "count": 1
+    },
+    {
+      "old": "#include \"ftimage.h\"",
+      "new": "#include \"../freetype-raster/ftimage.h\"",
+      "count": 1
+    },
+    {
+      "old": "  struct  black_TWorker_\n  {",
+      "new": "  struct  black_TWorker_\n  {\n    size_t*   work_left;\n    jmp_buf*  abort;",
+      "count": 1
+    },
+    {
+      "old": "InsNew( PProfileList",
+      "new": "InsNew( RAS_ARGS PProfileList",
+      "count": 1
+    },
+    {
+      "old": "InsNew( &",
+      "new": "InsNew( RAS_VARS &",
+      "count": 2
+    },
+    {
+      "old": "Increment( PProfileList",
+      "new": "Increment( RAS_ARGS PProfileList",
+      "count": 1
+    },
+    {
+      "old": "Increment( &",
+      "new": "Increment( RAS_VARS &",
+      "count": 2
+    },
+    {
+      "old": "while ( n-- && y < y_turns[n] )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), n-- && y < y_turns[n] )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( n-- >= 0 );\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), n-- >= 0 );\n",
+      "count": 1
+    },
+    {
+      "old": "while ( --n )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), --n )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( --size );\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), --size );\n",
+      "count": 2
+    },
+    {
+      "old": "while ( e <= e2 );\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), e <= e2 );\n",
+      "count": 1
+    },
+    {
+      "old": "while ( 1 );\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), 1 );\n",
+      "count": 2
+    },
+    {
+      "old": "while ( point < limit )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), point < limit )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( current && current->X < x )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), current && current->X < x )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( *old )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), *old )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( current->link )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), current->link )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( --c2 > 0 )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), --c2 > 0 )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( *Q )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), *Q )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( P_Left && P_Right )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), P_Left && P_Right )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( dropouts )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), dropouts )\n",
+      "count": 1
+    },
+    {
+      "old": "while ( ++y < y_turn );\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), ++y < y_turn );\n",
+      "count": 1
+    },
+    {
+      "old": "while ( 1 )\n",
+      "new": "while ( CUPIDIMAGE_MONO_TICK( worker ), 1 )\n",
+      "count": 1
+    },
+    {
+      "old": "for ( i = 0; i < ras.outline.n_contours; i++ )",
+      "new": "for ( i = 0; CUPIDIMAGE_MONO_TICK( worker ), i < ras.outline.n_contours; i++ )",
+      "count": 1
+    },
+    {
+      "old": "for ( y = min_Y; y <= max_Y; )",
+      "new": "for ( y = min_Y; CUPIDIMAGE_MONO_TICK( worker ), y <= max_Y; )",
+      "count": 1
+    },
+    {
+      "old": "if ( top + size >= ras.maxBuff )",
+      "new": "if ( size >= ras.maxBuff - top )",
+      "count": 1
+    },
+    {
+      "old": "if ( ( top + TRUNC( e2 - e ) + 1 ) >= ras.maxBuff )",
+      "new": "if ( TRUNC( e2 - e ) + 1 >= ras.maxBuff - top )",
+      "count": 1
+    },
+    {
+      "old": "      ras.cProfile  = (PProfile)ras.top;\n      ras.top       = ras.cProfile->x;\n\n      if ( ras.top >= ras.maxBuff )",
+      "new": "      if ( (size_t)( ras.maxBuff - ras.top ) <=\n           offsetof( TProfile, x ) / sizeof ( Long ) )",
+      "count": 1
+    },
+    {
+      "old": "      ras.cProfile->height = 0;",
+      "new": "      ras.cProfile  = (PProfile)ras.top;\n      ras.top       = ras.cProfile->x;\n      ras.cProfile->height = 0;",
+      "count": 1
+    }
+  ]
+}

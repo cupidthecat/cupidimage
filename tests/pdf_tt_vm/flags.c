@@ -1,8 +1,8 @@
 static void point_flag_tests(void) {
-    const pdf_tt_vm_point points[] = {{{31, 35}, {20, 25}, 3, 1, 0},
-                                      {{100, 0}, {100, 0}, 1, 0, 0},
-                                      {{0, 100}, {0, 100}, 2, 1, 1},
-                                      {{64, 0}, {60, 0}, 0, 0, 0}};
+    const pdf_tt_vm_point points[] = {{{31, 35}, {20, 25}, 3, 1, 0, 0},
+                                      {{100, 0}, {100, 0}, 1, 0, 0, 0},
+                                      {{0, 100}, {0, 100}, 2, 1, 1, 0},
+                                      {{64, 0}, {60, 0}, 0, 0, 0, 0}};
     for (unsigned op = 0x81; op <= 0x82; op++)
         for (unsigned low = 0; low < 4; low++)
             for (unsigned high = 0; high < 4; high++) {
