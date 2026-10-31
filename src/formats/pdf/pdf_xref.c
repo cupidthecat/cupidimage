@@ -217,7 +217,7 @@ static void xref_recover_catalog_size(const pdf_xref_builder *builder, pdf_xref_
                                           &body) ||
             object != trailer->root)
             return;
-        pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL};
+        pdf_object_view tail = {builder->data + body, builder->size - body, NULL, NULL, 0};
         pdf_object_view dictionary = {0};
         char name[128];
         if (!cupidimage_pdf_dictionary_view(&tail, 0, &dictionary, &end) ||

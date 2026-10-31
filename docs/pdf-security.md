@@ -70,6 +70,19 @@ The tests report those differences and retain the literal red-page expectation
 required by the first-Crypt-filter rule in ISO 32000 section 7.4.10. They do not
 count the differing images as matches.
 
+A focused run on the pinned public corpus compared the unchanged originals with
+independently decrypted controls. The first pages of issue6010_1.pdf,
+issue6010_2.pdf, bug1782186.pdf, issue21579.pdf and saslprep-r6.pdf matched their
+native control rasters exactly. This isolates password/stream decoding, not
+independent font or full-document visual fidelity.
+
+issue15893_reduced.pdf remains blocked by damaged cross-reference metadata in
+concatenated file bodies. issue3371.pdf reaches the unsupported JBIG2 image path
+in both its encrypted and decrypted forms. encrypted-attachment.pdf has a startxref
+offset of 2242 while its actual table starts at 2223; it is still rejected before
+password processing. None of these documents is counted as passing, and no
+original corpus bytes were changed for the reported successful comparisons.
+
 ## Objects, filters and bounds
 
 The latest trailer selects the encryption dictionary. Direct dictionaries and
