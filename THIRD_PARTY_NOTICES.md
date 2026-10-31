@@ -343,8 +343,15 @@ notices and the pinned adaptation record are in third_party/openjpeg.
 
 ## Harano Aji CID substitute fonts
 
-HaranoAjiGothic-Regular.otf and HaranoAjiMincho-Regular.otf are bundled without modification.
-Source: https://github.com/trueroad/HaranoAjiFonts
+The Gothic and Mincho Regular OpenType files for Japan1, GB1 (CN), CNS1 (TW),
+and Korea1 (K1) are bundled without modification. Pinned revisions and file
+hashes are listed in third_party/cid-standard-fonts/manifest.json.
+
+Sources:
+- https://github.com/trueroad/HaranoAjiFonts
+- https://github.com/trueroad/HaranoAjiFontsCN
+- https://github.com/trueroad/HaranoAjiFontsTW
+- https://github.com/trueroad/HaranoAjiFontsK1
 
 Harano Aji Gothic: Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
 
@@ -443,10 +450,14 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
-## Unicode CP932 mapping data
+## Unicode code-page mapping data
 
-The published CP932 mapping data is included without modification.
-Source: https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP932.TXT
+The published CP932, CP936, CP949 and CP950 mapping tables are included without modification.
+Sources:
+- https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP932.TXT
+- https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP936.TXT
+- https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP949.TXT
+- https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP950.TXT
 
 UNICODE LICENSE V3
 

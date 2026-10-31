@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import zlib
-from generate_pdf_cp932 import mappings
+from generate_pdf_codepages import mappings
 from test_pdf_pages import document
 from test_pdf_type3 import stream
 

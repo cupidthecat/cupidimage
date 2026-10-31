@@ -10,7 +10,9 @@
       "registry": "Adobe",
       "ordering": "Japan1",
       "supplement": 7,
-      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'."
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "repository": "https://github.com/trueroad/HaranoAjiFonts",
+      "revision": "f0f692c1e39593751a4796082fa5232185d91ecd"
     },
     {
       "face": "mincho",
@@ -20,7 +22,103 @@
       "registry": "Adobe",
       "ordering": "Japan1",
       "supplement": 7,
-      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'."
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "repository": "https://github.com/trueroad/HaranoAjiFonts",
+      "revision": "f0f692c1e39593751a4796082fa5232185d91ecd"
+    },
+    {
+      "face": "gothic_cn",
+      "file": "HaranoAjiGothicCN-Regular.otf",
+      "size": 8369264,
+      "sha256": "0ccf3943a0e3167513d77bd0e80c67d21516b3a81c2b620210cc94efdabfcbe0",
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "registry": "Adobe",
+      "ordering": "GB1",
+      "supplement": 6,
+      "repository": "https://github.com/trueroad/HaranoAjiFontsCN",
+      "revision": "8d9710abc7a36c040d30711f6c42d0374abb522a"
+    },
+    {
+      "face": "mincho_cn",
+      "file": "HaranoAjiMinchoCN-Regular.otf",
+      "size": 11472300,
+      "sha256": "1a4be2f3f3c57111b143d80e7927b0dedb40e07d25ab4b8732f47bb143fba250",
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "registry": "Adobe",
+      "ordering": "GB1",
+      "supplement": 6,
+      "repository": "https://github.com/trueroad/HaranoAjiFontsCN",
+      "revision": "8d9710abc7a36c040d30711f6c42d0374abb522a"
+    },
+    {
+      "face": "gothic_tw",
+      "file": "HaranoAjiGothicTW-Regular.otf",
+      "size": 5576324,
+      "sha256": "b82cbd253f4ed9c21d15f3a62d666f19754597322260b47d2cc3d11426c9440c",
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "registry": "Adobe",
+      "ordering": "CNS1",
+      "supplement": 7,
+      "repository": "https://github.com/trueroad/HaranoAjiFontsTW",
+      "revision": "b4d38acd03e7e8bc447223438da76eaf3b760579"
+    },
+    {
+      "face": "mincho_tw",
+      "file": "HaranoAjiMinchoTW-Regular.otf",
+      "size": 7680524,
+      "sha256": "6ad6065ebec315b3574a69832cd7b1f308ad18cc852897718547cb08ccaa88a1",
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "registry": "Adobe",
+      "ordering": "CNS1",
+      "supplement": 7,
+      "repository": "https://github.com/trueroad/HaranoAjiFontsTW",
+      "revision": "b4d38acd03e7e8bc447223438da76eaf3b760579"
+    },
+    {
+      "face": "gothic_k1",
+      "file": "HaranoAjiGothicK1-Regular.otf",
+      "size": 3879248,
+      "sha256": "a748a7036a52d38175b33c9242dbdaecf196e21008c951a129469ca4c63e0147",
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2014-2025 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "registry": "Adobe",
+      "ordering": "Korea1",
+      "supplement": 2,
+      "repository": "https://github.com/trueroad/HaranoAjiFontsK1",
+      "revision": "b3f1d0322423a2930db078cc0917dfa504844a46"
+    },
+    {
+      "face": "mincho_k1",
+      "file": "HaranoAjiMinchoK1-Regular.otf",
+      "size": 9240620,
+      "sha256": "521740c229d0e392704711c05db5e1a0ebf929af1cfea217c366745457dca2ad",
+      "copyright": "Copyright (C) 2019-2025 Masamichi Hosoda, with Reserved Font Name 'Harano Aji'. © 2017-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.",
+      "registry": "Adobe",
+      "ordering": "Korea1",
+      "supplement": 2,
+      "repository": "https://github.com/trueroad/HaranoAjiFontsK1",
+      "revision": "b3f1d0322423a2930db078cc0917dfa504844a46"
+    }
+  ],
+  "sources": [
+    {
+      "repository": "https://github.com/trueroad/HaranoAjiFonts",
+      "revision": "f0f692c1e39593751a4796082fa5232185d91ecd",
+      "ordering": "Japan1"
+    },
+    {
+      "repository": "https://github.com/trueroad/HaranoAjiFontsCN",
+      "revision": "8d9710abc7a36c040d30711f6c42d0374abb522a",
+      "ordering": "GB1"
+    },
+    {
+      "repository": "https://github.com/trueroad/HaranoAjiFontsTW",
+      "revision": "b4d38acd03e7e8bc447223438da76eaf3b760579",
+      "ordering": "CNS1"
+    },
+    {
+      "repository": "https://github.com/trueroad/HaranoAjiFontsK1",
+      "revision": "b3f1d0322423a2930db078cc0917dfa504844a46",
+      "ordering": "Korea1"
     }
   ]
 }

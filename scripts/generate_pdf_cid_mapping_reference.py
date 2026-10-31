@@ -22,8 +22,7 @@ def glyph(font, scalar):
     return 0
 
 
-if __name__ == '__main__':
-    names = ('HaranoAjiGothic-Regular.otf', 'HaranoAjiMincho-Regular.otf')
+def generate(names, suffix):
     fonts = [TTFont(SOURCE / name) for name in names]
     for font in fonts:
         charset = font['CFF '].cff.topDictIndex[0].charset
@@ -51,9 +50,19 @@ if __name__ == '__main__':
     result = {'source': 'Independent fontTools cmap and vrt2 decoding; original font bytes are unchanged.',
               'layout': 'big-endian u32 scalar, u16 Gothic horizontal/vertical, u16 Mincho horizontal/vertical',
               'cid_equals_gid': True,
-              'fonts': [{'file': name, 'sha256': hashlib.sha256((SOURCE / name).read_bytes()).hexdigest()}
-                        for name in names], 'count': len(scalars),
+              'fonts': [{'file': name, 'sha256': hashlib.sha256((SOURCE / name).read_bytes()).hexdigest(),
+                         'glyphs': len(font.getGlyphOrder())} for name, font in zip(names, fonts)], 'count': len(scalars),
               'records_zlib': base64.b64encode(zlib.compress(packed, 9)).decode()}
-    path = ROOT / 'tests/fixtures/pdf-cid-substitute-mapping.json'
+    path = ROOT / ('tests/fixtures/pdf-cid-substitute-mapping' + suffix + '.json')
     path.write_text(json.dumps(result, indent=2) + '\n')
-    print(f'Independent CID mapping oracle: {len(scalars)} Unicode scalars across two faces')
+    print(f'Independent CID mapping oracle{suffix}: {len(scalars)} Unicode scalars across two faces')
+    for font in fonts:
+        font.close()
+
+
+if __name__ == '__main__':
+    manifest = json.loads((SOURCE / 'manifest.json').read_text())
+    for start in range(0, len(manifest['files']), 2):
+        rows = manifest['files'][start:start + 2]
+        suffix = '' if start == 0 else '-' + rows[0]['face'].split('_', 1)[1]
+        generate(tuple(row['file'] for row in rows), suffix)

@@ -1,29 +1,32 @@
-# CID-keyed Japanese substitute fonts
+# CID-keyed CJK substitute fonts
 
-The two OpenType files are unmodified Harano Aji regular fonts from
-https://github.com/trueroad/HaranoAjiFonts at revision
-`f0f692c1e39593751a4796082fa5232185d91ecd`. Their hashes and Adobe-Japan1-7
-collection identifiers are recorded in `manifest.json`.
+These eight OpenType files are unmodified Harano Aji regular fonts. Each pinned
+collection has a Gothic sans-serif face and a Mincho serif face:
 
-The original files retain their font names, copyright notices and licensing
-metadata. They are distributed under the SIL Open Font License 1.1 in LICENSE.
-Include that license and the copyright notices in THIRD_PARTY_NOTICES.md with
-binary distributions. The compressed copies restore the exact original bytes;
-the font programs have not been subsetted, renamed or edited.
+- Adobe-Japan1-7: https://github.com/trueroad/HaranoAjiFonts
+- Adobe-GB1-6: https://github.com/trueroad/HaranoAjiFontsCN
+- Adobe-CNS1-7: https://github.com/trueroad/HaranoAjiFontsTW
+- Adobe-Korea1-2: https://github.com/trueroad/HaranoAjiFontsK1
 
-`scripts/generate_pdf_cid_fonts.py` packs each file independently. Fixed-size
-string rows avoid huge numeric initializer trees and keep individual string
-literals within the C99 minimum supported size. Only the last row is padded;
-the recorded compressed length excludes that padding. Each font has its own
-translation unit. Both compressed fonts together occupy about 9.1 MiB in the
-binary.
+Exact source revisions, byte counts, hashes, collection identifiers and copyright
+notices are recorded in manifest.json. Upstream labels the Chinese and Korean
+variants experimental. Source-font glyph coverage and regular-weight designs do
+not provide identical substitutes for every CJK typeface.
 
-These are regular-weight substitutes, not replacements with identical designs
-for every Japanese typeface. Source-font glyph coverage limits still apply.
-The renderer currently selects them only for nonembedded CIDFontType0 resources
-whose collection is explicitly Adobe-Japan1 with supplement 0 through 7.
-The same font bytes also provide Unicode cmap selection for the six supported
-Japanese predefined encodings on nonembedded CIDFontType2 resources. Vertical
-GID variants are extracted from each pinned font's single `vrt2` lookup, with
-independent fontTools mapping checks. Other collections and encodings remain
-separate work.
+The original files retain their names, copyright notices and licensing metadata.
+They are distributed under the SIL Open Font License 1.1 in LICENSE. Include that
+license and the copyright notices in THIRD_PARTY_NOTICES.md with binary
+distributions. The compressed copies restore the exact original bytes; the font
+programs have not been subsetted, renamed or edited.
+
+scripts/generate_pdf_cid_fonts.py packs each file independently. Fixed-size
+string rows keep individual literals within the C99 minimum supported size.
+Only the last row is padded, and its padding is excluded from the recorded
+compressed length. Each face has its own translation unit. The compressed font
+bytes together occupy about 43.7 MiB in the binary.
+
+The renderer uses collection-matched CID selection for nonembedded CIDFontType0
+resources. Selected Unicode and Windows predefined CMaps also support character-code/cmap
+selection for external CIDFontType2 fonts. Vertical GID variants are extracted
+from each unchanged font's single vrt2 lookup and checked against an independent
+fontTools oracle. See ../../docs/pdf-fonts.md for encodings, limits and tests.
